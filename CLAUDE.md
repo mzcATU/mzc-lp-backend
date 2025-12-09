@@ -21,10 +21,9 @@
 | 구분 | 기술 |
 |------|------|
 | Language | Java 21 |
-| Framework | Spring Boot 3.4.x |
+| Framework | Spring Boot 3.4.12 |
 | ORM | Spring Data JPA |
 | Database | MySQL 8.0 |
-| Cache | Redis |
 | Build | Gradle |
 
 ---
