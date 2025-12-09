@@ -1,0 +1,17 @@
+build/
+.gradle/
+.idea/
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+
+.env
+.env.*
+!.env.example
+application-local.yml
+application-prod.yml
+*-secret.yml
+*.pem
+*.jks
+
+*.log
+/uploads/
