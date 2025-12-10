@@ -6,7 +6,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Entity
 @Table(name = "refresh_tokens", indexes = {
@@ -25,19 +25,19 @@ public class RefreshToken extends BaseTimeEntity {
     private Long userId;
 
     @Column(name = "expires_at", nullable = false)
-    private LocalDateTime expiresAt;
+    private Instant expiresAt;
 
     @Column(nullable = false)
     private boolean revoked = false;
 
-    private RefreshToken(String token, Long userId, LocalDateTime expiresAt) {
+    private RefreshToken(String token, Long userId, Instant expiresAt) {
         this.token = token;
         this.userId = userId;
         this.expiresAt = expiresAt;
     }
 
     public static RefreshToken create(String token, Long userId, long expiryMillis) {
-        LocalDateTime expiresAt = LocalDateTime.now().plusSeconds(expiryMillis / 1000);
+        Instant expiresAt = Instant.now().plusMillis(expiryMillis);
         return new RefreshToken(token, userId, expiresAt);
     }
 
@@ -46,6 +46,6 @@ public class RefreshToken extends BaseTimeEntity {
     }
 
     public boolean isValid() {
-        return !revoked && expiresAt.isAfter(LocalDateTime.now());
+        return !revoked && expiresAt.isAfter(Instant.now());
     }
 }
