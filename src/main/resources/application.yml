@@ -29,5 +29,5 @@ server:
 
 jwt:
   secret: ${JWT_SECRET:default-secret-key-for-development-only}
-  access-expiration: ${JWT_ACCESS_EXPIRATION:3600000}
+  access-expiration: ${JWT_ACCESS_EXPIRATION:900000}
   refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
