@@ -24,7 +24,9 @@ public enum ErrorCode {
 
     // Auth
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "A001", "Unauthorized"),
-    ACCESS_DENIED(HttpStatus.FORBIDDEN, "A002", "Access denied");
+    ACCESS_DENIED(HttpStatus.FORBIDDEN, "A002", "Access denied"),
+    INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED, "A003", "Invalid email or password"),
+    INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "A004", "Invalid or expired token");
 
     private final HttpStatus status;
     private final String code;
