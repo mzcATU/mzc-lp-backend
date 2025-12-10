@@ -1,0 +1,33 @@
+name: Task
+description: 일반 작업 (리팩토링, 문서화, 설정 등)
+title: "[Task] "
+labels: ["task"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: 설명
+      description: 수행할 작업에 대해 설명해주세요.
+      placeholder: Controller 컨벤션 준수를 위한 리팩토링
+    validations:
+      required: true
+
+  - type: textarea
+    id: tasks
+    attributes:
+      label: 작업 내용
+      description: 세부 작업 목록을 작성해주세요.
+      placeholder: |
+        - [ ] @Validated 어노테이션 추가
+        - [ ] 테스트 코드 수정
+    validations:
+      required: true
+
+  - type: input
+    id: branch
+    attributes:
+      label: 관련 브랜치
+      description: 작업할 브랜치명을 입력해주세요.
+      placeholder: chore/github-templates
+    validations:
+      required: false
