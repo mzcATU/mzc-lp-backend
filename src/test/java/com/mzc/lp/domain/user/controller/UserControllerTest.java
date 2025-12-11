@@ -1,7 +1,10 @@
 package com.mzc.lp.domain.user.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mzc.lp.domain.user.constant.TenantRole;
+import com.mzc.lp.domain.user.constant.UserStatus;
 import com.mzc.lp.domain.user.dto.request.*;
+import com.mzc.lp.domain.user.entity.User;
 import com.mzc.lp.domain.user.repository.RefreshTokenRepository;
 import com.mzc.lp.domain.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -35,10 +39,40 @@ class UserControllerTest {
     @Autowired
     private RefreshTokenRepository refreshTokenRepository;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     @BeforeEach
     void setUp() {
         refreshTokenRepository.deleteAll();
         userRepository.deleteAll();
+    }
+
+    // OPERATOR 사용자 생성 헬퍼
+    private User createOperatorUser() {
+        User user = User.create("operator@example.com", "운영자", passwordEncoder.encode("Password123!"));
+        user.updateRole(TenantRole.OPERATOR);
+        return userRepository.save(user);
+    }
+
+    // TENANT_ADMIN 사용자 생성 헬퍼
+    private User createAdminUser() {
+        User user = User.create("admin@example.com", "관리자", passwordEncoder.encode("Password123!"));
+        user.updateRole(TenantRole.TENANT_ADMIN);
+        return userRepository.save(user);
+    }
+
+    // 특정 이메일로 로그인 후 토큰 추출 헬퍼
+    private String loginAndGetAccessToken(String email, String password) throws Exception {
+        LoginRequest request = new LoginRequest(email, password);
+        MvcResult result = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String response = result.getResponse().getContentAsString();
+        return objectMapper.readTree(response).get("data").get("accessToken").asText();
     }
 
     // 테스트용 유저 생성 헬퍼
@@ -310,6 +344,297 @@ class UserControllerTest {
 
             // when & then
             mockMvc.perform(delete("/api/users/me")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andDo(print())
+                    .andExpect(status().isForbidden());
+        }
+    }
+
+    // ==================== 사용자 목록 조회 테스트 (OPERATOR 권한) ====================
+
+    @Nested
+    @DisplayName("GET /api/users - 사용자 목록 조회")
+    class GetUsers {
+
+        @Test
+        @DisplayName("성공 - OPERATOR가 사용자 목록 조회")
+        void getUsers_success_operator() throws Exception {
+            // given
+            createOperatorUser();
+            createTestUser();
+            String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
+
+            // when & then
+            mockMvc.perform(get("/api/users")
+                            .header("Authorization", "Bearer " + accessToken))
+                    .andDo(print())
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.content").isArray())
+                    .andExpect(jsonPath("$.data.totalElements").value(2));
+        }
+
+        @Test
+        @DisplayName("성공 - TENANT_ADMIN이 사용자 목록 조회")
+        void getUsers_success_admin() throws Exception {
+            // given
+            createAdminUser();
+            createTestUser();
+            String accessToken = loginAndGetAccessToken("admin@example.com", "Password123!");
+
+            // when & then
+            mockMvc.perform(get("/api/users")
+                            .header("Authorization", "Bearer " + accessToken))
+                    .andDo(print())
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.content").isArray());
+        }
+
+        @Test
+        @DisplayName("성공 - 키워드 검색")
+        void getUsers_success_withKeyword() throws Exception {
+            // given
+            createOperatorUser();
+            createTestUser();
+            String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
+
+            // when & then
+            mockMvc.perform(get("/api/users")
+                            .header("Authorization", "Bearer " + accessToken)
+                            .param("keyword", "홍길동"))
+                    .andDo(print())
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.totalElements").value(1));
+        }
+
+        @Test
+        @DisplayName("성공 - 역할 필터링")
+        void getUsers_success_withRoleFilter() throws Exception {
+            // given
+            createOperatorUser();
+            createTestUser();
+            String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
+
+            // when & then
+            mockMvc.perform(get("/api/users")
+                            .header("Authorization", "Bearer " + accessToken)
+                            .param("role", "USER"))
+                    .andDo(print())
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.totalElements").value(1));
+        }
+
+        @Test
+        @DisplayName("실패 - USER 권한으로 접근")
+        void getUsers_fail_userRole() throws Exception {
+            // given
+            createTestUser();
+            String accessToken = loginAndGetAccessToken();
+
+            // when & then
+            mockMvc.perform(get("/api/users")
+                            .header("Authorization", "Bearer " + accessToken))
+                    .andDo(print())
+                    .andExpect(status().isForbidden());
+        }
+    }
+
+    // ==================== 사용자 상세 조회 테스트 (OPERATOR 권한) ====================
+
+    @Nested
+    @DisplayName("GET /api/users/{userId} - 사용자 상세 조회")
+    class GetUser {
+
+        @Test
+        @DisplayName("성공 - OPERATOR가 사용자 상세 조회")
+        void getUser_success() throws Exception {
+            // given
+            createOperatorUser();
+            createTestUser();
+            User targetUser = userRepository.findByEmail("test@example.com").orElseThrow();
+            String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
+
+            // when & then
+            mockMvc.perform(get("/api/users/{userId}", targetUser.getId())
+                            .header("Authorization", "Bearer " + accessToken))
+                    .andDo(print())
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.email").value("test@example.com"))
+                    .andExpect(jsonPath("$.data.name").value("홍길동"));
+        }
+
+        @Test
+        @DisplayName("실패 - 존재하지 않는 사용자")
+        void getUser_fail_notFound() throws Exception {
+            // given
+            createOperatorUser();
+            String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
+
+            // when & then
+            mockMvc.perform(get("/api/users/{userId}", 99999L)
+                            .header("Authorization", "Bearer " + accessToken))
+                    .andDo(print())
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.success").value(false))
+                    .andExpect(jsonPath("$.error.code").value("U001"));
+        }
+
+        @Test
+        @DisplayName("실패 - USER 권한으로 접근")
+        void getUser_fail_userRole() throws Exception {
+            // given
+            createTestUser();
+            User targetUser = userRepository.findByEmail("test@example.com").orElseThrow();
+            String accessToken = loginAndGetAccessToken();
+
+            // when & then
+            mockMvc.perform(get("/api/users/{userId}", targetUser.getId())
+                            .header("Authorization", "Bearer " + accessToken))
+                    .andDo(print())
+                    .andExpect(status().isForbidden());
+        }
+    }
+
+    // ==================== 역할 변경 테스트 (TENANT_ADMIN 권한) ====================
+
+    @Nested
+    @DisplayName("PUT /api/users/{userId}/role - 역할 변경")
+    class ChangeUserRole {
+
+        @Test
+        @DisplayName("성공 - TENANT_ADMIN이 역할 변경")
+        void changeUserRole_success() throws Exception {
+            // given
+            createAdminUser();
+            createTestUser();
+            User targetUser = userRepository.findByEmail("test@example.com").orElseThrow();
+            String accessToken = loginAndGetAccessToken("admin@example.com", "Password123!");
+            ChangeRoleRequest request = new ChangeRoleRequest(TenantRole.OPERATOR);
+
+            // when & then
+            mockMvc.perform(put("/api/users/{userId}/role", targetUser.getId())
+                            .header("Authorization", "Bearer " + accessToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andDo(print())
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.role").value("OPERATOR"));
+        }
+
+        @Test
+        @DisplayName("실패 - OPERATOR 권한으로 역할 변경 시도")
+        void changeUserRole_fail_operatorRole() throws Exception {
+            // given
+            createOperatorUser();
+            createTestUser();
+            User targetUser = userRepository.findByEmail("test@example.com").orElseThrow();
+            String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
+            ChangeRoleRequest request = new ChangeRoleRequest(TenantRole.OPERATOR);
+
+            // when & then
+            mockMvc.perform(put("/api/users/{userId}/role", targetUser.getId())
+                            .header("Authorization", "Bearer " + accessToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andDo(print())
+                    .andExpect(status().isForbidden());
+        }
+
+        @Test
+        @DisplayName("실패 - 존재하지 않는 사용자")
+        void changeUserRole_fail_notFound() throws Exception {
+            // given
+            createAdminUser();
+            String accessToken = loginAndGetAccessToken("admin@example.com", "Password123!");
+            ChangeRoleRequest request = new ChangeRoleRequest(TenantRole.OPERATOR);
+
+            // when & then
+            mockMvc.perform(put("/api/users/{userId}/role", 99999L)
+                            .header("Authorization", "Bearer " + accessToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andDo(print())
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.error.code").value("U001"));
+        }
+    }
+
+    // ==================== 상태 변경 테스트 (OPERATOR 권한) ====================
+
+    @Nested
+    @DisplayName("PUT /api/users/{userId}/status - 상태 변경")
+    class ChangeUserStatus {
+
+        @Test
+        @DisplayName("성공 - OPERATOR가 사용자 정지")
+        void changeUserStatus_success_suspend() throws Exception {
+            // given
+            createOperatorUser();
+            createTestUser();
+            User targetUser = userRepository.findByEmail("test@example.com").orElseThrow();
+            String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
+            ChangeStatusRequest request = new ChangeStatusRequest(UserStatus.SUSPENDED, "정책 위반");
+
+            // when & then
+            mockMvc.perform(put("/api/users/{userId}/status", targetUser.getId())
+                            .header("Authorization", "Bearer " + accessToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andDo(print())
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.status").value("SUSPENDED"));
+
+            // 정지된 사용자 로그인 시도 - 실패해야 함
+            LoginRequest loginRequest = new LoginRequest("test@example.com", "Password123!");
+            mockMvc.perform(post("/api/auth/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(loginRequest)))
+                    .andExpect(status().isUnauthorized());
+        }
+
+        @Test
+        @DisplayName("성공 - 정지 사용자 활성화")
+        void changeUserStatus_success_activate() throws Exception {
+            // given
+            createOperatorUser();
+            createTestUser();
+            User targetUser = userRepository.findByEmail("test@example.com").orElseThrow();
+            targetUser.suspend();
+            userRepository.save(targetUser);
+
+            String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
+            ChangeStatusRequest request = new ChangeStatusRequest(UserStatus.ACTIVE, null);
+
+            // when & then
+            mockMvc.perform(put("/api/users/{userId}/status", targetUser.getId())
+                            .header("Authorization", "Bearer " + accessToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andDo(print())
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.status").value("ACTIVE"));
+        }
+
+        @Test
+        @DisplayName("실패 - USER 권한으로 상태 변경 시도")
+        void changeUserStatus_fail_userRole() throws Exception {
+            // given
+            createTestUser();
+            User targetUser = userRepository.findByEmail("test@example.com").orElseThrow();
+            String accessToken = loginAndGetAccessToken();
+            ChangeStatusRequest request = new ChangeStatusRequest(UserStatus.SUSPENDED, "정책 위반");
+
+            // when & then
+            mockMvc.perform(put("/api/users/{userId}/status", targetUser.getId())
+                            .header("Authorization", "Bearer " + accessToken)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andDo(print())

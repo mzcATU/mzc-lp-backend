@@ -1,15 +1,24 @@
 package com.mzc.lp.domain.user.service;
 
+import com.mzc.lp.domain.user.constant.TenantRole;
+import com.mzc.lp.domain.user.constant.UserStatus;
 import com.mzc.lp.domain.user.dto.request.ChangePasswordRequest;
+import com.mzc.lp.domain.user.dto.request.ChangeRoleRequest;
+import com.mzc.lp.domain.user.dto.request.ChangeStatusRequest;
 import com.mzc.lp.domain.user.dto.request.UpdateProfileRequest;
 import com.mzc.lp.domain.user.dto.request.WithdrawRequest;
 import com.mzc.lp.domain.user.dto.response.UserDetailResponse;
+import com.mzc.lp.domain.user.dto.response.UserListResponse;
+import com.mzc.lp.domain.user.dto.response.UserRoleResponse;
+import com.mzc.lp.domain.user.dto.response.UserStatusResponse;
 import com.mzc.lp.domain.user.entity.User;
 import com.mzc.lp.domain.user.exception.PasswordMismatchException;
 import com.mzc.lp.domain.user.exception.UserNotFoundException;
 import com.mzc.lp.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -69,5 +78,51 @@ public class UserServiceImpl implements UserService {
 
         user.withdraw();
         log.info("User withdrawn: userId={}", userId);
+    }
+
+    // ========== 관리 API (OPERATOR 권한) ==========
+
+    @Override
+    public Page<UserListResponse> getUsers(String keyword, TenantRole role, UserStatus status, Pageable pageable) {
+        log.debug("Searching users: keyword={}, role={}, status={}", keyword, role, status);
+        return userRepository.searchUsers(keyword, role, status, pageable)
+                .map(UserListResponse::from);
+    }
+
+    @Override
+    public UserDetailResponse getUser(Long userId) {
+        log.debug("Getting user detail: userId={}", userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
+        return UserDetailResponse.from(user);
+    }
+
+    @Override
+    @Transactional
+    public UserRoleResponse changeUserRole(Long userId, ChangeRoleRequest request) {
+        log.info("Changing user role: userId={}, newRole={}", userId, request.role());
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
+        user.updateRole(request.role());
+        log.info("User role changed: userId={}, role={}", userId, request.role());
+        return UserRoleResponse.from(user);
+    }
+
+    @Override
+    @Transactional
+    public UserStatusResponse changeUserStatus(Long userId, ChangeStatusRequest request) {
+        log.info("Changing user status: userId={}, newStatus={}, reason={}", userId, request.status(), request.reason());
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
+
+        switch (request.status()) {
+            case ACTIVE -> user.activate();
+            case SUSPENDED -> user.suspend();
+            case WITHDRAWN -> user.withdraw();
+            default -> throw new IllegalArgumentException("Invalid status: " + request.status());
+        }
+
+        log.info("User status changed: userId={}, status={}", userId, request.status());
+        return UserStatusResponse.from(user);
     }
 }
