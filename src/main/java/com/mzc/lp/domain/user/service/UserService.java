@@ -2,6 +2,7 @@ package com.mzc.lp.domain.user.service;
 
 import com.mzc.lp.domain.user.constant.TenantRole;
 import com.mzc.lp.domain.user.constant.UserStatus;
+import com.mzc.lp.domain.user.dto.request.AssignCourseRoleRequest;
 import com.mzc.lp.domain.user.dto.request.ChangePasswordRequest;
 import com.mzc.lp.domain.user.dto.request.ChangeRoleRequest;
 import com.mzc.lp.domain.user.dto.request.ChangeStatusRequest;
@@ -41,4 +42,9 @@ public interface UserService {
     CourseRoleResponse requestDesignerRole(Long userId);
 
     List<CourseRoleResponse> getMyCourseRoles(Long userId);
+
+    // CourseRole 관리 API (OPERATOR 권한)
+    CourseRoleResponse assignCourseRole(Long userId, AssignCourseRoleRequest request);
+
+    void revokeCourseRole(Long userId, Long courseRoleId);
 }

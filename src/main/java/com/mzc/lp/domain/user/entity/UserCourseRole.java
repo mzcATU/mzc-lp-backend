@@ -55,4 +55,14 @@ public class UserCourseRole extends BaseTimeEntity {
         ucr.role = CourseRole.INSTRUCTOR;
         return ucr;
     }
+
+    // OPERATOR가 역할 부여
+    public static UserCourseRole create(User user, Long courseId, CourseRole role, Integer revenueSharePercent) {
+        UserCourseRole ucr = new UserCourseRole();
+        ucr.user = user;
+        ucr.courseId = courseId;
+        ucr.role = role;
+        ucr.revenueSharePercent = revenueSharePercent;
+        return ucr;
+    }
 }

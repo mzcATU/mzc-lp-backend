@@ -4,6 +4,7 @@ import com.mzc.lp.common.dto.ApiResponse;
 import com.mzc.lp.common.security.UserPrincipal;
 import com.mzc.lp.domain.user.constant.TenantRole;
 import com.mzc.lp.domain.user.constant.UserStatus;
+import com.mzc.lp.domain.user.dto.request.AssignCourseRoleRequest;
 import com.mzc.lp.domain.user.dto.request.ChangePasswordRequest;
 import com.mzc.lp.domain.user.dto.request.ChangeRoleRequest;
 import com.mzc.lp.domain.user.dto.request.ChangeStatusRequest;
@@ -130,5 +131,27 @@ public class UserController {
     ) {
         UserStatusResponse response = userService.changeUserStatus(userId, request);
         return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    // ========== CourseRole 관리 API (OPERATOR 이상 권한) ==========
+
+    @PostMapping("/{userId}/course-roles")
+    @PreAuthorize("hasAnyRole('OPERATOR', 'TENANT_ADMIN')")
+    public ResponseEntity<ApiResponse<CourseRoleResponse>> assignCourseRole(
+            @PathVariable Long userId,
+            @Valid @RequestBody AssignCourseRoleRequest request
+    ) {
+        CourseRoleResponse response = userService.assignCourseRole(userId, request);
+        return ResponseEntity.status(201).body(ApiResponse.success(response));
+    }
+
+    @DeleteMapping("/{userId}/course-roles/{courseRoleId}")
+    @PreAuthorize("hasAnyRole('OPERATOR', 'TENANT_ADMIN')")
+    public ResponseEntity<Void> revokeCourseRole(
+            @PathVariable Long userId,
+            @PathVariable Long courseRoleId
+    ) {
+        userService.revokeCourseRole(userId, courseRoleId);
+        return ResponseEntity.noContent().build();
     }
 }

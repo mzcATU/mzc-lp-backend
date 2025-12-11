@@ -754,4 +754,277 @@ class UserControllerTest {
                     .andExpect(status().isForbidden());
         }
     }
+
+    // ==================== CourseRole 관리 API 테스트 (OPERATOR 권한) ====================
+
+    @Nested
+    @DisplayName("POST /api/users/{userId}/course-roles - 역할 부여")
+    class AssignCourseRole {
+
+        @Test
+        @DisplayName("성공 - OPERATOR가 DESIGNER 역할 부여")
+        void assignCourseRole_success_designer() throws Exception {
+            // given
+            createOperatorUser();
+            createTestUser();
+            User targetUser = userRepository.findByEmail("test@example.com").orElseThrow();
+            String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
+            AssignCourseRoleRequest request = new AssignCourseRoleRequest(
+                    null,
+                    com.mzc.lp.domain.user.constant.CourseRole.DESIGNER,
+                    null
+            );
+
+            // when & then
+            mockMvc.perform(post("/api/users/{userId}/course-roles", targetUser.getId())
+                            .header("Authorization", "Bearer " + accessToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andDo(print())
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.role").value("DESIGNER"));
+        }
+
+        @Test
+        @DisplayName("성공 - OPERATOR가 강의별 INSTRUCTOR 역할 부여")
+        void assignCourseRole_success_instructor() throws Exception {
+            // given
+            createOperatorUser();
+            createTestUser();
+            User targetUser = userRepository.findByEmail("test@example.com").orElseThrow();
+            String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
+            AssignCourseRoleRequest request = new AssignCourseRoleRequest(
+                    100L,  // 가상의 courseId
+                    com.mzc.lp.domain.user.constant.CourseRole.INSTRUCTOR,
+                    null
+            );
+
+            // when & then
+            mockMvc.perform(post("/api/users/{userId}/course-roles", targetUser.getId())
+                            .header("Authorization", "Bearer " + accessToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andDo(print())
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.role").value("INSTRUCTOR"))
+                    .andExpect(jsonPath("$.data.courseId").value(100));
+        }
+
+        @Test
+        @DisplayName("성공 - OPERATOR가 OWNER 역할 부여 (수익 분배율 포함)")
+        void assignCourseRole_success_owner_withRevenue() throws Exception {
+            // given
+            createOperatorUser();
+            createTestUser();
+            User targetUser = userRepository.findByEmail("test@example.com").orElseThrow();
+            String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
+            AssignCourseRoleRequest request = new AssignCourseRoleRequest(
+                    200L,
+                    com.mzc.lp.domain.user.constant.CourseRole.OWNER,
+                    70
+            );
+
+            // when & then
+            mockMvc.perform(post("/api/users/{userId}/course-roles", targetUser.getId())
+                            .header("Authorization", "Bearer " + accessToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andDo(print())
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.role").value("OWNER"))
+                    .andExpect(jsonPath("$.data.courseId").value(200))
+                    .andExpect(jsonPath("$.data.revenueSharePercent").value(70));
+        }
+
+        @Test
+        @DisplayName("실패 - 중복 역할 부여 시도")
+        void assignCourseRole_fail_duplicate() throws Exception {
+            // given
+            createOperatorUser();
+            createTestUser();
+            User targetUser = userRepository.findByEmail("test@example.com").orElseThrow();
+            String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
+            AssignCourseRoleRequest request = new AssignCourseRoleRequest(
+                    null,
+                    com.mzc.lp.domain.user.constant.CourseRole.DESIGNER,
+                    null
+            );
+
+            // 첫 번째 요청 - 성공
+            mockMvc.perform(post("/api/users/{userId}/course-roles", targetUser.getId())
+                            .header("Authorization", "Bearer " + accessToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isCreated());
+
+            // when & then - 두 번째 요청 - 실패
+            mockMvc.perform(post("/api/users/{userId}/course-roles", targetUser.getId())
+                            .header("Authorization", "Bearer " + accessToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andDo(print())
+                    .andExpect(status().isConflict())
+                    .andExpect(jsonPath("$.error.code").value("U006"));
+        }
+
+        @Test
+        @DisplayName("실패 - USER 권한으로 역할 부여 시도")
+        void assignCourseRole_fail_userRole() throws Exception {
+            // given
+            createTestUser();
+            User targetUser = userRepository.findByEmail("test@example.com").orElseThrow();
+            String accessToken = loginAndGetAccessToken();
+            AssignCourseRoleRequest request = new AssignCourseRoleRequest(
+                    null,
+                    com.mzc.lp.domain.user.constant.CourseRole.DESIGNER,
+                    null
+            );
+
+            // when & then
+            mockMvc.perform(post("/api/users/{userId}/course-roles", targetUser.getId())
+                            .header("Authorization", "Bearer " + accessToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andDo(print())
+                    .andExpect(status().isForbidden());
+        }
+
+        @Test
+        @DisplayName("실패 - 존재하지 않는 사용자")
+        void assignCourseRole_fail_userNotFound() throws Exception {
+            // given
+            createOperatorUser();
+            String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
+            AssignCourseRoleRequest request = new AssignCourseRoleRequest(
+                    null,
+                    com.mzc.lp.domain.user.constant.CourseRole.DESIGNER,
+                    null
+            );
+
+            // when & then
+            mockMvc.perform(post("/api/users/{userId}/course-roles", 99999L)
+                            .header("Authorization", "Bearer " + accessToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andDo(print())
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.error.code").value("U001"));
+        }
+    }
+
+    @Nested
+    @DisplayName("DELETE /api/users/{userId}/course-roles/{courseRoleId} - 역할 회수")
+    class RevokeCourseRole {
+
+        @Test
+        @DisplayName("성공 - OPERATOR가 역할 회수")
+        void revokeCourseRole_success() throws Exception {
+            // given
+            createOperatorUser();
+            createTestUser();
+            User targetUser = userRepository.findByEmail("test@example.com").orElseThrow();
+            String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
+
+            // 역할 부여
+            AssignCourseRoleRequest assignRequest = new AssignCourseRoleRequest(
+                    null,
+                    com.mzc.lp.domain.user.constant.CourseRole.DESIGNER,
+                    null
+            );
+            MvcResult assignResult = mockMvc.perform(post("/api/users/{userId}/course-roles", targetUser.getId())
+                            .header("Authorization", "Bearer " + accessToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(assignRequest)))
+                    .andExpect(status().isCreated())
+                    .andReturn();
+
+            Long courseRoleId = objectMapper.readTree(assignResult.getResponse().getContentAsString())
+                    .get("data").get("courseRoleId").asLong();
+
+            // when & then - 역할 회수
+            mockMvc.perform(delete("/api/users/{userId}/course-roles/{courseRoleId}", targetUser.getId(), courseRoleId)
+                            .header("Authorization", "Bearer " + accessToken))
+                    .andDo(print())
+                    .andExpect(status().isNoContent());
+
+            // 역할이 삭제되었는지 확인
+            String userAccessToken = loginAndGetAccessToken();
+            mockMvc.perform(get("/api/users/me/course-roles")
+                            .header("Authorization", "Bearer " + userAccessToken))
+                    .andExpect(jsonPath("$.data.length()").value(0));
+        }
+
+        @Test
+        @DisplayName("실패 - USER 권한으로 역할 회수 시도")
+        void revokeCourseRole_fail_userRole() throws Exception {
+            // given
+            createTestUser();
+            User targetUser = userRepository.findByEmail("test@example.com").orElseThrow();
+            String accessToken = loginAndGetAccessToken();
+
+            // when & then
+            mockMvc.perform(delete("/api/users/{userId}/course-roles/{courseRoleId}", targetUser.getId(), 1L)
+                            .header("Authorization", "Bearer " + accessToken))
+                    .andDo(print())
+                    .andExpect(status().isForbidden());
+        }
+
+        @Test
+        @DisplayName("실패 - 존재하지 않는 역할 회수 시도")
+        void revokeCourseRole_fail_notFound() throws Exception {
+            // given
+            createOperatorUser();
+            createTestUser();
+            User targetUser = userRepository.findByEmail("test@example.com").orElseThrow();
+            String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
+
+            // when & then
+            mockMvc.perform(delete("/api/users/{userId}/course-roles/{courseRoleId}", targetUser.getId(), 99999L)
+                            .header("Authorization", "Bearer " + accessToken))
+                    .andDo(print())
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.error.code").value("U007"));
+        }
+
+        @Test
+        @DisplayName("실패 - 다른 사용자의 역할 회수 시도")
+        void revokeCourseRole_fail_wrongUser() throws Exception {
+            // given
+            createOperatorUser();
+            createTestUser();
+
+            // 다른 사용자 생성
+            User anotherUser = User.create("another@example.com", "다른사용자", passwordEncoder.encode("Password123!"));
+            userRepository.save(anotherUser);
+
+            User targetUser = userRepository.findByEmail("test@example.com").orElseThrow();
+            String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
+
+            // targetUser에게 역할 부여
+            AssignCourseRoleRequest assignRequest = new AssignCourseRoleRequest(
+                    null,
+                    com.mzc.lp.domain.user.constant.CourseRole.DESIGNER,
+                    null
+            );
+            MvcResult assignResult = mockMvc.perform(post("/api/users/{userId}/course-roles", targetUser.getId())
+                            .header("Authorization", "Bearer " + accessToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(assignRequest)))
+                    .andExpect(status().isCreated())
+                    .andReturn();
+
+            Long courseRoleId = objectMapper.readTree(assignResult.getResponse().getContentAsString())
+                    .get("data").get("courseRoleId").asLong();
+
+            // when & then - anotherUser의 ID로 targetUser의 역할 회수 시도
+            mockMvc.perform(delete("/api/users/{userId}/course-roles/{courseRoleId}", anotherUser.getId(), courseRoleId)
+                            .header("Authorization", "Bearer " + accessToken))
+                    .andDo(print())
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.error.code").value("U007"));
+        }
+    }
 }
