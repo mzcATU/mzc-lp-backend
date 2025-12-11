@@ -2,19 +2,26 @@ package com.mzc.lp.domain.user.service;
 
 import com.mzc.lp.domain.user.constant.TenantRole;
 import com.mzc.lp.domain.user.constant.UserStatus;
+import com.mzc.lp.domain.user.constant.CourseRole;
 import com.mzc.lp.domain.user.dto.request.ChangePasswordRequest;
 import com.mzc.lp.domain.user.dto.request.ChangeRoleRequest;
 import com.mzc.lp.domain.user.dto.request.ChangeStatusRequest;
 import com.mzc.lp.domain.user.dto.request.UpdateProfileRequest;
 import com.mzc.lp.domain.user.dto.request.WithdrawRequest;
+import com.mzc.lp.domain.user.dto.response.CourseRoleResponse;
 import com.mzc.lp.domain.user.dto.response.UserDetailResponse;
 import com.mzc.lp.domain.user.dto.response.UserListResponse;
 import com.mzc.lp.domain.user.dto.response.UserRoleResponse;
 import com.mzc.lp.domain.user.dto.response.UserStatusResponse;
 import com.mzc.lp.domain.user.entity.User;
+import com.mzc.lp.domain.user.entity.UserCourseRole;
 import com.mzc.lp.domain.user.exception.PasswordMismatchException;
+import com.mzc.lp.domain.user.exception.RoleAlreadyExistsException;
 import com.mzc.lp.domain.user.exception.UserNotFoundException;
+import com.mzc.lp.domain.user.repository.UserCourseRoleRepository;
 import com.mzc.lp.domain.user.repository.UserRepository;
+
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -30,6 +37,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final UserCourseRoleRepository userCourseRoleRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -124,5 +132,34 @@ public class UserServiceImpl implements UserService {
 
         log.info("User status changed: userId={}, status={}", userId, request.status());
         return UserStatusResponse.from(user);
+    }
+
+    // ========== CourseRole API ==========
+
+    @Override
+    @Transactional
+    public CourseRoleResponse requestDesignerRole(Long userId) {
+        log.info("Requesting DESIGNER role: userId={}", userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
+
+        // 이미 DESIGNER 역할이 있는지 확인
+        if (userCourseRoleRepository.existsByUserIdAndCourseIdIsNullAndRole(userId, CourseRole.DESIGNER)) {
+            throw new RoleAlreadyExistsException("DESIGNER");
+        }
+
+        UserCourseRole courseRole = UserCourseRole.createDesigner(user);
+        UserCourseRole savedRole = userCourseRoleRepository.save(courseRole);
+        log.info("DESIGNER role granted: userId={}, courseRoleId={}", userId, savedRole.getId());
+
+        return CourseRoleResponse.from(savedRole);
+    }
+
+    @Override
+    public List<CourseRoleResponse> getMyCourseRoles(Long userId) {
+        log.debug("Getting course roles: userId={}", userId);
+        return userCourseRoleRepository.findByUserId(userId).stream()
+                .map(CourseRoleResponse::from)
+                .toList();
     }
 }
