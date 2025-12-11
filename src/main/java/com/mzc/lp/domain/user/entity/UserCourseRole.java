@@ -1,6 +1,6 @@
 package com.mzc.lp.domain.user.entity;
 
-import com.mzc.lp.common.entity.BaseTimeEntity;
+import com.mzc.lp.common.entity.TenantEntity;
 import com.mzc.lp.domain.user.constant.CourseRole;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -9,11 +9,11 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "user_course_roles", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"user_id", "course_id", "role"})
+        @UniqueConstraint(columnNames = {"tenant_id", "user_id", "course_id", "role"})
 })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class UserCourseRole extends BaseTimeEntity {
+public class UserCourseRole extends TenantEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
