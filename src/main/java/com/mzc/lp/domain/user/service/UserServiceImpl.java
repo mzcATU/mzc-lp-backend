@@ -3,6 +3,7 @@ package com.mzc.lp.domain.user.service;
 import com.mzc.lp.domain.user.constant.TenantRole;
 import com.mzc.lp.domain.user.constant.UserStatus;
 import com.mzc.lp.domain.user.constant.CourseRole;
+import com.mzc.lp.domain.user.dto.request.AssignCourseRoleRequest;
 import com.mzc.lp.domain.user.dto.request.ChangePasswordRequest;
 import com.mzc.lp.domain.user.dto.request.ChangeRoleRequest;
 import com.mzc.lp.domain.user.dto.request.ChangeStatusRequest;
@@ -15,6 +16,7 @@ import com.mzc.lp.domain.user.dto.response.UserRoleResponse;
 import com.mzc.lp.domain.user.dto.response.UserStatusResponse;
 import com.mzc.lp.domain.user.entity.User;
 import com.mzc.lp.domain.user.entity.UserCourseRole;
+import com.mzc.lp.domain.user.exception.CourseRoleNotFoundException;
 import com.mzc.lp.domain.user.exception.PasswordMismatchException;
 import com.mzc.lp.domain.user.exception.RoleAlreadyExistsException;
 import com.mzc.lp.domain.user.exception.UserNotFoundException;
@@ -161,5 +163,56 @@ public class UserServiceImpl implements UserService {
         return userCourseRoleRepository.findByUserId(userId).stream()
                 .map(CourseRoleResponse::from)
                 .toList();
+    }
+
+    // ========== CourseRole 관리 API (OPERATOR 권한) ==========
+
+    @Override
+    @Transactional
+    public CourseRoleResponse assignCourseRole(Long userId, AssignCourseRoleRequest request) {
+        log.info("Assigning course role: userId={}, courseId={}, role={}", userId, request.courseId(), request.role());
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
+
+        // 중복 역할 검증
+        if (request.courseId() == null) {
+            // 테넌트 레벨 역할 (DESIGNER)
+            if (userCourseRoleRepository.existsByUserIdAndCourseIdIsNullAndRole(userId, request.role())) {
+                throw new RoleAlreadyExistsException(request.role().name());
+            }
+        } else {
+            // 강의 레벨 역할 (OWNER, INSTRUCTOR)
+            if (userCourseRoleRepository.existsByUserIdAndCourseIdAndRole(userId, request.courseId(), request.role())) {
+                throw new RoleAlreadyExistsException(request.role().name());
+            }
+        }
+
+        UserCourseRole courseRole = UserCourseRole.create(user, request.courseId(), request.role(), request.revenueSharePercent());
+        UserCourseRole savedRole = userCourseRoleRepository.save(courseRole);
+        log.info("Course role assigned: userId={}, courseRoleId={}, role={}", userId, savedRole.getId(), request.role());
+
+        return CourseRoleResponse.from(savedRole);
+    }
+
+    @Override
+    @Transactional
+    public void revokeCourseRole(Long userId, Long courseRoleId) {
+        log.info("Revoking course role: userId={}, courseRoleId={}", userId, courseRoleId);
+
+        // 사용자 존재 확인
+        if (!userRepository.existsById(userId)) {
+            throw new UserNotFoundException(userId);
+        }
+
+        UserCourseRole courseRole = userCourseRoleRepository.findById(courseRoleId)
+                .orElseThrow(() -> new CourseRoleNotFoundException(courseRoleId));
+
+        // 해당 사용자의 역할인지 확인
+        if (!courseRole.getUser().getId().equals(userId)) {
+            throw new CourseRoleNotFoundException(courseRoleId);
+        }
+
+        userCourseRoleRepository.delete(courseRole);
+        log.info("Course role revoked: userId={}, courseRoleId={}", userId, courseRoleId);
     }
 }
