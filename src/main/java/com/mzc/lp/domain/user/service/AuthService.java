@@ -8,6 +8,7 @@ import com.mzc.lp.domain.user.dto.response.TokenResponse;
 import com.mzc.lp.domain.user.dto.response.UserResponse;
 import com.mzc.lp.domain.user.entity.RefreshToken;
 import com.mzc.lp.domain.user.entity.User;
+import com.mzc.lp.domain.user.constant.UserStatus;
 import com.mzc.lp.domain.user.exception.DuplicateEmailException;
 import com.mzc.lp.domain.user.exception.InvalidCredentialsException;
 import com.mzc.lp.domain.user.exception.InvalidTokenException;
@@ -66,6 +67,11 @@ public class AuthService {
 
         // 비밀번호 검증
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
+            throw new InvalidCredentialsException();
+        }
+
+        // 탈퇴/정지 사용자 체크
+        if (user.getStatus() == UserStatus.WITHDRAWN || user.getStatus() == UserStatus.SUSPENDED) {
             throw new InvalidCredentialsException();
         }
 

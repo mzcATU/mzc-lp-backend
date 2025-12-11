@@ -17,7 +17,8 @@ public enum ErrorCode {
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "U001", "User not found"),
     DUPLICATE_EMAIL(HttpStatus.CONFLICT, "U002", "Email already exists"),
     INVALID_PASSWORD(HttpStatus.BAD_REQUEST, "U003", "Invalid password format"),
-    PASSWORD_MISMATCH(HttpStatus.UNAUTHORIZED, "U004", "Password mismatch"),
+    PASSWORD_MISMATCH(HttpStatus.BAD_REQUEST, "U004", "Current password is incorrect"),
+    USER_ALREADY_WITHDRAWN(HttpStatus.BAD_REQUEST, "U005", "User already withdrawn"),
 
     // Course
     COURSE_NOT_FOUND(HttpStatus.NOT_FOUND, "CR001", "Course not found"),
