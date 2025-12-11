@@ -9,11 +9,14 @@ import com.mzc.lp.domain.user.dto.request.ChangeRoleRequest;
 import com.mzc.lp.domain.user.dto.request.ChangeStatusRequest;
 import com.mzc.lp.domain.user.dto.request.UpdateProfileRequest;
 import com.mzc.lp.domain.user.dto.request.WithdrawRequest;
+import com.mzc.lp.domain.user.dto.response.CourseRoleResponse;
 import com.mzc.lp.domain.user.dto.response.UserDetailResponse;
 import com.mzc.lp.domain.user.dto.response.UserListResponse;
 import com.mzc.lp.domain.user.dto.response.UserRoleResponse;
 import com.mzc.lp.domain.user.dto.response.UserStatusResponse;
 import com.mzc.lp.domain.user.service.UserService;
+
+import java.util.List;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -66,6 +69,24 @@ public class UserController {
     ) {
         userService.withdraw(principal.id(), request);
         return ResponseEntity.noContent().build();
+    }
+
+    // ========== CourseRole API ==========
+
+    @PostMapping("/me/course-roles/designer")
+    public ResponseEntity<ApiResponse<CourseRoleResponse>> requestDesignerRole(
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        CourseRoleResponse response = userService.requestDesignerRole(principal.id());
+        return ResponseEntity.status(201).body(ApiResponse.success(response));
+    }
+
+    @GetMapping("/me/course-roles")
+    public ResponseEntity<ApiResponse<List<CourseRoleResponse>>> getMyCourseRoles(
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        List<CourseRoleResponse> response = userService.getMyCourseRoles(principal.id());
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     // ========== 관리 API (OPERATOR 이상 권한) ==========

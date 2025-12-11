@@ -7,12 +7,15 @@ import com.mzc.lp.domain.user.dto.request.ChangeRoleRequest;
 import com.mzc.lp.domain.user.dto.request.ChangeStatusRequest;
 import com.mzc.lp.domain.user.dto.request.UpdateProfileRequest;
 import com.mzc.lp.domain.user.dto.request.WithdrawRequest;
+import com.mzc.lp.domain.user.dto.response.CourseRoleResponse;
 import com.mzc.lp.domain.user.dto.response.UserDetailResponse;
 import com.mzc.lp.domain.user.dto.response.UserListResponse;
 import com.mzc.lp.domain.user.dto.response.UserRoleResponse;
 import com.mzc.lp.domain.user.dto.response.UserStatusResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+
+import java.util.List;
 
 public interface UserService {
 
@@ -33,4 +36,9 @@ public interface UserService {
     UserRoleResponse changeUserRole(Long userId, ChangeRoleRequest request);
 
     UserStatusResponse changeUserStatus(Long userId, ChangeStatusRequest request);
+
+    // CourseRole API
+    CourseRoleResponse requestDesignerRole(Long userId);
+
+    List<CourseRoleResponse> getMyCourseRoles(Long userId);
 }

@@ -6,6 +6,7 @@ import com.mzc.lp.domain.user.constant.UserStatus;
 import com.mzc.lp.domain.user.dto.request.*;
 import com.mzc.lp.domain.user.entity.User;
 import com.mzc.lp.domain.user.repository.RefreshTokenRepository;
+import com.mzc.lp.domain.user.repository.UserCourseRoleRepository;
 import com.mzc.lp.domain.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -40,10 +41,14 @@ class UserControllerTest {
     private RefreshTokenRepository refreshTokenRepository;
 
     @Autowired
+    private UserCourseRoleRepository userCourseRoleRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @BeforeEach
     void setUp() {
+        userCourseRoleRepository.deleteAll();
         refreshTokenRepository.deleteAll();
         userRepository.deleteAll();
     }
@@ -637,6 +642,114 @@ class UserControllerTest {
                             .header("Authorization", "Bearer " + accessToken)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
+                    .andDo(print())
+                    .andExpect(status().isForbidden());
+        }
+    }
+
+    // ==================== CourseRole API 테스트 ====================
+
+    @Nested
+    @DisplayName("POST /api/users/me/course-roles/designer - DESIGNER 역할 요청")
+    class RequestDesignerRole {
+
+        @Test
+        @DisplayName("성공 - DESIGNER 역할 요청")
+        void requestDesignerRole_success() throws Exception {
+            // given
+            createTestUser();
+            String accessToken = loginAndGetAccessToken();
+
+            // when & then
+            mockMvc.perform(post("/api/users/me/course-roles/designer")
+                            .header("Authorization", "Bearer " + accessToken))
+                    .andDo(print())
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.role").value("DESIGNER"))
+                    .andExpect(jsonPath("$.data.courseId").isEmpty());
+        }
+
+        @Test
+        @DisplayName("실패 - 이미 DESIGNER 역할 보유")
+        void requestDesignerRole_fail_alreadyExists() throws Exception {
+            // given
+            createTestUser();
+            String accessToken = loginAndGetAccessToken();
+
+            // 첫 번째 요청 - 성공
+            mockMvc.perform(post("/api/users/me/course-roles/designer")
+                            .header("Authorization", "Bearer " + accessToken))
+                    .andExpect(status().isCreated());
+
+            // when & then - 두 번째 요청 - 실패
+            mockMvc.perform(post("/api/users/me/course-roles/designer")
+                            .header("Authorization", "Bearer " + accessToken))
+                    .andDo(print())
+                    .andExpect(status().isConflict())
+                    .andExpect(jsonPath("$.success").value(false))
+                    .andExpect(jsonPath("$.error.code").value("U006"));
+        }
+
+        @Test
+        @DisplayName("실패 - 인증 없이 접근")
+        void requestDesignerRole_fail_unauthorized() throws Exception {
+            // when & then
+            mockMvc.perform(post("/api/users/me/course-roles/designer"))
+                    .andDo(print())
+                    .andExpect(status().isForbidden());
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /api/users/me/course-roles - 내 강의 역할 목록 조회")
+    class GetMyCourseRoles {
+
+        @Test
+        @DisplayName("성공 - 역할이 없는 경우 빈 배열 반환")
+        void getMyCourseRoles_success_empty() throws Exception {
+            // given
+            createTestUser();
+            String accessToken = loginAndGetAccessToken();
+
+            // when & then
+            mockMvc.perform(get("/api/users/me/course-roles")
+                            .header("Authorization", "Bearer " + accessToken))
+                    .andDo(print())
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data").isArray())
+                    .andExpect(jsonPath("$.data.length()").value(0));
+        }
+
+        @Test
+        @DisplayName("성공 - DESIGNER 역할 조회")
+        void getMyCourseRoles_success_withDesigner() throws Exception {
+            // given
+            createTestUser();
+            String accessToken = loginAndGetAccessToken();
+
+            // DESIGNER 역할 요청
+            mockMvc.perform(post("/api/users/me/course-roles/designer")
+                            .header("Authorization", "Bearer " + accessToken))
+                    .andExpect(status().isCreated());
+
+            // when & then
+            mockMvc.perform(get("/api/users/me/course-roles")
+                            .header("Authorization", "Bearer " + accessToken))
+                    .andDo(print())
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data").isArray())
+                    .andExpect(jsonPath("$.data.length()").value(1))
+                    .andExpect(jsonPath("$.data[0].role").value("DESIGNER"));
+        }
+
+        @Test
+        @DisplayName("실패 - 인증 없이 접근")
+        void getMyCourseRoles_fail_unauthorized() throws Exception {
+            // when & then
+            mockMvc.perform(get("/api/users/me/course-roles"))
                     .andDo(print())
                     .andExpect(status().isForbidden());
         }
