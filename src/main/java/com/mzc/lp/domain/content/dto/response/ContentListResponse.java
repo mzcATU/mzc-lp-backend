@@ -3,7 +3,8 @@ package com.mzc.lp.domain.content.dto.response;
 import com.mzc.lp.domain.content.constant.ContentType;
 import com.mzc.lp.domain.content.entity.Content;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 public record ContentListResponse(
         Long id,
@@ -12,7 +13,7 @@ public record ContentListResponse(
         Long fileSize,
         Integer duration,
         String resolution,
-        Instant createdAt
+        LocalDateTime createdAt
 ) {
     public static ContentListResponse from(Content content) {
         return new ContentListResponse(
@@ -22,7 +23,9 @@ public record ContentListResponse(
                 content.getFileSize(),
                 content.getDuration(),
                 content.getResolution(),
-                content.getCreatedAt()
+                content.getCreatedAt() != null
+                        ? LocalDateTime.ofInstant(content.getCreatedAt(), ZoneId.systemDefault())
+                        : null
         );
     }
 }

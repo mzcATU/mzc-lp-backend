@@ -3,7 +3,8 @@ package com.mzc.lp.domain.content.dto.response;
 import com.mzc.lp.domain.content.constant.ContentType;
 import com.mzc.lp.domain.content.entity.Content;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 public record ContentResponse(
         Long id,
@@ -16,8 +17,8 @@ public record ContentResponse(
         Integer pageCount,
         String externalUrl,
         String filePath,
-        Instant createdAt,
-        Instant updatedAt
+        LocalDateTime createdAt,
+        LocalDateTime updatedAt
 ) {
     public static ContentResponse from(Content content) {
         return new ContentResponse(
@@ -31,8 +32,12 @@ public record ContentResponse(
                 content.getPageCount(),
                 content.getExternalUrl(),
                 content.getFilePath(),
-                content.getCreatedAt(),
-                content.getUpdatedAt()
+                content.getCreatedAt() != null
+                        ? LocalDateTime.ofInstant(content.getCreatedAt(), ZoneId.systemDefault())
+                        : null,
+                content.getUpdatedAt() != null
+                        ? LocalDateTime.ofInstant(content.getUpdatedAt(), ZoneId.systemDefault())
+                        : null
         );
     }
 }
