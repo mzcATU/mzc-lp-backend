@@ -3,6 +3,7 @@ package com.mzc.lp.domain.learning.dto.response;
 import com.mzc.lp.domain.learning.entity.ContentFolder;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 
 public record ContentFolderResponse(
@@ -25,8 +26,12 @@ public record ContentFolderResponse(
                 folder.getChildCount(),
                 folder.getItemCount(),
                 null,
-                folder.getCreatedAt(),
-                folder.getUpdatedAt()
+                folder.getCreatedAt() != null
+                        ? LocalDateTime.ofInstant(folder.getCreatedAt(), ZoneId.systemDefault())
+                        : null,
+                folder.getUpdatedAt() != null
+                        ? LocalDateTime.ofInstant(folder.getUpdatedAt(), ZoneId.systemDefault())
+                        : null
         );
     }
 
@@ -41,8 +46,12 @@ public record ContentFolderResponse(
                 folder.getChildren().stream()
                         .map(ContentFolderResponse::fromWithChildren)
                         .toList(),
-                folder.getCreatedAt(),
-                folder.getUpdatedAt()
+                folder.getCreatedAt() != null
+                        ? LocalDateTime.ofInstant(folder.getCreatedAt(), ZoneId.systemDefault())
+                        : null,
+                folder.getUpdatedAt() != null
+                        ? LocalDateTime.ofInstant(folder.getUpdatedAt(), ZoneId.systemDefault())
+                        : null
         );
     }
 }

@@ -4,6 +4,7 @@ import com.mzc.lp.domain.content.constant.ContentType;
 import com.mzc.lp.domain.learning.entity.LearningObject;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 public record LearningObjectResponse(
         Long learningObjectId,
@@ -29,8 +30,12 @@ public record LearningObjectResponse(
                 lo.getContent() != null ? lo.getContent().getResolution() : null,
                 lo.getFolder() != null ? lo.getFolder().getId() : null,
                 lo.getFolder() != null ? lo.getFolder().getFolderName() : null,
-                lo.getCreatedAt(),
-                lo.getUpdatedAt()
+                lo.getCreatedAt() != null
+                        ? LocalDateTime.ofInstant(lo.getCreatedAt(), ZoneId.systemDefault())
+                        : null,
+                lo.getUpdatedAt() != null
+                        ? LocalDateTime.ofInstant(lo.getUpdatedAt(), ZoneId.systemDefault())
+                        : null
         );
     }
 }
