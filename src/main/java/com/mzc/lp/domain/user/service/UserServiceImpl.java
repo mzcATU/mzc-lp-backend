@@ -20,6 +20,7 @@ import com.mzc.lp.domain.user.exception.CourseRoleNotFoundException;
 import com.mzc.lp.domain.user.exception.PasswordMismatchException;
 import com.mzc.lp.domain.user.exception.RoleAlreadyExistsException;
 import com.mzc.lp.domain.user.exception.UserNotFoundException;
+import com.mzc.lp.domain.user.repository.RefreshTokenRepository;
 import com.mzc.lp.domain.user.repository.UserCourseRoleRepository;
 import com.mzc.lp.domain.user.repository.UserRepository;
 
@@ -41,6 +42,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final UserCourseRoleRepository userCourseRoleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     @Override
     public UserDetailResponse getMe(Long userId) {
@@ -87,7 +89,8 @@ public class UserServiceImpl implements UserService {
         }
 
         user.withdraw();
-        log.info("User withdrawn: userId={}", userId);
+        refreshTokenRepository.deleteByUserId(userId);
+        log.info("User withdrawn: userId={}, reason={}", userId, request.reason());
     }
 
     // ========== 관리 API (OPERATOR 권한) ==========
