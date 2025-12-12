@@ -25,8 +25,13 @@ public enum ErrorCode {
     IMAGE_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "U009", "Image size exceeds 5MB limit"),
     FILE_STORAGE_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "U010", "Failed to store file"),
 
-    // Course
-    COURSE_NOT_FOUND(HttpStatus.NOT_FOUND, "CR001", "Course not found"),
+    // Course (CM - Course Matrix)
+    CM_COURSE_NOT_FOUND(HttpStatus.NOT_FOUND, "CM001", "Course not found"),
+    CM_COURSE_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "CM002", "CourseItem not found"),
+    CM_MAX_DEPTH_EXCEEDED(HttpStatus.BAD_REQUEST, "CM003", "Max depth exceeded (10)"),
+    CM_CIRCULAR_REFERENCE(HttpStatus.BAD_REQUEST, "CM004", "Circular reference detected"),
+    CM_INVALID_PARENT(HttpStatus.BAD_REQUEST, "CM005", "Invalid parent"),
+    CM_LEARNING_OBJECT_NOT_FOUND(HttpStatus.NOT_FOUND, "CM008", "LearningObject not found"),
 
     // CourseTime (TS)
     COURSE_TIME_NOT_FOUND(HttpStatus.NOT_FOUND, "TS001", "CourseTime not found"),
