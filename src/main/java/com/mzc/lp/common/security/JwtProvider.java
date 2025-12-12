@@ -45,6 +45,24 @@ public class JwtProvider {
                 .compact();
     }
 
+    /**
+     * tenantId를 포함한 AccessToken 생성 (CMS/LO 모듈용)
+     */
+    public String createAccessToken(Long userId, String email, String role, Long tenantId) {
+        Date now = new Date();
+        Date expiry = new Date(now.getTime() + accessTokenExpiry);
+
+        return Jwts.builder()
+                .subject(String.valueOf(userId))
+                .claim("email", email)
+                .claim("role", role)
+                .claim("tenantId", tenantId)
+                .issuedAt(now)
+                .expiration(expiry)
+                .signWith(secretKey)
+                .compact();
+    }
+
     public String createRefreshToken(Long userId) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + refreshTokenExpiry);
@@ -91,6 +109,13 @@ public class JwtProvider {
 
     public String getRole(String token) {
         return getClaims(token).get("role", String.class);
+    }
+
+    /**
+     * tenantId claim 추출 (CMS/LO 모듈용)
+     */
+    public Long getTenantId(String token) {
+        return getClaims(token).get("tenantId", Long.class);
     }
 
     public long getRefreshTokenExpiry() {
