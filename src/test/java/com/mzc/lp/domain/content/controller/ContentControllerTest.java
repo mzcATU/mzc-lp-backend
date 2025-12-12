@@ -12,6 +12,8 @@ import com.mzc.lp.domain.user.entity.User;
 import com.mzc.lp.domain.user.repository.RefreshTokenRepository;
 import com.mzc.lp.domain.user.repository.UserCourseRoleRepository;
 import com.mzc.lp.domain.user.repository.UserRepository;
+import com.mzc.lp.domain.learning.repository.LearningObjectRepository;
+import com.mzc.lp.domain.learning.repository.ContentFolderRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -52,10 +54,19 @@ class ContentControllerTest {
     private UserCourseRoleRepository userCourseRoleRepository;
 
     @Autowired
+    private LearningObjectRepository learningObjectRepository;
+
+    @Autowired
+    private ContentFolderRepository contentFolderRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @BeforeEach
     void setUp() {
+        // FK 제약조건: LearningObject -> Content
+        learningObjectRepository.deleteAll();
+        contentFolderRepository.deleteAll();
         contentRepository.deleteAll();
         userCourseRoleRepository.deleteAll();
         refreshTokenRepository.deleteAll();
