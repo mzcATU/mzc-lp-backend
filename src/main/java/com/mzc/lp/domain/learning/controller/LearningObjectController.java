@@ -7,6 +7,9 @@ import com.mzc.lp.domain.learning.dto.request.MoveFolderRequest;
 import com.mzc.lp.domain.learning.dto.request.UpdateLearningObjectRequest;
 import com.mzc.lp.domain.learning.dto.response.LearningObjectResponse;
 import com.mzc.lp.domain.learning.service.LearningObjectService;
+import com.mzc.lp.domain.user.entity.User;
+import com.mzc.lp.domain.user.exception.UserNotFoundException;
+import com.mzc.lp.domain.user.repository.UserRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -26,6 +29,7 @@ import org.springframework.web.bind.annotation.*;
 public class LearningObjectController {
 
     private final LearningObjectService learningObjectService;
+    private final UserRepository userRepository;
 
     @PostMapping
     @PreAuthorize("hasAnyRole('DESIGNER', 'OPERATOR', 'TENANT_ADMIN')")
@@ -33,7 +37,8 @@ public class LearningObjectController {
             @Valid @RequestBody CreateLearningObjectRequest request,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        LearningObjectResponse response = learningObjectService.create(request, principal.tenantId());
+        Long tenantId = getTenantId(principal.id());
+        LearningObjectResponse response = learningObjectService.create(request, tenantId);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
     }
 
@@ -45,8 +50,9 @@ public class LearningObjectController {
             @PageableDefault(size = 20) Pageable pageable,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
+        Long tenantId = getTenantId(principal.id());
         Page<LearningObjectResponse> response = learningObjectService.getLearningObjects(
-                principal.tenantId(), folderId, keyword, pageable);
+                tenantId, folderId, keyword, pageable);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
@@ -56,8 +62,9 @@ public class LearningObjectController {
             @PathVariable Long learningObjectId,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
+        Long tenantId = getTenantId(principal.id());
         LearningObjectResponse response = learningObjectService.getLearningObject(
-                learningObjectId, principal.tenantId());
+                learningObjectId, tenantId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
@@ -67,8 +74,9 @@ public class LearningObjectController {
             @PathVariable Long contentId,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
+        Long tenantId = getTenantId(principal.id());
         LearningObjectResponse response = learningObjectService.getLearningObjectByContentId(
-                contentId, principal.tenantId());
+                contentId, tenantId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
@@ -79,8 +87,9 @@ public class LearningObjectController {
             @Valid @RequestBody UpdateLearningObjectRequest request,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
+        Long tenantId = getTenantId(principal.id());
         LearningObjectResponse response = learningObjectService.update(
-                learningObjectId, request, principal.tenantId());
+                learningObjectId, request, tenantId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
@@ -91,8 +100,9 @@ public class LearningObjectController {
             @Valid @RequestBody MoveFolderRequest request,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
+        Long tenantId = getTenantId(principal.id());
         LearningObjectResponse response = learningObjectService.moveToFolder(
-                learningObjectId, request, principal.tenantId());
+                learningObjectId, request, tenantId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
@@ -102,7 +112,14 @@ public class LearningObjectController {
             @PathVariable Long learningObjectId,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        learningObjectService.delete(learningObjectId, principal.tenantId());
+        Long tenantId = getTenantId(principal.id());
+        learningObjectService.delete(learningObjectId, tenantId);
         return ResponseEntity.noContent().build();
+    }
+
+    private Long getTenantId(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(UserNotFoundException::new);
+        return user.getTenantId();
     }
 }

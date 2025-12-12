@@ -31,6 +31,23 @@ public class JwtProvider {
         this.refreshTokenExpiry = refreshTokenExpiry;
     }
 
+    public String createAccessToken(Long userId, String email, String role) {
+        Date now = new Date();
+        Date expiry = new Date(now.getTime() + accessTokenExpiry);
+
+        return Jwts.builder()
+                .subject(String.valueOf(userId))
+                .claim("email", email)
+                .claim("role", role)
+                .issuedAt(now)
+                .expiration(expiry)
+                .signWith(secretKey)
+                .compact();
+    }
+
+    /**
+     * tenantId를 포함한 AccessToken 생성 (CMS/LO 모듈용)
+     */
     public String createAccessToken(Long userId, String email, String role, Long tenantId) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + accessTokenExpiry);
@@ -94,6 +111,9 @@ public class JwtProvider {
         return getClaims(token).get("role", String.class);
     }
 
+    /**
+     * tenantId claim 추출 (CMS/LO 모듈용)
+     */
     public Long getTenantId(String token) {
         return getClaims(token).get("tenantId", Long.class);
     }
