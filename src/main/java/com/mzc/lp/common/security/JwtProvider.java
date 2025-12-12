@@ -31,7 +31,7 @@ public class JwtProvider {
         this.refreshTokenExpiry = refreshTokenExpiry;
     }
 
-    public String createAccessToken(Long userId, String email, String role) {
+    public String createAccessToken(Long userId, String email, String role, Long tenantId) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + accessTokenExpiry);
 
@@ -39,6 +39,7 @@ public class JwtProvider {
                 .subject(String.valueOf(userId))
                 .claim("email", email)
                 .claim("role", role)
+                .claim("tenantId", tenantId)
                 .issuedAt(now)
                 .expiration(expiry)
                 .signWith(secretKey)
@@ -91,6 +92,10 @@ public class JwtProvider {
 
     public String getRole(String token) {
         return getClaims(token).get("role", String.class);
+    }
+
+    public Long getTenantId(String token) {
+        return getClaims(token).get("tenantId", Long.class);
     }
 
     public long getRefreshTokenExpiry() {

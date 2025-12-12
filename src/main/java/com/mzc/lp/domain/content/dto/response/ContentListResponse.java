@@ -3,16 +3,16 @@ package com.mzc.lp.domain.content.dto.response;
 import com.mzc.lp.domain.content.constant.ContentType;
 import com.mzc.lp.domain.content.entity.Content;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public record ContentListResponse(
-        Long contentId,
+        Long id,
         String originalFileName,
         ContentType contentType,
         Long fileSize,
         Integer duration,
         String resolution,
-        LocalDateTime createdAt
+        Instant createdAt
 ) {
     public static ContentListResponse from(Content content) {
         return new ContentListResponse(

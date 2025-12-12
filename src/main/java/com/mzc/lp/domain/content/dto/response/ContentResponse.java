@@ -3,10 +3,10 @@ package com.mzc.lp.domain.content.dto.response;
 import com.mzc.lp.domain.content.constant.ContentType;
 import com.mzc.lp.domain.content.entity.Content;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public record ContentResponse(
-        Long contentId,
+        Long id,
         String originalFileName,
         String storedFileName,
         ContentType contentType,
@@ -16,8 +16,8 @@ public record ContentResponse(
         Integer pageCount,
         String externalUrl,
         String filePath,
-        LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        Instant createdAt,
+        Instant updatedAt
 ) {
     public static ContentResponse from(Content content) {
         return new ContentResponse(
