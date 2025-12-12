@@ -25,6 +25,22 @@ public enum ErrorCode {
     // Course
     COURSE_NOT_FOUND(HttpStatus.NOT_FOUND, "CR001", "Course not found"),
 
+    // Content (CMS)
+    CONTENT_NOT_FOUND(HttpStatus.NOT_FOUND, "CT001", "Content not found"),
+    UNSUPPORTED_FILE_TYPE(HttpStatus.BAD_REQUEST, "CT002", "Unsupported file type"),
+    FILE_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "CT003", "File size exceeded"),
+    INVALID_EXTERNAL_URL(HttpStatus.BAD_REQUEST, "CT004", "Invalid external URL"),
+    FILE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "CT005", "File upload failed"),
+    METADATA_EXTRACTION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "CT006", "Metadata extraction failed"),
+    FILE_NOT_FOUND(HttpStatus.NOT_FOUND, "CT007", "File not found on storage"),
+
+    // Learning Object (LO)
+    LEARNING_OBJECT_NOT_FOUND(HttpStatus.NOT_FOUND, "LO001", "Learning object not found"),
+    CONTENT_FOLDER_NOT_FOUND(HttpStatus.NOT_FOUND, "LO002", "Content folder not found"),
+    MAX_FOLDER_DEPTH_EXCEEDED(HttpStatus.BAD_REQUEST, "LO003", "Maximum folder depth exceeded"),
+    FOLDER_NOT_EMPTY(HttpStatus.BAD_REQUEST, "LO004", "Folder is not empty"),
+    DUPLICATE_FOLDER_NAME(HttpStatus.CONFLICT, "LO005", "Folder name already exists in this location"),
+
     // Auth
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "A001", "Unauthorized"),
     ACCESS_DENIED(HttpStatus.FORBIDDEN, "A002", "Access denied"),
