@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -351,6 +352,148 @@ class UserControllerTest {
             mockMvc.perform(delete("/api/users/me")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
+                    .andDo(print())
+                    .andExpect(status().isForbidden());
+        }
+    }
+
+    // ==================== 프로필 이미지 업로드 테스트 ====================
+
+    @Nested
+    @DisplayName("POST /api/users/me/profile-image - 프로필 이미지 업로드")
+    class UploadProfileImage {
+
+        @Test
+        @DisplayName("성공 - JPG 이미지 업로드")
+        void uploadProfileImage_success_jpg() throws Exception {
+            // given
+            createTestUser();
+            String accessToken = loginAndGetAccessToken();
+            MockMultipartFile file = new MockMultipartFile(
+                    "file",
+                    "profile.jpg",
+                    "image/jpeg",
+                    "test image content".getBytes()
+            );
+
+            // when & then
+            mockMvc.perform(multipart("/api/users/me/profile-image")
+                            .file(file)
+                            .header("Authorization", "Bearer " + accessToken))
+                    .andDo(print())
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.profileImageUrl").exists())
+                    .andExpect(jsonPath("$.data.profileImageUrl").value(org.hamcrest.Matchers.containsString("/uploads/profile-images/")));
+        }
+
+        @Test
+        @DisplayName("성공 - PNG 이미지 업로드")
+        void uploadProfileImage_success_png() throws Exception {
+            // given
+            createTestUser();
+            String accessToken = loginAndGetAccessToken();
+            MockMultipartFile file = new MockMultipartFile(
+                    "file",
+                    "profile.png",
+                    "image/png",
+                    "test image content".getBytes()
+            );
+
+            // when & then
+            mockMvc.perform(multipart("/api/users/me/profile-image")
+                            .file(file)
+                            .header("Authorization", "Bearer " + accessToken))
+                    .andDo(print())
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.profileImageUrl").exists());
+        }
+
+        @Test
+        @DisplayName("실패 - 잘못된 파일 형식 (txt)")
+        void uploadProfileImage_fail_invalidFormat() throws Exception {
+            // given
+            createTestUser();
+            String accessToken = loginAndGetAccessToken();
+            MockMultipartFile file = new MockMultipartFile(
+                    "file",
+                    "profile.txt",
+                    "text/plain",
+                    "test content".getBytes()
+            );
+
+            // when & then
+            mockMvc.perform(multipart("/api/users/me/profile-image")
+                            .file(file)
+                            .header("Authorization", "Bearer " + accessToken))
+                    .andDo(print())
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.success").value(false))
+                    .andExpect(jsonPath("$.error.code").value("U008"));
+        }
+
+        @Test
+        @DisplayName("실패 - 파일 크기 초과 (6MB)")
+        void uploadProfileImage_fail_sizeExceeded() throws Exception {
+            // given
+            createTestUser();
+            String accessToken = loginAndGetAccessToken();
+            byte[] largeContent = new byte[6 * 1024 * 1024]; // 6MB
+            MockMultipartFile file = new MockMultipartFile(
+                    "file",
+                    "profile.jpg",
+                    "image/jpeg",
+                    largeContent
+            );
+
+            // when & then
+            mockMvc.perform(multipart("/api/users/me/profile-image")
+                            .file(file)
+                            .header("Authorization", "Bearer " + accessToken))
+                    .andDo(print())
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.success").value(false))
+                    .andExpect(jsonPath("$.error.code").value("U009"));
+        }
+
+        @Test
+        @DisplayName("실패 - 빈 파일")
+        void uploadProfileImage_fail_emptyFile() throws Exception {
+            // given
+            createTestUser();
+            String accessToken = loginAndGetAccessToken();
+            MockMultipartFile file = new MockMultipartFile(
+                    "file",
+                    "profile.jpg",
+                    "image/jpeg",
+                    new byte[0]
+            );
+
+            // when & then
+            mockMvc.perform(multipart("/api/users/me/profile-image")
+                            .file(file)
+                            .header("Authorization", "Bearer " + accessToken))
+                    .andDo(print())
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.success").value(false))
+                    .andExpect(jsonPath("$.error.code").value("U008"));
+        }
+
+        @Test
+        @DisplayName("실패 - 인증 없이 접근")
+        void uploadProfileImage_fail_unauthorized() throws Exception {
+            // given
+            MockMultipartFile file = new MockMultipartFile(
+                    "file",
+                    "profile.jpg",
+                    "image/jpeg",
+                    "test image content".getBytes()
+            );
+
+            // when & then
+            mockMvc.perform(multipart("/api/users/me/profile-image")
+                            .file(file))
                     .andDo(print())
                     .andExpect(status().isForbidden());
         }

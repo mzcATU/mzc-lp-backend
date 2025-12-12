@@ -13,8 +13,10 @@ import com.mzc.lp.domain.user.dto.response.UserDetailResponse;
 import com.mzc.lp.domain.user.dto.response.UserListResponse;
 import com.mzc.lp.domain.user.dto.response.UserRoleResponse;
 import com.mzc.lp.domain.user.dto.response.UserStatusResponse;
+import com.mzc.lp.domain.user.dto.response.ProfileImageResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -28,6 +30,8 @@ public interface UserService {
     void changePassword(Long userId, ChangePasswordRequest request);
 
     void withdraw(Long userId, WithdrawRequest request);
+
+    ProfileImageResponse uploadProfileImage(Long userId, MultipartFile file);
 
     // 관리 API (OPERATOR 권한)
     Page<UserListResponse> getUsers(String keyword, TenantRole role, UserStatus status, Pageable pageable);

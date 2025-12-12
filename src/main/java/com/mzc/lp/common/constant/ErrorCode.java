@@ -21,6 +21,9 @@ public enum ErrorCode {
     USER_ALREADY_WITHDRAWN(HttpStatus.BAD_REQUEST, "U005", "User already withdrawn"),
     ROLE_ALREADY_EXISTS(HttpStatus.CONFLICT, "U006", "Role already exists for this user"),
     COURSE_ROLE_NOT_FOUND(HttpStatus.NOT_FOUND, "U007", "Course role not found"),
+    INVALID_IMAGE_FORMAT(HttpStatus.BAD_REQUEST, "U008", "Invalid image format. Only JPG, JPEG, PNG allowed"),
+    IMAGE_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "U009", "Image size exceeds 5MB limit"),
+    FILE_STORAGE_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "U010", "Failed to store file"),
 
     // Course
     COURSE_NOT_FOUND(HttpStatus.NOT_FOUND, "CR001", "Course not found"),
@@ -40,6 +43,12 @@ public enum ErrorCode {
     MAX_FOLDER_DEPTH_EXCEEDED(HttpStatus.BAD_REQUEST, "LO003", "Maximum folder depth exceeded"),
     FOLDER_NOT_EMPTY(HttpStatus.BAD_REQUEST, "LO004", "Folder is not empty"),
     DUPLICATE_FOLDER_NAME(HttpStatus.CONFLICT, "LO005", "Folder name already exists in this location"),
+    // CourseTime (TS)
+    COURSE_TIME_NOT_FOUND(HttpStatus.NOT_FOUND, "TS001", "CourseTime not found"),
+    INVALID_STATUS_TRANSITION(HttpStatus.BAD_REQUEST, "TS002", "Invalid status transition"),
+    CAPACITY_EXCEEDED(HttpStatus.CONFLICT, "TS003", "Capacity exceeded"),
+    INVALID_DATE_RANGE(HttpStatus.BAD_REQUEST, "TS004", "Invalid date range"),
+    LOCATION_REQUIRED(HttpStatus.BAD_REQUEST, "TS005", "Location info required for OFFLINE/BLENDED"),
 
     // Auth
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "A001", "Unauthorized"),
