@@ -31,3 +31,18 @@ jwt:
   secret: ${JWT_SECRET:default-secret-key-for-development-only}
   access-expiration: ${JWT_ACCESS_EXPIRATION:900000}
   refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
+
+# File Storage
+file:
+  upload-dir: ${FILE_UPLOAD_DIR:./uploads}
+  max-size:
+    video: ${FILE_MAX_SIZE_VIDEO:2147483648}      # 2GB
+    audio: ${FILE_MAX_SIZE_AUDIO:524288000}       # 500MB
+    document: ${FILE_MAX_SIZE_DOCUMENT:104857600} # 100MB
+    image: ${FILE_MAX_SIZE_IMAGE:52428800}        # 50MB
+
+# Spring Servlet Multipart
+spring.servlet.multipart:
+  enabled: true
+  max-file-size: 2GB
+  max-request-size: 2GB
