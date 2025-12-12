@@ -15,6 +15,7 @@ import com.mzc.lp.domain.user.dto.response.UserDetailResponse;
 import com.mzc.lp.domain.user.dto.response.UserListResponse;
 import com.mzc.lp.domain.user.dto.response.UserRoleResponse;
 import com.mzc.lp.domain.user.dto.response.UserStatusResponse;
+import com.mzc.lp.domain.user.dto.response.ProfileImageResponse;
 import com.mzc.lp.domain.user.service.UserService;
 
 import java.util.List;
@@ -28,6 +29,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/users")
@@ -70,6 +72,15 @@ public class UserController {
     ) {
         userService.withdraw(principal.id(), request);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/me/profile-image")
+    public ResponseEntity<ApiResponse<ProfileImageResponse>> uploadProfileImage(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @RequestParam MultipartFile file
+    ) {
+        ProfileImageResponse response = userService.uploadProfileImage(principal.id(), file);
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     // ========== CourseRole API ==========
