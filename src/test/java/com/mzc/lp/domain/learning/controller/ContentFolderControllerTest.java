@@ -7,6 +7,9 @@ import com.mzc.lp.domain.learning.dto.request.MoveContentFolderRequest;
 import com.mzc.lp.domain.learning.dto.request.UpdateContentFolderRequest;
 import com.mzc.lp.domain.learning.entity.ContentFolder;
 import com.mzc.lp.domain.learning.repository.ContentFolderRepository;
+import com.mzc.lp.domain.user.constant.TenantRole;
+import com.mzc.lp.domain.user.entity.User;
+import com.mzc.lp.domain.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -39,14 +42,22 @@ class ContentFolderControllerTest {
     @Autowired
     private ContentFolderRepository contentFolderRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
     private String accessToken;
-    private static final Long TEST_TENANT_ID = 1L;
-    private static final Long TEST_USER_ID = 1L;
+    private User testUser;
 
     @BeforeEach
     void setUp() {
+        // 테스트용 사용자 생성
+        testUser = User.create("designer@test.com", "테스트디자이너", "encodedPassword");
+        testUser.updateRole(TenantRole.OPERATOR);
+        testUser = userRepository.save(testUser);
+
+        // 저장된 사용자의 ID로 토큰 생성
         accessToken = jwtProvider.createAccessToken(
-                TEST_USER_ID, "designer@test.com", "DESIGNER", TEST_TENANT_ID);
+                testUser.getId(), testUser.getEmail(), testUser.getRole().name());
     }
 
     @Test
