@@ -14,6 +14,7 @@ import com.mzc.lp.domain.user.dto.response.UserDetailResponse;
 import com.mzc.lp.domain.user.dto.response.UserListResponse;
 import com.mzc.lp.domain.user.dto.response.UserRoleResponse;
 import com.mzc.lp.domain.user.dto.response.UserStatusResponse;
+import com.mzc.lp.domain.user.dto.response.ProfileImageResponse;
 import com.mzc.lp.domain.user.entity.User;
 import com.mzc.lp.domain.user.entity.UserCourseRole;
 import com.mzc.lp.domain.user.exception.CourseRoleNotFoundException;
@@ -23,6 +24,7 @@ import com.mzc.lp.domain.user.exception.UserNotFoundException;
 import com.mzc.lp.domain.user.repository.RefreshTokenRepository;
 import com.mzc.lp.domain.user.repository.UserCourseRoleRepository;
 import com.mzc.lp.domain.user.repository.UserRepository;
+import com.mzc.lp.common.service.FileStorageService;
 
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +34,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @Service
@@ -43,6 +46,7 @@ public class UserServiceImpl implements UserService {
     private final UserCourseRoleRepository userCourseRoleRepository;
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final FileStorageService fileStorageService;
 
     @Override
     public UserDetailResponse getMe(Long userId) {
@@ -91,6 +95,20 @@ public class UserServiceImpl implements UserService {
         user.withdraw();
         refreshTokenRepository.deleteByUserId(userId);
         log.info("User withdrawn: userId={}, reason={}", userId, request.reason());
+    }
+
+    @Override
+    @Transactional
+    public ProfileImageResponse uploadProfileImage(Long userId, MultipartFile file) {
+        log.info("Uploading profile image: userId={}", userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
+
+        String profileImageUrl = fileStorageService.storeProfileImage(file);
+        user.updateProfile(user.getName(), user.getPhone(), profileImageUrl);
+
+        log.info("Profile image uploaded: userId={}, url={}", userId, profileImageUrl);
+        return ProfileImageResponse.from(profileImageUrl);
     }
 
     // ========== 관리 API (OPERATOR 권한) ==========

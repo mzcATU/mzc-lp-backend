@@ -21,6 +21,9 @@ public enum ErrorCode {
     USER_ALREADY_WITHDRAWN(HttpStatus.BAD_REQUEST, "U005", "User already withdrawn"),
     ROLE_ALREADY_EXISTS(HttpStatus.CONFLICT, "U006", "Role already exists for this user"),
     COURSE_ROLE_NOT_FOUND(HttpStatus.NOT_FOUND, "U007", "Course role not found"),
+    INVALID_IMAGE_FORMAT(HttpStatus.BAD_REQUEST, "U008", "Invalid image format. Only JPG, JPEG, PNG allowed"),
+    IMAGE_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "U009", "Image size exceeds 5MB limit"),
+    FILE_STORAGE_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "U010", "Failed to store file"),
 
     // Course
     COURSE_NOT_FOUND(HttpStatus.NOT_FOUND, "CR001", "Course not found"),
