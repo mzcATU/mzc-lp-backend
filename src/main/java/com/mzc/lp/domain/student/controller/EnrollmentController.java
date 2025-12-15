@@ -7,10 +7,13 @@ import com.mzc.lp.domain.student.dto.request.CompleteEnrollmentRequest;
 import com.mzc.lp.domain.student.dto.request.ForceEnrollRequest;
 import com.mzc.lp.domain.student.dto.request.UpdateEnrollmentStatusRequest;
 import com.mzc.lp.domain.student.dto.request.UpdateProgressRequest;
+import com.mzc.lp.domain.student.dto.response.CourseTimeEnrollmentStatsResponse;
 import com.mzc.lp.domain.student.dto.response.EnrollmentDetailResponse;
 import com.mzc.lp.domain.student.dto.response.EnrollmentResponse;
 import com.mzc.lp.domain.student.dto.response.ForceEnrollResultResponse;
+import com.mzc.lp.domain.student.dto.response.UserEnrollmentStatsResponse;
 import com.mzc.lp.domain.student.service.EnrollmentService;
+import com.mzc.lp.domain.student.service.EnrollmentStatsService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -29,6 +32,7 @@ import org.springframework.web.bind.annotation.*;
 public class EnrollmentController {
 
     private final EnrollmentService enrollmentService;
+    private final EnrollmentStatsService enrollmentStatsService;
 
     // ========== 수강 신청 API (TS 기반) ==========
 
@@ -167,6 +171,32 @@ public class EnrollmentController {
             @PageableDefault(size = 20) Pageable pageable
     ) {
         Page<EnrollmentResponse> response = enrollmentService.getEnrollmentsByUser(userId, status, pageable);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    // ========== 통계 API ==========
+
+    /**
+     * 차수별 수강 통계 조회
+     */
+    @GetMapping("/api/ts/course-times/{courseTimeId}/enrollments/stats")
+    @PreAuthorize("hasAnyRole('OPERATOR', 'TENANT_ADMIN')")
+    public ResponseEntity<ApiResponse<CourseTimeEnrollmentStatsResponse>> getCourseTimeStats(
+            @PathVariable Long courseTimeId
+    ) {
+        CourseTimeEnrollmentStatsResponse response = enrollmentStatsService.getCourseTimeStats(courseTimeId);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    /**
+     * 사용자별 수강 통계 조회
+     */
+    @GetMapping("/api/users/{userId}/enrollments/stats")
+    @PreAuthorize("hasAnyRole('OPERATOR', 'TENANT_ADMIN')")
+    public ResponseEntity<ApiResponse<UserEnrollmentStatsResponse>> getUserStats(
+            @PathVariable Long userId
+    ) {
+        UserEnrollmentStatsResponse response = enrollmentStatsService.getUserStats(userId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 }
