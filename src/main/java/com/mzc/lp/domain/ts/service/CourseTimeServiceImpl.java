@@ -1,5 +1,6 @@
 package com.mzc.lp.domain.ts.service;
 
+import com.mzc.lp.common.context.TenantContext;
 import com.mzc.lp.domain.ts.constant.CourseTimeStatus;
 import com.mzc.lp.domain.ts.constant.EnrollmentMethod;
 import com.mzc.lp.domain.ts.dto.request.CreateCourseTimeRequest;
@@ -76,7 +77,7 @@ public class CourseTimeServiceImpl implements CourseTimeService {
         log.debug("Getting course times: status={}, cmCourseId={}", status, cmCourseId);
 
         if (cmCourseId != null) {
-            return courseTimeRepository.findByCmCourseIdAndTenantId(cmCourseId, getCurrentTenantId())
+            return courseTimeRepository.findByCmCourseIdAndTenantId(cmCourseId, TenantContext.getCurrentTenantId())
                     .stream()
                     .filter(ct -> status == null || ct.getStatus() == status)
                     .map(CourseTimeResponse::from)
@@ -87,11 +88,11 @@ public class CourseTimeServiceImpl implements CourseTimeService {
         }
 
         if (status != null) {
-            return courseTimeRepository.findByTenantIdAndStatus(getCurrentTenantId(), status, pageable)
+            return courseTimeRepository.findByTenantIdAndStatus(TenantContext.getCurrentTenantId(), status, pageable)
                     .map(CourseTimeResponse::from);
         }
 
-        return courseTimeRepository.findByTenantId(getCurrentTenantId(), pageable)
+        return courseTimeRepository.findByTenantId(TenantContext.getCurrentTenantId(), pageable)
                 .map(CourseTimeResponse::from);
     }
 
@@ -99,7 +100,7 @@ public class CourseTimeServiceImpl implements CourseTimeService {
     public CourseTimeDetailResponse getCourseTime(Long id) {
         log.debug("Getting course time: id={}", id);
 
-        CourseTime courseTime = courseTimeRepository.findByIdAndTenantId(id, getCurrentTenantId())
+        CourseTime courseTime = courseTimeRepository.findByIdAndTenantId(id, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new CourseTimeNotFoundException(id));
 
         return CourseTimeDetailResponse.from(courseTime);
@@ -110,7 +111,7 @@ public class CourseTimeServiceImpl implements CourseTimeService {
     public CourseTimeDetailResponse updateCourseTime(Long id, UpdateCourseTimeRequest request) {
         log.info("Updating course time: id={}", id);
 
-        CourseTime courseTime = courseTimeRepository.findByIdAndTenantId(id, getCurrentTenantId())
+        CourseTime courseTime = courseTimeRepository.findByIdAndTenantId(id, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new CourseTimeNotFoundException(id));
 
         // DRAFT 또는 RECRUITING 상태에서만 수정 가능
@@ -168,7 +169,7 @@ public class CourseTimeServiceImpl implements CourseTimeService {
     public void deleteCourseTime(Long id) {
         log.info("Deleting course time: id={}", id);
 
-        CourseTime courseTime = courseTimeRepository.findByIdAndTenantId(id, getCurrentTenantId())
+        CourseTime courseTime = courseTimeRepository.findByIdAndTenantId(id, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new CourseTimeNotFoundException(id));
 
         // DRAFT 상태에서만 삭제 가능
@@ -187,7 +188,7 @@ public class CourseTimeServiceImpl implements CourseTimeService {
     public CourseTimeDetailResponse openCourseTime(Long id) {
         log.info("Opening course time: id={}", id);
 
-        CourseTime courseTime = courseTimeRepository.findByIdAndTenantId(id, getCurrentTenantId())
+        CourseTime courseTime = courseTimeRepository.findByIdAndTenantId(id, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new CourseTimeNotFoundException(id));
 
         if (!courseTime.isDraft()) {
@@ -214,7 +215,7 @@ public class CourseTimeServiceImpl implements CourseTimeService {
     public CourseTimeDetailResponse startCourseTime(Long id) {
         log.info("Starting course time: id={}", id);
 
-        CourseTime courseTime = courseTimeRepository.findByIdAndTenantId(id, getCurrentTenantId())
+        CourseTime courseTime = courseTimeRepository.findByIdAndTenantId(id, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new CourseTimeNotFoundException(id));
 
         if (!courseTime.isRecruiting()) {
@@ -235,7 +236,7 @@ public class CourseTimeServiceImpl implements CourseTimeService {
     public CourseTimeDetailResponse closeCourseTime(Long id) {
         log.info("Closing course time: id={}", id);
 
-        CourseTime courseTime = courseTimeRepository.findByIdAndTenantId(id, getCurrentTenantId())
+        CourseTime courseTime = courseTimeRepository.findByIdAndTenantId(id, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new CourseTimeNotFoundException(id));
 
         if (!courseTime.isOngoing()) {
@@ -256,7 +257,7 @@ public class CourseTimeServiceImpl implements CourseTimeService {
     public CourseTimeDetailResponse archiveCourseTime(Long id) {
         log.info("Archiving course time: id={}", id);
 
-        CourseTime courseTime = courseTimeRepository.findByIdAndTenantId(id, getCurrentTenantId())
+        CourseTime courseTime = courseTimeRepository.findByIdAndTenantId(id, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new CourseTimeNotFoundException(id));
 
         if (!courseTime.isClosed()) {
@@ -307,12 +308,6 @@ public class CourseTimeServiceImpl implements CourseTimeService {
                 && request.maxWaitingCount() > 0) {
             throw new IllegalArgumentException("승인제 모집에서는 대기자 기능을 사용할 수 없습니다");
         }
-    }
-
-    private Long getCurrentTenantId() {
-        // TODO: SecurityContext에서 tenantId 추출
-        // 현재는 임시로 1L 반환
-        return 1L;
     }
 
     // ========== 정원 관리 (SIS에서 호출) ==========

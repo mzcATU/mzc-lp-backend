@@ -1,4 +1,5 @@
 package com.mzc.lp.domain.ts.service;
+import com.mzc.lp.common.support.TenantTestSupport;
 
 import com.mzc.lp.domain.ts.constant.DeliveryType;
 import com.mzc.lp.domain.ts.constant.EnrollmentMethod;
@@ -26,7 +27,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-class CourseTimeServiceTest {
+class CourseTimeServiceTest extends TenantTestSupport {
 
     @InjectMocks
     private CourseTimeServiceImpl courseTimeService;

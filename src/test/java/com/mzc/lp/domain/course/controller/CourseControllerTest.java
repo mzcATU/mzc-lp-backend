@@ -1,4 +1,5 @@
 package com.mzc.lp.domain.course.controller;
+import com.mzc.lp.common.support.TenantTestSupport;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mzc.lp.domain.course.constant.CourseLevel;
@@ -32,7 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class CourseControllerTest {
+class CourseControllerTest extends TenantTestSupport {
 
     @Autowired
     private MockMvc mockMvc;
