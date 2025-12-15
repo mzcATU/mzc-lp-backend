@@ -41,9 +41,6 @@ public class CourseItem extends TenantEntity {
     @Column(nullable = false)
     private Integer depth;
 
-    @Column
-    private Integer sortOrder;
-
     // ===== 정적 팩토리 메서드 =====
     public static CourseItem createFolder(Course course, String itemName, CourseItem parent) {
         CourseItem item = new CourseItem();
@@ -111,10 +108,6 @@ public class CourseItem extends TenantEntity {
         if (newParent != null) {
             newParent.getChildren().add(this);
         }
-    }
-
-    public void updateSortOrder(Integer sortOrder) {
-        this.sortOrder = sortOrder;
     }
 
     // ===== 연관관계 편의 메서드 =====

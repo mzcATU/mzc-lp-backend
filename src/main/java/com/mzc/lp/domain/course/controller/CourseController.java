@@ -71,20 +71,6 @@ public class CourseController {
     }
 
     /**
-     * 강사별 강의 목록 조회
-     * GET /api/courses/instructor/{instructorId}
-     */
-    @GetMapping("/instructor/{instructorId}")
-    public ResponseEntity<ApiResponse<Page<CourseResponse>>> getCoursesByInstructor(
-            @PathVariable @Positive Long instructorId,
-            @PageableDefault(size = 20) Pageable pageable,
-            @AuthenticationPrincipal UserPrincipal principal
-    ) {
-        Page<CourseResponse> response = courseService.getCoursesByInstructor(instructorId, pageable);
-        return ResponseEntity.ok(ApiResponse.success(response));
-    }
-
-    /**
      * 강의 수정
      * PUT /api/courses/{courseId}
      */

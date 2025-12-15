@@ -21,7 +21,8 @@ public record UpdateCourseRequest(
 
         Long categoryId,
 
-        Long instructorId
+        @Size(max = 500, message = "썸네일 URL은 500자 이하여야 합니다")
+        String thumbnailUrl
 ) {
     public UpdateCourseRequest {
         if (title != null) {

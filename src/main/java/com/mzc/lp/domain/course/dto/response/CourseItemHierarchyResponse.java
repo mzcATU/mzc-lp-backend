@@ -11,7 +11,6 @@ public record CourseItemHierarchyResponse(
         Integer depth,
         Long learningObjectId,
         boolean isFolder,
-        Integer sortOrder,
         List<CourseItemHierarchyResponse> children
 ) {
     public static CourseItemHierarchyResponse from(CourseItem item) {
@@ -21,7 +20,6 @@ public record CourseItemHierarchyResponse(
                 item.getDepth(),
                 item.getLearningObjectId(),
                 item.isFolder(),
-                item.getSortOrder(),
                 item.getChildren().stream()
                         .map(CourseItemHierarchyResponse::from)
                         .collect(Collectors.toList())

@@ -39,7 +39,7 @@ public class CourseServiceImpl implements CourseService {
                 request.type(),
                 request.estimatedHours(),
                 request.categoryId(),
-                request.instructorId()
+                request.thumbnailUrl()
         );
 
         Course savedCourse = courseRepository.save(course);
@@ -85,14 +85,6 @@ public class CourseServiceImpl implements CourseService {
     }
 
     @Override
-    public Page<CourseResponse> getCoursesByInstructor(Long instructorId, Pageable pageable) {
-        log.debug("Getting courses by instructor: instructorId={}", instructorId);
-
-        return courseRepository.findByTenantIdAndInstructorId(DEFAULT_TENANT_ID, instructorId, pageable)
-                .map(CourseResponse::from);
-    }
-
-    @Override
     @Transactional
     public CourseResponse updateCourse(Long courseId, UpdateCourseRequest request) {
         log.info("Updating course: courseId={}", courseId);
@@ -107,7 +99,7 @@ public class CourseServiceImpl implements CourseService {
                 request.type(),
                 request.estimatedHours(),
                 request.categoryId(),
-                request.instructorId()
+                request.thumbnailUrl()
         );
 
         log.info("Course updated: id={}", courseId);
