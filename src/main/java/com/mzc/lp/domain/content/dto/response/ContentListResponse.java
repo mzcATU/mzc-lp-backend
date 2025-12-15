@@ -13,6 +13,7 @@ public record ContentListResponse(
         Long fileSize,
         Integer duration,
         String resolution,
+        String thumbnailPath,
         LocalDateTime createdAt
 ) {
     public static ContentListResponse from(Content content) {
@@ -23,6 +24,7 @@ public record ContentListResponse(
                 content.getFileSize(),
                 content.getDuration(),
                 content.getResolution(),
+                content.getThumbnailPath(),
                 content.getCreatedAt() != null
                         ? LocalDateTime.ofInstant(content.getCreatedAt(), ZoneId.systemDefault())
                         : null

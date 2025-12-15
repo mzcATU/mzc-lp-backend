@@ -45,6 +45,9 @@ public class Content extends TenantEntity {
     @Column(name = "file_path", length = 1000)
     private String filePath;
 
+    @Column(name = "thumbnail_path", length = 1000)
+    private String thumbnailPath;
+
     // 정적 팩토리 메서드 - 파일 업로드용
     public static Content createFile(String originalFileName, String storedFileName,
                                      ContentType contentType, Long fileSize, String filePath) {
@@ -112,5 +115,10 @@ public class Content extends TenantEntity {
         this.storedFileName = storedFileName;
         this.fileSize = fileSize;
         this.filePath = filePath;
+    }
+
+    // 비즈니스 메서드 - 썸네일 설정
+    public void setThumbnailPath(String thumbnailPath) {
+        this.thumbnailPath = thumbnailPath;
     }
 }

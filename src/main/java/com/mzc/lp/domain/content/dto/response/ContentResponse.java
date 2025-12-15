@@ -17,6 +17,7 @@ public record ContentResponse(
         Integer pageCount,
         String externalUrl,
         String filePath,
+        String thumbnailPath,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
@@ -32,6 +33,7 @@ public record ContentResponse(
                 content.getPageCount(),
                 content.getExternalUrl(),
                 content.getFilePath(),
+                content.getThumbnailPath(),
                 content.getCreatedAt() != null
                         ? LocalDateTime.ofInstant(content.getCreatedAt(), ZoneId.systemDefault())
                         : null,
