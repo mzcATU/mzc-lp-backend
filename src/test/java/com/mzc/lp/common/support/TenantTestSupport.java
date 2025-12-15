@@ -19,7 +19,7 @@ public abstract class TenantTestSupport {
      * 각 테스트 시작 전 TenantContext 설정
      */
     @BeforeEach
-    void setUpTenantContext() {
+    protected void setUpTenantContext() {
         TenantContext.setTenantId(DEFAULT_TENANT_ID);
     }
 
@@ -28,7 +28,7 @@ public abstract class TenantTestSupport {
      * ThreadLocal 메모리 릭 방지
      */
     @AfterEach
-    void tearDownTenantContext() {
+    protected void tearDownTenantContext() {
         TenantContext.clear();
     }
 

@@ -5,9 +5,18 @@ import jakarta.persistence.Column;
 import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.PrePersist;
 import lombok.Getter;
+import org.hibernate.annotations.Filter;
+import org.hibernate.annotations.FilterDef;
+import org.hibernate.annotations.ParamDef;
 
 @Getter
 @MappedSuperclass
+@FilterDef(
+        name = "tenantFilter",
+        parameters = @ParamDef(name = "tenantId", type = Long.class),
+        defaultCondition = "tenant_id = :tenantId"
+)
+@Filter(name = "tenantFilter")
 public abstract class TenantEntity extends BaseTimeEntity {
 
     @Column(name = "tenant_id", nullable = false)
