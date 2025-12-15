@@ -1,12 +1,22 @@
 package com.mzc.lp.common.entity;
 
+import com.mzc.lp.common.context.TenantContext;
 import jakarta.persistence.Column;
 import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.PrePersist;
 import lombok.Getter;
+import org.hibernate.annotations.Filter;
+import org.hibernate.annotations.FilterDef;
+import org.hibernate.annotations.ParamDef;
 
 @Getter
 @MappedSuperclass
+@FilterDef(
+        name = "tenantFilter",
+        parameters = @ParamDef(name = "tenantId", type = Long.class),
+        defaultCondition = "tenant_id = :tenantId"
+)
+@Filter(name = "tenantFilter")
 public abstract class TenantEntity extends BaseTimeEntity {
 
     @Column(name = "tenant_id", nullable = false)
@@ -15,10 +25,15 @@ public abstract class TenantEntity extends BaseTimeEntity {
     @PrePersist
     protected void prePersistTenant() {
         if (this.tenantId == null) {
-            this.tenantId = 1L; // 기본값: B2C 테넌트
+            // TenantContext에서 자동 주입
+            this.tenantId = TenantContext.getCurrentTenantId();
         }
     }
 
+    /**
+     * TenantId 설정 (테스트 전용)
+     * 프로덕션 코드에서는 TenantContext를 통해 자동 주입됨
+     */
     protected void setTenantId(Long tenantId) {
         this.tenantId = tenantId;
     }

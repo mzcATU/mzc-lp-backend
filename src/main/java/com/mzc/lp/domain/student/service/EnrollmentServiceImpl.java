@@ -1,5 +1,6 @@
 package com.mzc.lp.domain.student.service;
 
+import com.mzc.lp.common.context.TenantContext;
 import com.mzc.lp.domain.student.constant.EnrollmentStatus;
 import com.mzc.lp.domain.student.dto.request.CompleteEnrollmentRequest;
 import com.mzc.lp.domain.student.dto.request.ForceEnrollRequest;
@@ -43,7 +44,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     public EnrollmentDetailResponse enroll(Long courseTimeId, Long userId) {
         log.info("Enrolling user: userId={}, courseTimeId={}", userId, courseTimeId);
 
-        Long tenantId = getCurrentTenantId();
+        Long tenantId = TenantContext.getCurrentTenantId();
 
         // 차수 조회 및 검증
         CourseTime courseTime = courseTimeRepository.findByIdAndTenantId(courseTimeId, tenantId)
@@ -78,7 +79,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         log.info("Force enrolling users: courseTimeId={}, userCount={}, operatorId={}",
                 courseTimeId, request.userIds().size(), operatorId);
 
-        Long tenantId = getCurrentTenantId();
+        Long tenantId = TenantContext.getCurrentTenantId();
 
         // 차수 조회 및 검증
         CourseTime courseTime = courseTimeRepository.findByIdAndTenantId(courseTimeId, tenantId)
@@ -119,7 +120,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     public EnrollmentDetailResponse getEnrollment(Long enrollmentId) {
         log.debug("Getting enrollment: id={}", enrollmentId);
 
-        Enrollment enrollment = enrollmentRepository.findByIdAndTenantId(enrollmentId, getCurrentTenantId())
+        Enrollment enrollment = enrollmentRepository.findByIdAndTenantId(enrollmentId, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new EnrollmentNotFoundException(enrollmentId));
 
         return EnrollmentDetailResponse.from(enrollment);
@@ -129,7 +130,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     public Page<EnrollmentResponse> getEnrollmentsByCourseTime(Long courseTimeId, EnrollmentStatus status, Pageable pageable) {
         log.debug("Getting enrollments by course time: courseTimeId={}, status={}", courseTimeId, status);
 
-        Long tenantId = getCurrentTenantId();
+        Long tenantId = TenantContext.getCurrentTenantId();
 
         if (status != null) {
             return enrollmentRepository.findByCourseTimeIdAndStatusAndTenantId(courseTimeId, status, tenantId, pageable)
@@ -144,7 +145,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     public Page<EnrollmentResponse> getMyEnrollments(Long userId, EnrollmentStatus status, Pageable pageable) {
         log.debug("Getting my enrollments: userId={}, status={}", userId, status);
 
-        Long tenantId = getCurrentTenantId();
+        Long tenantId = TenantContext.getCurrentTenantId();
 
         if (status != null) {
             return enrollmentRepository.findByUserIdAndStatusAndTenantId(userId, status, tenantId, pageable)
@@ -168,7 +169,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     public EnrollmentResponse updateProgress(Long enrollmentId, UpdateProgressRequest request, Long userId) {
         log.info("Updating progress: enrollmentId={}, progressPercent={}", enrollmentId, request.progressPercent());
 
-        Enrollment enrollment = enrollmentRepository.findByIdAndTenantId(enrollmentId, getCurrentTenantId())
+        Enrollment enrollment = enrollmentRepository.findByIdAndTenantId(enrollmentId, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new EnrollmentNotFoundException(enrollmentId));
 
         // 본인 확인 (또는 관리자)
@@ -187,7 +188,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     public EnrollmentDetailResponse completeEnrollment(Long enrollmentId, CompleteEnrollmentRequest request) {
         log.info("Completing enrollment: enrollmentId={}, score={}", enrollmentId, request.score());
 
-        Enrollment enrollment = enrollmentRepository.findByIdAndTenantId(enrollmentId, getCurrentTenantId())
+        Enrollment enrollment = enrollmentRepository.findByIdAndTenantId(enrollmentId, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new EnrollmentNotFoundException(enrollmentId));
 
         enrollment.complete(request.score());
@@ -202,7 +203,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     public EnrollmentDetailResponse updateStatus(Long enrollmentId, UpdateEnrollmentStatusRequest request) {
         log.info("Updating enrollment status: enrollmentId={}, status={}", enrollmentId, request.status());
 
-        Enrollment enrollment = enrollmentRepository.findByIdAndTenantId(enrollmentId, getCurrentTenantId())
+        Enrollment enrollment = enrollmentRepository.findByIdAndTenantId(enrollmentId, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new EnrollmentNotFoundException(enrollmentId));
 
         enrollment.updateStatus(request.status());
@@ -217,7 +218,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     public void cancelEnrollment(Long enrollmentId, Long userId) {
         log.info("Cancelling enrollment: enrollmentId={}, userId={}", enrollmentId, userId);
 
-        Enrollment enrollment = enrollmentRepository.findByIdAndTenantId(enrollmentId, getCurrentTenantId())
+        Enrollment enrollment = enrollmentRepository.findByIdAndTenantId(enrollmentId, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new EnrollmentNotFoundException(enrollmentId));
 
         // 본인 확인
@@ -235,10 +236,5 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         enrollment.drop();
 
         log.info("Enrollment cancelled: enrollmentId={}", enrollmentId);
-    }
-
-    private Long getCurrentTenantId() {
-        // TODO: SecurityContext에서 tenantId 추출
-        return 1L;
     }
 }

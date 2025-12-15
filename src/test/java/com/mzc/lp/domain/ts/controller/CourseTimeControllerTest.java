@@ -1,4 +1,5 @@
 package com.mzc.lp.domain.ts.controller;
+import com.mzc.lp.common.support.TenantTestSupport;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mzc.lp.domain.ts.constant.CourseTimeStatus;
@@ -35,7 +36,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class CourseTimeControllerTest {
+class CourseTimeControllerTest extends TenantTestSupport {
 
     @Autowired
     private MockMvc mockMvc;

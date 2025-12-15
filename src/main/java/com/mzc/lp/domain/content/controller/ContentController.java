@@ -1,5 +1,6 @@
 package com.mzc.lp.domain.content.controller;
 
+import com.mzc.lp.common.context.TenantContext;
 import com.mzc.lp.common.dto.ApiResponse;
 import com.mzc.lp.common.security.UserPrincipal;
 import com.mzc.lp.domain.content.constant.ContentType;
@@ -8,9 +9,6 @@ import com.mzc.lp.domain.content.dto.request.UpdateContentRequest;
 import com.mzc.lp.domain.content.dto.response.ContentListResponse;
 import com.mzc.lp.domain.content.dto.response.ContentResponse;
 import com.mzc.lp.domain.content.service.ContentService;
-import com.mzc.lp.domain.user.entity.User;
-import com.mzc.lp.domain.user.exception.UserNotFoundException;
-import com.mzc.lp.domain.user.repository.UserRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
@@ -37,7 +35,6 @@ import java.nio.charset.StandardCharsets;
 public class ContentController {
 
     private final ContentService contentService;
-    private final UserRepository userRepository;
 
     @PostMapping("/upload")
     @PreAuthorize("hasAnyRole('DESIGNER', 'OPERATOR', 'TENANT_ADMIN')")
@@ -46,7 +43,7 @@ public class ContentController {
             @RequestParam(value = "folderId", required = false) Long folderId,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        Long tenantId = getTenantId(principal.id());
+        Long tenantId = TenantContext.getCurrentTenantId();
         ContentResponse response = contentService.uploadFile(file, folderId, tenantId);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
     }
@@ -57,7 +54,7 @@ public class ContentController {
             @Valid @RequestBody CreateExternalLinkRequest request,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        Long tenantId = getTenantId(principal.id());
+        Long tenantId = TenantContext.getCurrentTenantId();
         ContentResponse response = contentService.createExternalLink(request, tenantId);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
     }
@@ -70,7 +67,7 @@ public class ContentController {
             @PageableDefault(size = 20) Pageable pageable,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        Long tenantId = getTenantId(principal.id());
+        Long tenantId = TenantContext.getCurrentTenantId();
         Page<ContentListResponse> response = contentService.getContents(
                 tenantId, type, keyword, pageable);
         return ResponseEntity.ok(ApiResponse.success(response));
@@ -82,7 +79,7 @@ public class ContentController {
             @PathVariable Long contentId,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        Long tenantId = getTenantId(principal.id());
+        Long tenantId = TenantContext.getCurrentTenantId();
         ContentResponse response = contentService.getContent(contentId, tenantId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
@@ -93,7 +90,7 @@ public class ContentController {
             @PathVariable Long contentId,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        Long tenantId = getTenantId(principal.id());
+        Long tenantId = TenantContext.getCurrentTenantId();
         Resource resource = contentService.getFileAsResource(contentId, tenantId);
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
@@ -106,7 +103,7 @@ public class ContentController {
             @PathVariable Long contentId,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        Long tenantId = getTenantId(principal.id());
+        Long tenantId = TenantContext.getCurrentTenantId();
         ContentService.ContentDownloadInfo downloadInfo =
                 contentService.getFileForDownload(contentId, tenantId);
 
@@ -126,7 +123,7 @@ public class ContentController {
             @PathVariable Long contentId,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        Long tenantId = getTenantId(principal.id());
+        Long tenantId = TenantContext.getCurrentTenantId();
         ContentService.ContentDownloadInfo downloadInfo =
                 contentService.getFileForDownload(contentId, tenantId);
 
@@ -143,7 +140,7 @@ public class ContentController {
             @Valid @RequestBody UpdateContentRequest request,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        Long tenantId = getTenantId(principal.id());
+        Long tenantId = TenantContext.getCurrentTenantId();
         ContentResponse response = contentService.updateContent(contentId, request, tenantId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
@@ -155,7 +152,7 @@ public class ContentController {
             @RequestParam("file") MultipartFile file,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        Long tenantId = getTenantId(principal.id());
+        Long tenantId = TenantContext.getCurrentTenantId();
         ContentResponse response = contentService.replaceFile(contentId, file, tenantId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
@@ -166,14 +163,8 @@ public class ContentController {
             @PathVariable Long contentId,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        Long tenantId = getTenantId(principal.id());
+        Long tenantId = TenantContext.getCurrentTenantId();
         contentService.deleteContent(contentId, tenantId);
         return ResponseEntity.noContent().build();
-    }
-
-    private Long getTenantId(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(UserNotFoundException::new);
-        return user.getTenantId();
     }
 }

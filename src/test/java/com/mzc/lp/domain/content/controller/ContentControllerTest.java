@@ -1,4 +1,5 @@
 package com.mzc.lp.domain.content.controller;
+import com.mzc.lp.common.support.TenantTestSupport;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mzc.lp.domain.content.constant.ContentType;
@@ -33,7 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class ContentControllerTest {
+class ContentControllerTest extends TenantTestSupport {
 
     @Autowired
     private MockMvc mockMvc;

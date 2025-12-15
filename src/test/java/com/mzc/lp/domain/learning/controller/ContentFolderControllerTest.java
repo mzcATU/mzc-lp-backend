@@ -1,4 +1,5 @@
 package com.mzc.lp.domain.learning.controller;
+import com.mzc.lp.common.support.TenantTestSupport;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mzc.lp.domain.learning.dto.request.CreateContentFolderRequest;
@@ -27,7 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class ContentFolderControllerTest {
+class ContentFolderControllerTest extends TenantTestSupport {
 
     @Autowired
     private MockMvc mockMvc;
