@@ -18,19 +18,19 @@ public interface CourseItemRepository extends JpaRepository<CourseItem, Long> {
 
     List<CourseItem> findByCourseIdAndTenantIdAndParentId(Long courseId, Long tenantId, Long parentId);
 
-    @Query("SELECT ci FROM CourseItem ci WHERE ci.course.id = :courseId AND ci.tenantId = :tenantId ORDER BY ci.depth, ci.sortOrder")
+    @Query("SELECT ci FROM CourseItem ci WHERE ci.course.id = :courseId AND ci.tenantId = :tenantId ORDER BY ci.depth, ci.id")
     List<CourseItem> findByCourseIdOrderByDepthAndSortOrder(@Param("courseId") Long courseId, @Param("tenantId") Long tenantId);
 
-    @Query("SELECT ci FROM CourseItem ci WHERE ci.course.id = :courseId AND ci.tenantId = :tenantId AND ci.learningObjectId IS NOT NULL ORDER BY ci.sortOrder")
+    @Query("SELECT ci FROM CourseItem ci WHERE ci.course.id = :courseId AND ci.tenantId = :tenantId AND ci.learningObjectId IS NOT NULL ORDER BY ci.id")
     List<CourseItem> findItemsOnlyByCourseId(@Param("courseId") Long courseId, @Param("tenantId") Long tenantId);
 
-    @Query("SELECT ci FROM CourseItem ci WHERE ci.course.id = :courseId AND ci.tenantId = :tenantId AND ci.learningObjectId IS NULL ORDER BY ci.depth, ci.sortOrder")
+    @Query("SELECT ci FROM CourseItem ci WHERE ci.course.id = :courseId AND ci.tenantId = :tenantId AND ci.learningObjectId IS NULL ORDER BY ci.depth, ci.id")
     List<CourseItem> findFoldersOnlyByCourseId(@Param("courseId") Long courseId, @Param("tenantId") Long tenantId);
 
     @Query("SELECT ci FROM CourseItem ci LEFT JOIN FETCH ci.children WHERE ci.id = :id AND ci.tenantId = :tenantId")
     Optional<CourseItem> findByIdWithChildren(@Param("id") Long id, @Param("tenantId") Long tenantId);
 
-    @Query("SELECT DISTINCT ci FROM CourseItem ci LEFT JOIN FETCH ci.children WHERE ci.course.id = :courseId AND ci.tenantId = :tenantId AND ci.parent IS NULL ORDER BY ci.sortOrder")
+    @Query("SELECT DISTINCT ci FROM CourseItem ci LEFT JOIN FETCH ci.children WHERE ci.course.id = :courseId AND ci.tenantId = :tenantId AND ci.parent IS NULL ORDER BY ci.id")
     List<CourseItem> findRootItemsWithChildren(@Param("courseId") Long courseId, @Param("tenantId") Long tenantId);
 
     boolean existsByIdAndTenantId(Long id, Long tenantId);
