@@ -22,6 +22,8 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
 
     Page<Course> findByTenantIdAndCategoryId(Long tenantId, Long categoryId, Pageable pageable);
 
+    Page<Course> findByTenantIdAndTitleContainingAndCategoryId(Long tenantId, String keyword, Long categoryId, Pageable pageable);
+
     List<Course> findByTenantIdAndInstructorId(Long tenantId, Long instructorId);
 
     @Query("SELECT c FROM Course c LEFT JOIN FETCH c.items WHERE c.id = :id AND c.tenantId = :tenantId")
