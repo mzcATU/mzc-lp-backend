@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -42,4 +43,18 @@ public interface CourseTimeRepository extends JpaRepository<CourseTime, Long> {
     );
 
     boolean existsByCmCourseIdAndTenantIdAndStatus(Long cmCourseId, Long tenantId, CourseTimeStatus status);
+
+    // ===== 배치 Job용 쿼리 =====
+
+    /**
+     * RECRUITING 상태이면서 classStartDate가 도래한 차수 조회
+     * (상시 모집 차수는 classStartDate가 9999-12-31이므로 자연스럽게 제외)
+     */
+    List<CourseTime> findByStatusAndClassStartDateLessThanEqual(CourseTimeStatus status, LocalDate today);
+
+    /**
+     * ONGOING 상태이면서 classEndDate가 경과한 차수 조회
+     * (상시 모집 차수는 classEndDate가 9999-12-31이므로 자연스럽게 제외)
+     */
+    List<CourseTime> findByStatusAndClassEndDateLessThan(CourseTimeStatus status, LocalDate today);
 }
