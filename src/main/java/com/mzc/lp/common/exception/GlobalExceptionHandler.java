@@ -42,6 +42,14 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ErrorCode.ACCESS_DENIED));
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    protected ResponseEntity<ApiResponse<Void>> handleIllegalArgumentException(IllegalArgumentException e) {
+        log.error("IllegalArgumentException: {}", e.getMessage());
+        return ResponseEntity
+                .status(ErrorCode.INVALID_INPUT_VALUE.getStatus())
+                .body(ApiResponse.error(ErrorCode.INVALID_INPUT_VALUE, e.getMessage()));
+    }
+
     @ExceptionHandler(Exception.class)
     protected ResponseEntity<ApiResponse<Void>> handleException(Exception e) {
         log.error("Exception: {}", e.getMessage(), e);
