@@ -14,6 +14,7 @@ import com.mzc.lp.domain.content.exception.UnsupportedContentTypeException;
 import com.mzc.lp.domain.content.repository.ContentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
@@ -23,6 +24,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Set;
 
 @Slf4j
@@ -33,7 +36,11 @@ public class ContentServiceImpl implements ContentService {
 
     private final ContentRepository contentRepository;
     private final FileStorageService fileStorageService;
+    private final ThumbnailService thumbnailService;
     private final ApplicationEventPublisher eventPublisher;
+
+    @Value("${file.upload-dir:./uploads}")
+    private String uploadDir;
 
     private static final Set<String> SUPPORTED_YOUTUBE_PATTERNS = Set.of(
             "youtube.com/watch", "youtu.be/", "youtube.com/embed"
@@ -66,6 +73,9 @@ public class ContentServiceImpl implements ContentService {
                 file.getSize(),
                 filePath
         );
+
+        // 썸네일 자동 생성
+        generateAndSetThumbnail(content, filePath, contentType);
 
         Content savedContent = contentRepository.save(content);
         log.info("Content created: id={}, type={}, file={}", savedContent.getId(), contentType, originalFileName);
@@ -138,14 +148,21 @@ public class ContentServiceImpl implements ContentService {
         }
 
         String oldFilePath = content.getFilePath();
+        String oldThumbnailPath = content.getThumbnailPath();
         String originalFileName = StringUtils.cleanPath(file.getOriginalFilename());
         String storedFileName = fileStorageService.generateStoredFileName(originalFileName);
         String newFilePath = fileStorageService.storeFile(file);
 
         content.replaceFile(originalFileName, storedFileName, file.getSize(), newFilePath);
 
+        // 썸네일 재생성
+        generateAndSetThumbnail(content, newFilePath, content.getContentType());
+
         if (oldFilePath != null) {
             fileStorageService.deleteFile(oldFilePath);
+        }
+        if (oldThumbnailPath != null) {
+            thumbnailService.deleteThumbnail(oldThumbnailPath);
         }
 
         log.info("Content file replaced: id={}, newFile={}", contentId, originalFileName);
@@ -159,6 +176,9 @@ public class ContentServiceImpl implements ContentService {
 
         if (content.getFilePath() != null) {
             fileStorageService.deleteFile(content.getFilePath());
+        }
+        if (content.getThumbnailPath() != null) {
+            thumbnailService.deleteThumbnail(content.getThumbnailPath());
         }
 
         contentRepository.delete(content);
@@ -250,5 +270,21 @@ public class ContentServiceImpl implements ContentService {
             };
             default -> "application/octet-stream";
         };
+    }
+
+    private void generateAndSetThumbnail(Content content, String filePath, ContentType contentType) {
+        try {
+            // /uploads/... 형태의 경로에서 실제 파일 경로로 변환
+            String relativePath = filePath.startsWith("/uploads/")
+                    ? filePath.substring("/uploads/".length())
+                    : filePath;
+
+            Path absolutePath = Paths.get(uploadDir).toAbsolutePath().normalize().resolve(relativePath);
+
+            thumbnailService.generateThumbnail(absolutePath, contentType)
+                    .ifPresent(content::setThumbnailPath);
+        } catch (Exception e) {
+            log.warn("Failed to generate thumbnail for content: {}", filePath, e);
+        }
     }
 }
