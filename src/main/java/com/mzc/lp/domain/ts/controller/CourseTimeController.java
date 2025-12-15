@@ -5,8 +5,10 @@ import com.mzc.lp.common.security.UserPrincipal;
 import com.mzc.lp.domain.ts.constant.CourseTimeStatus;
 import com.mzc.lp.domain.ts.dto.request.CreateCourseTimeRequest;
 import com.mzc.lp.domain.ts.dto.request.UpdateCourseTimeRequest;
+import com.mzc.lp.domain.ts.dto.response.CapacityResponse;
 import com.mzc.lp.domain.ts.dto.response.CourseTimeDetailResponse;
 import com.mzc.lp.domain.ts.dto.response.CourseTimeResponse;
+import com.mzc.lp.domain.ts.dto.response.PriceResponse;
 import com.mzc.lp.domain.ts.service.CourseTimeService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -110,6 +112,24 @@ public class CourseTimeController {
             @PathVariable Long id
     ) {
         CourseTimeDetailResponse response = courseTimeService.archiveCourseTime(id);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    // ========== Public API (permitAll) ==========
+
+    @GetMapping("/{id}/capacity")
+    public ResponseEntity<ApiResponse<CapacityResponse>> getCapacity(
+            @PathVariable Long id
+    ) {
+        CapacityResponse response = courseTimeService.getCapacity(id);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @GetMapping("/{id}/price")
+    public ResponseEntity<ApiResponse<PriceResponse>> getPrice(
+            @PathVariable Long id
+    ) {
+        PriceResponse response = courseTimeService.getPrice(id);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 }
