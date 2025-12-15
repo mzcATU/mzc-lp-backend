@@ -59,7 +59,13 @@ public enum ErrorCode {
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "A001", "Unauthorized"),
     ACCESS_DENIED(HttpStatus.FORBIDDEN, "A002", "Access denied"),
     INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED, "A003", "Invalid email or password"),
-    INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "A004", "Invalid or expired token");
+    INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "A004", "Invalid or expired token"),
+
+    // Instructor (IIS)
+    INSTRUCTOR_ASSIGNMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "IIS001", "Instructor assignment not found"),
+    INSTRUCTOR_ALREADY_ASSIGNED(HttpStatus.CONFLICT, "IIS002", "Instructor already assigned to this course time"),
+    MAIN_INSTRUCTOR_ALREADY_EXISTS(HttpStatus.CONFLICT, "IIS003", "Main instructor already exists for this course time"),
+    CANNOT_MODIFY_INACTIVE_ASSIGNMENT(HttpStatus.BAD_REQUEST, "IIS004", "Cannot modify inactive assignment");
 
     private final HttpStatus status;
     private final String code;
