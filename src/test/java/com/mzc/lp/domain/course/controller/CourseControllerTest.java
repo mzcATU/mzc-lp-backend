@@ -483,7 +483,7 @@ class CourseControllerTest {
                     .andDo(print())
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.success").value(false))
-                    .andExpect(jsonPath("$.error.code").value("CM_COURSE_NOT_FOUND"));
+                    .andExpect(jsonPath("$.error.code").value("CM001"));
         }
     }
 
@@ -577,7 +577,7 @@ class CourseControllerTest {
                     .andDo(print())
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.success").value(false))
-                    .andExpect(jsonPath("$.error.code").value("CM_COURSE_NOT_FOUND"));
+                    .andExpect(jsonPath("$.error.code").value("CM001"));
         }
 
         @Test
@@ -661,7 +661,7 @@ class CourseControllerTest {
                     .andDo(print())
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.success").value(false))
-                    .andExpect(jsonPath("$.error.code").value("CM_COURSE_NOT_FOUND"));
+                    .andExpect(jsonPath("$.error.code").value("CM001"));
         }
 
         @Test

@@ -66,4 +66,21 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
 
     // 사용자별 전체 카운트
     long countByUserIdAndTenantId(Long userId, Long tenantId);
+
+    // ==================== 통계 조회 ====================
+
+    // 차수별 평균 진도율
+    @Query("SELECT AVG(e.progressPercent) FROM Enrollment e WHERE e.courseTimeId = :courseTimeId AND e.tenantId = :tenantId")
+    Double findAverageProgressByCourseTimeId(@Param("courseTimeId") Long courseTimeId, @Param("tenantId") Long tenantId);
+
+    // 차수별 전체 카운트
+    long countByCourseTimeIdAndTenantId(Long courseTimeId, Long tenantId);
+
+    // 사용자별 평균 진도율
+    @Query("SELECT AVG(e.progressPercent) FROM Enrollment e WHERE e.userId = :userId AND e.tenantId = :tenantId")
+    Double findAverageProgressByUserId(@Param("userId") Long userId, @Param("tenantId") Long tenantId);
+
+    // 사용자별 평균 점수 (수료한 과정만)
+    @Query("SELECT AVG(e.score) FROM Enrollment e WHERE e.userId = :userId AND e.tenantId = :tenantId AND e.status = 'COMPLETED' AND e.score IS NOT NULL")
+    Double findAverageScoreByUserId(@Param("userId") Long userId, @Param("tenantId") Long tenantId);
 }
