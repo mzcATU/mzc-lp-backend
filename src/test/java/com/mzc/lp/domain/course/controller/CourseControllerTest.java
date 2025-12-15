@@ -110,20 +110,7 @@ class CourseControllerTest {
                 CourseType.ONLINE,
                 10,
                 1L,
-                1L
-        );
-        return courseRepository.save(course);
-    }
-
-    private Course createTestCourse(String title, Long instructorId) {
-        Course course = Course.create(
-                title,
-                "테스트 강의 설명",
-                CourseLevel.BEGINNER,
-                CourseType.ONLINE,
-                10,
-                1L,
-                instructorId
+                null
         );
         return courseRepository.save(course);
     }
@@ -147,7 +134,7 @@ class CourseControllerTest {
                     CourseType.ONLINE,
                     20,
                     1L,
-                    1L
+                    null
             );
 
             // when & then
@@ -178,7 +165,7 @@ class CourseControllerTest {
                     CourseType.BLENDED,
                     30,
                     2L,
-                    2L
+                    null
             );
 
             // when & then
@@ -232,7 +219,7 @@ class CourseControllerTest {
                     CourseType.ONLINE,
                     10,
                     1L,
-                    1L
+                    null
             );
 
             // when & then
@@ -258,7 +245,7 @@ class CourseControllerTest {
                     CourseType.ONLINE,
                     10,
                     1L,
-                    1L
+                    null
             );
 
             // when & then
@@ -285,7 +272,7 @@ class CourseControllerTest {
                     CourseType.ONLINE,
                     10,
                     1L,
-                    1L
+                    null
             );
 
             // when & then
@@ -399,9 +386,9 @@ class CourseControllerTest {
             createOperatorUser();
             String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
 
-            Course course1 = Course.create("Spring Boot", "설명", CourseLevel.BEGINNER, CourseType.ONLINE, 10, 1L, 1L);
-            Course course2 = Course.create("React", "설명", CourseLevel.BEGINNER, CourseType.ONLINE, 10, 2L, 1L);
-            Course course3 = Course.create("Docker", "설명", CourseLevel.BEGINNER, CourseType.ONLINE, 10, 1L, 1L);
+            Course course1 = Course.create("Spring Boot", "설명", CourseLevel.BEGINNER, CourseType.ONLINE, 10, 1L, null);
+            Course course2 = Course.create("React", "설명", CourseLevel.BEGINNER, CourseType.ONLINE, 10, 2L, null);
+            Course course3 = Course.create("Docker", "설명", CourseLevel.BEGINNER, CourseType.ONLINE, 10, 1L, null);
             courseRepository.save(course1);
             courseRepository.save(course2);
             courseRepository.save(course3);
@@ -500,49 +487,6 @@ class CourseControllerTest {
         }
     }
 
-    // ==================== 강사별 강의 목록 조회 테스트 ====================
-
-    @Nested
-    @DisplayName("GET /api/courses/instructor/{instructorId} - 강사별 강의 목록")
-    class GetCoursesByInstructor {
-
-        @Test
-        @DisplayName("성공 - 강사별 강의 목록 조회")
-        void getCoursesByInstructor_success() throws Exception {
-            // given
-            createOperatorUser();
-            String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
-            createTestCourse("Spring Boot 기초", 100L);
-            createTestCourse("Spring Security", 100L);
-            createTestCourse("React 입문", 200L);
-
-            // when & then
-            mockMvc.perform(get("/api/courses/instructor/{instructorId}", 100L)
-                            .header("Authorization", "Bearer " + accessToken))
-                    .andDo(print())
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.success").value(true))
-                    .andExpect(jsonPath("$.data.totalElements").value(2));
-        }
-
-        @Test
-        @DisplayName("성공 - 강의가 없는 강사")
-        void getCoursesByInstructor_success_empty() throws Exception {
-            // given
-            createOperatorUser();
-            String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
-            createTestCourse("Spring Boot 기초", 100L);
-
-            // when & then
-            mockMvc.perform(get("/api/courses/instructor/{instructorId}", 999L)
-                            .header("Authorization", "Bearer " + accessToken))
-                    .andDo(print())
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.success").value(true))
-                    .andExpect(jsonPath("$.data.totalElements").value(0));
-        }
-    }
-
     // ==================== 강의 수정 테스트 ====================
 
     @Nested
@@ -563,7 +507,7 @@ class CourseControllerTest {
                     CourseType.BLENDED,
                     50,
                     2L,
-                    2L
+                    null
             );
 
             // when & then

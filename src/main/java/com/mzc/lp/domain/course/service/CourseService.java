@@ -33,14 +33,6 @@ public interface CourseService {
     CourseDetailResponse getCourseDetail(Long courseId);
 
     /**
-     * 강사별 강의 목록 조회
-     * @param instructorId 강사 ID
-     * @param pageable 페이징 정보
-     * @return 강의 목록 페이지
-     */
-    Page<CourseResponse> getCoursesByInstructor(Long instructorId, Pageable pageable);
-
-    /**
      * 강의 수정
      * @param courseId 강의 ID
      * @param request 수정 요청 DTO

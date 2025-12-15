@@ -40,23 +40,19 @@ public class Course extends TenantEntity {
     @Column
     private Long categoryId;
 
-    @Column
-    private Long instructorId;
-
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CourseItem> items = new ArrayList<>();
 
     // ===== 정적 팩토리 메서드 =====
-    public static Course create(String title, Long instructorId) {
+    public static Course create(String title) {
         Course course = new Course();
         course.title = title;
-        course.instructorId = instructorId;
         return course;
     }
 
     public static Course create(String title, String description, CourseLevel level,
                                 CourseType type, Integer estimatedHours,
-                                Long categoryId, Long instructorId) {
+                                Long categoryId, String thumbnailUrl) {
         Course course = new Course();
         course.title = title;
         course.description = description;
@@ -64,7 +60,7 @@ public class Course extends TenantEntity {
         course.type = type;
         course.estimatedHours = estimatedHours;
         course.categoryId = categoryId;
-        course.instructorId = instructorId;
+        course.thumbnailUrl = thumbnailUrl;
         return course;
     }
 
@@ -98,13 +94,9 @@ public class Course extends TenantEntity {
         this.categoryId = categoryId;
     }
 
-    public void updateInstructorId(Long instructorId) {
-        this.instructorId = instructorId;
-    }
-
     public void update(String title, String description, CourseLevel level,
                        CourseType type, Integer estimatedHours,
-                       Long categoryId, Long instructorId) {
+                       Long categoryId, String thumbnailUrl) {
         if (title != null) {
             updateTitle(title);
         }
@@ -113,7 +105,7 @@ public class Course extends TenantEntity {
         this.type = type;
         this.estimatedHours = estimatedHours;
         this.categoryId = categoryId;
-        this.instructorId = instructorId;
+        this.thumbnailUrl = thumbnailUrl;
     }
 
     // ===== 연관관계 편의 메서드 =====

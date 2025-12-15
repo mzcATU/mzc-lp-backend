@@ -15,7 +15,6 @@ public record CourseResponse(
         CourseType type,
         Integer estimatedHours,
         Long categoryId,
-        Long instructorId,
         Instant createdAt,
         Instant updatedAt
 ) {
@@ -29,7 +28,6 @@ public record CourseResponse(
                 course.getType(),
                 course.getEstimatedHours(),
                 course.getCategoryId(),
-                course.getInstructorId(),
                 course.getCreatedAt(),
                 course.getUpdatedAt()
         );
