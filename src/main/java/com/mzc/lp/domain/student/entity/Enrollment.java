@@ -8,7 +8,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Entity
 @Table(name = "sis_enrollments",
@@ -37,7 +37,7 @@ public class Enrollment extends TenantEntity {
     private Long courseTimeId;
 
     @Column(name = "enrolled_at", nullable = false)
-    private LocalDateTime enrolledAt;
+    private Instant enrolledAt;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -53,7 +53,7 @@ public class Enrollment extends TenantEntity {
     private Integer score;
 
     @Column(name = "completed_at")
-    private LocalDateTime completedAt;
+    private Instant completedAt;
 
     @Column(name = "enrolled_by")
     private Long enrolledBy;
@@ -63,7 +63,7 @@ public class Enrollment extends TenantEntity {
         Enrollment enrollment = new Enrollment();
         enrollment.userId = userId;
         enrollment.courseTimeId = courseTimeId;
-        enrollment.enrolledAt = LocalDateTime.now();
+        enrollment.enrolledAt = Instant.now();
         enrollment.type = EnrollmentType.VOLUNTARY;
         enrollment.status = EnrollmentStatus.ENROLLED;
         enrollment.progressPercent = 0;
@@ -76,7 +76,7 @@ public class Enrollment extends TenantEntity {
         Enrollment enrollment = new Enrollment();
         enrollment.userId = userId;
         enrollment.courseTimeId = courseTimeId;
-        enrollment.enrolledAt = LocalDateTime.now();
+        enrollment.enrolledAt = Instant.now();
         enrollment.type = EnrollmentType.MANDATORY;
         enrollment.status = EnrollmentStatus.ENROLLED;
         enrollment.progressPercent = 0;
@@ -96,7 +96,7 @@ public class Enrollment extends TenantEntity {
     public void complete(Integer score) {
         this.status = EnrollmentStatus.COMPLETED;
         this.score = score;
-        this.completedAt = LocalDateTime.now();
+        this.completedAt = Instant.now();
         this.progressPercent = 100;
     }
 
@@ -111,7 +111,7 @@ public class Enrollment extends TenantEntity {
     public void updateStatus(EnrollmentStatus status) {
         this.status = status;
         if (status == EnrollmentStatus.COMPLETED) {
-            this.completedAt = LocalDateTime.now();
+            this.completedAt = Instant.now();
         }
     }
 
