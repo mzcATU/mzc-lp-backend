@@ -4,9 +4,12 @@ import com.mzc.lp.domain.ts.constant.CourseTimeStatus;
 import com.mzc.lp.domain.ts.constant.EnrollmentMethod;
 import com.mzc.lp.domain.ts.dto.request.CreateCourseTimeRequest;
 import com.mzc.lp.domain.ts.dto.request.UpdateCourseTimeRequest;
+import com.mzc.lp.domain.ts.dto.response.CapacityResponse;
 import com.mzc.lp.domain.ts.dto.response.CourseTimeDetailResponse;
 import com.mzc.lp.domain.ts.dto.response.CourseTimeResponse;
+import com.mzc.lp.domain.ts.dto.response.PriceResponse;
 import com.mzc.lp.domain.ts.entity.CourseTime;
+import com.mzc.lp.domain.ts.exception.CapacityExceededException;
 import com.mzc.lp.domain.ts.exception.CourseTimeNotFoundException;
 import com.mzc.lp.domain.ts.exception.InvalidDateRangeException;
 import com.mzc.lp.domain.ts.exception.InvalidStatusTransitionException;
@@ -310,5 +313,62 @@ public class CourseTimeServiceImpl implements CourseTimeService {
         // TODO: SecurityContext에서 tenantId 추출
         // 현재는 임시로 1L 반환
         return 1L;
+    }
+
+    // ========== 정원 관리 (SIS에서 호출) ==========
+
+    @Override
+    @Transactional
+    public void occupySeat(Long courseTimeId) {
+        log.info("Occupying seat: courseTimeId={}", courseTimeId);
+
+        // [R04] 비관적 락으로 조회
+        CourseTime courseTime = courseTimeRepository.findByIdWithLock(courseTimeId)
+                .orElseThrow(() -> new CourseTimeNotFoundException(courseTimeId));
+
+        // [R02] capacity = null이면 무제한
+        if (!courseTime.hasUnlimitedCapacity() && !courseTime.hasAvailableSeats()) {
+            throw new CapacityExceededException(courseTime.getCapacity(), courseTime.getCurrentEnrollment());
+        }
+
+        courseTime.incrementEnrollment();
+        log.info("Seat occupied: courseTimeId={}, currentEnrollment={}",
+                courseTimeId, courseTime.getCurrentEnrollment());
+    }
+
+    @Override
+    @Transactional
+    public void releaseSeat(Long courseTimeId) {
+        log.info("Releasing seat: courseTimeId={}", courseTimeId);
+
+        // [R04] 비관적 락으로 조회
+        CourseTime courseTime = courseTimeRepository.findByIdWithLock(courseTimeId)
+                .orElseThrow(() -> new CourseTimeNotFoundException(courseTimeId));
+
+        courseTime.decrementEnrollment();
+        log.info("Seat released: courseTimeId={}, currentEnrollment={}",
+                courseTimeId, courseTime.getCurrentEnrollment());
+    }
+
+    // ========== Public API ==========
+
+    @Override
+    public CapacityResponse getCapacity(Long id) {
+        log.debug("Getting capacity: id={}", id);
+
+        CourseTime courseTime = courseTimeRepository.findById(id)
+                .orElseThrow(() -> new CourseTimeNotFoundException(id));
+
+        return CapacityResponse.from(courseTime);
+    }
+
+    @Override
+    public PriceResponse getPrice(Long id) {
+        log.debug("Getting price: id={}", id);
+
+        CourseTime courseTime = courseTimeRepository.findById(id)
+                .orElseThrow(() -> new CourseTimeNotFoundException(id));
+
+        return PriceResponse.from(courseTime);
     }
 }

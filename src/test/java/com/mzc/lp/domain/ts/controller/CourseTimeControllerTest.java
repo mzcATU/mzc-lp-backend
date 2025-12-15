@@ -624,4 +624,142 @@ class CourseTimeControllerTest {
                     .andExpect(jsonPath("$.data.status").value("ARCHIVED"));
         }
     }
+
+    // ==================== Public API 테스트 ====================
+
+    @Nested
+    @DisplayName("GET /api/ts/course-times/{id}/capacity - 정원 조회")
+    class GetCapacity {
+
+        @Test
+        @DisplayName("성공 - 정원 조회 (정원 제한 있음)")
+        void getCapacity_success_limited() throws Exception {
+            // given
+            createNormalUser();
+            CourseTime courseTime = createTestCourseTime();
+            String accessToken = loginAndGetAccessToken("user@example.com", "Password123!");
+
+            // when & then
+            mockMvc.perform(get("/api/ts/course-times/{id}/capacity", courseTime.getId())
+                            .header("Authorization", "Bearer " + accessToken))
+                    .andDo(print())
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.courseTimeId").value(courseTime.getId()))
+                    .andExpect(jsonPath("$.data.capacity").value(30))
+                    .andExpect(jsonPath("$.data.currentEnrollment").value(0))
+                    .andExpect(jsonPath("$.data.availableSeats").value(30))
+                    .andExpect(jsonPath("$.data.unlimited").value(false));
+        }
+
+        @Test
+        @DisplayName("성공 - 정원 조회 (무제한)")
+        void getCapacity_success_unlimited() throws Exception {
+            // given
+            createNormalUser();
+            CourseTime courseTime = CourseTime.create(
+                    "무제한 정원 차수",
+                    DeliveryType.ONLINE,
+                    LocalDate.now(),
+                    LocalDate.now().plusDays(7),
+                    LocalDate.now().plusDays(7),
+                    LocalDate.now().plusDays(30),
+                    null,  // capacity = null (무제한)
+                    null,
+                    EnrollmentMethod.FIRST_COME,
+                    80,
+                    new BigDecimal("100000"),
+                    false,
+                    null,
+                    true,
+                    1L
+            );
+            courseTimeRepository.save(courseTime);
+            String accessToken = loginAndGetAccessToken("user@example.com", "Password123!");
+
+            // when & then
+            mockMvc.perform(get("/api/ts/course-times/{id}/capacity", courseTime.getId())
+                            .header("Authorization", "Bearer " + accessToken))
+                    .andDo(print())
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.capacity").isEmpty())
+                    .andExpect(jsonPath("$.data.unlimited").value(true))
+                    .andExpect(jsonPath("$.data.availableSeats").isEmpty());
+        }
+
+        @Test
+        @DisplayName("실패 - 존재하지 않는 차수")
+        void getCapacity_fail_notFound() throws Exception {
+            // given
+            createNormalUser();
+            String accessToken = loginAndGetAccessToken("user@example.com", "Password123!");
+
+            // when & then
+            mockMvc.perform(get("/api/ts/course-times/{id}/capacity", 99999L)
+                            .header("Authorization", "Bearer " + accessToken))
+                    .andDo(print())
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.error.code").value("TS001"));
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /api/ts/course-times/{id}/price - 가격 조회")
+    class GetPrice {
+
+        @Test
+        @DisplayName("성공 - 유료 차수 가격 조회")
+        void getPrice_success_paid() throws Exception {
+            // given
+            createNormalUser();
+            CourseTime courseTime = createTestCourseTime();
+            String accessToken = loginAndGetAccessToken("user@example.com", "Password123!");
+
+            // when & then
+            mockMvc.perform(get("/api/ts/course-times/{id}/price", courseTime.getId())
+                            .header("Authorization", "Bearer " + accessToken))
+                    .andDo(print())
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.courseTimeId").value(courseTime.getId()))
+                    .andExpect(jsonPath("$.data.price").value(100000))
+                    .andExpect(jsonPath("$.data.free").value(false));
+        }
+
+        @Test
+        @DisplayName("성공 - 무료 차수 가격 조회")
+        void getPrice_success_free() throws Exception {
+            // given
+            createNormalUser();
+            CourseTime courseTime = CourseTime.create(
+                    "무료 차수",
+                    DeliveryType.ONLINE,
+                    LocalDate.now(),
+                    LocalDate.now().plusDays(7),
+                    LocalDate.now().plusDays(7),
+                    LocalDate.now().plusDays(30),
+                    30,
+                    null,
+                    EnrollmentMethod.FIRST_COME,
+                    80,
+                    BigDecimal.ZERO,
+                    true,  // isFree = true
+                    null,
+                    true,
+                    1L
+            );
+            courseTimeRepository.save(courseTime);
+            String accessToken = loginAndGetAccessToken("user@example.com", "Password123!");
+
+            // when & then
+            mockMvc.perform(get("/api/ts/course-times/{id}/price", courseTime.getId())
+                            .header("Authorization", "Bearer " + accessToken))
+                    .andDo(print())
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.price").value(0))
+                    .andExpect(jsonPath("$.data.free").value(true));
+        }
+    }
 }
