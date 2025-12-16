@@ -1,4 +1,5 @@
 package com.mzc.lp.domain.ts.repository;
+import com.mzc.lp.common.support.TenantTestSupport;
 
 import com.mzc.lp.domain.ts.constant.CourseTimeStatus;
 import com.mzc.lp.domain.ts.constant.DeliveryType;
@@ -26,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DataJpaTest
 @Import(JpaConfig.class)
 @ActiveProfiles("test")
-class CourseTimeRepositoryTest {
+class CourseTimeRepositoryTest extends TenantTestSupport {
 
     @Autowired
     private CourseTimeRepository courseTimeRepository;

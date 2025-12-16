@@ -1,5 +1,6 @@
 package com.mzc.lp.domain.student.service;
 
+import com.mzc.lp.common.context.TenantContext;
 import com.mzc.lp.domain.student.constant.EnrollmentStatus;
 import com.mzc.lp.domain.student.dto.response.CourseTimeEnrollmentStatsResponse;
 import com.mzc.lp.domain.student.dto.response.UserEnrollmentStatsResponse;
@@ -25,7 +26,7 @@ public class EnrollmentStatsServiceImpl implements EnrollmentStatsService {
 
     @Override
     public CourseTimeEnrollmentStatsResponse getCourseTimeStats(Long courseTimeId) {
-        Long tenantId = getCurrentTenantId();
+        Long tenantId = TenantContext.getCurrentTenantId();
 
         // 차수 존재 확인
         courseTimeRepository.findByIdAndTenantId(courseTimeId, tenantId)
@@ -63,7 +64,7 @@ public class EnrollmentStatsServiceImpl implements EnrollmentStatsService {
 
     @Override
     public UserEnrollmentStatsResponse getUserStats(Long userId) {
-        Long tenantId = getCurrentTenantId();
+        Long tenantId = TenantContext.getCurrentTenantId();
 
         // 사용자 존재 확인
         userRepository.findById(userId)
@@ -102,10 +103,5 @@ public class EnrollmentStatsServiceImpl implements EnrollmentStatsService {
                 averageScore,
                 averageProgress
         );
-    }
-
-    private Long getCurrentTenantId() {
-        // TODO: SecurityContext에서 tenantId 추출
-        return 1L;
     }
 }

@@ -72,7 +72,14 @@ public enum ErrorCode {
     INSTRUCTOR_ASSIGNMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "IIS001", "Instructor assignment not found"),
     INSTRUCTOR_ALREADY_ASSIGNED(HttpStatus.CONFLICT, "IIS002", "Instructor already assigned to this course time"),
     MAIN_INSTRUCTOR_ALREADY_EXISTS(HttpStatus.CONFLICT, "IIS003", "Main instructor already exists for this course time"),
-    CANNOT_MODIFY_INACTIVE_ASSIGNMENT(HttpStatus.BAD_REQUEST, "IIS004", "Cannot modify inactive assignment");
+    CANNOT_MODIFY_INACTIVE_ASSIGNMENT(HttpStatus.BAD_REQUEST, "IIS004", "Cannot modify inactive assignment"),
+
+    // Tenant (TN)
+    TENANT_NOT_FOUND(HttpStatus.NOT_FOUND, "TN001", "Tenant not found"),
+    DUPLICATE_TENANT_CODE(HttpStatus.CONFLICT, "TN002", "Tenant code already exists"),
+    DUPLICATE_SUBDOMAIN(HttpStatus.CONFLICT, "TN003", "Subdomain already exists"),
+    DUPLICATE_CUSTOM_DOMAIN(HttpStatus.CONFLICT, "TN004", "Custom domain already exists"),
+    INVALID_TENANT_STATUS(HttpStatus.BAD_REQUEST, "TN005", "Invalid tenant status transition");
 
     private final HttpStatus status;
     private final String code;

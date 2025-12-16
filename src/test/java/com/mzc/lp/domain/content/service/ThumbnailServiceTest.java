@@ -1,4 +1,5 @@
 package com.mzc.lp.domain.content.service;
+import com.mzc.lp.common.support.TenantTestSupport;
 
 import com.mzc.lp.domain.content.constant.ContentType;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,7 +18,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class ThumbnailServiceTest {
+class ThumbnailServiceTest extends TenantTestSupport {
 
     private ThumbnailService thumbnailService;
 

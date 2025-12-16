@@ -1,4 +1,5 @@
 package com.mzc.lp.domain.iis.repository;
+import com.mzc.lp.common.support.TenantTestSupport;
 
 import com.mzc.lp.common.config.JpaConfig;
 import com.mzc.lp.domain.iis.constant.AssignmentStatus;
@@ -22,7 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DataJpaTest
 @Import(JpaConfig.class)
 @ActiveProfiles("test")
-class AssignmentHistoryRepositoryTest {
+class AssignmentHistoryRepositoryTest extends TenantTestSupport {
 
     @Autowired
     private AssignmentHistoryRepository historyRepository;

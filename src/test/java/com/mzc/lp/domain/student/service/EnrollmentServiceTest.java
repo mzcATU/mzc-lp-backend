@@ -1,4 +1,5 @@
 package com.mzc.lp.domain.student.service;
+import com.mzc.lp.common.support.TenantTestSupport;
 
 import com.mzc.lp.domain.student.constant.EnrollmentStatus;
 import com.mzc.lp.domain.student.constant.EnrollmentType;
@@ -45,7 +46,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class EnrollmentServiceTest {
+class EnrollmentServiceTest extends TenantTestSupport {
 
     @InjectMocks
     private EnrollmentServiceImpl enrollmentService;

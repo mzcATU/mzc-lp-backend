@@ -1,15 +1,13 @@
 package com.mzc.lp.domain.learning.controller;
 
 import com.mzc.lp.common.dto.ApiResponse;
+import com.mzc.lp.common.context.TenantContext;
 import com.mzc.lp.common.security.UserPrincipal;
 import com.mzc.lp.domain.learning.dto.request.CreateContentFolderRequest;
 import com.mzc.lp.domain.learning.dto.request.MoveContentFolderRequest;
 import com.mzc.lp.domain.learning.dto.request.UpdateContentFolderRequest;
 import com.mzc.lp.domain.learning.dto.response.ContentFolderResponse;
 import com.mzc.lp.domain.learning.service.ContentFolderService;
-import com.mzc.lp.domain.user.entity.User;
-import com.mzc.lp.domain.user.exception.UserNotFoundException;
-import com.mzc.lp.domain.user.repository.UserRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -28,7 +26,6 @@ import java.util.List;
 public class ContentFolderController {
 
     private final ContentFolderService contentFolderService;
-    private final UserRepository userRepository;
 
     @PostMapping
     @PreAuthorize("hasAnyRole('DESIGNER', 'OPERATOR', 'TENANT_ADMIN')")
@@ -36,7 +33,7 @@ public class ContentFolderController {
             @Valid @RequestBody CreateContentFolderRequest request,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        Long tenantId = getTenantId(principal.id());
+        Long tenantId = TenantContext.getCurrentTenantId();
         ContentFolderResponse response = contentFolderService.create(request, tenantId);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
     }
@@ -46,7 +43,7 @@ public class ContentFolderController {
     public ResponseEntity<ApiResponse<List<ContentFolderResponse>>> getFolderTree(
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        Long tenantId = getTenantId(principal.id());
+        Long tenantId = TenantContext.getCurrentTenantId();
         List<ContentFolderResponse> response = contentFolderService.getFolderTree(tenantId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
@@ -57,7 +54,7 @@ public class ContentFolderController {
             @PathVariable Long folderId,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        Long tenantId = getTenantId(principal.id());
+        Long tenantId = TenantContext.getCurrentTenantId();
         ContentFolderResponse response = contentFolderService.getFolder(folderId, tenantId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
@@ -68,7 +65,7 @@ public class ContentFolderController {
             @PathVariable Long folderId,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        Long tenantId = getTenantId(principal.id());
+        Long tenantId = TenantContext.getCurrentTenantId();
         List<ContentFolderResponse> response = contentFolderService.getChildFolders(
                 folderId, tenantId);
         return ResponseEntity.ok(ApiResponse.success(response));
@@ -81,7 +78,7 @@ public class ContentFolderController {
             @Valid @RequestBody UpdateContentFolderRequest request,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        Long tenantId = getTenantId(principal.id());
+        Long tenantId = TenantContext.getCurrentTenantId();
         ContentFolderResponse response = contentFolderService.update(
                 folderId, request, tenantId);
         return ResponseEntity.ok(ApiResponse.success(response));
@@ -94,7 +91,7 @@ public class ContentFolderController {
             @Valid @RequestBody MoveContentFolderRequest request,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        Long tenantId = getTenantId(principal.id());
+        Long tenantId = TenantContext.getCurrentTenantId();
         ContentFolderResponse response = contentFolderService.move(
                 folderId, request, tenantId);
         return ResponseEntity.ok(ApiResponse.success(response));
@@ -106,14 +103,9 @@ public class ContentFolderController {
             @PathVariable Long folderId,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        Long tenantId = getTenantId(principal.id());
+        Long tenantId = TenantContext.getCurrentTenantId();
         contentFolderService.delete(folderId, tenantId);
         return ResponseEntity.noContent().build();
     }
 
-    private Long getTenantId(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(UserNotFoundException::new);
-        return user.getTenantId();
-    }
 }

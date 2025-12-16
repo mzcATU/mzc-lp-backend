@@ -1,4 +1,5 @@
 package com.mzc.lp.domain.ts.scheduler;
+import com.mzc.lp.common.support.TenantTestSupport;
 
 import com.mzc.lp.domain.ts.constant.CourseTimeStatus;
 import com.mzc.lp.domain.ts.constant.DeliveryType;
@@ -25,7 +26,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-class CourseTimeSchedulerTest {
+class CourseTimeSchedulerTest extends TenantTestSupport {
 
     @InjectMocks
     private CourseTimeScheduler courseTimeScheduler;
