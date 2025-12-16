@@ -1,5 +1,6 @@
 package com.mzc.lp.domain.content.dto.response;
 
+import com.mzc.lp.domain.content.constant.ContentStatus;
 import com.mzc.lp.domain.content.constant.ContentType;
 import com.mzc.lp.domain.content.entity.Content;
 
@@ -11,6 +12,7 @@ public record ContentResponse(
         String originalFileName,
         String storedFileName,
         ContentType contentType,
+        ContentStatus status,
         Long fileSize,
         Integer duration,
         String resolution,
@@ -18,6 +20,7 @@ public record ContentResponse(
         String externalUrl,
         String filePath,
         String thumbnailPath,
+        Long createdBy,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
@@ -27,6 +30,7 @@ public record ContentResponse(
                 content.getOriginalFileName(),
                 content.getStoredFileName(),
                 content.getContentType(),
+                content.getStatus(),
                 content.getFileSize(),
                 content.getDuration(),
                 content.getResolution(),
@@ -34,6 +38,7 @@ public record ContentResponse(
                 content.getExternalUrl(),
                 content.getFilePath(),
                 content.getThumbnailPath(),
+                content.getCreatedBy(),
                 content.getCreatedAt() != null
                         ? LocalDateTime.ofInstant(content.getCreatedAt(), ZoneId.systemDefault())
                         : null,

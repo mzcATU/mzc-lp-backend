@@ -1,5 +1,6 @@
 package com.mzc.lp.domain.content.repository;
 
+import com.mzc.lp.domain.content.constant.ContentStatus;
 import com.mzc.lp.domain.content.constant.ContentType;
 import com.mzc.lp.domain.content.entity.Content;
 import org.springframework.data.domain.Page;
@@ -32,4 +33,25 @@ public interface ContentRepository extends JpaRepository<Content, Long> {
                                                          @Param("contentType") ContentType contentType,
                                                          @Param("keyword") String keyword,
                                                          Pageable pageable);
+
+    // createdBy 기반 조회 (DESIGNER용)
+    Page<Content> findByTenantIdAndCreatedBy(Long tenantId, Long createdBy, Pageable pageable);
+
+    Page<Content> findByTenantIdAndCreatedByAndStatus(Long tenantId, Long createdBy,
+                                                       ContentStatus status, Pageable pageable);
+
+    @Query("SELECT c FROM Content c WHERE c.tenantId = :tenantId AND c.createdBy = :createdBy " +
+           "AND LOWER(c.originalFileName) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+    Page<Content> findByTenantIdAndCreatedByAndKeyword(@Param("tenantId") Long tenantId,
+                                                        @Param("createdBy") Long createdBy,
+                                                        @Param("keyword") String keyword,
+                                                        Pageable pageable);
+
+    @Query("SELECT c FROM Content c WHERE c.tenantId = :tenantId AND c.createdBy = :createdBy " +
+           "AND c.status = :status AND LOWER(c.originalFileName) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+    Page<Content> findByTenantIdAndCreatedByAndStatusAndKeyword(@Param("tenantId") Long tenantId,
+                                                                 @Param("createdBy") Long createdBy,
+                                                                 @Param("status") ContentStatus status,
+                                                                 @Param("keyword") String keyword,
+                                                                 Pageable pageable);
 }
