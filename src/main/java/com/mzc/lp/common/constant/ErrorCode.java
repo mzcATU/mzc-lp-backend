@@ -31,6 +31,8 @@ public enum ErrorCode {
     CM_MAX_DEPTH_EXCEEDED(HttpStatus.BAD_REQUEST, "CM003", "Max depth exceeded (10)"),
     CM_CIRCULAR_REFERENCE(HttpStatus.BAD_REQUEST, "CM004", "Circular reference detected"),
     CM_INVALID_PARENT(HttpStatus.BAD_REQUEST, "CM005", "Invalid parent"),
+    CM_SNAPSHOT_NOT_FOUND(HttpStatus.NOT_FOUND, "CM006", "Snapshot not found"),
+    CM_SNAPSHOT_STATE_ERROR(HttpStatus.BAD_REQUEST, "CM007", "Invalid snapshot state"),
     CM_LEARNING_OBJECT_NOT_FOUND(HttpStatus.NOT_FOUND, "CM008", "LearningObject not found"),
 
     // Content (CMS)
