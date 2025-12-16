@@ -1,12 +1,14 @@
 package com.mzc.lp.common.filter;
 
 import com.mzc.lp.common.context.TenantContext;
+import com.mzc.lp.common.security.JwtProvider;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -21,10 +23,13 @@ import java.io.IOException;
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 10) // SecurityFilter 다음에 실행
 @Slf4j
+@RequiredArgsConstructor
 public class TenantFilter implements Filter {
 
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
+
+    private final JwtProvider jwtProvider;
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
@@ -72,10 +77,10 @@ public class TenantFilter implements Filter {
 
     /**
      * 요청에서 tenantId 추출
-     * 현재는 JWT 연동 전이므로 임시로 null 반환
+     * JWT 토큰의 tenantId claim에서 추출
      *
      * @param request HTTP 요청
-     * @return 테넌트 ID (현재는 null)
+     * @return 테넌트 ID (토큰 없거나 유효하지 않으면 null)
      */
     private Long extractTenantIdFromRequest(HttpServletRequest request) {
         String authHeader = request.getHeader(AUTHORIZATION_HEADER);
@@ -85,12 +90,15 @@ public class TenantFilter implements Filter {
         }
 
         try {
-            // JWT에서 tenantId 추출 (TODO: JwtTokenProvider 연동)
-            // String token = authHeader.substring(BEARER_PREFIX.length());
-            // return jwtTokenProvider.getTenantIdFromToken(token);
+            String token = authHeader.substring(BEARER_PREFIX.length());
 
-            // 임시: JWT 연동 전까지 null 반환
-            return null;
+            // 토큰 유효성 검증
+            if (!jwtProvider.validateToken(token)) {
+                return null;
+            }
+
+            // JWT에서 tenantId 추출
+            return jwtProvider.getTenantId(token);
 
         } catch (Exception e) {
             log.warn("Failed to extract tenantId from JWT token: {}", e.getMessage());

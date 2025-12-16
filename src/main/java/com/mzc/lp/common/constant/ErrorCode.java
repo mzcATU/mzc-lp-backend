@@ -66,6 +66,7 @@ public enum ErrorCode {
     CANNOT_CANCEL_COMPLETED(HttpStatus.BAD_REQUEST, "SIS003", "Cannot cancel completed enrollment"),
     ENROLLMENT_PERIOD_CLOSED(HttpStatus.BAD_REQUEST, "SIS004", "Enrollment period is closed"),
     INVALID_PROGRESS_VALUE(HttpStatus.BAD_REQUEST, "SIS005", "Progress value must be between 0 and 100"),
+    UNAUTHORIZED_ENROLLMENT_ACCESS(HttpStatus.FORBIDDEN, "SIS006", "Not authorized to access this enrollment"),
 
     // Auth
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "A001", "Unauthorized"),
