@@ -2,9 +2,7 @@ package com.mzc.lp.domain.iis.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mzc.lp.common.support.TenantTestSupport;
-import com.mzc.lp.domain.iis.constant.AssignmentStatus;
 import com.mzc.lp.domain.iis.constant.InstructorRole;
-import com.mzc.lp.domain.iis.dto.request.AssignInstructorRequest;
 import com.mzc.lp.domain.iis.dto.request.CancelAssignmentRequest;
 import com.mzc.lp.domain.iis.dto.request.ReplaceInstructorRequest;
 import com.mzc.lp.domain.iis.dto.request.UpdateRoleRequest;
@@ -33,6 +31,12 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+/**
+ * InstructorAssignmentController 테스트
+ *
+ * 참고: /api/times/{timeId}/instructors 엔드포인트는 CourseTimeInstructorController에서 처리하며,
+ * 해당 테스트는 CourseTimeInstructorControllerTest에서 수행합니다.
+ */
 @SpringBootTest
 @AutoConfigureMockMvc
 class InstructorAssignmentControllerTest extends TenantTestSupport {
@@ -102,120 +106,7 @@ class InstructorAssignmentControllerTest extends TenantTestSupport {
         return assignmentRepository.save(InstructorAssignment.create(userId, timeId, role, 1L));
     }
 
-    // ==================== 배정 API 테스트 ====================
-
-    @Nested
-    @DisplayName("POST /api/times/{timeId}/instructors - 강사 배정")
-    class AssignInstructor {
-
-        @Test
-        @DisplayName("성공 - 강사 배정")
-        void assignInstructor_success() throws Exception {
-            // given
-            User operator = createOperatorUser();
-            User instructor = createInstructorUser();
-            String token = loginAndGetAccessToken("operator@example.com", "Password123!");
-
-            AssignInstructorRequest request = new AssignInstructorRequest(instructor.getId(), InstructorRole.MAIN);
-
-            // when & then
-            mockMvc.perform(post("/api/times/{timeId}/instructors", TIME_ID)
-                            .header("Authorization", "Bearer " + token)
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(request)))
-                    .andDo(print())
-                    .andExpect(status().isCreated())
-                    .andExpect(jsonPath("$.success").value(true))
-                    .andExpect(jsonPath("$.data.userId").value(instructor.getId()))
-                    .andExpect(jsonPath("$.data.role").value("MAIN"))
-                    .andExpect(jsonPath("$.data.status").value("ACTIVE"));
-        }
-
-        @Test
-        @DisplayName("실패 - 권한 없음")
-        void assignInstructor_fail_forbidden() throws Exception {
-            // given
-            User instructor = createInstructorUser();
-            String token = loginAndGetAccessToken("instructor@example.com", "Password123!");
-
-            AssignInstructorRequest request = new AssignInstructorRequest(instructor.getId(), InstructorRole.MAIN);
-
-            // when & then
-            mockMvc.perform(post("/api/times/{timeId}/instructors", TIME_ID)
-                            .header("Authorization", "Bearer " + token)
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(request)))
-                    .andDo(print())
-                    .andExpect(status().isForbidden());
-        }
-
-        @Test
-        @DisplayName("실패 - 중복 배정")
-        void assignInstructor_fail_duplicate() throws Exception {
-            // given
-            User operator = createOperatorUser();
-            User instructor = createInstructorUser();
-            String token = loginAndGetAccessToken("operator@example.com", "Password123!");
-
-            createAssignment(instructor.getId(), TIME_ID, InstructorRole.SUB);
-
-            AssignInstructorRequest request = new AssignInstructorRequest(instructor.getId(), InstructorRole.MAIN);
-
-            // when & then
-            mockMvc.perform(post("/api/times/{timeId}/instructors", TIME_ID)
-                            .header("Authorization", "Bearer " + token)
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(request)))
-                    .andDo(print())
-                    .andExpect(status().isConflict())
-                    .andExpect(jsonPath("$.errorCode").value("IIS002"));
-        }
-    }
-
-    // ==================== 조회 API 테스트 ====================
-
-    @Nested
-    @DisplayName("GET /api/times/{timeId}/instructors - 차수별 강사 목록 조회")
-    class GetInstructorsByTimeId {
-
-        @Test
-        @DisplayName("성공 - 전체 조회")
-        void getInstructorsByTimeId_success() throws Exception {
-            // given
-            User operator = createOperatorUser();
-            User instructor = createInstructorUser();
-            String token = loginAndGetAccessToken("operator@example.com", "Password123!");
-
-            createAssignment(instructor.getId(), TIME_ID, InstructorRole.MAIN);
-
-            // when & then
-            mockMvc.perform(get("/api/times/{timeId}/instructors", TIME_ID)
-                            .header("Authorization", "Bearer " + token))
-                    .andDo(print())
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.success").value(true))
-                    .andExpect(jsonPath("$.data.length()").value(1));
-        }
-
-        @Test
-        @DisplayName("성공 - 상태별 필터 조회")
-        void getInstructorsByTimeId_success_byStatus() throws Exception {
-            // given
-            User operator = createOperatorUser();
-            User instructor = createInstructorUser();
-            String token = loginAndGetAccessToken("operator@example.com", "Password123!");
-
-            createAssignment(instructor.getId(), TIME_ID, InstructorRole.MAIN);
-
-            // when & then
-            mockMvc.perform(get("/api/times/{timeId}/instructors", TIME_ID)
-                            .header("Authorization", "Bearer " + token)
-                            .param("status", "ACTIVE"))
-                    .andDo(print())
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.data.length()").value(1));
-        }
-    }
+    // ==================== 배정 단건 조회 API 테스트 ====================
 
     @Nested
     @DisplayName("GET /api/instructor-assignments/{id} - 배정 단건 조회")
@@ -225,7 +116,7 @@ class InstructorAssignmentControllerTest extends TenantTestSupport {
         @DisplayName("성공 - 배정 조회")
         void getAssignment_success() throws Exception {
             // given
-            User operator = createOperatorUser();
+            createOperatorUser();
             User instructor = createInstructorUser();
             String token = loginAndGetAccessToken("operator@example.com", "Password123!");
 
@@ -244,7 +135,7 @@ class InstructorAssignmentControllerTest extends TenantTestSupport {
         @DisplayName("실패 - 존재하지 않는 배정")
         void getAssignment_fail_notFound() throws Exception {
             // given
-            User operator = createOperatorUser();
+            createOperatorUser();
             String token = loginAndGetAccessToken("operator@example.com", "Password123!");
 
             // when & then
@@ -252,7 +143,7 @@ class InstructorAssignmentControllerTest extends TenantTestSupport {
                             .header("Authorization", "Bearer " + token))
                     .andDo(print())
                     .andExpect(status().isNotFound())
-                    .andExpect(jsonPath("$.errorCode").value("IIS001"));
+                    .andExpect(jsonPath("$.error.code").value("IIS001"));
         }
     }
 
@@ -266,7 +157,7 @@ class InstructorAssignmentControllerTest extends TenantTestSupport {
         @DisplayName("성공 - 역할 변경")
         void updateRole_success() throws Exception {
             // given
-            User operator = createOperatorUser();
+            createOperatorUser();
             User instructor = createInstructorUser();
             String token = loginAndGetAccessToken("operator@example.com", "Password123!");
 
@@ -295,7 +186,7 @@ class InstructorAssignmentControllerTest extends TenantTestSupport {
         @DisplayName("성공 - 강사 교체")
         void replaceInstructor_success() throws Exception {
             // given
-            User operator = createOperatorUser();
+            createOperatorUser();
             User instructor1 = createInstructorUser();
             User instructor2 = User.create("instructor2@example.com", "강사2", passwordEncoder.encode("Password123!"));
             instructor2.updateRole(TenantRole.USER);
@@ -329,7 +220,7 @@ class InstructorAssignmentControllerTest extends TenantTestSupport {
         @DisplayName("성공 - 배정 취소")
         void cancelAssignment_success() throws Exception {
             // given
-            User operator = createOperatorUser();
+            createOperatorUser();
             User instructor = createInstructorUser();
             String token = loginAndGetAccessToken("operator@example.com", "Password123!");
 

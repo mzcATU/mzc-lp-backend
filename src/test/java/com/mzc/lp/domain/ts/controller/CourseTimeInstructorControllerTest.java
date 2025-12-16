@@ -8,8 +8,9 @@ import com.mzc.lp.domain.iis.dto.request.AssignInstructorRequest;
 import com.mzc.lp.domain.iis.dto.request.CancelAssignmentRequest;
 import com.mzc.lp.domain.iis.dto.request.ReplaceInstructorRequest;
 import com.mzc.lp.domain.iis.dto.request.UpdateRoleRequest;
-import com.mzc.lp.domain.iis.dto.response.InstructorAssignmentResponse;
-import com.mzc.lp.domain.iis.service.InstructorAssignmentService;
+import com.mzc.lp.domain.iis.entity.InstructorAssignment;
+import com.mzc.lp.domain.iis.repository.AssignmentHistoryRepository;
+import com.mzc.lp.domain.iis.repository.InstructorAssignmentRepository;
 import com.mzc.lp.domain.ts.constant.DeliveryType;
 import com.mzc.lp.domain.ts.constant.EnrollmentMethod;
 import com.mzc.lp.domain.ts.entity.CourseTime;
@@ -27,21 +28,16 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.doNothing;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -69,13 +65,18 @@ class CourseTimeInstructorControllerTest extends TenantTestSupport {
     private UserCourseRoleRepository userCourseRoleRepository;
 
     @Autowired
-    private PasswordEncoder passwordEncoder;
+    private InstructorAssignmentRepository instructorAssignmentRepository;
 
-    @MockitoBean
-    private InstructorAssignmentService instructorAssignmentService;
+    @Autowired
+    private AssignmentHistoryRepository assignmentHistoryRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @BeforeEach
     void setUp() {
+        assignmentHistoryRepository.deleteAll();
+        instructorAssignmentRepository.deleteAll();
         courseTimeRepository.deleteAll();
         userCourseRoleRepository.deleteAll();
         refreshTokenRepository.deleteAll();
@@ -92,6 +93,11 @@ class CourseTimeInstructorControllerTest extends TenantTestSupport {
 
     private User createNormalUser() {
         User user = User.create("user@example.com", "일반사용자", passwordEncoder.encode("Password123!"));
+        return userRepository.save(user);
+    }
+
+    private User createInstructorUser(String email, String name) {
+        User user = User.create(email, name, passwordEncoder.encode("Password123!"));
         return userRepository.save(user);
     }
 
@@ -141,18 +147,9 @@ class CourseTimeInstructorControllerTest extends TenantTestSupport {
         return courseTimeRepository.save(courseTime);
     }
 
-    private InstructorAssignmentResponse createMockResponse(Long id, Long userId, Long timeId, InstructorRole role) {
-        return new InstructorAssignmentResponse(
-                id,
-                userId,
-                timeId,
-                role,
-                AssignmentStatus.ACTIVE,
-                Instant.now(),
-                null,
-                1L,
-                Instant.now()
-        );
+    private InstructorAssignment createInstructorAssignment(Long userId, Long timeId, InstructorRole role, Long operatorId) {
+        InstructorAssignment assignment = InstructorAssignment.create(userId, timeId, role, operatorId);
+        return instructorAssignmentRepository.save(assignment);
     }
 
     // ==================== 강사 배정 테스트 ====================
@@ -165,15 +162,12 @@ class CourseTimeInstructorControllerTest extends TenantTestSupport {
         @DisplayName("성공 - DRAFT 상태 차수에 강사 배정")
         void assignInstructor_success_draft() throws Exception {
             // given
-            createOperatorUser();
+            User operator = createOperatorUser();
+            User instructor = createInstructorUser("instructor@example.com", "강사");
             CourseTime courseTime = createTestCourseTime();
             String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
 
-            AssignInstructorRequest request = new AssignInstructorRequest(100L, InstructorRole.MAIN);
-            InstructorAssignmentResponse mockResponse = createMockResponse(1L, 100L, courseTime.getId(), InstructorRole.MAIN);
-
-            given(instructorAssignmentService.assignInstructor(eq(courseTime.getId()), any(), any()))
-                    .willReturn(mockResponse);
+            AssignInstructorRequest request = new AssignInstructorRequest(instructor.getId(), InstructorRole.MAIN);
 
             // when & then
             mockMvc.perform(post("/api/times/{timeId}/instructors", courseTime.getId())
@@ -183,9 +177,16 @@ class CourseTimeInstructorControllerTest extends TenantTestSupport {
                     .andDo(print())
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$.success").value(true))
-                    .andExpect(jsonPath("$.data.id").value(1))
-                    .andExpect(jsonPath("$.data.userId").value(100))
-                    .andExpect(jsonPath("$.data.role").value("MAIN"));
+                    .andExpect(jsonPath("$.data.userId").value(instructor.getId()))
+                    .andExpect(jsonPath("$.data.timeId").value(courseTime.getId()))
+                    .andExpect(jsonPath("$.data.role").value("MAIN"))
+                    .andExpect(jsonPath("$.data.status").value("ACTIVE"));
+
+            // DB 검증
+            List<InstructorAssignment> assignments = instructorAssignmentRepository.findByTimeKeyAndTenantId(courseTime.getId(), 1L);
+            assertThat(assignments).hasSize(1);
+            assertThat(assignments.get(0).getUserKey()).isEqualTo(instructor.getId());
+            assertThat(assignments.get(0).getRole()).isEqualTo(InstructorRole.MAIN);
         }
 
         @Test
@@ -193,16 +194,13 @@ class CourseTimeInstructorControllerTest extends TenantTestSupport {
         void assignInstructor_success_recruiting() throws Exception {
             // given
             createOperatorUser();
+            User instructor = createInstructorUser("instructor@example.com", "강사");
             CourseTime courseTime = createTestCourseTime();
             courseTime.open();
             courseTimeRepository.save(courseTime);
             String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
 
-            AssignInstructorRequest request = new AssignInstructorRequest(100L, InstructorRole.SUB);
-            InstructorAssignmentResponse mockResponse = createMockResponse(1L, 100L, courseTime.getId(), InstructorRole.SUB);
-
-            given(instructorAssignmentService.assignInstructor(eq(courseTime.getId()), any(), any()))
-                    .willReturn(mockResponse);
+            AssignInstructorRequest request = new AssignInstructorRequest(instructor.getId(), InstructorRole.SUB);
 
             // when & then
             mockMvc.perform(post("/api/times/{timeId}/instructors", courseTime.getId())
@@ -220,14 +218,11 @@ class CourseTimeInstructorControllerTest extends TenantTestSupport {
         void assignInstructor_success_ongoing() throws Exception {
             // given
             createOperatorUser();
+            User instructor = createInstructorUser("instructor@example.com", "강사");
             CourseTime courseTime = createOngoingCourseTime();
             String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
 
-            AssignInstructorRequest request = new AssignInstructorRequest(100L, InstructorRole.ASSISTANT);
-            InstructorAssignmentResponse mockResponse = createMockResponse(1L, 100L, courseTime.getId(), InstructorRole.ASSISTANT);
-
-            given(instructorAssignmentService.assignInstructor(eq(courseTime.getId()), any(), any()))
-                    .willReturn(mockResponse);
+            AssignInstructorRequest request = new AssignInstructorRequest(instructor.getId(), InstructorRole.ASSISTANT);
 
             // when & then
             mockMvc.perform(post("/api/times/{timeId}/instructors", courseTime.getId())
@@ -236,7 +231,8 @@ class CourseTimeInstructorControllerTest extends TenantTestSupport {
                             .content(objectMapper.writeValueAsString(request)))
                     .andDo(print())
                     .andExpect(status().isCreated())
-                    .andExpect(jsonPath("$.success").value(true));
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.role").value("ASSISTANT"));
         }
 
         @Test
@@ -244,10 +240,11 @@ class CourseTimeInstructorControllerTest extends TenantTestSupport {
         void assignInstructor_fail_closed() throws Exception {
             // given
             createOperatorUser();
+            User instructor = createInstructorUser("instructor@example.com", "강사");
             CourseTime courseTime = createClosedCourseTime();
             String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
 
-            AssignInstructorRequest request = new AssignInstructorRequest(100L, InstructorRole.MAIN);
+            AssignInstructorRequest request = new AssignInstructorRequest(instructor.getId(), InstructorRole.MAIN);
 
             // when & then
             mockMvc.perform(post("/api/times/{timeId}/instructors", courseTime.getId())
@@ -265,12 +262,13 @@ class CourseTimeInstructorControllerTest extends TenantTestSupport {
         void assignInstructor_fail_archived() throws Exception {
             // given
             createOperatorUser();
+            User instructor = createInstructorUser("instructor@example.com", "강사");
             CourseTime courseTime = createClosedCourseTime();
             courseTime.archive();
             courseTimeRepository.save(courseTime);
             String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
 
-            AssignInstructorRequest request = new AssignInstructorRequest(100L, InstructorRole.MAIN);
+            AssignInstructorRequest request = new AssignInstructorRequest(instructor.getId(), InstructorRole.MAIN);
 
             // when & then
             mockMvc.perform(post("/api/times/{timeId}/instructors", courseTime.getId())
@@ -307,10 +305,11 @@ class CourseTimeInstructorControllerTest extends TenantTestSupport {
         void assignInstructor_fail_userRole() throws Exception {
             // given
             createNormalUser();
+            User instructor = createInstructorUser("instructor@example.com", "강사");
             CourseTime courseTime = createTestCourseTime();
             String accessToken = loginAndGetAccessToken("user@example.com", "Password123!");
 
-            AssignInstructorRequest request = new AssignInstructorRequest(100L, InstructorRole.MAIN);
+            AssignInstructorRequest request = new AssignInstructorRequest(instructor.getId(), InstructorRole.MAIN);
 
             // when & then
             mockMvc.perform(post("/api/times/{timeId}/instructors", courseTime.getId())
@@ -319,6 +318,57 @@ class CourseTimeInstructorControllerTest extends TenantTestSupport {
                             .content(objectMapper.writeValueAsString(request)))
                     .andDo(print())
                     .andExpect(status().isForbidden());
+        }
+
+        @Test
+        @DisplayName("실패 - 이미 배정된 강사 중복 배정 시도")
+        void assignInstructor_fail_duplicateAssignment() throws Exception {
+            // given
+            User operator = createOperatorUser();
+            User instructor = createInstructorUser("instructor@example.com", "강사");
+            CourseTime courseTime = createTestCourseTime();
+            String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
+
+            // 먼저 강사 배정
+            createInstructorAssignment(instructor.getId(), courseTime.getId(), InstructorRole.SUB, operator.getId());
+
+            AssignInstructorRequest request = new AssignInstructorRequest(instructor.getId(), InstructorRole.ASSISTANT);
+
+            // when & then
+            mockMvc.perform(post("/api/times/{timeId}/instructors", courseTime.getId())
+                            .header("Authorization", "Bearer " + accessToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andDo(print())
+                    .andExpect(status().isConflict())
+                    .andExpect(jsonPath("$.success").value(false))
+                    .andExpect(jsonPath("$.error.code").value("IIS002"));
+        }
+
+        @Test
+        @DisplayName("실패 - MAIN 강사가 이미 존재하는 상태에서 MAIN 배정 시도")
+        void assignInstructor_fail_mainAlreadyExists() throws Exception {
+            // given
+            User operator = createOperatorUser();
+            User instructor1 = createInstructorUser("instructor1@example.com", "주강사");
+            User instructor2 = createInstructorUser("instructor2@example.com", "신규강사");
+            CourseTime courseTime = createTestCourseTime();
+            String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
+
+            // 먼저 MAIN 강사 배정
+            createInstructorAssignment(instructor1.getId(), courseTime.getId(), InstructorRole.MAIN, operator.getId());
+
+            AssignInstructorRequest request = new AssignInstructorRequest(instructor2.getId(), InstructorRole.MAIN);
+
+            // when & then
+            mockMvc.perform(post("/api/times/{timeId}/instructors", courseTime.getId())
+                            .header("Authorization", "Bearer " + accessToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andDo(print())
+                    .andExpect(status().isConflict())
+                    .andExpect(jsonPath("$.success").value(false))
+                    .andExpect(jsonPath("$.error.code").value("IIS003"));
         }
     }
 
@@ -332,17 +382,14 @@ class CourseTimeInstructorControllerTest extends TenantTestSupport {
         @DisplayName("성공 - 전체 강사 목록 조회")
         void getInstructors_success_all() throws Exception {
             // given
-            createOperatorUser();
+            User operator = createOperatorUser();
+            User instructor1 = createInstructorUser("instructor1@example.com", "주강사");
+            User instructor2 = createInstructorUser("instructor2@example.com", "보조강사");
             CourseTime courseTime = createTestCourseTime();
             String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
 
-            List<InstructorAssignmentResponse> mockResponses = List.of(
-                    createMockResponse(1L, 100L, courseTime.getId(), InstructorRole.MAIN),
-                    createMockResponse(2L, 101L, courseTime.getId(), InstructorRole.SUB)
-            );
-
-            given(instructorAssignmentService.getInstructorsByTimeId(eq(courseTime.getId()), eq(null)))
-                    .willReturn(mockResponses);
+            createInstructorAssignment(instructor1.getId(), courseTime.getId(), InstructorRole.MAIN, operator.getId());
+            createInstructorAssignment(instructor2.getId(), courseTime.getId(), InstructorRole.SUB, operator.getId());
 
             // when & then
             mockMvc.perform(get("/api/times/{timeId}/instructors", courseTime.getId())
@@ -358,16 +405,16 @@ class CourseTimeInstructorControllerTest extends TenantTestSupport {
         @DisplayName("성공 - ACTIVE 상태 강사만 조회")
         void getInstructors_success_filterByStatus() throws Exception {
             // given
-            createOperatorUser();
+            User operator = createOperatorUser();
+            User instructor1 = createInstructorUser("instructor1@example.com", "주강사");
+            User instructor2 = createInstructorUser("instructor2@example.com", "취소된강사");
             CourseTime courseTime = createTestCourseTime();
             String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
 
-            List<InstructorAssignmentResponse> mockResponses = List.of(
-                    createMockResponse(1L, 100L, courseTime.getId(), InstructorRole.MAIN)
-            );
-
-            given(instructorAssignmentService.getInstructorsByTimeId(eq(courseTime.getId()), eq(AssignmentStatus.ACTIVE)))
-                    .willReturn(mockResponses);
+            createInstructorAssignment(instructor1.getId(), courseTime.getId(), InstructorRole.MAIN, operator.getId());
+            InstructorAssignment cancelledAssignment = createInstructorAssignment(instructor2.getId(), courseTime.getId(), InstructorRole.SUB, operator.getId());
+            cancelledAssignment.cancel();
+            instructorAssignmentRepository.save(cancelledAssignment);
 
             // when & then
             mockMvc.perform(get("/api/times/{timeId}/instructors", courseTime.getId())
@@ -376,7 +423,8 @@ class CourseTimeInstructorControllerTest extends TenantTestSupport {
                     .andDo(print())
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
-                    .andExpect(jsonPath("$.data.length()").value(1));
+                    .andExpect(jsonPath("$.data.length()").value(1))
+                    .andExpect(jsonPath("$.data[0].role").value("MAIN"));
         }
 
         @Test
@@ -405,39 +453,45 @@ class CourseTimeInstructorControllerTest extends TenantTestSupport {
         @DisplayName("성공 - 역할 수정")
         void updateRole_success() throws Exception {
             // given
-            createOperatorUser();
+            User operator = createOperatorUser();
+            User instructor = createInstructorUser("instructor@example.com", "강사");
             CourseTime courseTime = createTestCourseTime();
             String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
 
-            UpdateRoleRequest request = new UpdateRoleRequest(InstructorRole.SUB, "역할 변경 사유");
-            InstructorAssignmentResponse mockResponse = createMockResponse(1L, 100L, courseTime.getId(), InstructorRole.SUB);
+            InstructorAssignment assignment = createInstructorAssignment(instructor.getId(), courseTime.getId(), InstructorRole.SUB, operator.getId());
 
-            given(instructorAssignmentService.updateRole(eq(1L), any(), any()))
-                    .willReturn(mockResponse);
+            UpdateRoleRequest request = new UpdateRoleRequest(InstructorRole.ASSISTANT, "역할 변경 사유");
 
             // when & then
-            mockMvc.perform(put("/api/times/{timeId}/instructors/{assignmentId}", courseTime.getId(), 1L)
+            mockMvc.perform(put("/api/times/{timeId}/instructors/{assignmentId}", courseTime.getId(), assignment.getId())
                             .header("Authorization", "Bearer " + accessToken)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andDo(print())
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
-                    .andExpect(jsonPath("$.data.role").value("SUB"));
+                    .andExpect(jsonPath("$.data.role").value("ASSISTANT"));
+
+            // DB 검증
+            InstructorAssignment updated = instructorAssignmentRepository.findById(assignment.getId()).orElseThrow();
+            assertThat(updated.getRole()).isEqualTo(InstructorRole.ASSISTANT);
         }
 
         @Test
         @DisplayName("실패 - CLOSED 상태 차수")
         void updateRole_fail_closed() throws Exception {
             // given
-            createOperatorUser();
+            User operator = createOperatorUser();
+            User instructor = createInstructorUser("instructor@example.com", "강사");
             CourseTime courseTime = createClosedCourseTime();
             String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
 
-            UpdateRoleRequest request = new UpdateRoleRequest(InstructorRole.SUB, null);
+            InstructorAssignment assignment = createInstructorAssignment(instructor.getId(), courseTime.getId(), InstructorRole.SUB, operator.getId());
+
+            UpdateRoleRequest request = new UpdateRoleRequest(InstructorRole.ASSISTANT, null);
 
             // when & then
-            mockMvc.perform(put("/api/times/{timeId}/instructors/{assignmentId}", courseTime.getId(), 1L)
+            mockMvc.perform(put("/api/times/{timeId}/instructors/{assignmentId}", courseTime.getId(), assignment.getId())
                             .header("Authorization", "Bearer " + accessToken)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
@@ -457,40 +511,53 @@ class CourseTimeInstructorControllerTest extends TenantTestSupport {
         @DisplayName("성공 - 강사 교체")
         void replaceInstructor_success() throws Exception {
             // given
-            createOperatorUser();
+            User operator = createOperatorUser();
+            User oldInstructor = createInstructorUser("old@example.com", "기존강사");
+            User newInstructor = createInstructorUser("new@example.com", "신규강사");
             CourseTime courseTime = createOngoingCourseTime();
             String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
 
-            ReplaceInstructorRequest request = new ReplaceInstructorRequest(200L, InstructorRole.MAIN, "강사 교체 사유");
-            InstructorAssignmentResponse mockResponse = createMockResponse(2L, 200L, courseTime.getId(), InstructorRole.MAIN);
+            InstructorAssignment oldAssignment = createInstructorAssignment(oldInstructor.getId(), courseTime.getId(), InstructorRole.MAIN, operator.getId());
 
-            given(instructorAssignmentService.replaceInstructor(eq(1L), any(), any()))
-                    .willReturn(mockResponse);
+            ReplaceInstructorRequest request = new ReplaceInstructorRequest(newInstructor.getId(), InstructorRole.MAIN, "강사 교체 사유");
 
             // when & then
-            mockMvc.perform(post("/api/times/{timeId}/instructors/{assignmentId}/replace", courseTime.getId(), 1L)
+            mockMvc.perform(post("/api/times/{timeId}/instructors/{assignmentId}/replace", courseTime.getId(), oldAssignment.getId())
                             .header("Authorization", "Bearer " + accessToken)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andDo(print())
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
-                    .andExpect(jsonPath("$.data.id").value(2))
-                    .andExpect(jsonPath("$.data.userId").value(200));
+                    .andExpect(jsonPath("$.data.userId").value(newInstructor.getId()))
+                    .andExpect(jsonPath("$.data.role").value("MAIN"));
+
+            // DB 검증
+            InstructorAssignment replaced = instructorAssignmentRepository.findById(oldAssignment.getId()).orElseThrow();
+            assertThat(replaced.getStatus()).isEqualTo(AssignmentStatus.REPLACED);
+
+            List<InstructorAssignment> activeAssignments = instructorAssignmentRepository.findByTimeKeyAndTenantIdAndStatus(
+                    courseTime.getId(), 1L, AssignmentStatus.ACTIVE);
+            assertThat(activeAssignments).hasSize(1);
+            assertThat(activeAssignments.get(0).getUserKey()).isEqualTo(newInstructor.getId());
         }
 
         @Test
         @DisplayName("실패 - CLOSED 상태 차수")
         void replaceInstructor_fail_closed() throws Exception {
             // given
-            createOperatorUser();
+            User operator = createOperatorUser();
+            User oldInstructor = createInstructorUser("old@example.com", "기존강사");
+            User newInstructor = createInstructorUser("new@example.com", "신규강사");
             CourseTime courseTime = createClosedCourseTime();
             String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
 
-            ReplaceInstructorRequest request = new ReplaceInstructorRequest(200L, InstructorRole.MAIN, null);
+            InstructorAssignment oldAssignment = createInstructorAssignment(oldInstructor.getId(), courseTime.getId(), InstructorRole.MAIN, operator.getId());
+
+            ReplaceInstructorRequest request = new ReplaceInstructorRequest(newInstructor.getId(), InstructorRole.MAIN, null);
 
             // when & then
-            mockMvc.perform(post("/api/times/{timeId}/instructors/{assignmentId}/replace", courseTime.getId(), 1L)
+            mockMvc.perform(post("/api/times/{timeId}/instructors/{assignmentId}/replace", courseTime.getId(), oldAssignment.getId())
                             .header("Authorization", "Bearer " + accessToken)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
@@ -510,50 +577,63 @@ class CourseTimeInstructorControllerTest extends TenantTestSupport {
         @DisplayName("성공 - 배정 취소")
         void cancelAssignment_success() throws Exception {
             // given
-            createOperatorUser();
+            User operator = createOperatorUser();
+            User instructor = createInstructorUser("instructor@example.com", "강사");
             CourseTime courseTime = createTestCourseTime();
             String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
 
+            InstructorAssignment assignment = createInstructorAssignment(instructor.getId(), courseTime.getId(), InstructorRole.SUB, operator.getId());
+
             CancelAssignmentRequest request = new CancelAssignmentRequest("배정 취소 사유");
 
-            doNothing().when(instructorAssignmentService).cancelAssignment(eq(1L), any(), any());
-
             // when & then
-            mockMvc.perform(delete("/api/times/{timeId}/instructors/{assignmentId}", courseTime.getId(), 1L)
+            mockMvc.perform(delete("/api/times/{timeId}/instructors/{assignmentId}", courseTime.getId(), assignment.getId())
                             .header("Authorization", "Bearer " + accessToken)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andDo(print())
                     .andExpect(status().isNoContent());
+
+            // DB 검증
+            InstructorAssignment cancelled = instructorAssignmentRepository.findById(assignment.getId()).orElseThrow();
+            assertThat(cancelled.getStatus()).isEqualTo(AssignmentStatus.CANCELLED);
         }
 
         @Test
         @DisplayName("성공 - Request Body 없이 배정 취소")
         void cancelAssignment_success_noBody() throws Exception {
             // given
-            createOperatorUser();
+            User operator = createOperatorUser();
+            User instructor = createInstructorUser("instructor@example.com", "강사");
             CourseTime courseTime = createTestCourseTime();
             String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
 
-            doNothing().when(instructorAssignmentService).cancelAssignment(eq(1L), any(), any());
+            InstructorAssignment assignment = createInstructorAssignment(instructor.getId(), courseTime.getId(), InstructorRole.SUB, operator.getId());
 
             // when & then
-            mockMvc.perform(delete("/api/times/{timeId}/instructors/{assignmentId}", courseTime.getId(), 1L)
+            mockMvc.perform(delete("/api/times/{timeId}/instructors/{assignmentId}", courseTime.getId(), assignment.getId())
                             .header("Authorization", "Bearer " + accessToken))
                     .andDo(print())
                     .andExpect(status().isNoContent());
+
+            // DB 검증
+            InstructorAssignment cancelled = instructorAssignmentRepository.findById(assignment.getId()).orElseThrow();
+            assertThat(cancelled.getStatus()).isEqualTo(AssignmentStatus.CANCELLED);
         }
 
         @Test
         @DisplayName("실패 - CLOSED 상태 차수")
         void cancelAssignment_fail_closed() throws Exception {
             // given
-            createOperatorUser();
+            User operator = createOperatorUser();
+            User instructor = createInstructorUser("instructor@example.com", "강사");
             CourseTime courseTime = createClosedCourseTime();
             String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
 
+            InstructorAssignment assignment = createInstructorAssignment(instructor.getId(), courseTime.getId(), InstructorRole.SUB, operator.getId());
+
             // when & then
-            mockMvc.perform(delete("/api/times/{timeId}/instructors/{assignmentId}", courseTime.getId(), 1L)
+            mockMvc.perform(delete("/api/times/{timeId}/instructors/{assignmentId}", courseTime.getId(), assignment.getId())
                             .header("Authorization", "Bearer " + accessToken))
                     .andDo(print())
                     .andExpect(status().isBadRequest())

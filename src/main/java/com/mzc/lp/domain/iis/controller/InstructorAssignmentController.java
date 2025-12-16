@@ -3,7 +3,6 @@ package com.mzc.lp.domain.iis.controller;
 import com.mzc.lp.common.dto.ApiResponse;
 import com.mzc.lp.common.security.UserPrincipal;
 import com.mzc.lp.domain.iis.constant.AssignmentStatus;
-import com.mzc.lp.domain.iis.dto.request.AssignInstructorRequest;
 import com.mzc.lp.domain.iis.dto.request.CancelAssignmentRequest;
 import com.mzc.lp.domain.iis.dto.request.ReplaceInstructorRequest;
 import com.mzc.lp.domain.iis.dto.request.UpdateRoleRequest;
@@ -30,30 +29,8 @@ public class InstructorAssignmentController {
 
     private final InstructorAssignmentService assignmentService;
 
-    // ========== 차수 기준 API ==========
-
-    @PostMapping("/api/times/{timeId}/instructors")
-    @PreAuthorize("hasAnyRole('OPERATOR', 'TENANT_ADMIN')")
-    public ResponseEntity<ApiResponse<InstructorAssignmentResponse>> assignInstructor(
-            @PathVariable Long timeId,
-            @AuthenticationPrincipal UserPrincipal principal,
-            @Valid @RequestBody AssignInstructorRequest request
-    ) {
-        InstructorAssignmentResponse response = assignmentService.assignInstructor(
-                timeId, request, principal.id());
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
-    }
-
-    @GetMapping("/api/times/{timeId}/instructors")
-    public ResponseEntity<ApiResponse<List<InstructorAssignmentResponse>>> getInstructorsByTimeId(
-            @PathVariable Long timeId,
-            @RequestParam(required = false) AssignmentStatus status
-    ) {
-        List<InstructorAssignmentResponse> response = assignmentService.getInstructorsByTimeId(timeId, status);
-        return ResponseEntity.ok(ApiResponse.success(response));
-    }
-
     // ========== 배정 단건 API ==========
+    // 차수 기준 API는 CourseTimeInstructorController에서 처리 (차수 상태 검증 포함)
 
     @GetMapping("/api/instructor-assignments/{id}")
     public ResponseEntity<ApiResponse<InstructorAssignmentResponse>> getAssignment(
