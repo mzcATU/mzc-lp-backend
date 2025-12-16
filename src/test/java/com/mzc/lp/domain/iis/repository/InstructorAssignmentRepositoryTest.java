@@ -169,10 +169,8 @@ class InstructorAssignmentRepositoryTest extends TenantTestSupport {
         @DisplayName("성공 - 차수별 ACTIVE 강사 목록 조회")
         void findByTimeKeyAndTenantIdAndStatus_success() {
             // given
-            InstructorAssignment active1 = assignmentRepository.save(
-                    createAssignment(10L, TIME_KEY, InstructorRole.MAIN));
-            InstructorAssignment active2 = assignmentRepository.save(
-                    createAssignment(20L, TIME_KEY, InstructorRole.SUB));
+            assignmentRepository.save(createAssignment(10L, TIME_KEY, InstructorRole.MAIN));
+            assignmentRepository.save(createAssignment(20L, TIME_KEY, InstructorRole.SUB));
             InstructorAssignment cancelled = assignmentRepository.save(
                     createAssignment(30L, TIME_KEY, InstructorRole.SUB));
             cancelled.cancel();
