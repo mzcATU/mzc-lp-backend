@@ -39,7 +39,7 @@ public class EnrollmentController {
     /**
      * 수강 신청
      */
-    @PostMapping("/api/ts/course-times/{courseTimeId}/enrollments")
+    @PostMapping("/api/times/{courseTimeId}/enrollments")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<EnrollmentDetailResponse>> enroll(
             @PathVariable Long courseTimeId,
@@ -52,7 +52,7 @@ public class EnrollmentController {
     /**
      * 강제 배정 (필수 교육)
      */
-    @PostMapping("/api/ts/course-times/{courseTimeId}/enrollments/force")
+    @PostMapping("/api/times/{courseTimeId}/enrollments/force")
     @PreAuthorize("hasAnyRole('OPERATOR', 'TENANT_ADMIN')")
     public ResponseEntity<ApiResponse<ForceEnrollResultResponse>> forceEnroll(
             @PathVariable Long courseTimeId,
@@ -66,7 +66,7 @@ public class EnrollmentController {
     /**
      * 차수별 수강생 목록 조회
      */
-    @GetMapping("/api/ts/course-times/{courseTimeId}/enrollments")
+    @GetMapping("/api/times/{courseTimeId}/enrollments")
     @PreAuthorize("hasAnyRole('OPERATOR', 'TENANT_ADMIN')")
     public ResponseEntity<ApiResponse<Page<EnrollmentResponse>>> getEnrollmentsByCourseTime(
             @PathVariable Long courseTimeId,
@@ -179,7 +179,7 @@ public class EnrollmentController {
     /**
      * 차수별 수강 통계 조회
      */
-    @GetMapping("/api/ts/course-times/{courseTimeId}/enrollments/stats")
+    @GetMapping("/api/times/{courseTimeId}/enrollments/stats")
     @PreAuthorize("hasAnyRole('OPERATOR', 'TENANT_ADMIN')")
     public ResponseEntity<ApiResponse<CourseTimeEnrollmentStatsResponse>> getCourseTimeStats(
             @PathVariable Long courseTimeId

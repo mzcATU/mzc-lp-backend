@@ -2,6 +2,7 @@ package com.mzc.lp.domain.ts.controller;
 import com.mzc.lp.common.support.TenantTestSupport;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mzc.lp.domain.iis.service.InstructorAssignmentService;
 import com.mzc.lp.domain.ts.constant.CourseTimeStatus;
 import com.mzc.lp.domain.ts.constant.DeliveryType;
 import com.mzc.lp.domain.ts.constant.EnrollmentMethod;
@@ -22,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
@@ -58,6 +60,9 @@ class CourseTimeControllerTest extends TenantTestSupport {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @MockitoBean
+    private InstructorAssignmentService instructorAssignmentService;
 
     @BeforeEach
     void setUp() {
@@ -158,7 +163,7 @@ class CourseTimeControllerTest extends TenantTestSupport {
     // ==================== 차수 생성 테스트 ====================
 
     @Nested
-    @DisplayName("POST /api/ts/course-times - 차수 생성")
+    @DisplayName("POST /api/times - 차수 생성")
     class CreateCourseTime {
 
         @Test
@@ -170,7 +175,7 @@ class CourseTimeControllerTest extends TenantTestSupport {
             CreateCourseTimeRequest request = createValidRequest();
 
             // when & then
-            mockMvc.perform(post("/api/ts/course-times")
+            mockMvc.perform(post("/api/times")
                             .header("Authorization", "Bearer " + accessToken)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
@@ -193,7 +198,7 @@ class CourseTimeControllerTest extends TenantTestSupport {
             CreateCourseTimeRequest request = createOfflineRequest();
 
             // when & then
-            mockMvc.perform(post("/api/ts/course-times")
+            mockMvc.perform(post("/api/times")
                             .header("Authorization", "Bearer " + accessToken)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
@@ -222,7 +227,7 @@ class CourseTimeControllerTest extends TenantTestSupport {
             );
 
             // when & then
-            mockMvc.perform(post("/api/ts/course-times")
+            mockMvc.perform(post("/api/times")
                             .header("Authorization", "Bearer " + accessToken)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
@@ -248,7 +253,7 @@ class CourseTimeControllerTest extends TenantTestSupport {
             );
 
             // when & then
-            mockMvc.perform(post("/api/ts/course-times")
+            mockMvc.perform(post("/api/times")
                             .header("Authorization", "Bearer " + accessToken)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
@@ -267,7 +272,7 @@ class CourseTimeControllerTest extends TenantTestSupport {
             CreateCourseTimeRequest request = createValidRequest();
 
             // when & then
-            mockMvc.perform(post("/api/ts/course-times")
+            mockMvc.perform(post("/api/times")
                             .header("Authorization", "Bearer " + accessToken)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
@@ -282,7 +287,7 @@ class CourseTimeControllerTest extends TenantTestSupport {
             CreateCourseTimeRequest request = createValidRequest();
 
             // when & then
-            mockMvc.perform(post("/api/ts/course-times")
+            mockMvc.perform(post("/api/times")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andDo(print())
@@ -293,7 +298,7 @@ class CourseTimeControllerTest extends TenantTestSupport {
     // ==================== 차수 목록 조회 테스트 ====================
 
     @Nested
-    @DisplayName("GET /api/ts/course-times - 차수 목록 조회")
+    @DisplayName("GET /api/times - 차수 목록 조회")
     class GetCourseTimes {
 
         @Test
@@ -306,7 +311,7 @@ class CourseTimeControllerTest extends TenantTestSupport {
             String accessToken = loginAndGetAccessToken("user@example.com", "Password123!");
 
             // when & then
-            mockMvc.perform(get("/api/ts/course-times")
+            mockMvc.perform(get("/api/times")
                             .header("Authorization", "Bearer " + accessToken))
                     .andDo(print())
                     .andExpect(status().isOk())
@@ -327,7 +332,7 @@ class CourseTimeControllerTest extends TenantTestSupport {
             String accessToken = loginAndGetAccessToken("user@example.com", "Password123!");
 
             // when & then
-            mockMvc.perform(get("/api/ts/course-times")
+            mockMvc.perform(get("/api/times")
                             .header("Authorization", "Bearer " + accessToken)
                             .param("status", "RECRUITING"))
                     .andDo(print())
@@ -340,7 +345,7 @@ class CourseTimeControllerTest extends TenantTestSupport {
     // ==================== 차수 상세 조회 테스트 ====================
 
     @Nested
-    @DisplayName("GET /api/ts/course-times/{id} - 차수 상세 조회")
+    @DisplayName("GET /api/times/{id} - 차수 상세 조회")
     class GetCourseTime {
 
         @Test
@@ -352,7 +357,7 @@ class CourseTimeControllerTest extends TenantTestSupport {
             String accessToken = loginAndGetAccessToken("user@example.com", "Password123!");
 
             // when & then
-            mockMvc.perform(get("/api/ts/course-times/{id}", courseTime.getId())
+            mockMvc.perform(get("/api/times/{id}", courseTime.getId())
                             .header("Authorization", "Bearer " + accessToken))
                     .andDo(print())
                     .andExpect(status().isOk())
@@ -369,7 +374,7 @@ class CourseTimeControllerTest extends TenantTestSupport {
             String accessToken = loginAndGetAccessToken("user@example.com", "Password123!");
 
             // when & then
-            mockMvc.perform(get("/api/ts/course-times/{id}", 99999L)
+            mockMvc.perform(get("/api/times/{id}", 99999L)
                             .header("Authorization", "Bearer " + accessToken))
                     .andDo(print())
                     .andExpect(status().isNotFound())
@@ -381,7 +386,7 @@ class CourseTimeControllerTest extends TenantTestSupport {
     // ==================== 차수 수정 테스트 ====================
 
     @Nested
-    @DisplayName("PATCH /api/ts/course-times/{id} - 차수 수정")
+    @DisplayName("PATCH /api/times/{id} - 차수 수정")
     class UpdateCourseTime {
 
         @Test
@@ -403,7 +408,7 @@ class CourseTimeControllerTest extends TenantTestSupport {
             );
 
             // when & then
-            mockMvc.perform(patch("/api/ts/course-times/{id}", courseTime.getId())
+            mockMvc.perform(patch("/api/times/{id}", courseTime.getId())
                             .header("Authorization", "Bearer " + accessToken)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
@@ -431,7 +436,7 @@ class CourseTimeControllerTest extends TenantTestSupport {
             );
 
             // when & then
-            mockMvc.perform(patch("/api/ts/course-times/{id}", courseTime.getId())
+            mockMvc.perform(patch("/api/times/{id}", courseTime.getId())
                             .header("Authorization", "Bearer " + accessToken)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
@@ -454,7 +459,7 @@ class CourseTimeControllerTest extends TenantTestSupport {
             );
 
             // when & then
-            mockMvc.perform(patch("/api/ts/course-times/{id}", courseTime.getId())
+            mockMvc.perform(patch("/api/times/{id}", courseTime.getId())
                             .header("Authorization", "Bearer " + accessToken)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
@@ -466,7 +471,7 @@ class CourseTimeControllerTest extends TenantTestSupport {
     // ==================== 차수 삭제 테스트 ====================
 
     @Nested
-    @DisplayName("DELETE /api/ts/course-times/{id} - 차수 삭제")
+    @DisplayName("DELETE /api/times/{id} - 차수 삭제")
     class DeleteCourseTime {
 
         @Test
@@ -478,13 +483,13 @@ class CourseTimeControllerTest extends TenantTestSupport {
             String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
 
             // when & then
-            mockMvc.perform(delete("/api/ts/course-times/{id}", courseTime.getId())
+            mockMvc.perform(delete("/api/times/{id}", courseTime.getId())
                             .header("Authorization", "Bearer " + accessToken))
                     .andDo(print())
                     .andExpect(status().isNoContent());
 
             // 삭제 확인
-            mockMvc.perform(get("/api/ts/course-times/{id}", courseTime.getId())
+            mockMvc.perform(get("/api/times/{id}", courseTime.getId())
                             .header("Authorization", "Bearer " + accessToken))
                     .andExpect(status().isNotFound());
         }
@@ -500,7 +505,7 @@ class CourseTimeControllerTest extends TenantTestSupport {
             String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
 
             // when & then
-            mockMvc.perform(delete("/api/ts/course-times/{id}", courseTime.getId())
+            mockMvc.perform(delete("/api/times/{id}", courseTime.getId())
                             .header("Authorization", "Bearer " + accessToken))
                     .andDo(print())
                     .andExpect(status().isBadRequest())
@@ -512,7 +517,7 @@ class CourseTimeControllerTest extends TenantTestSupport {
     // ==================== 상태 전이 테스트 ====================
 
     @Nested
-    @DisplayName("POST /api/ts/course-times/{id}/open - 모집 시작")
+    @DisplayName("POST /api/times/{id}/open - 모집 시작")
     class OpenCourseTime {
 
         @Test
@@ -524,7 +529,7 @@ class CourseTimeControllerTest extends TenantTestSupport {
             String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
 
             // when & then
-            mockMvc.perform(post("/api/ts/course-times/{id}/open", courseTime.getId())
+            mockMvc.perform(post("/api/times/{id}/open", courseTime.getId())
                             .header("Authorization", "Bearer " + accessToken))
                     .andDo(print())
                     .andExpect(status().isOk())
@@ -543,7 +548,7 @@ class CourseTimeControllerTest extends TenantTestSupport {
             String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
 
             // when & then
-            mockMvc.perform(post("/api/ts/course-times/{id}/open", courseTime.getId())
+            mockMvc.perform(post("/api/times/{id}/open", courseTime.getId())
                             .header("Authorization", "Bearer " + accessToken))
                     .andDo(print())
                     .andExpect(status().isBadRequest())
@@ -552,7 +557,7 @@ class CourseTimeControllerTest extends TenantTestSupport {
     }
 
     @Nested
-    @DisplayName("POST /api/ts/course-times/{id}/start - 학습 시작")
+    @DisplayName("POST /api/times/{id}/start - 학습 시작")
     class StartCourseTime {
 
         @Test
@@ -566,7 +571,7 @@ class CourseTimeControllerTest extends TenantTestSupport {
             String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
 
             // when & then
-            mockMvc.perform(post("/api/ts/course-times/{id}/start", courseTime.getId())
+            mockMvc.perform(post("/api/times/{id}/start", courseTime.getId())
                             .header("Authorization", "Bearer " + accessToken))
                     .andDo(print())
                     .andExpect(status().isOk())
@@ -576,7 +581,7 @@ class CourseTimeControllerTest extends TenantTestSupport {
     }
 
     @Nested
-    @DisplayName("POST /api/ts/course-times/{id}/close - 학습 종료")
+    @DisplayName("POST /api/times/{id}/close - 학습 종료")
     class CloseCourseTime {
 
         @Test
@@ -591,7 +596,7 @@ class CourseTimeControllerTest extends TenantTestSupport {
             String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
 
             // when & then
-            mockMvc.perform(post("/api/ts/course-times/{id}/close", courseTime.getId())
+            mockMvc.perform(post("/api/times/{id}/close", courseTime.getId())
                             .header("Authorization", "Bearer " + accessToken))
                     .andDo(print())
                     .andExpect(status().isOk())
@@ -601,7 +606,7 @@ class CourseTimeControllerTest extends TenantTestSupport {
     }
 
     @Nested
-    @DisplayName("POST /api/ts/course-times/{id}/archive - 아카이브")
+    @DisplayName("POST /api/times/{id}/archive - 아카이브")
     class ArchiveCourseTime {
 
         @Test
@@ -617,7 +622,7 @@ class CourseTimeControllerTest extends TenantTestSupport {
             String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
 
             // when & then
-            mockMvc.perform(post("/api/ts/course-times/{id}/archive", courseTime.getId())
+            mockMvc.perform(post("/api/times/{id}/archive", courseTime.getId())
                             .header("Authorization", "Bearer " + accessToken))
                     .andDo(print())
                     .andExpect(status().isOk())
@@ -629,7 +634,7 @@ class CourseTimeControllerTest extends TenantTestSupport {
     // ==================== Public API 테스트 ====================
 
     @Nested
-    @DisplayName("GET /api/ts/course-times/{id}/capacity - 정원 조회")
+    @DisplayName("GET /api/times/{id}/capacity - 정원 조회")
     class GetCapacity {
 
         @Test
@@ -641,7 +646,7 @@ class CourseTimeControllerTest extends TenantTestSupport {
             String accessToken = loginAndGetAccessToken("user@example.com", "Password123!");
 
             // when & then
-            mockMvc.perform(get("/api/ts/course-times/{id}/capacity", courseTime.getId())
+            mockMvc.perform(get("/api/times/{id}/capacity", courseTime.getId())
                             .header("Authorization", "Bearer " + accessToken))
                     .andDo(print())
                     .andExpect(status().isOk())
@@ -679,7 +684,7 @@ class CourseTimeControllerTest extends TenantTestSupport {
             String accessToken = loginAndGetAccessToken("user@example.com", "Password123!");
 
             // when & then
-            mockMvc.perform(get("/api/ts/course-times/{id}/capacity", courseTime.getId())
+            mockMvc.perform(get("/api/times/{id}/capacity", courseTime.getId())
                             .header("Authorization", "Bearer " + accessToken))
                     .andDo(print())
                     .andExpect(status().isOk())
@@ -697,7 +702,7 @@ class CourseTimeControllerTest extends TenantTestSupport {
             String accessToken = loginAndGetAccessToken("user@example.com", "Password123!");
 
             // when & then
-            mockMvc.perform(get("/api/ts/course-times/{id}/capacity", 99999L)
+            mockMvc.perform(get("/api/times/{id}/capacity", 99999L)
                             .header("Authorization", "Bearer " + accessToken))
                     .andDo(print())
                     .andExpect(status().isNotFound())
@@ -706,7 +711,7 @@ class CourseTimeControllerTest extends TenantTestSupport {
     }
 
     @Nested
-    @DisplayName("GET /api/ts/course-times/{id}/price - 가격 조회")
+    @DisplayName("GET /api/times/{id}/price - 가격 조회")
     class GetPrice {
 
         @Test
@@ -718,7 +723,7 @@ class CourseTimeControllerTest extends TenantTestSupport {
             String accessToken = loginAndGetAccessToken("user@example.com", "Password123!");
 
             // when & then
-            mockMvc.perform(get("/api/ts/course-times/{id}/price", courseTime.getId())
+            mockMvc.perform(get("/api/times/{id}/price", courseTime.getId())
                             .header("Authorization", "Bearer " + accessToken))
                     .andDo(print())
                     .andExpect(status().isOk())
@@ -754,7 +759,7 @@ class CourseTimeControllerTest extends TenantTestSupport {
             String accessToken = loginAndGetAccessToken("user@example.com", "Password123!");
 
             // when & then
-            mockMvc.perform(get("/api/ts/course-times/{id}/price", courseTime.getId())
+            mockMvc.perform(get("/api/times/{id}/price", courseTime.getId())
                             .header("Authorization", "Bearer " + accessToken))
                     .andDo(print())
                     .andExpect(status().isOk())
