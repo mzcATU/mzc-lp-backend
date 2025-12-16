@@ -1,6 +1,7 @@
 package com.mzc.lp.domain.content.service;
 
 import com.mzc.lp.common.constant.ErrorCode;
+import com.mzc.lp.domain.content.constant.ContentStatus;
 import com.mzc.lp.domain.content.constant.ContentType;
 import com.mzc.lp.domain.content.dto.request.CreateExternalLinkRequest;
 import com.mzc.lp.domain.content.dto.request.UpdateContentRequest;
@@ -10,6 +11,7 @@ import com.mzc.lp.domain.content.entity.Content;
 import com.mzc.lp.domain.content.event.ContentCreatedEvent;
 import com.mzc.lp.domain.content.exception.ContentNotFoundException;
 import com.mzc.lp.domain.content.exception.FileStorageException;
+import com.mzc.lp.domain.content.exception.UnauthorizedContentAccessException;
 import com.mzc.lp.domain.content.exception.UnsupportedContentTypeException;
 import com.mzc.lp.domain.content.repository.ContentRepository;
 import lombok.RequiredArgsConstructor;
@@ -285,6 +287,60 @@ public class ContentServiceImpl implements ContentService {
                     .ifPresent(content::setThumbnailPath);
         } catch (Exception e) {
             log.warn("Failed to generate thumbnail for content: {}", filePath, e);
+        }
+    }
+
+    // ========== DESIGNER용 API (본인 콘텐츠 관리) ==========
+
+    @Override
+    public Page<ContentListResponse> getMyContents(Long tenantId, Long userId,
+                                                    ContentStatus status, String keyword,
+                                                    Pageable pageable) {
+        Page<Content> contents;
+
+        if (status != null && keyword != null && !keyword.isBlank()) {
+            contents = contentRepository.findByTenantIdAndCreatedByAndStatusAndKeyword(
+                    tenantId, userId, status, keyword, pageable);
+        } else if (status != null) {
+            contents = contentRepository.findByTenantIdAndCreatedByAndStatus(
+                    tenantId, userId, status, pageable);
+        } else if (keyword != null && !keyword.isBlank()) {
+            contents = contentRepository.findByTenantIdAndCreatedByAndKeyword(
+                    tenantId, userId, keyword, pageable);
+        } else {
+            contents = contentRepository.findByTenantIdAndCreatedBy(tenantId, userId, pageable);
+        }
+
+        return contents.map(ContentListResponse::from);
+    }
+
+    @Override
+    @Transactional
+    public ContentResponse archiveContent(Long contentId, Long tenantId, Long userId) {
+        Content content = findContentOrThrow(contentId, tenantId);
+        validateContentOwnership(content, userId);
+
+        content.archive();
+        log.info("Content archived: id={}, userId={}", contentId, userId);
+
+        return ContentResponse.from(content);
+    }
+
+    @Override
+    @Transactional
+    public ContentResponse restoreContent(Long contentId, Long tenantId, Long userId) {
+        Content content = findContentOrThrow(contentId, tenantId);
+        validateContentOwnership(content, userId);
+
+        content.restore();
+        log.info("Content restored: id={}, userId={}", contentId, userId);
+
+        return ContentResponse.from(content);
+    }
+
+    private void validateContentOwnership(Content content, Long userId) {
+        if (content.getCreatedBy() == null || !content.getCreatedBy().equals(userId)) {
+            throw new UnauthorizedContentAccessException(content.getId());
         }
     }
 }

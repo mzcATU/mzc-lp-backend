@@ -1,5 +1,6 @@
 package com.mzc.lp.domain.content.service;
 
+import com.mzc.lp.domain.content.constant.ContentStatus;
 import com.mzc.lp.domain.content.constant.ContentType;
 import com.mzc.lp.domain.content.dto.request.CreateExternalLinkRequest;
 import com.mzc.lp.domain.content.dto.request.UpdateContentRequest;
@@ -58,4 +59,21 @@ public interface ContentService {
     ContentDownloadInfo getFileForDownload(Long contentId, Long tenantId);
 
     record ContentDownloadInfo(Resource resource, String originalFileName, String contentType) {}
+
+    // ========== DESIGNER용 API (본인 콘텐츠 관리) ==========
+
+    /**
+     * 내 콘텐츠 목록 조회 (DESIGNER용)
+     */
+    Page<ContentListResponse> getMyContents(Long tenantId, Long userId, ContentStatus status, String keyword, Pageable pageable);
+
+    /**
+     * 콘텐츠 보관 (Archive)
+     */
+    ContentResponse archiveContent(Long contentId, Long tenantId, Long userId);
+
+    /**
+     * 콘텐츠 복원 (Restore from Archive)
+     */
+    ContentResponse restoreContent(Long contentId, Long tenantId, Long userId);
 }

@@ -3,6 +3,7 @@ package com.mzc.lp.domain.content.controller;
 import com.mzc.lp.common.context.TenantContext;
 import com.mzc.lp.common.dto.ApiResponse;
 import com.mzc.lp.common.security.UserPrincipal;
+import com.mzc.lp.domain.content.constant.ContentStatus;
 import com.mzc.lp.domain.content.constant.ContentType;
 import com.mzc.lp.domain.content.dto.request.CreateExternalLinkRequest;
 import com.mzc.lp.domain.content.dto.request.UpdateContentRequest;
@@ -166,5 +167,46 @@ public class ContentController {
         Long tenantId = TenantContext.getCurrentTenantId();
         contentService.deleteContent(contentId, tenantId);
         return ResponseEntity.noContent().build();
+    }
+
+    // ========== DESIGNER용 API (본인 콘텐츠 관리) ==========
+
+    @GetMapping("/my")
+    @PreAuthorize("hasRole('DESIGNER')")
+    public ResponseEntity<ApiResponse<Page<ContentListResponse>>> getMyContents(
+            @RequestParam(required = false) ContentStatus status,
+            @RequestParam(required = false) String keyword,
+            @PageableDefault(size = 20) Pageable pageable,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        Long tenantId = TenantContext.getCurrentTenantId();
+        Long userId = principal.id();
+        Page<ContentListResponse> response = contentService.getMyContents(
+                tenantId, userId, status, keyword, pageable);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @PostMapping("/{contentId}/archive")
+    @PreAuthorize("hasRole('DESIGNER')")
+    public ResponseEntity<ApiResponse<ContentResponse>> archiveContent(
+            @PathVariable Long contentId,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        Long tenantId = TenantContext.getCurrentTenantId();
+        Long userId = principal.id();
+        ContentResponse response = contentService.archiveContent(contentId, tenantId, userId);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @PostMapping("/{contentId}/restore")
+    @PreAuthorize("hasRole('DESIGNER')")
+    public ResponseEntity<ApiResponse<ContentResponse>> restoreContent(
+            @PathVariable Long contentId,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        Long tenantId = TenantContext.getCurrentTenantId();
+        Long userId = principal.id();
+        ContentResponse response = contentService.restoreContent(contentId, tenantId, userId);
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 }
