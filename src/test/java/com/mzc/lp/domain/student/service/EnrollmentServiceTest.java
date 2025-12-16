@@ -265,8 +265,8 @@ class EnrollmentServiceTest extends TenantTestSupport {
             given(enrollmentRepository.findByIdAndTenantId(enrollmentId, TENANT_ID))
                     .willReturn(Optional.of(enrollment));
 
-            // when
-            EnrollmentResponse response = enrollmentService.updateProgress(enrollmentId, request, userId);
+            // when (본인의 수강이므로 isAdmin=false)
+            EnrollmentResponse response = enrollmentService.updateProgress(enrollmentId, request, userId, false);
 
             // then
             assertThat(response.progressPercent()).isEqualTo(50);
@@ -283,7 +283,7 @@ class EnrollmentServiceTest extends TenantTestSupport {
                     .willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> enrollmentService.updateProgress(enrollmentId, request, 1L))
+            assertThatThrownBy(() -> enrollmentService.updateProgress(enrollmentId, request, 1L, false))
                     .isInstanceOf(EnrollmentNotFoundException.class);
         }
     }
@@ -334,8 +334,8 @@ class EnrollmentServiceTest extends TenantTestSupport {
             given(enrollmentRepository.findByIdAndTenantId(enrollmentId, TENANT_ID))
                     .willReturn(Optional.of(enrollment));
 
-            // when
-            enrollmentService.cancelEnrollment(enrollmentId, userId);
+            // when (본인의 수강 취소이므로 isAdmin=false)
+            enrollmentService.cancelEnrollment(enrollmentId, userId, false);
 
             // then
             assertThat(enrollment.isDropped()).isTrue();
@@ -354,7 +354,7 @@ class EnrollmentServiceTest extends TenantTestSupport {
                     .willReturn(Optional.of(enrollment));
 
             // when & then
-            assertThatThrownBy(() -> enrollmentService.cancelEnrollment(enrollmentId, userId))
+            assertThatThrownBy(() -> enrollmentService.cancelEnrollment(enrollmentId, userId, false))
                     .isInstanceOf(CannotCancelCompletedException.class);
 
             verify(courseTimeService, never()).releaseSeat(any());

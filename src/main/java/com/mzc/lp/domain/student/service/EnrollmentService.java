@@ -32,7 +32,7 @@ public interface EnrollmentService {
     Page<EnrollmentResponse> getEnrollmentsByUser(Long userId, EnrollmentStatus status, Pageable pageable);
 
     // 진도율 업데이트
-    EnrollmentResponse updateProgress(Long enrollmentId, UpdateProgressRequest request, Long userId);
+    EnrollmentResponse updateProgress(Long enrollmentId, UpdateProgressRequest request, Long userId, boolean isAdmin);
 
     // 수료 처리
     EnrollmentDetailResponse completeEnrollment(Long enrollmentId, CompleteEnrollmentRequest request);
@@ -41,5 +41,5 @@ public interface EnrollmentService {
     EnrollmentDetailResponse updateStatus(Long enrollmentId, UpdateEnrollmentStatusRequest request);
 
     // 수강 취소
-    void cancelEnrollment(Long enrollmentId, Long userId);
+    void cancelEnrollment(Long enrollmentId, Long userId, boolean isAdmin);
 }

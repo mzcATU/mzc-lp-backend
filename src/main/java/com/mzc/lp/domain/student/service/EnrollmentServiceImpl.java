@@ -14,6 +14,7 @@ import com.mzc.lp.domain.student.exception.AlreadyEnrolledException;
 import com.mzc.lp.domain.student.exception.CannotCancelCompletedException;
 import com.mzc.lp.domain.student.exception.EnrollmentNotFoundException;
 import com.mzc.lp.domain.student.exception.EnrollmentPeriodClosedException;
+import com.mzc.lp.domain.student.exception.UnauthorizedEnrollmentAccessException;
 import com.mzc.lp.domain.student.repository.EnrollmentRepository;
 import com.mzc.lp.domain.ts.entity.CourseTime;
 import com.mzc.lp.domain.ts.exception.CourseTimeNotFoundException;
@@ -166,14 +167,17 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
     @Override
     @Transactional
-    public EnrollmentResponse updateProgress(Long enrollmentId, UpdateProgressRequest request, Long userId) {
-        log.info("Updating progress: enrollmentId={}, progressPercent={}", enrollmentId, request.progressPercent());
+    public EnrollmentResponse updateProgress(Long enrollmentId, UpdateProgressRequest request, Long userId, boolean isAdmin) {
+        log.info("Updating progress: enrollmentId={}, progressPercent={}, userId={}, isAdmin={}",
+                enrollmentId, request.progressPercent(), userId, isAdmin);
 
         Enrollment enrollment = enrollmentRepository.findByIdAndTenantId(enrollmentId, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new EnrollmentNotFoundException(enrollmentId));
 
-        // 본인 확인 (또는 관리자)
-        // TODO: 권한 체크 로직 추가
+        // 본인 확인 (관리자가 아닌 경우)
+        if (!isAdmin && !enrollment.getUserId().equals(userId)) {
+            throw new UnauthorizedEnrollmentAccessException(enrollmentId, userId);
+        }
 
         enrollment.updateProgress(request.progressPercent());
 
@@ -215,14 +219,16 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
     @Override
     @Transactional
-    public void cancelEnrollment(Long enrollmentId, Long userId) {
-        log.info("Cancelling enrollment: enrollmentId={}, userId={}", enrollmentId, userId);
+    public void cancelEnrollment(Long enrollmentId, Long userId, boolean isAdmin) {
+        log.info("Cancelling enrollment: enrollmentId={}, userId={}, isAdmin={}", enrollmentId, userId, isAdmin);
 
         Enrollment enrollment = enrollmentRepository.findByIdAndTenantId(enrollmentId, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new EnrollmentNotFoundException(enrollmentId));
 
-        // 본인 확인
-        // TODO: 관리자는 타인 취소 가능하도록 수정
+        // 본인 확인 (관리자가 아닌 경우)
+        if (!isAdmin && !enrollment.getUserId().equals(userId)) {
+            throw new UnauthorizedEnrollmentAccessException(enrollmentId, userId);
+        }
 
         // 수료 상태에서는 취소 불가
         if (!enrollment.canCancel()) {

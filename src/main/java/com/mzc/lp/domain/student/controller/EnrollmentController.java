@@ -101,7 +101,8 @@ public class EnrollmentController {
             @Valid @RequestBody UpdateProgressRequest request,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        EnrollmentResponse response = enrollmentService.updateProgress(enrollmentId, request, principal.id());
+        boolean isAdmin = hasAdminRole(principal);
+        EnrollmentResponse response = enrollmentService.updateProgress(enrollmentId, request, principal.id(), isAdmin);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
@@ -140,7 +141,8 @@ public class EnrollmentController {
             @PathVariable Long enrollmentId,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        enrollmentService.cancelEnrollment(enrollmentId, principal.id());
+        boolean isAdmin = hasAdminRole(principal);
+        enrollmentService.cancelEnrollment(enrollmentId, principal.id(), isAdmin);
         return ResponseEntity.noContent().build();
     }
 
@@ -198,5 +200,15 @@ public class EnrollmentController {
     ) {
         UserEnrollmentStatsResponse response = enrollmentStatsService.getUserStats(userId);
         return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    // ========== Helper Methods ==========
+
+    /**
+     * 관리자 역할 여부 확인 (OPERATOR, TENANT_ADMIN)
+     */
+    private boolean hasAdminRole(UserPrincipal principal) {
+        String role = principal.role();
+        return "OPERATOR".equals(role) || "TENANT_ADMIN".equals(role);
     }
 }
