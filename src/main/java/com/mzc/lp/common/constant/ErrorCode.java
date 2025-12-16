@@ -54,6 +54,8 @@ public enum ErrorCode {
     CAPACITY_EXCEEDED(HttpStatus.CONFLICT, "TS003", "Capacity exceeded"),
     INVALID_DATE_RANGE(HttpStatus.BAD_REQUEST, "TS004", "Invalid date range"),
     LOCATION_REQUIRED(HttpStatus.BAD_REQUEST, "TS005", "Location info required for OFFLINE/BLENDED"),
+    COURSE_TIME_NOT_MODIFIABLE(HttpStatus.BAD_REQUEST, "TS006", "CourseTime is not modifiable in current status"),
+    CANNOT_DELETE_MAIN_INSTRUCTOR(HttpStatus.BAD_REQUEST, "TS007", "Cannot delete main instructor while course is ongoing"),
 
     // Enrollment (SIS)
     ENROLLMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "SIS001", "Enrollment not found"),
