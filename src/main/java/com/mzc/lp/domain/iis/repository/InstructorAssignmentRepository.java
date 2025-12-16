@@ -58,4 +58,25 @@ public interface InstructorAssignmentRepository extends JpaRepository<Instructor
             "AND ia.tenantId = :tenantId " +
             "AND ia.status = 'ACTIVE'")
     long countActiveByUserKey(@Param("userKey") Long userKey, @Param("tenantId") Long tenantId);
+
+    // ========== TS 모듈 연동용 메서드 ==========
+
+    // MAIN 강사 존재 여부 확인
+    @Query("SELECT CASE WHEN COUNT(ia) > 0 THEN true ELSE false END " +
+            "FROM InstructorAssignment ia " +
+            "WHERE ia.timeKey = :timeKey " +
+            "AND ia.tenantId = :tenantId " +
+            "AND ia.role = 'MAIN' " +
+            "AND ia.status = 'ACTIVE'")
+    boolean existsActiveMainInstructor(@Param("timeKey") Long timeKey, @Param("tenantId") Long tenantId);
+
+    // 여러 차수의 강사 목록 Bulk 조회 (N+1 방지)
+    @Query("SELECT ia FROM InstructorAssignment ia " +
+            "WHERE ia.timeKey IN :timeKeys " +
+            "AND ia.tenantId = :tenantId " +
+            "AND ia.status = 'ACTIVE' " +
+            "ORDER BY ia.timeKey, ia.role")
+    List<InstructorAssignment> findActiveByTimeKeyIn(
+            @Param("timeKeys") List<Long> timeKeys,
+            @Param("tenantId") Long tenantId);
 }
