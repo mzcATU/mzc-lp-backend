@@ -23,7 +23,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/ts/course-times")
+@RequestMapping("/api/times")
 @RequiredArgsConstructor
 @Validated
 public class CourseTimeController {

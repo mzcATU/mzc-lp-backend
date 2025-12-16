@@ -28,7 +28,7 @@ import java.util.List;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/ts/course-times/{timeId}/instructors")
+@RequestMapping("/api/times/{timeId}/instructors")
 @RequiredArgsConstructor
 @Validated
 public class CourseTimeInstructorController {
