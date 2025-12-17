@@ -3,6 +3,7 @@ package com.mzc.lp.domain.ts.controller;
 import com.mzc.lp.common.dto.ApiResponse;
 import com.mzc.lp.common.security.UserPrincipal;
 import com.mzc.lp.domain.ts.constant.CourseTimeStatus;
+import com.mzc.lp.domain.ts.dto.request.CloneCourseTimeRequest;
 import com.mzc.lp.domain.ts.dto.request.CreateCourseTimeRequest;
 import com.mzc.lp.domain.ts.dto.request.UpdateCourseTimeRequest;
 import com.mzc.lp.domain.ts.dto.response.CapacityResponse;
@@ -75,6 +76,17 @@ public class CourseTimeController {
     ) {
         courseTimeService.deleteCourseTime(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/clone")
+    @PreAuthorize("hasAnyRole('OPERATOR', 'TENANT_ADMIN')")
+    public ResponseEntity<ApiResponse<CourseTimeDetailResponse>> cloneCourseTime(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserPrincipal principal,
+            @Valid @RequestBody CloneCourseTimeRequest request
+    ) {
+        CourseTimeDetailResponse response = courseTimeService.cloneCourseTime(id, request, principal.id());
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
     }
 
     // ========== 상태 전이 API ==========

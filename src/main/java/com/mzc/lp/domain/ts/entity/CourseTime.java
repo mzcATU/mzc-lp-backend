@@ -92,6 +92,44 @@ public class CourseTime extends TenantEntity {
     private Long createdBy;
 
     // 정적 팩토리 메서드
+    public static CourseTime cloneFrom(
+            CourseTime source,
+            String newTitle,
+            LocalDate enrollStartDate,
+            LocalDate enrollEndDate,
+            LocalDate classStartDate,
+            LocalDate classEndDate,
+            Long createdBy
+    ) {
+        CourseTime courseTime = new CourseTime();
+        // 복제 대상 필드
+        courseTime.deliveryType = source.deliveryType;
+        courseTime.capacity = source.capacity;
+        courseTime.maxWaitingCount = source.maxWaitingCount;
+        courseTime.enrollmentMethod = source.enrollmentMethod;
+        courseTime.minProgressForCompletion = source.minProgressForCompletion;
+        courseTime.price = source.price;
+        courseTime.free = source.free;
+        courseTime.locationInfo = source.locationInfo;
+        courseTime.allowLateEnrollment = source.allowLateEnrollment;
+        courseTime.cmCourseId = source.cmCourseId;
+        courseTime.cmCourseVersionId = source.cmCourseVersionId;
+
+        // 새로 지정하는 필드
+        courseTime.title = newTitle;
+        courseTime.enrollStartDate = enrollStartDate;
+        courseTime.enrollEndDate = enrollEndDate;
+        courseTime.classStartDate = classStartDate;
+        courseTime.classEndDate = classEndDate;
+        courseTime.createdBy = createdBy;
+
+        // 고정 값
+        courseTime.status = CourseTimeStatus.DRAFT;
+        courseTime.currentEnrollment = 0;
+
+        return courseTime;
+    }
+
     public static CourseTime create(
             String title,
             DeliveryType deliveryType,
