@@ -2,10 +2,12 @@ package com.mzc.lp.domain.iis.controller;
 
 import com.mzc.lp.common.dto.ApiResponse;
 import com.mzc.lp.common.security.UserPrincipal;
+import com.mzc.lp.domain.iis.constant.AssignmentAction;
 import com.mzc.lp.domain.iis.constant.AssignmentStatus;
 import com.mzc.lp.domain.iis.dto.request.CancelAssignmentRequest;
 import com.mzc.lp.domain.iis.dto.request.ReplaceInstructorRequest;
 import com.mzc.lp.domain.iis.dto.request.UpdateRoleRequest;
+import com.mzc.lp.domain.iis.dto.response.AssignmentHistoryResponse;
 import com.mzc.lp.domain.iis.dto.response.InstructorAssignmentResponse;
 import com.mzc.lp.domain.iis.service.InstructorAssignmentService;
 import jakarta.validation.Valid;
@@ -73,6 +75,17 @@ public class InstructorAssignmentController {
                 request != null ? request : new CancelAssignmentRequest(null),
                 principal.id());
         return ResponseEntity.noContent().build();
+    }
+
+    // ========== 이력 조회 API ==========
+
+    @GetMapping("/api/instructor-assignments/{id}/histories")
+    public ResponseEntity<ApiResponse<List<AssignmentHistoryResponse>>> getAssignmentHistories(
+            @PathVariable Long id,
+            @RequestParam(required = false) AssignmentAction action
+    ) {
+        List<AssignmentHistoryResponse> response = assignmentService.getAssignmentHistories(id, action);
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     // ========== 사용자 기준 API ==========

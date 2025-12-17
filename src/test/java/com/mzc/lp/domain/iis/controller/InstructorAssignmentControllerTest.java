@@ -238,6 +238,75 @@ class InstructorAssignmentControllerTest extends TenantTestSupport {
         }
     }
 
+    // ==================== 이력 조회 API 테스트 ====================
+
+    @Nested
+    @DisplayName("GET /api/instructor-assignments/{id}/histories - 이력 조회")
+    class GetAssignmentHistories {
+
+        @Test
+        @DisplayName("성공 - 전체 이력 조회")
+        void getAssignmentHistories_success() throws Exception {
+            // given
+            createOperatorUser();
+            User instructor = createInstructorUser();
+            String token = loginAndGetAccessToken("operator@example.com", "Password123!");
+
+            InstructorAssignment assignment = createAssignment(instructor.getId(), TIME_ID, InstructorRole.MAIN);
+
+            // when & then - 배정 생성 시 자동으로 ASSIGN 이력이 생성됨
+            mockMvc.perform(get("/api/instructor-assignments/{id}/histories", assignment.getId())
+                            .header("Authorization", "Bearer " + token))
+                    .andDo(print())
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data").isArray());
+        }
+
+        @Test
+        @DisplayName("성공 - 액션 타입 필터링 조회")
+        void getAssignmentHistories_withActionFilter_success() throws Exception {
+            // given
+            createOperatorUser();
+            User instructor = createInstructorUser();
+            String token = loginAndGetAccessToken("operator@example.com", "Password123!");
+
+            InstructorAssignment assignment = createAssignment(instructor.getId(), TIME_ID, InstructorRole.SUB);
+
+            // 역할 변경하여 ROLE_CHANGE 이력 생성
+            UpdateRoleRequest updateRequest = new UpdateRoleRequest(InstructorRole.MAIN, "주강사 승격");
+            mockMvc.perform(put("/api/instructor-assignments/{id}", assignment.getId())
+                            .header("Authorization", "Bearer " + token)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(updateRequest)))
+                    .andExpect(status().isOk());
+
+            // when & then - ROLE_CHANGE 액션만 필터링
+            mockMvc.perform(get("/api/instructor-assignments/{id}/histories", assignment.getId())
+                            .param("action", "ROLE_CHANGE")
+                            .header("Authorization", "Bearer " + token))
+                    .andDo(print())
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data").isArray())
+                    .andExpect(jsonPath("$.data.length()").value(1))
+                    .andExpect(jsonPath("$.data[0].action").value("ROLE_CHANGE"));
+        }
+
+        @Test
+        @DisplayName("실패 - 존재하지 않는 배정")
+        void getAssignmentHistories_fail_notFound() throws Exception {
+            // given
+            createOperatorUser();
+            String token = loginAndGetAccessToken("operator@example.com", "Password123!");
+
+            // when & then
+            mockMvc.perform(get("/api/instructor-assignments/{id}/histories", 999L)
+                            .header("Authorization", "Bearer " + token))
+                    .andDo(print())
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.error.code").value("IIS001"));
+        }
+    }
+
     // ==================== 사용자 기준 API 테스트 ====================
 
     @Nested

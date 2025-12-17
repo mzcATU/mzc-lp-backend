@@ -55,4 +55,5 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+    environment 'JWT_SECRET', 'mzc-lp-test-jwt-secret-key-that-is-at-least-256-bits-long-for-hmac-sha256'
 }

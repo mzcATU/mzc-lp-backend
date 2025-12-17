@@ -1,10 +1,12 @@
 package com.mzc.lp.domain.iis.service;
 
+import com.mzc.lp.domain.iis.constant.AssignmentAction;
 import com.mzc.lp.domain.iis.constant.AssignmentStatus;
 import com.mzc.lp.domain.iis.dto.request.AssignInstructorRequest;
 import com.mzc.lp.domain.iis.dto.request.CancelAssignmentRequest;
 import com.mzc.lp.domain.iis.dto.request.ReplaceInstructorRequest;
 import com.mzc.lp.domain.iis.dto.request.UpdateRoleRequest;
+import com.mzc.lp.domain.iis.dto.response.AssignmentHistoryResponse;
 import com.mzc.lp.domain.iis.dto.response.InstructorAssignmentResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -47,4 +49,14 @@ public interface InstructorAssignmentService {
      * 반환: Key=timeId, Value=강사목록
      */
     Map<Long, List<InstructorAssignmentResponse>> getInstructorsByTimeIds(List<Long> timeIds);
+
+    // ========== 이력 조회 ==========
+
+    /**
+     * 특정 배정의 변경 이력 조회
+     * @param assignmentId 배정 ID
+     * @param action 액션 타입 필터 (null이면 전체 조회)
+     * @return 이력 목록 (최신순 정렬)
+     */
+    List<AssignmentHistoryResponse> getAssignmentHistories(Long assignmentId, AssignmentAction action);
 }

@@ -1,12 +1,14 @@
 package com.mzc.lp.domain.iis.service;
 
 import com.mzc.lp.common.context.TenantContext;
+import com.mzc.lp.domain.iis.constant.AssignmentAction;
 import com.mzc.lp.domain.iis.constant.AssignmentStatus;
 import com.mzc.lp.domain.iis.constant.InstructorRole;
 import com.mzc.lp.domain.iis.dto.request.AssignInstructorRequest;
 import com.mzc.lp.domain.iis.dto.request.CancelAssignmentRequest;
 import com.mzc.lp.domain.iis.dto.request.ReplaceInstructorRequest;
 import com.mzc.lp.domain.iis.dto.request.UpdateRoleRequest;
+import com.mzc.lp.domain.iis.dto.response.AssignmentHistoryResponse;
 import com.mzc.lp.domain.iis.dto.response.InstructorAssignmentResponse;
 import com.mzc.lp.domain.iis.entity.AssignmentHistory;
 import com.mzc.lp.domain.iis.entity.InstructorAssignment;
@@ -245,6 +247,27 @@ public class InstructorAssignmentServiceImpl implements InstructorAssignmentServ
                                 Collectors.toList()
                         )
                 ));
+    }
+
+    // ========== 이력 조회 ==========
+
+    @Override
+    public List<AssignmentHistoryResponse> getAssignmentHistories(Long assignmentId, AssignmentAction action) {
+        log.debug("Getting assignment histories: assignmentId={}, action={}", assignmentId, action);
+
+        // 배정 존재 여부 확인
+        findAssignmentById(assignmentId);
+
+        List<AssignmentHistory> histories;
+        if (action != null) {
+            histories = historyRepository.findByAssignmentIdAndActionOrderByChangedAtDesc(assignmentId, action);
+        } else {
+            histories = historyRepository.findByAssignmentIdOrderByChangedAtDesc(assignmentId);
+        }
+
+        return histories.stream()
+                .map(AssignmentHistoryResponse::from)
+                .toList();
     }
 
     // ========== Private Methods ==========
