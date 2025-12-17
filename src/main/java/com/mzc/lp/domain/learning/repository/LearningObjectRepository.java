@@ -35,4 +35,9 @@ public interface LearningObjectRepository extends JpaRepository<LearningObject, 
                                                              @Param("folderId") Long folderId,
                                                              @Param("keyword") String keyword,
                                                              Pageable pageable);
+
+    /**
+     * 콘텐츠가 강의(LearningObject)에서 참조되고 있는지 확인
+     */
+    boolean existsByContentId(Long contentId);
 }

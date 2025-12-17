@@ -44,6 +44,8 @@ public enum ErrorCode {
     METADATA_EXTRACTION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "CT006", "Metadata extraction failed"),
     FILE_NOT_FOUND(HttpStatus.NOT_FOUND, "CT007", "File not found on storage"),
     UNAUTHORIZED_CONTENT_ACCESS(HttpStatus.FORBIDDEN, "CT008", "Not authorized to access this content"),
+    CONTENT_VERSION_NOT_FOUND(HttpStatus.NOT_FOUND, "CT009", "Content version not found"),
+    CONTENT_IN_USE(HttpStatus.CONFLICT, "CT010", "Content is in use by learning objects and cannot be modified"),
 
     // Learning Object (LO)
     LEARNING_OBJECT_NOT_FOUND(HttpStatus.NOT_FOUND, "LO001", "Learning object not found"),

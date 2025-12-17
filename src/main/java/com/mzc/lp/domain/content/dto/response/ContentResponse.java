@@ -21,6 +21,7 @@ public record ContentResponse(
         String filePath,
         String thumbnailPath,
         Long createdBy,
+        Integer currentVersion,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
@@ -39,6 +40,7 @@ public record ContentResponse(
                 content.getFilePath(),
                 content.getThumbnailPath(),
                 content.getCreatedBy(),
+                content.getCurrentVersion(),
                 content.getCreatedAt() != null
                         ? LocalDateTime.ofInstant(content.getCreatedAt(), ZoneId.systemDefault())
                         : null,
