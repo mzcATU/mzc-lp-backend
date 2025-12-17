@@ -56,7 +56,7 @@ public class ContentServiceImpl implements ContentService {
 
     @Override
     @Transactional
-    public ContentResponse uploadFile(MultipartFile file, Long folderId, Long tenantId) {
+    public ContentResponse uploadFile(MultipartFile file, Long folderId, Long tenantId, Long userId) {
         String originalFileName = StringUtils.cleanPath(file.getOriginalFilename());
         String extension = fileStorageService.getFileExtension(originalFileName);
 
@@ -73,7 +73,8 @@ public class ContentServiceImpl implements ContentService {
                 storedFileName,
                 contentType,
                 file.getSize(),
-                filePath
+                filePath,
+                userId
         );
 
         // 썸네일 자동 생성
@@ -89,11 +90,11 @@ public class ContentServiceImpl implements ContentService {
 
     @Override
     @Transactional
-    public ContentResponse createExternalLink(CreateExternalLinkRequest request, Long tenantId) {
+    public ContentResponse createExternalLink(CreateExternalLinkRequest request, Long tenantId, Long userId) {
         String url = request.url();
         validateExternalUrl(url);
 
-        Content content = Content.createExternalLink(request.name(), url);
+        Content content = Content.createExternalLink(request.name(), url, userId);
         Content savedContent = contentRepository.save(content);
 
         log.info("External link created: id={}, name={}, url={}",
