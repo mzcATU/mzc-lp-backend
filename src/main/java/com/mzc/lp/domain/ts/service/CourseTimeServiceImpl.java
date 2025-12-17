@@ -34,6 +34,12 @@ public class CourseTimeServiceImpl implements CourseTimeService {
     private final CourseTimeRepository courseTimeRepository;
 
     @Override
+    public CourseTime getCourseTimeEntity(Long id) {
+        return courseTimeRepository.findByIdAndTenantId(id, TenantContext.getCurrentTenantId())
+                .orElseThrow(() -> new CourseTimeNotFoundException(id));
+    }
+
+    @Override
     @Transactional
     public CourseTimeDetailResponse createCourseTime(CreateCourseTimeRequest request, Long createdBy) {
         log.info("Creating course time: title={}", request.title());
