@@ -1,5 +1,6 @@
 package com.mzc.lp.domain.iis.repository;
 
+import com.mzc.lp.domain.iis.constant.AssignmentAction;
 import com.mzc.lp.domain.iis.entity.AssignmentHistory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -10,6 +11,8 @@ import java.util.List;
 public interface AssignmentHistoryRepository extends JpaRepository<AssignmentHistory, Long> {
 
     List<AssignmentHistory> findByAssignmentIdOrderByChangedAtDesc(Long assignmentId);
+
+    List<AssignmentHistory> findByAssignmentIdAndActionOrderByChangedAtDesc(Long assignmentId, AssignmentAction action);
 
     Page<AssignmentHistory> findByAssignmentId(Long assignmentId, Pageable pageable);
 }
