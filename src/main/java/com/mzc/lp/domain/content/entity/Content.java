@@ -27,6 +27,9 @@ public class Content extends TenantEntity {
     @Column(name = "created_by")
     private Long createdBy;
 
+    @Column(name = "current_version")
+    private Integer currentVersion;
+
     @Column(name = "original_file_name", length = 500)
     private String originalFileName;
 
@@ -71,6 +74,7 @@ public class Content extends TenantEntity {
         Content content = new Content();
         content.status = ContentStatus.ACTIVE;
         content.createdBy = createdBy;
+        content.currentVersion = 1;
         content.originalFileName = originalFileName;
         content.storedFileName = storedFileName;
         content.contentType = contentType;
@@ -89,6 +93,7 @@ public class Content extends TenantEntity {
         Content content = new Content();
         content.status = ContentStatus.ACTIVE;
         content.createdBy = createdBy;
+        content.currentVersion = 1;
         content.originalFileName = name;
         content.contentType = ContentType.EXTERNAL_LINK;
         content.externalUrl = externalUrl;
@@ -164,5 +169,13 @@ public class Content extends TenantEntity {
 
     public boolean isArchived() {
         return this.status == ContentStatus.ARCHIVED;
+    }
+
+    // 버전 증가 메서드
+    public void incrementVersion() {
+        if (this.currentVersion == null) {
+            this.currentVersion = 1;
+        }
+        this.currentVersion++;
     }
 }

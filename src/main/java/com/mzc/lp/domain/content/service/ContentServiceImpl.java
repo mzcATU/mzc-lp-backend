@@ -3,6 +3,7 @@ package com.mzc.lp.domain.content.service;
 import com.mzc.lp.common.constant.ErrorCode;
 import com.mzc.lp.domain.content.constant.ContentStatus;
 import com.mzc.lp.domain.content.constant.ContentType;
+import com.mzc.lp.domain.content.constant.VersionChangeType;
 import com.mzc.lp.domain.content.dto.request.CreateExternalLinkRequest;
 import com.mzc.lp.domain.content.dto.request.UpdateContentRequest;
 import com.mzc.lp.domain.content.dto.response.ContentListResponse;
@@ -39,6 +40,7 @@ public class ContentServiceImpl implements ContentService {
     private final ContentRepository contentRepository;
     private final FileStorageService fileStorageService;
     private final ThumbnailService thumbnailService;
+    private final ContentVersionService contentVersionService;
     private final ApplicationEventPublisher eventPublisher;
 
     @Value("${file.upload-dir:./uploads}")
@@ -83,6 +85,9 @@ public class ContentServiceImpl implements ContentService {
         Content savedContent = contentRepository.save(content);
         log.info("Content created: id={}, type={}, file={}", savedContent.getId(), contentType, originalFileName);
 
+        // 초기 버전 기록
+        contentVersionService.createVersion(savedContent, VersionChangeType.FILE_UPLOAD, userId, "Initial upload");
+
         eventPublisher.publishEvent(new ContentCreatedEvent(this, savedContent, folderId));
 
         return ContentResponse.from(savedContent);
@@ -99,6 +104,9 @@ public class ContentServiceImpl implements ContentService {
 
         log.info("External link created: id={}, name={}, url={}",
                 savedContent.getId(), request.name(), url);
+
+        // 초기 버전 기록
+        contentVersionService.createVersion(savedContent, VersionChangeType.FILE_UPLOAD, userId, "External link created");
 
         eventPublisher.publishEvent(new ContentCreatedEvent(this, savedContent, request.folderId()));
 
@@ -134,7 +142,13 @@ public class ContentServiceImpl implements ContentService {
     @Transactional
     public ContentResponse updateContent(Long contentId, UpdateContentRequest request, Long tenantId) {
         Content content = findContentOrThrow(contentId, tenantId);
+
+        // 버전 기록 (변경 전 상태 저장)
+        contentVersionService.createVersion(content, VersionChangeType.METADATA_UPDATE,
+                content.getCreatedBy(), "Metadata updated");
+
         content.updateMetadata(request.originalFileName(), request.duration(), request.resolution());
+        content.incrementVersion();
 
         log.info("Content updated: id={}", contentId);
         return ContentResponse.from(content);
@@ -150,6 +164,10 @@ public class ContentServiceImpl implements ContentService {
                     "Cannot replace file for external link content");
         }
 
+        // 버전 기록 (변경 전 상태 저장)
+        contentVersionService.createVersion(content, VersionChangeType.FILE_REPLACE,
+                content.getCreatedBy(), "File replaced");
+
         String oldFilePath = content.getFilePath();
         String oldThumbnailPath = content.getThumbnailPath();
         String originalFileName = StringUtils.cleanPath(file.getOriginalFilename());
@@ -157,6 +175,7 @@ public class ContentServiceImpl implements ContentService {
         String newFilePath = fileStorageService.storeFile(file);
 
         content.replaceFile(originalFileName, storedFileName, file.getSize(), newFilePath);
+        content.incrementVersion();
 
         // 썸네일 재생성
         generateAndSetThumbnail(content, newFilePath, content.getContentType());

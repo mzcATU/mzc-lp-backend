@@ -7,6 +7,7 @@ import com.mzc.lp.domain.content.dto.request.CreateExternalLinkRequest;
 import com.mzc.lp.domain.content.dto.request.UpdateContentRequest;
 import com.mzc.lp.domain.content.entity.Content;
 import com.mzc.lp.domain.content.repository.ContentRepository;
+import com.mzc.lp.domain.content.repository.ContentVersionRepository;
 import com.mzc.lp.domain.user.constant.TenantRole;
 import com.mzc.lp.domain.user.dto.request.LoginRequest;
 import com.mzc.lp.domain.user.entity.User;
@@ -46,6 +47,9 @@ class ContentControllerTest extends TenantTestSupport {
     private ContentRepository contentRepository;
 
     @Autowired
+    private ContentVersionRepository contentVersionRepository;
+
+    @Autowired
     private UserRepository userRepository;
 
     @Autowired
@@ -65,9 +69,10 @@ class ContentControllerTest extends TenantTestSupport {
 
     @BeforeEach
     void setUp() {
-        // FK 제약조건: LearningObject -> Content
+        // FK 제약조건: LearningObject -> Content, ContentVersion -> Content
         learningObjectRepository.deleteAll();
         contentFolderRepository.deleteAll();
+        contentVersionRepository.deleteAll();
         contentRepository.deleteAll();
         userCourseRoleRepository.deleteAll();
         refreshTokenRepository.deleteAll();
