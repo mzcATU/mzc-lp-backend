@@ -10,11 +10,13 @@ import com.mzc.lp.domain.ts.dto.response.CourseTimeDetailResponse;
 import com.mzc.lp.domain.ts.dto.response.CourseTimeResponse;
 import com.mzc.lp.domain.ts.dto.response.PriceResponse;
 import com.mzc.lp.domain.ts.entity.CourseTime;
+import com.mzc.lp.domain.iis.service.InstructorAssignmentService;
 import com.mzc.lp.domain.ts.exception.CapacityExceededException;
 import com.mzc.lp.domain.ts.exception.CourseTimeNotFoundException;
 import com.mzc.lp.domain.ts.exception.InvalidDateRangeException;
 import com.mzc.lp.domain.ts.exception.InvalidStatusTransitionException;
 import com.mzc.lp.domain.ts.exception.LocationRequiredException;
+import com.mzc.lp.domain.ts.exception.MainInstructorRequiredException;
 import com.mzc.lp.domain.ts.repository.CourseTimeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +34,7 @@ import java.util.List;
 public class CourseTimeServiceImpl implements CourseTimeService {
 
     private final CourseTimeRepository courseTimeRepository;
+    private final InstructorAssignmentService instructorAssignmentService;
 
     @Override
     public CourseTime getCourseTimeEntity(Long id) {
@@ -208,6 +211,11 @@ public class CourseTimeServiceImpl implements CourseTimeService {
         if (courseTime.requiresLocationInfo() &&
                 (courseTime.getLocationInfo() == null || courseTime.getLocationInfo().isBlank())) {
             throw new LocationRequiredException();
+        }
+
+        // MAIN 강사 필수 검증 (R-IIS-01, R-TS-OPEN)
+        if (!instructorAssignmentService.existsMainInstructor(id)) {
+            throw new MainInstructorRequiredException(id);
         }
 
         courseTime.open();
