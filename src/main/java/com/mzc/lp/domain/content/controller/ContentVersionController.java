@@ -23,7 +23,7 @@ public class ContentVersionController {
     private final ContentVersionService contentVersionService;
 
     @GetMapping
-    @PreAuthorize("hasRole('DESIGNER')")
+    @PreAuthorize("hasAnyRole('DESIGNER', 'OPERATOR', 'TENANT_ADMIN')")
     public ResponseEntity<ApiResponse<List<ContentVersionResponse>>> getVersionHistory(
             @PathVariable Long contentId,
             @AuthenticationPrincipal UserPrincipal principal
@@ -35,7 +35,7 @@ public class ContentVersionController {
     }
 
     @GetMapping("/{versionNumber}")
-    @PreAuthorize("hasRole('DESIGNER')")
+    @PreAuthorize("hasAnyRole('DESIGNER', 'OPERATOR', 'TENANT_ADMIN')")
     public ResponseEntity<ApiResponse<ContentVersionResponse>> getVersion(
             @PathVariable Long contentId,
             @PathVariable Integer versionNumber,
@@ -48,7 +48,7 @@ public class ContentVersionController {
     }
 
     @PostMapping("/{versionNumber}/restore")
-    @PreAuthorize("hasRole('DESIGNER')")
+    @PreAuthorize("hasAnyRole('DESIGNER', 'OPERATOR', 'TENANT_ADMIN')")
     public ResponseEntity<ApiResponse<ContentResponse>> restoreVersion(
             @PathVariable Long contentId,
             @PathVariable Integer versionNumber,

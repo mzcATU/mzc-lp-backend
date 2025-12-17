@@ -5,11 +5,13 @@ import com.mzc.lp.domain.content.dto.response.ContentResponse;
 import com.mzc.lp.domain.content.dto.response.ContentVersionResponse;
 import com.mzc.lp.domain.content.entity.Content;
 import com.mzc.lp.domain.content.entity.ContentVersion;
+import com.mzc.lp.domain.content.exception.ContentInUseException;
 import com.mzc.lp.domain.content.exception.ContentNotFoundException;
 import com.mzc.lp.domain.content.exception.ContentVersionNotFoundException;
 import com.mzc.lp.domain.content.exception.UnauthorizedContentAccessException;
 import com.mzc.lp.domain.content.repository.ContentRepository;
 import com.mzc.lp.domain.content.repository.ContentVersionRepository;
+import com.mzc.lp.domain.learning.repository.LearningObjectRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,6 +27,7 @@ public class ContentVersionServiceImpl implements ContentVersionService {
 
     private final ContentRepository contentRepository;
     private final ContentVersionRepository contentVersionRepository;
+    private final LearningObjectRepository learningObjectRepository;
 
     @Override
     @Transactional
@@ -67,6 +70,7 @@ public class ContentVersionServiceImpl implements ContentVersionService {
     public ContentResponse restoreVersion(Long contentId, Integer versionNumber, Long tenantId, Long userId, String changeSummary) {
         Content content = findContentOrThrow(contentId, tenantId);
         validateOwnership(content, userId);
+        validateContentNotInUse(contentId);
 
         ContentVersion version = contentVersionRepository.findByContentIdAndVersionNumber(contentId, versionNumber)
                 .orElseThrow(() -> new ContentVersionNotFoundException(contentId, versionNumber));
@@ -101,6 +105,12 @@ public class ContentVersionServiceImpl implements ContentVersionService {
     private void validateOwnership(Content content, Long userId) {
         if (content.getCreatedBy() == null || !content.getCreatedBy().equals(userId)) {
             throw new UnauthorizedContentAccessException(content.getId());
+        }
+    }
+
+    private void validateContentNotInUse(Long contentId) {
+        if (learningObjectRepository.existsByContentId(contentId)) {
+            throw new ContentInUseException(contentId);
         }
     }
 }

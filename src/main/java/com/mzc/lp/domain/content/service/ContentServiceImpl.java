@@ -10,11 +10,13 @@ import com.mzc.lp.domain.content.dto.response.ContentListResponse;
 import com.mzc.lp.domain.content.dto.response.ContentResponse;
 import com.mzc.lp.domain.content.entity.Content;
 import com.mzc.lp.domain.content.event.ContentCreatedEvent;
+import com.mzc.lp.domain.content.exception.ContentInUseException;
 import com.mzc.lp.domain.content.exception.ContentNotFoundException;
 import com.mzc.lp.domain.content.exception.FileStorageException;
 import com.mzc.lp.domain.content.exception.UnauthorizedContentAccessException;
 import com.mzc.lp.domain.content.exception.UnsupportedContentTypeException;
 import com.mzc.lp.domain.content.repository.ContentRepository;
+import com.mzc.lp.domain.learning.repository.LearningObjectRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -41,6 +43,7 @@ public class ContentServiceImpl implements ContentService {
     private final FileStorageService fileStorageService;
     private final ThumbnailService thumbnailService;
     private final ContentVersionService contentVersionService;
+    private final LearningObjectRepository learningObjectRepository;
     private final ApplicationEventPublisher eventPublisher;
 
     @Value("${file.upload-dir:./uploads}")
@@ -143,6 +146,9 @@ public class ContentServiceImpl implements ContentService {
     public ContentResponse updateContent(Long contentId, UpdateContentRequest request, Long tenantId) {
         Content content = findContentOrThrow(contentId, tenantId);
 
+        // 강의에서 사용 중인 콘텐츠는 수정 불가
+        validateContentNotInUse(contentId);
+
         // 버전 기록 (변경 전 상태 저장)
         contentVersionService.createVersion(content, VersionChangeType.METADATA_UPDATE,
                 content.getCreatedBy(), "Metadata updated");
@@ -158,6 +164,9 @@ public class ContentServiceImpl implements ContentService {
     @Transactional
     public ContentResponse replaceFile(Long contentId, MultipartFile file, Long tenantId) {
         Content content = findContentOrThrow(contentId, tenantId);
+
+        // 강의에서 사용 중인 콘텐츠는 파일 교체 불가
+        validateContentNotInUse(contentId);
 
         if (content.getContentType() == ContentType.EXTERNAL_LINK) {
             throw new FileStorageException(ErrorCode.UNSUPPORTED_FILE_TYPE,
@@ -361,6 +370,12 @@ public class ContentServiceImpl implements ContentService {
     private void validateContentOwnership(Content content, Long userId) {
         if (content.getCreatedBy() == null || !content.getCreatedBy().equals(userId)) {
             throw new UnauthorizedContentAccessException(content.getId());
+        }
+    }
+
+    private void validateContentNotInUse(Long contentId) {
+        if (learningObjectRepository.existsByContentId(contentId)) {
+            throw new ContentInUseException(contentId);
         }
     }
 }
