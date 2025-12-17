@@ -1,6 +1,7 @@
 package com.mzc.lp.domain.ts.service;
 
 import com.mzc.lp.domain.ts.constant.CourseTimeStatus;
+import com.mzc.lp.domain.ts.dto.request.CloneCourseTimeRequest;
 import com.mzc.lp.domain.ts.dto.request.CreateCourseTimeRequest;
 import com.mzc.lp.domain.ts.dto.request.UpdateCourseTimeRequest;
 import com.mzc.lp.domain.ts.dto.response.CapacityResponse;
@@ -18,6 +19,8 @@ public interface CourseTimeService {
 
     // CRUD
     CourseTimeDetailResponse createCourseTime(CreateCourseTimeRequest request, Long createdBy);
+
+    CourseTimeDetailResponse cloneCourseTime(Long sourceId, CloneCourseTimeRequest request, Long createdBy);
 
     Page<CourseTimeResponse> getCourseTimes(CourseTimeStatus status, Long cmCourseId, Pageable pageable);
 

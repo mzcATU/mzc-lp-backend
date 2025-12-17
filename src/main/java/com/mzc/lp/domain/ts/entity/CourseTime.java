@@ -1,6 +1,7 @@
 package com.mzc.lp.domain.ts.entity;
 
 import com.mzc.lp.common.entity.TenantEntity;
+import com.mzc.lp.domain.program.entity.Program;
 import com.mzc.lp.domain.ts.constant.CourseTimeStatus;
 import com.mzc.lp.domain.ts.constant.DeliveryType;
 import com.mzc.lp.domain.ts.constant.EnrollmentMethod;
@@ -15,16 +16,24 @@ import java.time.LocalDate;
 @Entity
 @Table(name = "course_times", indexes = {
         @Index(name = "idx_course_times_status", columnList = "tenant_id, status"),
-        @Index(name = "idx_course_times_course", columnList = "tenant_id, cm_course_id")
+        @Index(name = "idx_course_times_course", columnList = "tenant_id, cm_course_id"),
+        @Index(name = "idx_course_times_program", columnList = "tenant_id, program_id")
 })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class CourseTime extends TenantEntity {
 
-    // CM 연결 (CM 구현 전까지 nullable)
+    // Program 연결 (승인된 프로그램과 연결)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "program_id")
+    private Program program;
+
+    // CM 연결 (deprecated - Program을 통해 Snapshot으로 연결됨)
+    @Deprecated
     @Column(name = "cm_course_id")
     private Long cmCourseId;
 
+    @Deprecated
     @Column(name = "cm_course_version_id")
     private Long cmCourseVersionId;
 
@@ -92,6 +101,44 @@ public class CourseTime extends TenantEntity {
     private Long createdBy;
 
     // 정적 팩토리 메서드
+    public static CourseTime cloneFrom(
+            CourseTime source,
+            String newTitle,
+            LocalDate enrollStartDate,
+            LocalDate enrollEndDate,
+            LocalDate classStartDate,
+            LocalDate classEndDate,
+            Long createdBy
+    ) {
+        CourseTime courseTime = new CourseTime();
+        // 복제 대상 필드
+        courseTime.deliveryType = source.deliveryType;
+        courseTime.capacity = source.capacity;
+        courseTime.maxWaitingCount = source.maxWaitingCount;
+        courseTime.enrollmentMethod = source.enrollmentMethod;
+        courseTime.minProgressForCompletion = source.minProgressForCompletion;
+        courseTime.price = source.price;
+        courseTime.free = source.free;
+        courseTime.locationInfo = source.locationInfo;
+        courseTime.allowLateEnrollment = source.allowLateEnrollment;
+        courseTime.cmCourseId = source.cmCourseId;
+        courseTime.cmCourseVersionId = source.cmCourseVersionId;
+
+        // 새로 지정하는 필드
+        courseTime.title = newTitle;
+        courseTime.enrollStartDate = enrollStartDate;
+        courseTime.enrollEndDate = enrollEndDate;
+        courseTime.classStartDate = classStartDate;
+        courseTime.classEndDate = classEndDate;
+        courseTime.createdBy = createdBy;
+
+        // 고정 값
+        courseTime.status = CourseTimeStatus.DRAFT;
+        courseTime.currentEnrollment = 0;
+
+        return courseTime;
+    }
+
     public static CourseTime create(
             String title,
             DeliveryType deliveryType,
@@ -132,6 +179,17 @@ public class CourseTime extends TenantEntity {
 
     // 비즈니스 메서드
 
+    /**
+     * 승인된 Program과 연결
+     */
+    public void linkProgram(Program program) {
+        this.program = program;
+    }
+
+    /**
+     * @deprecated Program을 통해 Snapshot으로 연결하세요
+     */
+    @Deprecated
     public void linkCourse(Long cmCourseId, Long cmCourseVersionId) {
         this.cmCourseId = cmCourseId;
         this.cmCourseVersionId = cmCourseVersionId;
