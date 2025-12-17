@@ -88,7 +88,14 @@ public enum ErrorCode {
     DUPLICATE_TENANT_CODE(HttpStatus.CONFLICT, "TN002", "Tenant code already exists"),
     DUPLICATE_SUBDOMAIN(HttpStatus.CONFLICT, "TN003", "Subdomain already exists"),
     DUPLICATE_CUSTOM_DOMAIN(HttpStatus.CONFLICT, "TN004", "Custom domain already exists"),
-    INVALID_TENANT_STATUS(HttpStatus.BAD_REQUEST, "TN005", "Invalid tenant status transition");
+    INVALID_TENANT_STATUS(HttpStatus.BAD_REQUEST, "TN005", "Invalid tenant status transition"),
+
+    // Program (PG)
+    PROGRAM_NOT_FOUND(HttpStatus.NOT_FOUND, "PG001", "Program not found"),
+    INVALID_PROGRAM_STATUS(HttpStatus.BAD_REQUEST, "PG002", "Invalid program status transition"),
+    PROGRAM_NOT_MODIFIABLE(HttpStatus.BAD_REQUEST, "PG003", "Program is not modifiable in current status"),
+    PROGRAM_NOT_APPROVED(HttpStatus.BAD_REQUEST, "PG004", "Program is not approved"),
+    REJECTION_REASON_REQUIRED(HttpStatus.BAD_REQUEST, "PG005", "Rejection reason is required");
 
     private final HttpStatus status;
     private final String code;
