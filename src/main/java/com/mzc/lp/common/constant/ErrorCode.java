@@ -59,6 +59,7 @@ public enum ErrorCode {
     LOCATION_REQUIRED(HttpStatus.BAD_REQUEST, "TS005", "Location info required for OFFLINE/BLENDED"),
     COURSE_TIME_NOT_MODIFIABLE(HttpStatus.BAD_REQUEST, "TS006", "CourseTime is not modifiable in current status"),
     CANNOT_DELETE_MAIN_INSTRUCTOR(HttpStatus.BAD_REQUEST, "TS007", "Cannot delete main instructor while course is ongoing"),
+    MAIN_INSTRUCTOR_REQUIRED(HttpStatus.BAD_REQUEST, "TS008", "Main instructor required for opening course time"),
 
     // Enrollment (SIS)
     ENROLLMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "SIS001", "Enrollment not found"),

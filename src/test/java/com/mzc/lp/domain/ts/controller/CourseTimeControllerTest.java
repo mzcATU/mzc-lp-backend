@@ -25,6 +25,8 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.when;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -327,6 +329,10 @@ class CourseTimeControllerTest extends TenantTestSupport {
             createNormalUser();
             CourseTime draft = createTestCourseTime();
             CourseTime recruiting = createTestCourseTime();
+
+            // MAIN 강사 Mock (상태 전이를 위해)
+            when(instructorAssignmentService.existsMainInstructor(anyLong())).thenReturn(true);
+
             recruiting.open();
             courseTimeRepository.save(recruiting);
             String accessToken = loginAndGetAccessToken("user@example.com", "Password123!");
@@ -521,12 +527,15 @@ class CourseTimeControllerTest extends TenantTestSupport {
     class OpenCourseTime {
 
         @Test
-        @DisplayName("성공 - DRAFT → RECRUITING")
+        @DisplayName("성공 - DRAFT → RECRUITING (MAIN 강사 배정됨)")
         void openCourseTime_success() throws Exception {
             // given
             createOperatorUser();
             CourseTime courseTime = createTestCourseTime();
             String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
+
+            // MAIN 강사가 배정되어 있음을 Mock
+            when(instructorAssignmentService.existsMainInstructor(courseTime.getId())).thenReturn(true);
 
             // when & then
             mockMvc.perform(post("/api/times/{id}/open", courseTime.getId())
@@ -538,11 +547,35 @@ class CourseTimeControllerTest extends TenantTestSupport {
         }
 
         @Test
+        @DisplayName("실패 - MAIN 강사 미배정")
+        void openCourseTime_fail_noMainInstructor() throws Exception {
+            // given
+            createOperatorUser();
+            CourseTime courseTime = createTestCourseTime();
+            String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
+
+            // MAIN 강사가 배정되어 있지 않음을 Mock
+            when(instructorAssignmentService.existsMainInstructor(courseTime.getId())).thenReturn(false);
+
+            // when & then
+            mockMvc.perform(post("/api/times/{id}/open", courseTime.getId())
+                            .header("Authorization", "Bearer " + accessToken))
+                    .andDo(print())
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.success").value(false))
+                    .andExpect(jsonPath("$.error.code").value("TS008"));
+        }
+
+        @Test
         @DisplayName("실패 - RECRUITING 상태에서 open 시도")
         void openCourseTime_fail_alreadyRecruiting() throws Exception {
             // given
             createOperatorUser();
             CourseTime courseTime = createTestCourseTime();
+
+            // MAIN 강사 Mock (상태 전이를 위해)
+            when(instructorAssignmentService.existsMainInstructor(courseTime.getId())).thenReturn(true);
+
             courseTime.open();
             courseTimeRepository.save(courseTime);
             String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
