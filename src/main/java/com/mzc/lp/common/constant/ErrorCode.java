@@ -44,6 +44,8 @@ public enum ErrorCode {
     METADATA_EXTRACTION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "CT006", "Metadata extraction failed"),
     FILE_NOT_FOUND(HttpStatus.NOT_FOUND, "CT007", "File not found on storage"),
     UNAUTHORIZED_CONTENT_ACCESS(HttpStatus.FORBIDDEN, "CT008", "Not authorized to access this content"),
+    CONTENT_VERSION_NOT_FOUND(HttpStatus.NOT_FOUND, "CT009", "Content version not found"),
+    CONTENT_IN_USE(HttpStatus.CONFLICT, "CT010", "Content is in use by learning objects and cannot be modified"),
 
     // Learning Object (LO)
     LEARNING_OBJECT_NOT_FOUND(HttpStatus.NOT_FOUND, "LO001", "Learning object not found"),
@@ -59,6 +61,7 @@ public enum ErrorCode {
     LOCATION_REQUIRED(HttpStatus.BAD_REQUEST, "TS005", "Location info required for OFFLINE/BLENDED"),
     COURSE_TIME_NOT_MODIFIABLE(HttpStatus.BAD_REQUEST, "TS006", "CourseTime is not modifiable in current status"),
     CANNOT_DELETE_MAIN_INSTRUCTOR(HttpStatus.BAD_REQUEST, "TS007", "Cannot delete main instructor while course is ongoing"),
+    MAIN_INSTRUCTOR_REQUIRED(HttpStatus.BAD_REQUEST, "TS008", "Main instructor required for opening course time"),
 
     // Enrollment (SIS)
     ENROLLMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "SIS001", "Enrollment not found"),
