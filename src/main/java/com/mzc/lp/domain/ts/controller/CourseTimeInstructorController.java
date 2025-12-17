@@ -1,6 +1,5 @@
 package com.mzc.lp.domain.ts.controller;
 
-import com.mzc.lp.common.context.TenantContext;
 import com.mzc.lp.common.dto.ApiResponse;
 import com.mzc.lp.common.security.UserPrincipal;
 import com.mzc.lp.domain.iis.constant.AssignmentStatus;
@@ -11,9 +10,8 @@ import com.mzc.lp.domain.iis.dto.request.UpdateRoleRequest;
 import com.mzc.lp.domain.iis.dto.response.InstructorAssignmentResponse;
 import com.mzc.lp.domain.iis.service.InstructorAssignmentService;
 import com.mzc.lp.domain.ts.entity.CourseTime;
-import com.mzc.lp.domain.ts.exception.CourseTimeNotFoundException;
 import com.mzc.lp.domain.ts.exception.CourseTimeNotModifiableException;
-import com.mzc.lp.domain.ts.repository.CourseTimeRepository;
+import com.mzc.lp.domain.ts.service.CourseTimeService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,7 +31,7 @@ import java.util.List;
 @Validated
 public class CourseTimeInstructorController {
 
-    private final CourseTimeRepository courseTimeRepository;
+    private final CourseTimeService courseTimeService;
     private final InstructorAssignmentService instructorAssignmentService;
 
     @PostMapping
@@ -138,8 +136,7 @@ public class CourseTimeInstructorController {
     // ========== Private Methods ==========
 
     private CourseTime getCourseTimeOrThrow(Long timeId) {
-        return courseTimeRepository.findByIdAndTenantId(timeId, TenantContext.getCurrentTenantId())
-                .orElseThrow(() -> new CourseTimeNotFoundException(timeId));
+        return courseTimeService.getCourseTimeEntity(timeId);
     }
 
     private void validateModifiable(CourseTime courseTime) {

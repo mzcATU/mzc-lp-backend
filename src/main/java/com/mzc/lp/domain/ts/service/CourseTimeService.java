@@ -7,10 +7,14 @@ import com.mzc.lp.domain.ts.dto.response.CapacityResponse;
 import com.mzc.lp.domain.ts.dto.response.CourseTimeDetailResponse;
 import com.mzc.lp.domain.ts.dto.response.CourseTimeResponse;
 import com.mzc.lp.domain.ts.dto.response.PriceResponse;
+import com.mzc.lp.domain.ts.entity.CourseTime;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface CourseTimeService {
+
+    // Entity 조회 (다른 Controller에서 상태 검증용)
+    CourseTime getCourseTimeEntity(Long id);
 
     // CRUD
     CourseTimeDetailResponse createCourseTime(CreateCourseTimeRequest request, Long createdBy);
