@@ -45,7 +45,8 @@ public class ContentController {
             @AuthenticationPrincipal UserPrincipal principal
     ) {
         Long tenantId = TenantContext.getCurrentTenantId();
-        ContentResponse response = contentService.uploadFile(file, folderId, tenantId);
+        Long userId = principal.id();
+        ContentResponse response = contentService.uploadFile(file, folderId, tenantId, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
     }
 
@@ -56,7 +57,8 @@ public class ContentController {
             @AuthenticationPrincipal UserPrincipal principal
     ) {
         Long tenantId = TenantContext.getCurrentTenantId();
-        ContentResponse response = contentService.createExternalLink(request, tenantId);
+        Long userId = principal.id();
+        ContentResponse response = contentService.createExternalLink(request, tenantId, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
     }
 
