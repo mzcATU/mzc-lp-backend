@@ -7,7 +7,10 @@ import com.mzc.lp.domain.iis.dto.request.AssignInstructorRequest;
 import com.mzc.lp.domain.iis.dto.request.CancelAssignmentRequest;
 import com.mzc.lp.domain.iis.dto.request.ReplaceInstructorRequest;
 import com.mzc.lp.domain.iis.dto.request.UpdateRoleRequest;
+import com.mzc.lp.domain.iis.dto.response.AssignmentHistoryResponse;
 import com.mzc.lp.domain.iis.dto.response.InstructorAssignmentResponse;
+import com.mzc.lp.domain.iis.constant.AssignmentAction;
+import com.mzc.lp.domain.iis.entity.AssignmentHistory;
 import com.mzc.lp.domain.iis.entity.InstructorAssignment;
 import com.mzc.lp.domain.iis.exception.CannotModifyInactiveAssignmentException;
 import com.mzc.lp.domain.iis.exception.InstructorAlreadyAssignedException;
@@ -386,6 +389,65 @@ class InstructorAssignmentServiceTest extends TenantTestSupport {
             // when & then
             assertThatThrownBy(() -> assignmentService.cancelAssignment(1L, request, OPERATOR_ID))
                     .isInstanceOf(CannotModifyInactiveAssignmentException.class);
+        }
+    }
+
+    // ==================== 이력 조회 테스트 ====================
+
+    @Nested
+    @DisplayName("getAssignmentHistories - 이력 조회")
+    class GetAssignmentHistories {
+
+        @Test
+        @DisplayName("성공 - 전체 이력 조회")
+        void getAssignmentHistories_success_all() {
+            // given
+            InstructorAssignment assignment = createTestAssignment(1L, USER_ID, TIME_ID, InstructorRole.MAIN);
+            List<AssignmentHistory> histories = List.of(
+                    AssignmentHistory.ofAssign(1L, InstructorRole.MAIN, OPERATOR_ID),
+                    AssignmentHistory.ofRoleChange(1L, InstructorRole.MAIN, InstructorRole.SUB, "역할 변경", OPERATOR_ID)
+            );
+
+            given(assignmentRepository.findByIdAndTenantId(1L, TENANT_ID)).willReturn(Optional.of(assignment));
+            given(historyRepository.findByAssignmentIdOrderByChangedAtDesc(1L)).willReturn(histories);
+
+            // when
+            List<AssignmentHistoryResponse> response = assignmentService.getAssignmentHistories(1L, null);
+
+            // then
+            assertThat(response).hasSize(2);
+        }
+
+        @Test
+        @DisplayName("성공 - 액션 타입 필터링 조회")
+        void getAssignmentHistories_success_byAction() {
+            // given
+            InstructorAssignment assignment = createTestAssignment(1L, USER_ID, TIME_ID, InstructorRole.MAIN);
+            List<AssignmentHistory> histories = List.of(
+                    AssignmentHistory.ofRoleChange(1L, InstructorRole.MAIN, InstructorRole.SUB, "역할 변경", OPERATOR_ID)
+            );
+
+            given(assignmentRepository.findByIdAndTenantId(1L, TENANT_ID)).willReturn(Optional.of(assignment));
+            given(historyRepository.findByAssignmentIdAndActionOrderByChangedAtDesc(1L, AssignmentAction.ROLE_CHANGE))
+                    .willReturn(histories);
+
+            // when
+            List<AssignmentHistoryResponse> response = assignmentService.getAssignmentHistories(1L, AssignmentAction.ROLE_CHANGE);
+
+            // then
+            assertThat(response).hasSize(1);
+            assertThat(response.get(0).action()).isEqualTo(AssignmentAction.ROLE_CHANGE);
+        }
+
+        @Test
+        @DisplayName("실패 - 배정 없음")
+        void getAssignmentHistories_fail_notFound() {
+            // given
+            given(assignmentRepository.findByIdAndTenantId(999L, TENANT_ID)).willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> assignmentService.getAssignmentHistories(999L, null))
+                    .isInstanceOf(InstructorAssignmentNotFoundException.class);
         }
     }
 }
