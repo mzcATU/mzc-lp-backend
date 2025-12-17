@@ -18,6 +18,8 @@ import com.mzc.lp.domain.iis.exception.InstructorAssignmentNotFoundException;
 import com.mzc.lp.domain.iis.exception.MainInstructorAlreadyExistsException;
 import com.mzc.lp.domain.iis.repository.AssignmentHistoryRepository;
 import com.mzc.lp.domain.iis.repository.InstructorAssignmentRepository;
+import com.mzc.lp.domain.user.entity.User;
+import com.mzc.lp.domain.user.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -52,6 +54,9 @@ class InstructorAssignmentServiceTest extends TenantTestSupport {
     @Mock
     private AssignmentHistoryRepository historyRepository;
 
+    @Mock
+    private UserRepository userRepository;
+
     private static final Long TENANT_ID = 1L;
     private static final Long TIME_ID = 100L;
     private static final Long USER_ID = 10L;
@@ -70,6 +75,18 @@ class InstructorAssignmentServiceTest extends TenantTestSupport {
         return assignment;
     }
 
+    private User createTestUser(Long id, String name, String email) {
+        User user = User.create(email, name, "encodedPassword");
+        try {
+            var idField = com.mzc.lp.common.entity.BaseEntity.class.getDeclaredField("id");
+            idField.setAccessible(true);
+            idField.set(user, id);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return user;
+    }
+
     // ==================== 배정 테스트 ====================
 
     @Nested
@@ -82,12 +99,14 @@ class InstructorAssignmentServiceTest extends TenantTestSupport {
             // given
             AssignInstructorRequest request = new AssignInstructorRequest(USER_ID, InstructorRole.MAIN);
             InstructorAssignment saved = createTestAssignment(1L, USER_ID, TIME_ID, InstructorRole.MAIN);
+            User user = createTestUser(USER_ID, "강사", "instructor@example.com");
 
             given(assignmentRepository.existsByTimeKeyAndUserKeyAndTenantIdAndStatus(
                     TIME_ID, USER_ID, TENANT_ID, AssignmentStatus.ACTIVE)).willReturn(false);
             given(assignmentRepository.findActiveByTimeKeyAndRole(TIME_ID, TENANT_ID, InstructorRole.MAIN))
                     .willReturn(Optional.empty());
             given(assignmentRepository.save(any())).willReturn(saved);
+            given(userRepository.findById(USER_ID)).willReturn(Optional.of(user));
 
             // when
             InstructorAssignmentResponse response = assignmentService.assignInstructor(TIME_ID, request, OPERATOR_ID);
@@ -95,6 +114,8 @@ class InstructorAssignmentServiceTest extends TenantTestSupport {
             // then
             assertThat(response.id()).isEqualTo(1L);
             assertThat(response.userId()).isEqualTo(USER_ID);
+            assertThat(response.userName()).isEqualTo("강사");
+            assertThat(response.userEmail()).isEqualTo("instructor@example.com");
             assertThat(response.role()).isEqualTo(InstructorRole.MAIN);
             verify(historyRepository).save(any());
         }
@@ -105,10 +126,12 @@ class InstructorAssignmentServiceTest extends TenantTestSupport {
             // given
             AssignInstructorRequest request = new AssignInstructorRequest(USER_ID, InstructorRole.SUB);
             InstructorAssignment saved = createTestAssignment(1L, USER_ID, TIME_ID, InstructorRole.SUB);
+            User user = createTestUser(USER_ID, "부강사", "sub@example.com");
 
             given(assignmentRepository.existsByTimeKeyAndUserKeyAndTenantIdAndStatus(
                     TIME_ID, USER_ID, TENANT_ID, AssignmentStatus.ACTIVE)).willReturn(false);
             given(assignmentRepository.save(any())).willReturn(saved);
+            given(userRepository.findById(USER_ID)).willReturn(Optional.of(user));
 
             // when
             InstructorAssignmentResponse response = assignmentService.assignInstructor(TIME_ID, request, OPERATOR_ID);
@@ -160,7 +183,10 @@ class InstructorAssignmentServiceTest extends TenantTestSupport {
         void getAssignment_success() {
             // given
             InstructorAssignment assignment = createTestAssignment(1L, USER_ID, TIME_ID, InstructorRole.MAIN);
+            User user = createTestUser(USER_ID, "강사", "instructor@example.com");
+
             given(assignmentRepository.findByIdAndTenantId(1L, TENANT_ID)).willReturn(Optional.of(assignment));
+            given(userRepository.findById(USER_ID)).willReturn(Optional.of(user));
 
             // when
             InstructorAssignmentResponse response = assignmentService.getAssignment(1L);
@@ -168,6 +194,8 @@ class InstructorAssignmentServiceTest extends TenantTestSupport {
             // then
             assertThat(response.id()).isEqualTo(1L);
             assertThat(response.userId()).isEqualTo(USER_ID);
+            assertThat(response.userName()).isEqualTo("강사");
+            assertThat(response.userEmail()).isEqualTo("instructor@example.com");
         }
 
         @Test
@@ -194,7 +222,13 @@ class InstructorAssignmentServiceTest extends TenantTestSupport {
                     createTestAssignment(1L, 10L, TIME_ID, InstructorRole.MAIN),
                     createTestAssignment(2L, 20L, TIME_ID, InstructorRole.SUB)
             );
+            List<User> users = List.of(
+                    createTestUser(10L, "주강사", "main@example.com"),
+                    createTestUser(20L, "부강사", "sub@example.com")
+            );
+
             given(assignmentRepository.findByTimeKeyAndTenantId(TIME_ID, TENANT_ID)).willReturn(assignments);
+            given(userRepository.findAllById(List.of(10L, 20L))).willReturn(users);
 
             // when
             List<InstructorAssignmentResponse> response = assignmentService.getInstructorsByTimeId(TIME_ID, null);
@@ -210,8 +244,11 @@ class InstructorAssignmentServiceTest extends TenantTestSupport {
             List<InstructorAssignment> assignments = List.of(
                     createTestAssignment(1L, 10L, TIME_ID, InstructorRole.MAIN)
             );
+            List<User> users = List.of(createTestUser(10L, "강사", "instructor@example.com"));
+
             given(assignmentRepository.findByTimeKeyAndTenantIdAndStatus(TIME_ID, TENANT_ID, AssignmentStatus.ACTIVE))
                     .willReturn(assignments);
+            given(userRepository.findAllById(List.of(10L))).willReturn(users);
 
             // when
             List<InstructorAssignmentResponse> response = assignmentService.getInstructorsByTimeId(
@@ -236,8 +273,10 @@ class InstructorAssignmentServiceTest extends TenantTestSupport {
                     createTestAssignment(2L, USER_ID, 200L, InstructorRole.SUB)
             );
             Page<InstructorAssignment> page = new PageImpl<>(assignments, pageable, 2);
+            User user = createTestUser(USER_ID, "강사", "instructor@example.com");
 
             given(assignmentRepository.findByUserKeyAndTenantId(USER_ID, TENANT_ID, pageable)).willReturn(page);
+            given(userRepository.findById(USER_ID)).willReturn(Optional.of(user));
 
             // when
             Page<InstructorAssignmentResponse> response = assignmentService.getAssignmentsByUserId(
@@ -261,10 +300,12 @@ class InstructorAssignmentServiceTest extends TenantTestSupport {
             // given
             InstructorAssignment assignment = createTestAssignment(1L, USER_ID, TIME_ID, InstructorRole.SUB);
             UpdateRoleRequest request = new UpdateRoleRequest(InstructorRole.MAIN, "주강사 승격");
+            User user = createTestUser(USER_ID, "강사", "instructor@example.com");
 
             given(assignmentRepository.findByIdAndTenantId(1L, TENANT_ID)).willReturn(Optional.of(assignment));
             given(assignmentRepository.findActiveByTimeKeyAndRole(TIME_ID, TENANT_ID, InstructorRole.MAIN))
                     .willReturn(Optional.empty());
+            given(userRepository.findById(USER_ID)).willReturn(Optional.of(user));
 
             // when
             InstructorAssignmentResponse response = assignmentService.updateRole(1L, request, OPERATOR_ID);
@@ -321,17 +362,20 @@ class InstructorAssignmentServiceTest extends TenantTestSupport {
             InstructorAssignment oldAssignment = createTestAssignment(1L, USER_ID, TIME_ID, InstructorRole.MAIN);
             InstructorAssignment newAssignment = createTestAssignment(2L, newUserId, TIME_ID, InstructorRole.MAIN);
             ReplaceInstructorRequest request = new ReplaceInstructorRequest(newUserId, InstructorRole.MAIN, "교체 사유");
+            User newUser = createTestUser(newUserId, "새강사", "new@example.com");
 
             given(assignmentRepository.findByIdAndTenantId(1L, TENANT_ID)).willReturn(Optional.of(oldAssignment));
             given(assignmentRepository.existsByTimeKeyAndUserKeyAndTenantIdAndStatus(
                     TIME_ID, newUserId, TENANT_ID, AssignmentStatus.ACTIVE)).willReturn(false);
             given(assignmentRepository.save(any())).willReturn(newAssignment);
+            given(userRepository.findById(newUserId)).willReturn(Optional.of(newUser));
 
             // when
             InstructorAssignmentResponse response = assignmentService.replaceInstructor(1L, request, OPERATOR_ID);
 
             // then
             assertThat(response.userId()).isEqualTo(newUserId);
+            assertThat(response.userName()).isEqualTo("새강사");
             assertThat(oldAssignment.getStatus()).isEqualTo(AssignmentStatus.REPLACED);
         }
 

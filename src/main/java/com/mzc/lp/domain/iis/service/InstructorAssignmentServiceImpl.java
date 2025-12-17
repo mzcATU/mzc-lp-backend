@@ -18,6 +18,8 @@ import com.mzc.lp.domain.iis.exception.InstructorAssignmentNotFoundException;
 import com.mzc.lp.domain.iis.exception.MainInstructorAlreadyExistsException;
 import com.mzc.lp.domain.iis.repository.AssignmentHistoryRepository;
 import com.mzc.lp.domain.iis.repository.InstructorAssignmentRepository;
+import com.mzc.lp.domain.user.entity.User;
+import com.mzc.lp.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -27,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -37,6 +40,7 @@ public class InstructorAssignmentServiceImpl implements InstructorAssignmentServ
 
     private final InstructorAssignmentRepository assignmentRepository;
     private final AssignmentHistoryRepository historyRepository;
+    private final UserRepository userRepository;
 
     @Override
     @Transactional
@@ -73,7 +77,10 @@ public class InstructorAssignmentServiceImpl implements InstructorAssignmentServ
         historyRepository.save(AssignmentHistory.ofAssign(saved.getId(), request.role(), operatorId));
 
         log.info("Instructor assigned: assignmentId={}", saved.getId());
-        return InstructorAssignmentResponse.from(saved);
+
+        // User 정보 조회
+        User user = userRepository.findById(request.userId()).orElse(null);
+        return InstructorAssignmentResponse.from(saved, user);
     }
 
     @Override
@@ -89,8 +96,11 @@ public class InstructorAssignmentServiceImpl implements InstructorAssignmentServ
             assignments = assignmentRepository.findByTimeKeyAndTenantId(timeId, tenantId);
         }
 
+        // N+1 방지: User 벌크 조회
+        Map<Long, User> userMap = getUserMapByAssignments(assignments);
+
         return assignments.stream()
-                .map(InstructorAssignmentResponse::from)
+                .map(a -> InstructorAssignmentResponse.from(a, userMap.get(a.getUserKey())))
                 .toList();
     }
 
@@ -99,7 +109,8 @@ public class InstructorAssignmentServiceImpl implements InstructorAssignmentServ
         log.debug("Getting assignment: id={}", id);
 
         InstructorAssignment assignment = findAssignmentById(id);
-        return InstructorAssignmentResponse.from(assignment);
+        User user = userRepository.findById(assignment.getUserKey()).orElse(null);
+        return InstructorAssignmentResponse.from(assignment, user);
     }
 
     @Override
@@ -107,14 +118,15 @@ public class InstructorAssignmentServiceImpl implements InstructorAssignmentServ
         log.debug("Getting assignments by userId: userId={}, status={}", userId, status);
 
         Long tenantId = TenantContext.getCurrentTenantId();
+        User user = userRepository.findById(userId).orElse(null);
 
         if (status != null) {
             return assignmentRepository.findByUserKeyAndTenantIdAndStatus(userId, tenantId, status, pageable)
-                    .map(InstructorAssignmentResponse::from);
+                    .map(a -> InstructorAssignmentResponse.from(a, user));
         }
 
         return assignmentRepository.findByUserKeyAndTenantId(userId, tenantId, pageable)
-                .map(InstructorAssignmentResponse::from);
+                .map(a -> InstructorAssignmentResponse.from(a, user));
     }
 
     @Override
@@ -122,10 +134,11 @@ public class InstructorAssignmentServiceImpl implements InstructorAssignmentServ
         log.debug("Getting my assignments: userId={}", userId);
 
         Long tenantId = TenantContext.getCurrentTenantId();
+        User user = userRepository.findById(userId).orElse(null);
 
         return assignmentRepository.findByUserKeyAndTenantIdAndStatus(userId, tenantId, AssignmentStatus.ACTIVE,
                         Pageable.unpaged())
-                .map(InstructorAssignmentResponse::from)
+                .map(a -> InstructorAssignmentResponse.from(a, user))
                 .toList();
     }
 
@@ -158,7 +171,9 @@ public class InstructorAssignmentServiceImpl implements InstructorAssignmentServ
                 id, oldRole, request.role(), request.reason(), operatorId));
 
         log.info("Role updated: id={}, oldRole={}, newRole={}", id, oldRole, request.role());
-        return InstructorAssignmentResponse.from(assignment);
+
+        User user = userRepository.findById(assignment.getUserKey()).orElse(null);
+        return InstructorAssignmentResponse.from(assignment, user);
     }
 
     @Override
@@ -195,7 +210,9 @@ public class InstructorAssignmentServiceImpl implements InstructorAssignmentServ
         historyRepository.save(AssignmentHistory.ofAssign(saved.getId(), request.role(), operatorId));
 
         log.info("Instructor replaced: oldId={}, newId={}", id, saved.getId());
-        return InstructorAssignmentResponse.from(saved);
+
+        User user = userRepository.findById(request.newUserId()).orElse(null);
+        return InstructorAssignmentResponse.from(saved, user);
     }
 
     @Override
@@ -239,11 +256,14 @@ public class InstructorAssignmentServiceImpl implements InstructorAssignmentServ
 
         List<InstructorAssignment> assignments = assignmentRepository.findActiveByTimeKeyIn(timeIds, tenantId);
 
+        // N+1 방지: User 벌크 조회
+        Map<Long, User> userMap = getUserMapByAssignments(assignments);
+
         return assignments.stream()
                 .collect(Collectors.groupingBy(
                         InstructorAssignment::getTimeKey,
                         Collectors.mapping(
-                                InstructorAssignmentResponse::from,
+                                a -> InstructorAssignmentResponse.from(a, userMap.get(a.getUserKey())),
                                 Collectors.toList()
                         )
                 ));
@@ -282,5 +302,22 @@ public class InstructorAssignmentServiceImpl implements InstructorAssignmentServ
         if (!assignment.isActive()) {
             throw new CannotModifyInactiveAssignmentException(assignment.getId());
         }
+    }
+
+    /**
+     * N+1 방지를 위한 User 벌크 조회 헬퍼 메서드
+     */
+    private Map<Long, User> getUserMapByAssignments(List<InstructorAssignment> assignments) {
+        if (assignments.isEmpty()) {
+            return Map.of();
+        }
+
+        List<Long> userIds = assignments.stream()
+                .map(InstructorAssignment::getUserKey)
+                .distinct()
+                .toList();
+
+        return userRepository.findAllById(userIds).stream()
+                .collect(Collectors.toMap(User::getId, Function.identity()));
     }
 }
