@@ -6,6 +6,7 @@ import com.mzc.lp.domain.iis.service.InstructorAssignmentService;
 import com.mzc.lp.domain.ts.constant.CourseTimeStatus;
 import com.mzc.lp.domain.ts.constant.DeliveryType;
 import com.mzc.lp.domain.ts.constant.EnrollmentMethod;
+import com.mzc.lp.domain.ts.dto.request.CloneCourseTimeRequest;
 import com.mzc.lp.domain.ts.dto.request.CreateCourseTimeRequest;
 import com.mzc.lp.domain.ts.dto.request.UpdateCourseTimeRequest;
 import com.mzc.lp.domain.ts.entity.CourseTime;
@@ -799,6 +800,183 @@ class CourseTimeControllerTest extends TenantTestSupport {
                     .andExpect(jsonPath("$.success").value(true))
                     .andExpect(jsonPath("$.data.price").value(0))
                     .andExpect(jsonPath("$.data.free").value(true));
+        }
+    }
+
+    // ==================== 차수 복제 테스트 ====================
+
+    @Nested
+    @DisplayName("POST /api/times/{id}/clone - 차수 복제")
+    class CloneCourseTime {
+
+        @Test
+        @DisplayName("성공 - 차수 복제")
+        void cloneCourseTime_success() throws Exception {
+            // given
+            createOperatorUser();
+            CourseTime source = createTestCourseTime();
+            String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
+
+            CloneCourseTimeRequest request = new CloneCourseTimeRequest(
+                    "복제된 차수",
+                    LocalDate.now().plusMonths(1),
+                    LocalDate.now().plusMonths(1).plusDays(7),
+                    LocalDate.now().plusMonths(1).plusDays(7),
+                    LocalDate.now().plusMonths(2)
+            );
+
+            // when & then
+            mockMvc.perform(post("/api/times/{id}/clone", source.getId())
+                            .header("Authorization", "Bearer " + accessToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andDo(print())
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.title").value("복제된 차수"))
+                    .andExpect(jsonPath("$.data.status").value("DRAFT"))
+                    .andExpect(jsonPath("$.data.deliveryType").value(source.getDeliveryType().name()))
+                    .andExpect(jsonPath("$.data.capacity").value(source.getCapacity()))
+                    .andExpect(jsonPath("$.data.price").value(source.getPrice().intValue()))
+                    .andExpect(jsonPath("$.data.currentEnrollment").value(0));
+        }
+
+        @Test
+        @DisplayName("성공 - ONGOING 상태의 차수도 복제 가능")
+        void cloneCourseTime_success_fromOngoing() throws Exception {
+            // given
+            createOperatorUser();
+            CourseTime source = createTestCourseTime();
+
+            // MAIN 강사 Mock 설정 후 상태 전이
+            when(instructorAssignmentService.existsMainInstructor(source.getId())).thenReturn(true);
+            source.open();
+            source.startClass();
+            courseTimeRepository.save(source);
+
+            String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
+
+            CloneCourseTimeRequest request = new CloneCourseTimeRequest(
+                    "ONGOING에서 복제",
+                    LocalDate.now().plusMonths(1),
+                    LocalDate.now().plusMonths(1).plusDays(7),
+                    LocalDate.now().plusMonths(1).plusDays(7),
+                    LocalDate.now().plusMonths(2)
+            );
+
+            // when & then
+            mockMvc.perform(post("/api/times/{id}/clone", source.getId())
+                            .header("Authorization", "Bearer " + accessToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andDo(print())
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.status").value("DRAFT"));
+        }
+
+        @Test
+        @DisplayName("실패 - 원본 차수 미존재")
+        void cloneCourseTime_fail_sourceNotFound() throws Exception {
+            // given
+            createOperatorUser();
+            String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
+
+            CloneCourseTimeRequest request = new CloneCourseTimeRequest(
+                    "복제된 차수",
+                    LocalDate.now().plusMonths(1),
+                    LocalDate.now().plusMonths(1).plusDays(7),
+                    LocalDate.now().plusMonths(1).plusDays(7),
+                    LocalDate.now().plusMonths(2)
+            );
+
+            // when & then
+            mockMvc.perform(post("/api/times/{id}/clone", 99999L)
+                            .header("Authorization", "Bearer " + accessToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andDo(print())
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.success").value(false))
+                    .andExpect(jsonPath("$.error.code").value("TS001"));
+        }
+
+        @Test
+        @DisplayName("실패 - 잘못된 날짜 범위 (모집 종료일 > 학습 종료일)")
+        void cloneCourseTime_fail_invalidDateRange() throws Exception {
+            // given
+            createOperatorUser();
+            CourseTime source = createTestCourseTime();
+            String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
+
+            CloneCourseTimeRequest request = new CloneCourseTimeRequest(
+                    "복제된 차수",
+                    LocalDate.now().plusMonths(1),
+                    LocalDate.now().plusMonths(3),  // 모집 종료일
+                    LocalDate.now().plusMonths(1).plusDays(7),
+                    LocalDate.now().plusMonths(2)   // 학습 종료일 (모집 종료일보다 이전)
+            );
+
+            // when & then
+            mockMvc.perform(post("/api/times/{id}/clone", source.getId())
+                            .header("Authorization", "Bearer " + accessToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andDo(print())
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.success").value(false))
+                    .andExpect(jsonPath("$.error.code").value("TS004"));
+        }
+
+        @Test
+        @DisplayName("실패 - 제목 누락")
+        void cloneCourseTime_fail_titleRequired() throws Exception {
+            // given
+            createOperatorUser();
+            CourseTime source = createTestCourseTime();
+            String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
+
+            CloneCourseTimeRequest request = new CloneCourseTimeRequest(
+                    "",  // 빈 제목
+                    LocalDate.now().plusMonths(1),
+                    LocalDate.now().plusMonths(1).plusDays(7),
+                    LocalDate.now().plusMonths(1).plusDays(7),
+                    LocalDate.now().plusMonths(2)
+            );
+
+            // when & then
+            mockMvc.perform(post("/api/times/{id}/clone", source.getId())
+                            .header("Authorization", "Bearer " + accessToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andDo(print())
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.success").value(false));
+        }
+
+        @Test
+        @DisplayName("실패 - 권한 없음 (일반 사용자)")
+        void cloneCourseTime_fail_forbidden() throws Exception {
+            // given
+            createNormalUser();
+            CourseTime source = createTestCourseTime();
+            String accessToken = loginAndGetAccessToken("user@example.com", "Password123!");
+
+            CloneCourseTimeRequest request = new CloneCourseTimeRequest(
+                    "복제된 차수",
+                    LocalDate.now().plusMonths(1),
+                    LocalDate.now().plusMonths(1).plusDays(7),
+                    LocalDate.now().plusMonths(1).plusDays(7),
+                    LocalDate.now().plusMonths(2)
+            );
+
+            // when & then
+            mockMvc.perform(post("/api/times/{id}/clone", source.getId())
+                            .header("Authorization", "Bearer " + accessToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andDo(print())
+                    .andExpect(status().isForbidden());
         }
     }
 }

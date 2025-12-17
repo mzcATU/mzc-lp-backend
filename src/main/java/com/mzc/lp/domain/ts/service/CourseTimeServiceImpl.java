@@ -3,6 +3,7 @@ package com.mzc.lp.domain.ts.service;
 import com.mzc.lp.common.context.TenantContext;
 import com.mzc.lp.domain.ts.constant.CourseTimeStatus;
 import com.mzc.lp.domain.ts.constant.EnrollmentMethod;
+import com.mzc.lp.domain.ts.dto.request.CloneCourseTimeRequest;
 import com.mzc.lp.domain.ts.dto.request.CreateCourseTimeRequest;
 import com.mzc.lp.domain.ts.dto.request.UpdateCourseTimeRequest;
 import com.mzc.lp.domain.ts.dto.response.CapacityResponse;
@@ -25,7 +26,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import java.time.LocalDate;
 
 @Slf4j
 @Service
@@ -77,6 +78,40 @@ public class CourseTimeServiceImpl implements CourseTimeService {
 
         CourseTime savedCourseTime = courseTimeRepository.save(courseTime);
         log.info("Course time created: id={}", savedCourseTime.getId());
+
+        return CourseTimeDetailResponse.from(savedCourseTime);
+    }
+
+    @Override
+    @Transactional
+    public CourseTimeDetailResponse cloneCourseTime(Long sourceId, CloneCourseTimeRequest request, Long createdBy) {
+        log.info("Cloning course time: sourceId={}, newTitle={}", sourceId, request.title());
+
+        // 원본 차수 조회
+        CourseTime source = courseTimeRepository.findByIdAndTenantId(sourceId, TenantContext.getCurrentTenantId())
+                .orElseThrow(() -> new CourseTimeNotFoundException(sourceId));
+
+        // 날짜 검증
+        validateDateRange(
+                request.enrollStartDate(),
+                request.enrollEndDate(),
+                request.classStartDate(),
+                request.classEndDate()
+        );
+
+        // 복제 생성
+        CourseTime cloned = CourseTime.cloneFrom(
+                source,
+                request.title(),
+                request.enrollStartDate(),
+                request.enrollEndDate(),
+                request.classStartDate(),
+                request.classEndDate(),
+                createdBy
+        );
+
+        CourseTime savedCourseTime = courseTimeRepository.save(cloned);
+        log.info("Course time cloned: sourceId={}, newId={}", sourceId, savedCourseTime.getId());
 
         return CourseTimeDetailResponse.from(savedCourseTime);
     }
@@ -290,18 +325,32 @@ public class CourseTimeServiceImpl implements CourseTimeService {
     // ========== Private Methods ==========
 
     private void validateDateRange(CreateCourseTimeRequest request) {
+        validateDateRange(
+                request.enrollStartDate(),
+                request.enrollEndDate(),
+                request.classStartDate(),
+                request.classEndDate()
+        );
+    }
+
+    private void validateDateRange(
+            LocalDate enrollStartDate,
+            LocalDate enrollEndDate,
+            LocalDate classStartDate,
+            LocalDate classEndDate
+    ) {
         // [R09] enroll_end_date <= class_end_date
-        if (request.enrollEndDate().isAfter(request.classEndDate())) {
+        if (enrollEndDate.isAfter(classEndDate)) {
             throw new InvalidDateRangeException("모집 종료일은 학습 종료일 이전이어야 합니다");
         }
 
         // 모집 시작일 <= 모집 종료일
-        if (request.enrollStartDate().isAfter(request.enrollEndDate())) {
+        if (enrollStartDate.isAfter(enrollEndDate)) {
             throw new InvalidDateRangeException("모집 시작일은 모집 종료일 이전이어야 합니다");
         }
 
         // 학습 시작일 <= 학습 종료일
-        if (request.classStartDate().isAfter(request.classEndDate())) {
+        if (classStartDate.isAfter(classEndDate)) {
             throw new InvalidDateRangeException("학습 시작일은 학습 종료일 이전이어야 합니다");
         }
     }
