@@ -34,6 +34,7 @@ public enum ErrorCode {
     CM_SNAPSHOT_NOT_FOUND(HttpStatus.NOT_FOUND, "CM006", "Snapshot not found"),
     CM_SNAPSHOT_STATE_ERROR(HttpStatus.BAD_REQUEST, "CM007", "Invalid snapshot state"),
     CM_LEARNING_OBJECT_NOT_FOUND(HttpStatus.NOT_FOUND, "CM008", "LearningObject not found"),
+    CM_SNAPSHOT_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "CM009", "SnapshotItem not found"),
 
     // Content (CMS)
     CONTENT_NOT_FOUND(HttpStatus.NOT_FOUND, "CT001", "Content not found"),
