@@ -112,6 +112,7 @@ public class CourseTime extends TenantEntity {
     ) {
         CourseTime courseTime = new CourseTime();
         // 복제 대상 필드
+        courseTime.program = source.program;
         courseTime.deliveryType = source.deliveryType;
         courseTime.capacity = source.capacity;
         courseTime.maxWaitingCount = source.maxWaitingCount;
