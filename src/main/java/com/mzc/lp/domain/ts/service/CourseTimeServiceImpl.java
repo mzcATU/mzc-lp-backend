@@ -1,6 +1,9 @@
 package com.mzc.lp.domain.ts.service;
 
 import com.mzc.lp.common.context.TenantContext;
+import com.mzc.lp.domain.iis.constant.AssignmentStatus;
+import com.mzc.lp.domain.iis.dto.response.InstructorAssignmentResponse;
+import com.mzc.lp.domain.iis.service.InstructorAssignmentService;
 import com.mzc.lp.domain.ts.constant.CourseTimeStatus;
 import com.mzc.lp.domain.ts.constant.EnrollmentMethod;
 import com.mzc.lp.domain.ts.dto.request.CloneCourseTimeRequest;
@@ -11,7 +14,6 @@ import com.mzc.lp.domain.ts.dto.response.CourseTimeDetailResponse;
 import com.mzc.lp.domain.ts.dto.response.CourseTimeResponse;
 import com.mzc.lp.domain.ts.dto.response.PriceResponse;
 import com.mzc.lp.domain.ts.entity.CourseTime;
-import com.mzc.lp.domain.iis.service.InstructorAssignmentService;
 import com.mzc.lp.domain.ts.exception.CapacityExceededException;
 import com.mzc.lp.domain.ts.exception.CourseTimeNotFoundException;
 import com.mzc.lp.domain.ts.exception.InvalidDateRangeException;
@@ -27,6 +29,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -120,24 +124,34 @@ public class CourseTimeServiceImpl implements CourseTimeService {
     public Page<CourseTimeResponse> getCourseTimes(CourseTimeStatus status, Long cmCourseId, Pageable pageable) {
         log.debug("Getting course times: status={}, cmCourseId={}", status, cmCourseId);
 
+        Page<CourseTime> courseTimePage;
+
         if (cmCourseId != null) {
-            return courseTimeRepository.findByCmCourseIdAndTenantId(cmCourseId, TenantContext.getCurrentTenantId())
+            List<CourseTime> filtered = courseTimeRepository
+                    .findByCmCourseIdAndTenantId(cmCourseId, TenantContext.getCurrentTenantId())
                     .stream()
                     .filter(ct -> status == null || ct.getStatus() == status)
-                    .map(CourseTimeResponse::from)
-                    .collect(java.util.stream.Collectors.collectingAndThen(
-                            java.util.stream.Collectors.toList(),
-                            list -> new org.springframework.data.domain.PageImpl<>(list, pageable, list.size())
-                    ));
+                    .toList();
+            courseTimePage = new org.springframework.data.domain.PageImpl<>(filtered, pageable, filtered.size());
+        } else if (status != null) {
+            courseTimePage = courseTimeRepository.findByTenantIdAndStatus(
+                    TenantContext.getCurrentTenantId(), status, pageable);
+        } else {
+            courseTimePage = courseTimeRepository.findByTenantId(
+                    TenantContext.getCurrentTenantId(), pageable);
         }
 
-        if (status != null) {
-            return courseTimeRepository.findByTenantIdAndStatus(TenantContext.getCurrentTenantId(), status, pageable)
-                    .map(CourseTimeResponse::from);
-        }
+        // 벌크 조회로 N+1 방지
+        List<Long> timeIds = courseTimePage.getContent().stream()
+                .map(CourseTime::getId)
+                .toList();
 
-        return courseTimeRepository.findByTenantId(TenantContext.getCurrentTenantId(), pageable)
-                .map(CourseTimeResponse::from);
+        Map<Long, List<InstructorAssignmentResponse>> instructorMap =
+                instructorAssignmentService.getInstructorsByTimeIds(timeIds);
+
+        return courseTimePage.map(ct ->
+                CourseTimeResponse.from(ct, instructorMap.getOrDefault(ct.getId(), List.of()))
+        );
     }
 
     @Override
@@ -147,7 +161,10 @@ public class CourseTimeServiceImpl implements CourseTimeService {
         CourseTime courseTime = courseTimeRepository.findByIdAndTenantId(id, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new CourseTimeNotFoundException(id));
 
-        return CourseTimeDetailResponse.from(courseTime);
+        List<InstructorAssignmentResponse> instructors =
+                instructorAssignmentService.getInstructorsByTimeId(id, AssignmentStatus.ACTIVE);
+
+        return CourseTimeDetailResponse.from(courseTime, instructors);
     }
 
     @Override
@@ -205,7 +222,11 @@ public class CourseTimeServiceImpl implements CourseTimeService {
         }
 
         log.info("Course time updated: id={}", id);
-        return CourseTimeDetailResponse.from(courseTime);
+
+        List<InstructorAssignmentResponse> instructors =
+                instructorAssignmentService.getInstructorsByTimeId(id, AssignmentStatus.ACTIVE);
+
+        return CourseTimeDetailResponse.from(courseTime, instructors);
     }
 
     @Override
@@ -256,7 +277,10 @@ public class CourseTimeServiceImpl implements CourseTimeService {
         courseTime.open();
         log.info("Course time opened: id={}", id);
 
-        return CourseTimeDetailResponse.from(courseTime);
+        List<InstructorAssignmentResponse> instructors =
+                instructorAssignmentService.getInstructorsByTimeId(id, AssignmentStatus.ACTIVE);
+
+        return CourseTimeDetailResponse.from(courseTime, instructors);
     }
 
     @Override
@@ -277,7 +301,10 @@ public class CourseTimeServiceImpl implements CourseTimeService {
         courseTime.startClass();
         log.info("Course time started: id={}", id);
 
-        return CourseTimeDetailResponse.from(courseTime);
+        List<InstructorAssignmentResponse> instructors =
+                instructorAssignmentService.getInstructorsByTimeId(id, AssignmentStatus.ACTIVE);
+
+        return CourseTimeDetailResponse.from(courseTime, instructors);
     }
 
     @Override
@@ -298,7 +325,10 @@ public class CourseTimeServiceImpl implements CourseTimeService {
         courseTime.close();
         log.info("Course time closed: id={}", id);
 
-        return CourseTimeDetailResponse.from(courseTime);
+        List<InstructorAssignmentResponse> instructors =
+                instructorAssignmentService.getInstructorsByTimeId(id, AssignmentStatus.ACTIVE);
+
+        return CourseTimeDetailResponse.from(courseTime, instructors);
     }
 
     @Override
@@ -319,7 +349,10 @@ public class CourseTimeServiceImpl implements CourseTimeService {
         courseTime.archive();
         log.info("Course time archived: id={}", id);
 
-        return CourseTimeDetailResponse.from(courseTime);
+        List<InstructorAssignmentResponse> instructors =
+                instructorAssignmentService.getInstructorsByTimeId(id, AssignmentStatus.ACTIVE);
+
+        return CourseTimeDetailResponse.from(courseTime, instructors);
     }
 
     // ========== Private Methods ==========

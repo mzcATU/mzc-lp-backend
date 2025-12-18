@@ -28,7 +28,7 @@ server:
       force-response: true
 
 jwt:
-  secret: ${JWT_SECRET:default-secret-key-for-development-only}
+  secret: mzc-lp-backend-jwt-secret-key-for-development-environment-only-256-bits-minimum-required-key
   access-expiration: ${JWT_ACCESS_EXPIRATION:900000}
   refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
 

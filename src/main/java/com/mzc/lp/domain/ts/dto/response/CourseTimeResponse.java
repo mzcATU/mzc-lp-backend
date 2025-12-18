@@ -1,5 +1,6 @@
 package com.mzc.lp.domain.ts.dto.response;
 
+import com.mzc.lp.domain.iis.dto.response.InstructorAssignmentResponse;
 import com.mzc.lp.domain.ts.constant.CourseTimeStatus;
 import com.mzc.lp.domain.ts.constant.DeliveryType;
 import com.mzc.lp.domain.ts.constant.EnrollmentMethod;
@@ -8,6 +9,7 @@ import com.mzc.lp.domain.ts.entity.CourseTime;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 
 public record CourseTimeResponse(
         Long id,
@@ -27,9 +29,14 @@ public record CourseTimeResponse(
         BigDecimal price,
         boolean isFree,
         boolean allowLateEnrollment,
-        Instant createdAt
+        Instant createdAt,
+        List<InstructorAssignmentResponse> instructors
 ) {
     public static CourseTimeResponse from(CourseTime entity) {
+        return from(entity, List.of());
+    }
+
+    public static CourseTimeResponse from(CourseTime entity, List<InstructorAssignmentResponse> instructors) {
         return new CourseTimeResponse(
                 entity.getId(),
                 entity.getCmCourseId(),
@@ -48,7 +55,8 @@ public record CourseTimeResponse(
                 entity.getPrice(),
                 entity.isFree(),
                 entity.isAllowLateEnrollment(),
-                entity.getCreatedAt()
+                entity.getCreatedAt(),
+                instructors != null ? instructors : List.of()
         );
     }
 }
