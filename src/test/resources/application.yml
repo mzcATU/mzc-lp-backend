@@ -32,6 +32,14 @@ jwt:
   access-expiration: 3600000
   refresh-expiration: 604800000
 
+# CORS 설정 (테스트용)
+cors:
+  allowed-origins: http://localhost:3000
+
+# Tenant 설정 (테스트용)
+tenant:
+  default-id: 1
+
 # File Storage (Test)
 file:
   upload-dir: ${java.io.tmpdir}/test-uploads
