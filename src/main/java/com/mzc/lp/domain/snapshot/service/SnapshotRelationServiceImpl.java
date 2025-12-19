@@ -12,6 +12,7 @@ import com.mzc.lp.domain.snapshot.exception.SnapshotNotFoundException;
 import com.mzc.lp.domain.snapshot.repository.CourseSnapshotRepository;
 import com.mzc.lp.domain.snapshot.repository.SnapshotItemRepository;
 import com.mzc.lp.domain.snapshot.repository.SnapshotRelationRepository;
+import com.mzc.lp.common.context.TenantContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -29,8 +30,6 @@ public class SnapshotRelationServiceImpl implements SnapshotRelationService {
     private final SnapshotItemRepository snapshotItemRepository;
     private final SnapshotRelationRepository snapshotRelationRepository;
 
-    private static final Long DEFAULT_TENANT_ID = 1L;
-
     @Override
     public SnapshotRelationResponse.SnapshotRelationsResponse getRelations(Long snapshotId) {
         log.debug("Getting relations: snapshotId={}", snapshotId);
@@ -38,7 +37,7 @@ public class SnapshotRelationServiceImpl implements SnapshotRelationService {
         validateSnapshotExists(snapshotId);
 
         List<SnapshotRelation> relations = snapshotRelationRepository.findBySnapshotIdWithItems(
-                snapshotId, DEFAULT_TENANT_ID);
+                snapshotId, TenantContext.getCurrentTenantId());
 
         if (relations.isEmpty()) {
             return SnapshotRelationResponse.SnapshotRelationsResponse.from(
@@ -57,7 +56,7 @@ public class SnapshotRelationServiceImpl implements SnapshotRelationService {
         validateSnapshotExists(snapshotId);
 
         List<SnapshotRelation> relations = snapshotRelationRepository.findBySnapshotIdWithItems(
-                snapshotId, DEFAULT_TENANT_ID);
+                snapshotId, TenantContext.getCurrentTenantId());
 
         if (relations.isEmpty()) {
             return Collections.emptyList();
@@ -84,7 +83,7 @@ public class SnapshotRelationServiceImpl implements SnapshotRelationService {
         validateItemBelongsToSnapshot(toItem, snapshotId);
 
         // toItem이 이미 다른 관계에서 참조되고 있는지 확인
-        if (snapshotRelationRepository.existsByToItemIdAndTenantId(request.toItemId(), DEFAULT_TENANT_ID)) {
+        if (snapshotRelationRepository.existsByToItemIdAndTenantId(request.toItemId(), TenantContext.getCurrentTenantId())) {
             throw new IllegalArgumentException("이 항목은 이미 학습 순서에 포함되어 있습니다: " + request.toItemId());
         }
 
@@ -96,7 +95,7 @@ public class SnapshotRelationServiceImpl implements SnapshotRelationService {
         SnapshotRelation relation;
         if (request.fromItemId() == null) {
             // 기존 시작점이 있으면 삭제
-            snapshotRelationRepository.findBySnapshotIdAndFromItemIsNullAndTenantId(snapshotId, DEFAULT_TENANT_ID)
+            snapshotRelationRepository.findBySnapshotIdAndFromItemIsNullAndTenantId(snapshotId, TenantContext.getCurrentTenantId())
                     .ifPresent(snapshotRelationRepository::delete);
             relation = SnapshotRelation.createStartPoint(snapshot, toItem);
         } else {
@@ -125,11 +124,11 @@ public class SnapshotRelationServiceImpl implements SnapshotRelationService {
 
         // 기존 시작점 찾기
         Optional<SnapshotRelation> existingStart = snapshotRelationRepository
-                .findBySnapshotIdAndFromItemIsNullAndTenantId(snapshotId, DEFAULT_TENANT_ID);
+                .findBySnapshotIdAndFromItemIsNullAndTenantId(snapshotId, TenantContext.getCurrentTenantId());
 
         // 새 시작점이 이미 다른 곳에서 참조되고 있다면 해당 관계 삭제
         Optional<SnapshotRelation> existingToNew = snapshotRelationRepository
-                .findByToItemIdAndTenantId(request.itemId(), DEFAULT_TENANT_ID);
+                .findByToItemIdAndTenantId(request.itemId(), TenantContext.getCurrentTenantId());
         existingToNew.ifPresent(snapshotRelationRepository::delete);
 
         SnapshotRelation startRelation;
@@ -153,7 +152,7 @@ public class SnapshotRelationServiceImpl implements SnapshotRelationService {
 
         validateSnapshotExists(snapshotId);
 
-        SnapshotRelation relation = snapshotRelationRepository.findByIdAndTenantId(relationId, DEFAULT_TENANT_ID)
+        SnapshotRelation relation = snapshotRelationRepository.findByIdAndTenantId(relationId, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new IllegalArgumentException("순서 연결을 찾을 수 없습니다: " + relationId));
 
         if (!relation.getSnapshot().getId().equals(snapshotId)) {
@@ -167,18 +166,18 @@ public class SnapshotRelationServiceImpl implements SnapshotRelationService {
     // ===== Private Helper Methods =====
 
     private CourseSnapshot findSnapshotById(Long snapshotId) {
-        return snapshotRepository.findByIdAndTenantId(snapshotId, DEFAULT_TENANT_ID)
+        return snapshotRepository.findByIdAndTenantId(snapshotId, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new SnapshotNotFoundException(snapshotId));
     }
 
     private void validateSnapshotExists(Long snapshotId) {
-        if (!snapshotRepository.existsByIdAndTenantId(snapshotId, DEFAULT_TENANT_ID)) {
+        if (!snapshotRepository.existsByIdAndTenantId(snapshotId, TenantContext.getCurrentTenantId())) {
             throw new SnapshotNotFoundException(snapshotId);
         }
     }
 
     private SnapshotItem findItemById(Long itemId) {
-        return snapshotItemRepository.findByIdAndTenantId(itemId, DEFAULT_TENANT_ID)
+        return snapshotItemRepository.findByIdAndTenantId(itemId, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new SnapshotItemNotFoundException(itemId));
     }
 
@@ -190,7 +189,7 @@ public class SnapshotRelationServiceImpl implements SnapshotRelationService {
 
     private void validateNoCircularReference(Long snapshotId, Long fromItemId, Long toItemId) {
         List<SnapshotRelation> relations = snapshotRelationRepository.findBySnapshotIdAndTenantId(
-                snapshotId, DEFAULT_TENANT_ID);
+                snapshotId, TenantContext.getCurrentTenantId());
 
         Map<Long, Long> fromToMap = new HashMap<>();
         for (SnapshotRelation relation : relations) {

@@ -193,12 +193,12 @@ class EnrollmentServiceTest extends TenantTestSupport {
             Long operatorId = 99L;
             List<Long> userIds = List.of(1L, 2L, 3L);
             ForceEnrollRequest request = new ForceEnrollRequest(userIds, null);
-            CourseTime courseTime = createTestCourseTime(true);
 
-            given(courseTimeRepository.findByIdAndTenantId(courseTimeId, TENANT_ID))
-                    .willReturn(Optional.of(courseTime));
+            given(courseTimeRepository.existsByIdAndTenantId(courseTimeId, TENANT_ID))
+                    .willReturn(true);
             given(enrollmentRepository.existsByUserIdAndCourseTimeIdAndTenantId(any(), eq(courseTimeId), eq(TENANT_ID)))
                     .willReturn(false);
+            doNothing().when(courseTimeService).forceOccupySeat(courseTimeId);
             given(enrollmentRepository.save(any(Enrollment.class)))
                     .willAnswer(invocation -> invocation.getArgument(0));
 
@@ -212,6 +212,7 @@ class EnrollmentServiceTest extends TenantTestSupport {
             assertThat(response.failCount()).isEqualTo(0);
 
             verify(enrollmentRepository, times(3)).save(any(Enrollment.class));
+            verify(courseTimeService, times(3)).forceOccupySeat(courseTimeId);
         }
 
         @Test
@@ -222,16 +223,16 @@ class EnrollmentServiceTest extends TenantTestSupport {
             Long operatorId = 99L;
             List<Long> userIds = List.of(1L, 2L, 3L);
             ForceEnrollRequest request = new ForceEnrollRequest(userIds, null);
-            CourseTime courseTime = createTestCourseTime(true);
 
-            given(courseTimeRepository.findByIdAndTenantId(courseTimeId, TENANT_ID))
-                    .willReturn(Optional.of(courseTime));
+            given(courseTimeRepository.existsByIdAndTenantId(courseTimeId, TENANT_ID))
+                    .willReturn(true);
             given(enrollmentRepository.existsByUserIdAndCourseTimeIdAndTenantId(1L, courseTimeId, TENANT_ID))
                     .willReturn(true);  // 이미 등록됨
             given(enrollmentRepository.existsByUserIdAndCourseTimeIdAndTenantId(2L, courseTimeId, TENANT_ID))
                     .willReturn(false);
             given(enrollmentRepository.existsByUserIdAndCourseTimeIdAndTenantId(3L, courseTimeId, TENANT_ID))
                     .willReturn(false);
+            doNothing().when(courseTimeService).forceOccupySeat(courseTimeId);
             given(enrollmentRepository.save(any(Enrollment.class)))
                     .willAnswer(invocation -> invocation.getArgument(0));
 
@@ -244,6 +245,7 @@ class EnrollmentServiceTest extends TenantTestSupport {
             assertThat(response.failures().get(0).userId()).isEqualTo(1L);
 
             verify(enrollmentRepository, times(2)).save(any(Enrollment.class));
+            verify(courseTimeService, times(2)).forceOccupySeat(courseTimeId);
         }
     }
 

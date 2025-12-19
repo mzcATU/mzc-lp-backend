@@ -100,7 +100,12 @@ public class JwtProvider {
     }
 
     public Long getUserId(String token) {
-        return Long.parseLong(getClaims(token).getSubject());
+        try {
+            return Long.parseLong(getClaims(token).getSubject());
+        } catch (NumberFormatException e) {
+            log.error("Invalid userId format in token subject");
+            throw new IllegalArgumentException("Invalid userId format in token");
+        }
     }
 
     public String getEmail(String token) {

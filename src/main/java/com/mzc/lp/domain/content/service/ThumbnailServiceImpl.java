@@ -67,6 +67,7 @@ public class ThumbnailServiceImpl implements ThumbnailService {
 
     @Override
     public Optional<String> generateVideoThumbnail(Path videoPath) {
+        Process process = null;
         try {
             String outputFileName = generateThumbnailFileName();
             Path outputPath = getThumbnailOutputPath(outputFileName);
@@ -84,7 +85,7 @@ public class ThumbnailServiceImpl implements ThumbnailService {
             );
             pb.redirectErrorStream(true);
 
-            Process process = pb.start();
+            process = pb.start();
             boolean finished = process.waitFor(30, TimeUnit.SECONDS);
 
             if (finished && process.exitValue() == 0 && Files.exists(outputPath)) {
@@ -95,9 +96,18 @@ public class ThumbnailServiceImpl implements ThumbnailService {
                 log.warn("Failed to generate video thumbnail for: {}", videoPath);
                 return Optional.empty();
             }
-        } catch (Exception e) {
-            log.error("Error generating video thumbnail: {}", videoPath, e);
+        } catch (IOException e) {
+            log.error("IO error generating video thumbnail: {}", videoPath, e);
             return Optional.empty();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.error("Video thumbnail generation interrupted: {}", videoPath, e);
+            return Optional.empty();
+        } finally {
+            // Process 리소스 정리
+            if (process != null) {
+                process.destroyForcibly();
+            }
         }
     }
 

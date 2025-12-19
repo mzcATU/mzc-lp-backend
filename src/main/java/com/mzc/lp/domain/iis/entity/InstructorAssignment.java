@@ -11,14 +11,22 @@ import lombok.NoArgsConstructor;
 import java.time.Instant;
 
 @Entity
-@Table(name = "iis_instructor_assignments", indexes = {
-        @Index(name = "idx_iis_tenant", columnList = "tenant_id"),
-        @Index(name = "idx_iis_user", columnList = "user_key"),
-        @Index(name = "idx_iis_time", columnList = "time_key"),
-        @Index(name = "idx_iis_status", columnList = "status"),
-        @Index(name = "idx_iis_role", columnList = "role"),
-        @Index(name = "idx_iis_assigned_at", columnList = "assigned_at")
-})
+@Table(name = "iis_instructor_assignments",
+        uniqueConstraints = {
+                // 동일 차수에 동일 강사 중복 배정 방지 (ACTIVE 상태에서)
+                @UniqueConstraint(
+                        name = "uk_iis_time_user_active",
+                        columnNames = {"tenant_id", "time_key", "user_key", "status"}
+                )
+        },
+        indexes = {
+                @Index(name = "idx_iis_tenant", columnList = "tenant_id"),
+                @Index(name = "idx_iis_user", columnList = "user_key"),
+                @Index(name = "idx_iis_time", columnList = "time_key"),
+                @Index(name = "idx_iis_status", columnList = "status"),
+                @Index(name = "idx_iis_role", columnList = "role"),
+                @Index(name = "idx_iis_assigned_at", columnList = "assigned_at")
+        })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class InstructorAssignment extends TenantEntity {

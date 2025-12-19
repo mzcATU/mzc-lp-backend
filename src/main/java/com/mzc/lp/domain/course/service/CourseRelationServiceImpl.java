@@ -11,6 +11,7 @@ import com.mzc.lp.domain.course.exception.CourseNotFoundException;
 import com.mzc.lp.domain.course.repository.CourseItemRepository;
 import com.mzc.lp.domain.course.repository.CourseRelationRepository;
 import com.mzc.lp.domain.course.repository.CourseRepository;
+import com.mzc.lp.common.context.TenantContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,8 +28,6 @@ public class CourseRelationServiceImpl implements CourseRelationService {
     private final CourseRepository courseRepository;
     private final CourseItemRepository courseItemRepository;
     private final CourseRelationRepository courseRelationRepository;
-
-    private static final Long DEFAULT_TENANT_ID = 1L;
 
     @Override
     @Transactional
@@ -68,7 +67,7 @@ public class CourseRelationServiceImpl implements CourseRelationService {
 
         validateCourseExists(courseId);
 
-        List<CourseRelation> relations = courseRelationRepository.findByCourseIdWithItems(courseId, DEFAULT_TENANT_ID);
+        List<CourseRelation> relations = courseRelationRepository.findByCourseIdWithItems(courseId, TenantContext.getCurrentTenantId());
 
         if (relations.isEmpty()) {
             return CourseRelationResponse.from(courseId, Collections.emptyList(), Collections.emptyList());
@@ -88,7 +87,7 @@ public class CourseRelationServiceImpl implements CourseRelationService {
         validateRelationRequest(courseId, request);
 
         // 기존 관계 삭제
-        int deleted = courseRelationRepository.deleteByCourseId(courseId, DEFAULT_TENANT_ID);
+        int deleted = courseRelationRepository.deleteByCourseId(courseId, TenantContext.getCurrentTenantId());
         log.debug("Deleted existing relations: courseId={}, count={}", courseId, deleted);
 
         // 새 관계 생성
@@ -132,11 +131,11 @@ public class CourseRelationServiceImpl implements CourseRelationService {
 
         // 기존 시작점 찾기
         Optional<CourseRelation> existingStart = courseRelationRepository
-                .findStartPointByCourseId(courseId, DEFAULT_TENANT_ID);
+                .findStartPointByCourseId(courseId, TenantContext.getCurrentTenantId());
 
         // 새 시작점이 이미 다른 곳에서 참조되고 있다면 해당 관계 삭제
         Optional<CourseRelation> existingToNew = courseRelationRepository
-                .findByToItemId(request.startItemId(), DEFAULT_TENANT_ID);
+                .findByToItemId(request.startItemId(), TenantContext.getCurrentTenantId());
         existingToNew.ifPresent(courseRelationRepository::delete);
 
         if (existingStart.isPresent()) {
@@ -162,10 +161,10 @@ public class CourseRelationServiceImpl implements CourseRelationService {
         validateCourseExists(courseId);
 
         // 기존 관계 삭제
-        courseRelationRepository.deleteByCourseId(courseId, DEFAULT_TENANT_ID);
+        courseRelationRepository.deleteByCourseId(courseId, TenantContext.getCurrentTenantId());
 
         // 차시만 조회 (폴더 제외), depth와 id 순으로 정렬
-        List<CourseItem> items = courseItemRepository.findItemsOnlyByCourseId(courseId, DEFAULT_TENANT_ID);
+        List<CourseItem> items = courseItemRepository.findItemsOnlyByCourseId(courseId, TenantContext.getCurrentTenantId());
 
         if (items.isEmpty()) {
             log.info("No items found for auto relation: courseId={}", courseId);
@@ -201,7 +200,7 @@ public class CourseRelationServiceImpl implements CourseRelationService {
 
         validateCourseExists(courseId);
 
-        CourseRelation relation = courseRelationRepository.findByIdAndTenantId(relationId, DEFAULT_TENANT_ID)
+        CourseRelation relation = courseRelationRepository.findByIdAndTenantId(relationId, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new IllegalArgumentException("순서 연결을 찾을 수 없습니다: " + relationId));
 
         // 해당 relation이 이 course에 속하는지 확인
@@ -216,13 +215,13 @@ public class CourseRelationServiceImpl implements CourseRelationService {
     // ===== Private Helper Methods =====
 
     private void validateCourseExists(Long courseId) {
-        if (!courseRepository.existsByIdAndTenantId(courseId, DEFAULT_TENANT_ID)) {
+        if (!courseRepository.existsByIdAndTenantId(courseId, TenantContext.getCurrentTenantId())) {
             throw new CourseNotFoundException(courseId);
         }
     }
 
     private CourseItem findCourseItem(Long itemId) {
-        return courseItemRepository.findByIdAndTenantId(itemId, DEFAULT_TENANT_ID)
+        return courseItemRepository.findByIdAndTenantId(itemId, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new CourseItemNotFoundException(itemId));
     }
 

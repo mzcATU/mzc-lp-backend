@@ -15,6 +15,7 @@ import com.mzc.lp.domain.course.exception.InvalidParentException;
 import com.mzc.lp.domain.course.exception.MaxDepthExceededException;
 import com.mzc.lp.domain.course.repository.CourseItemRepository;
 import com.mzc.lp.domain.course.repository.CourseRepository;
+import com.mzc.lp.common.context.TenantContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -30,8 +31,6 @@ public class CourseItemServiceImpl implements CourseItemService {
 
     private final CourseRepository courseRepository;
     private final CourseItemRepository courseItemRepository;
-
-    private static final Long DEFAULT_TENANT_ID = 1L;
 
     @Override
     @Transactional
@@ -98,7 +97,7 @@ public class CourseItemServiceImpl implements CourseItemService {
 
         validateCourseExists(courseId);
 
-        List<CourseItem> rootItems = courseItemRepository.findRootItemsWithChildren(courseId, DEFAULT_TENANT_ID);
+        List<CourseItem> rootItems = courseItemRepository.findRootItemsWithChildren(courseId, TenantContext.getCurrentTenantId());
 
         return CourseItemHierarchyResponse.fromList(rootItems);
     }
@@ -109,7 +108,7 @@ public class CourseItemServiceImpl implements CourseItemService {
 
         validateCourseExists(courseId);
 
-        List<CourseItem> items = courseItemRepository.findItemsOnlyByCourseId(courseId, DEFAULT_TENANT_ID);
+        List<CourseItem> items = courseItemRepository.findItemsOnlyByCourseId(courseId, TenantContext.getCurrentTenantId());
 
         return items.stream()
                 .map(CourseItemResponse::from)
@@ -202,18 +201,18 @@ public class CourseItemServiceImpl implements CourseItemService {
     // ===== Private Helper Methods =====
 
     private Course findCourseById(Long courseId) {
-        return courseRepository.findByIdAndTenantId(courseId, DEFAULT_TENANT_ID)
+        return courseRepository.findByIdAndTenantId(courseId, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new CourseNotFoundException(courseId));
     }
 
     private void validateCourseExists(Long courseId) {
-        if (!courseRepository.existsByIdAndTenantId(courseId, DEFAULT_TENANT_ID)) {
+        if (!courseRepository.existsByIdAndTenantId(courseId, TenantContext.getCurrentTenantId())) {
             throw new CourseNotFoundException(courseId);
         }
     }
 
     private CourseItem findItemById(Long itemId) {
-        return courseItemRepository.findByIdAndTenantId(itemId, DEFAULT_TENANT_ID)
+        return courseItemRepository.findByIdAndTenantId(itemId, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new CourseItemNotFoundException(itemId));
     }
 
@@ -221,7 +220,7 @@ public class CourseItemServiceImpl implements CourseItemService {
         if (parentId == null) {
             return null;
         }
-        return courseItemRepository.findByIdAndTenantId(parentId, DEFAULT_TENANT_ID)
+        return courseItemRepository.findByIdAndTenantId(parentId, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new CourseItemNotFoundException(parentId));
     }
 

@@ -18,6 +18,8 @@ public interface CourseTimeRepository extends JpaRepository<CourseTime, Long> {
 
     Optional<CourseTime> findByIdAndTenantId(Long id, Long tenantId);
 
+    boolean existsByIdAndTenantId(Long id, Long tenantId);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT ct FROM CourseTime ct WHERE ct.id = :id")
     Optional<CourseTime> findByIdWithLock(@Param("id") Long id);

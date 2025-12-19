@@ -14,6 +14,7 @@ import com.mzc.lp.domain.program.repository.ProgramRepository;
 import com.mzc.lp.domain.snapshot.entity.CourseSnapshot;
 import com.mzc.lp.domain.snapshot.exception.SnapshotNotFoundException;
 import com.mzc.lp.domain.snapshot.repository.CourseSnapshotRepository;
+import com.mzc.lp.common.context.TenantContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -26,8 +27,6 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ProgramServiceImpl implements ProgramService {
-
-    private static final Long DEFAULT_TENANT_ID = 1L;
 
     private final ProgramRepository programRepository;
     private final CourseSnapshotRepository snapshotRepository;
@@ -49,7 +48,7 @@ public class ProgramServiceImpl implements ProgramService {
 
         // Snapshot 연결 (선택)
         if (request.snapshotId() != null) {
-            CourseSnapshot snapshot = snapshotRepository.findByIdAndTenantId(request.snapshotId(), DEFAULT_TENANT_ID)
+            CourseSnapshot snapshot = snapshotRepository.findByIdAndTenantId(request.snapshotId(), TenantContext.getCurrentTenantId())
                     .orElseThrow(() -> new SnapshotNotFoundException(request.snapshotId()));
             program.linkSnapshot(snapshot);
         }
@@ -64,7 +63,7 @@ public class ProgramServiceImpl implements ProgramService {
     public ProgramDetailResponse getProgram(Long programId) {
         log.debug("Getting program: id={}", programId);
 
-        Program program = programRepository.findByIdWithSnapshot(programId, DEFAULT_TENANT_ID)
+        Program program = programRepository.findByIdWithSnapshot(programId, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new ProgramNotFoundException(programId));
 
         return ProgramDetailResponse.from(program);
@@ -77,13 +76,13 @@ public class ProgramServiceImpl implements ProgramService {
         Page<Program> programs;
 
         if (status != null && creatorId != null) {
-            programs = programRepository.findByTenantIdAndStatusAndCreatorId(DEFAULT_TENANT_ID, status, creatorId, pageable);
+            programs = programRepository.findByTenantIdAndStatusAndCreatorId(TenantContext.getCurrentTenantId(), status, creatorId, pageable);
         } else if (status != null) {
-            programs = programRepository.findByTenantIdAndStatus(DEFAULT_TENANT_ID, status, pageable);
+            programs = programRepository.findByTenantIdAndStatus(TenantContext.getCurrentTenantId(), status, pageable);
         } else if (creatorId != null) {
-            programs = programRepository.findByTenantIdAndCreatorId(DEFAULT_TENANT_ID, creatorId, pageable);
+            programs = programRepository.findByTenantIdAndCreatorId(TenantContext.getCurrentTenantId(), creatorId, pageable);
         } else {
-            programs = programRepository.findByTenantId(DEFAULT_TENANT_ID, pageable);
+            programs = programRepository.findByTenantId(TenantContext.getCurrentTenantId(), pageable);
         }
 
         return programs.map(ProgramResponse::from);
@@ -94,7 +93,7 @@ public class ProgramServiceImpl implements ProgramService {
     public ProgramResponse updateProgram(Long programId, UpdateProgramRequest request) {
         log.info("Updating program: id={}", programId);
 
-        Program program = programRepository.findByIdAndTenantId(programId, DEFAULT_TENANT_ID)
+        Program program = programRepository.findByIdAndTenantId(programId, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new ProgramNotFoundException(programId));
 
         program.update(
@@ -115,7 +114,7 @@ public class ProgramServiceImpl implements ProgramService {
     public void deleteProgram(Long programId) {
         log.info("Deleting program: id={}", programId);
 
-        Program program = programRepository.findByIdAndTenantId(programId, DEFAULT_TENANT_ID)
+        Program program = programRepository.findByIdAndTenantId(programId, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new ProgramNotFoundException(programId));
 
         // DRAFT 상태에서만 삭제 가능
@@ -133,7 +132,7 @@ public class ProgramServiceImpl implements ProgramService {
     public ProgramResponse submitProgram(Long programId) {
         log.info("Submitting program: id={}", programId);
 
-        Program program = programRepository.findByIdAndTenantId(programId, DEFAULT_TENANT_ID)
+        Program program = programRepository.findByIdAndTenantId(programId, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new ProgramNotFoundException(programId));
 
         program.submit();
@@ -146,7 +145,7 @@ public class ProgramServiceImpl implements ProgramService {
     public Page<PendingProgramResponse> getPendingPrograms(Pageable pageable) {
         log.debug("Getting pending programs");
 
-        Page<Program> pendingPrograms = programRepository.findPendingPrograms(DEFAULT_TENANT_ID, pageable);
+        Page<Program> pendingPrograms = programRepository.findPendingPrograms(TenantContext.getCurrentTenantId(), pageable);
         return pendingPrograms.map(PendingProgramResponse::from);
     }
 
@@ -155,7 +154,7 @@ public class ProgramServiceImpl implements ProgramService {
     public ProgramDetailResponse approveProgram(Long programId, ApproveRequest request, Long operatorId) {
         log.info("Approving program: id={}, operatorId={}", programId, operatorId);
 
-        Program program = programRepository.findByIdWithSnapshot(programId, DEFAULT_TENANT_ID)
+        Program program = programRepository.findByIdWithSnapshot(programId, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new ProgramNotFoundException(programId));
 
         program.approve(operatorId, request != null ? request.comment() : null);
@@ -169,7 +168,7 @@ public class ProgramServiceImpl implements ProgramService {
     public ProgramDetailResponse rejectProgram(Long programId, RejectRequest request, Long operatorId) {
         log.info("Rejecting program: id={}, operatorId={}", programId, operatorId);
 
-        Program program = programRepository.findByIdWithSnapshot(programId, DEFAULT_TENANT_ID)
+        Program program = programRepository.findByIdWithSnapshot(programId, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new ProgramNotFoundException(programId));
 
         program.reject(operatorId, request.reason());
@@ -183,7 +182,7 @@ public class ProgramServiceImpl implements ProgramService {
     public ProgramResponse closeProgram(Long programId) {
         log.info("Closing program: id={}", programId);
 
-        Program program = programRepository.findByIdAndTenantId(programId, DEFAULT_TENANT_ID)
+        Program program = programRepository.findByIdAndTenantId(programId, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new ProgramNotFoundException(programId));
 
         program.close();
@@ -197,10 +196,10 @@ public class ProgramServiceImpl implements ProgramService {
     public ProgramResponse linkSnapshot(Long programId, Long snapshotId) {
         log.info("Linking snapshot to program: programId={}, snapshotId={}", programId, snapshotId);
 
-        Program program = programRepository.findByIdAndTenantId(programId, DEFAULT_TENANT_ID)
+        Program program = programRepository.findByIdAndTenantId(programId, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new ProgramNotFoundException(programId));
 
-        CourseSnapshot snapshot = snapshotRepository.findByIdAndTenantId(snapshotId, DEFAULT_TENANT_ID)
+        CourseSnapshot snapshot = snapshotRepository.findByIdAndTenantId(snapshotId, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new SnapshotNotFoundException(snapshotId));
 
         program.linkSnapshot(snapshot);

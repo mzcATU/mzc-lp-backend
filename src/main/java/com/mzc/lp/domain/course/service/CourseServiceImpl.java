@@ -8,6 +8,7 @@ import com.mzc.lp.domain.course.dto.response.CourseResponse;
 import com.mzc.lp.domain.course.entity.Course;
 import com.mzc.lp.domain.course.exception.CourseNotFoundException;
 import com.mzc.lp.domain.course.repository.CourseRepository;
+import com.mzc.lp.common.context.TenantContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -24,8 +25,6 @@ import java.util.List;
 public class CourseServiceImpl implements CourseService {
 
     private final CourseRepository courseRepository;
-
-    private static final Long DEFAULT_TENANT_ID = 1L;
 
     @Override
     @Transactional
@@ -56,15 +55,15 @@ public class CourseServiceImpl implements CourseService {
 
         if (keyword != null && !keyword.isBlank() && categoryId != null) {
             courses = courseRepository.findByTenantIdAndTitleContainingAndCategoryId(
-                    DEFAULT_TENANT_ID, keyword, categoryId, pageable);
+                    TenantContext.getCurrentTenantId(), keyword, categoryId, pageable);
         } else if (keyword != null && !keyword.isBlank()) {
             courses = courseRepository.findByTenantIdAndTitleContaining(
-                    DEFAULT_TENANT_ID, keyword, pageable);
+                    TenantContext.getCurrentTenantId(), keyword, pageable);
         } else if (categoryId != null) {
             courses = courseRepository.findByTenantIdAndCategoryId(
-                    DEFAULT_TENANT_ID, categoryId, pageable);
+                    TenantContext.getCurrentTenantId(), categoryId, pageable);
         } else {
-            courses = courseRepository.findByTenantId(DEFAULT_TENANT_ID, pageable);
+            courses = courseRepository.findByTenantId(TenantContext.getCurrentTenantId(), pageable);
         }
 
         return courses.map(CourseResponse::from);
@@ -74,7 +73,7 @@ public class CourseServiceImpl implements CourseService {
     public CourseDetailResponse getCourseDetail(Long courseId) {
         log.debug("Getting course detail: courseId={}", courseId);
 
-        Course course = courseRepository.findByIdWithItems(courseId, DEFAULT_TENANT_ID)
+        Course course = courseRepository.findByIdWithItems(courseId, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new CourseNotFoundException(courseId));
 
         List<CourseItemResponse> items = course.getItems().stream()
@@ -89,7 +88,7 @@ public class CourseServiceImpl implements CourseService {
     public CourseResponse updateCourse(Long courseId, UpdateCourseRequest request) {
         log.info("Updating course: courseId={}", courseId);
 
-        Course course = courseRepository.findByIdAndTenantId(courseId, DEFAULT_TENANT_ID)
+        Course course = courseRepository.findByIdAndTenantId(courseId, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new CourseNotFoundException(courseId));
 
         course.update(
@@ -111,7 +110,7 @@ public class CourseServiceImpl implements CourseService {
     public void deleteCourse(Long courseId) {
         log.info("Deleting course: courseId={}", courseId);
 
-        Course course = courseRepository.findByIdAndTenantId(courseId, DEFAULT_TENANT_ID)
+        Course course = courseRepository.findByIdAndTenantId(courseId, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new CourseNotFoundException(courseId));
 
         courseRepository.delete(course);

@@ -19,6 +19,7 @@ import com.mzc.lp.domain.snapshot.exception.SnapshotStateException;
 import com.mzc.lp.domain.snapshot.repository.CourseSnapshotRepository;
 import com.mzc.lp.domain.snapshot.repository.SnapshotItemRepository;
 import com.mzc.lp.domain.snapshot.repository.SnapshotLearningObjectRepository;
+import com.mzc.lp.common.context.TenantContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -42,21 +43,19 @@ public class SnapshotServiceImpl implements SnapshotService {
     private final CourseRepository courseRepository;
     private final CourseItemRepository courseItemRepository;
 
-    private static final Long DEFAULT_TENANT_ID = 1L;
-
     @Override
     @Transactional
     public SnapshotDetailResponse createSnapshotFromCourse(Long courseId, Long createdBy) {
         log.info("Creating snapshot from course: courseId={}, createdBy={}", courseId, createdBy);
 
-        Course course = courseRepository.findByIdAndTenantId(courseId, DEFAULT_TENANT_ID)
+        Course course = courseRepository.findByIdAndTenantId(courseId, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new CourseNotFoundException(courseId));
 
         CourseSnapshot snapshot = CourseSnapshot.createFromCourse(course, createdBy);
         CourseSnapshot savedSnapshot = snapshotRepository.save(snapshot);
 
         List<CourseItem> courseItems = courseItemRepository.findByCourseIdOrderByDepthAndSortOrder(
-                courseId, DEFAULT_TENANT_ID);
+                courseId, TenantContext.getCurrentTenantId());
 
         copyItemsFromCourse(savedSnapshot, courseItems);
 
@@ -64,7 +63,7 @@ public class SnapshotServiceImpl implements SnapshotService {
         Long totalDuration = snapshotRepository.sumDurationBySnapshotId(savedSnapshot.getId());
 
         List<SnapshotItem> rootItems = snapshotItemRepository.findRootItemsWithLo(
-                savedSnapshot.getId(), DEFAULT_TENANT_ID);
+                savedSnapshot.getId(), TenantContext.getCurrentTenantId());
         List<SnapshotItemResponse> itemResponses = rootItems.stream()
                 .map(SnapshotItemResponse::fromWithChildren)
                 .toList();
@@ -101,15 +100,15 @@ public class SnapshotServiceImpl implements SnapshotService {
 
         if (status != null && createdBy != null) {
             snapshots = snapshotRepository.findByTenantIdAndStatusAndCreatedBy(
-                    DEFAULT_TENANT_ID, status, createdBy, pageable);
+                    TenantContext.getCurrentTenantId(), status, createdBy, pageable);
         } else if (status != null) {
             snapshots = snapshotRepository.findByTenantIdAndStatus(
-                    DEFAULT_TENANT_ID, status, pageable);
+                    TenantContext.getCurrentTenantId(), status, pageable);
         } else if (createdBy != null) {
             snapshots = snapshotRepository.findByTenantIdAndCreatedBy(
-                    DEFAULT_TENANT_ID, createdBy, pageable);
+                    TenantContext.getCurrentTenantId(), createdBy, pageable);
         } else {
-            snapshots = snapshotRepository.findByTenantId(DEFAULT_TENANT_ID, pageable);
+            snapshots = snapshotRepository.findByTenantId(TenantContext.getCurrentTenantId(), pageable);
         }
 
         return snapshots.map(SnapshotResponse::from);
@@ -119,11 +118,11 @@ public class SnapshotServiceImpl implements SnapshotService {
     public SnapshotDetailResponse getSnapshotDetail(Long snapshotId) {
         log.debug("Getting snapshot detail: snapshotId={}", snapshotId);
 
-        CourseSnapshot snapshot = snapshotRepository.findByIdAndTenantId(snapshotId, DEFAULT_TENANT_ID)
+        CourseSnapshot snapshot = snapshotRepository.findByIdAndTenantId(snapshotId, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new SnapshotNotFoundException(snapshotId));
 
         List<SnapshotItem> rootItems = snapshotItemRepository.findRootItemsWithLo(
-                snapshotId, DEFAULT_TENANT_ID);
+                snapshotId, TenantContext.getCurrentTenantId());
         List<SnapshotItemResponse> itemResponses = rootItems.stream()
                 .map(SnapshotItemResponse::fromWithChildren)
                 .toList();
@@ -138,12 +137,12 @@ public class SnapshotServiceImpl implements SnapshotService {
     public List<SnapshotResponse> getSnapshotsByCourse(Long courseId) {
         log.debug("Getting snapshots by course: courseId={}", courseId);
 
-        if (!courseRepository.existsByIdAndTenantId(courseId, DEFAULT_TENANT_ID)) {
+        if (!courseRepository.existsByIdAndTenantId(courseId, TenantContext.getCurrentTenantId())) {
             throw new CourseNotFoundException(courseId);
         }
 
         List<CourseSnapshot> snapshots = snapshotRepository.findBySourceCourseIdAndTenantId(
-                courseId, DEFAULT_TENANT_ID);
+                courseId, TenantContext.getCurrentTenantId());
 
         return snapshots.stream()
                 .map(SnapshotResponse::from)
@@ -155,7 +154,7 @@ public class SnapshotServiceImpl implements SnapshotService {
     public SnapshotResponse updateSnapshot(Long snapshotId, UpdateSnapshotRequest request) {
         log.info("Updating snapshot: snapshotId={}", snapshotId);
 
-        CourseSnapshot snapshot = snapshotRepository.findByIdAndTenantId(snapshotId, DEFAULT_TENANT_ID)
+        CourseSnapshot snapshot = snapshotRepository.findByIdAndTenantId(snapshotId, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new SnapshotNotFoundException(snapshotId));
 
         if (!snapshot.isModifiable()) {
@@ -173,7 +172,7 @@ public class SnapshotServiceImpl implements SnapshotService {
     public void deleteSnapshot(Long snapshotId) {
         log.info("Deleting snapshot: snapshotId={}", snapshotId);
 
-        CourseSnapshot snapshot = snapshotRepository.findByIdAndTenantId(snapshotId, DEFAULT_TENANT_ID)
+        CourseSnapshot snapshot = snapshotRepository.findByIdAndTenantId(snapshotId, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new SnapshotNotFoundException(snapshotId));
 
         snapshotRepository.delete(snapshot);
@@ -185,7 +184,7 @@ public class SnapshotServiceImpl implements SnapshotService {
     public SnapshotResponse publishSnapshot(Long snapshotId) {
         log.info("Publishing snapshot: snapshotId={}", snapshotId);
 
-        CourseSnapshot snapshot = snapshotRepository.findByIdAndTenantId(snapshotId, DEFAULT_TENANT_ID)
+        CourseSnapshot snapshot = snapshotRepository.findByIdAndTenantId(snapshotId, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new SnapshotNotFoundException(snapshotId));
 
         if (!snapshot.isDraft()) {
@@ -203,7 +202,7 @@ public class SnapshotServiceImpl implements SnapshotService {
     public SnapshotResponse completeSnapshot(Long snapshotId) {
         log.info("Completing snapshot: snapshotId={}", snapshotId);
 
-        CourseSnapshot snapshot = snapshotRepository.findByIdAndTenantId(snapshotId, DEFAULT_TENANT_ID)
+        CourseSnapshot snapshot = snapshotRepository.findByIdAndTenantId(snapshotId, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new SnapshotNotFoundException(snapshotId));
 
         if (!snapshot.isActive()) {
@@ -221,7 +220,7 @@ public class SnapshotServiceImpl implements SnapshotService {
     public SnapshotResponse archiveSnapshot(Long snapshotId) {
         log.info("Archiving snapshot: snapshotId={}", snapshotId);
 
-        CourseSnapshot snapshot = snapshotRepository.findByIdAndTenantId(snapshotId, DEFAULT_TENANT_ID)
+        CourseSnapshot snapshot = snapshotRepository.findByIdAndTenantId(snapshotId, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new SnapshotNotFoundException(snapshotId));
 
         if (snapshot.getStatus() != SnapshotStatus.COMPLETED) {

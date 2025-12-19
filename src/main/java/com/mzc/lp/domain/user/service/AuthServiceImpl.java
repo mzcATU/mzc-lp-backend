@@ -55,7 +55,7 @@ public class AuthServiceImpl implements AuthService {
 
         // 저장
         User savedUser = userRepository.save(user);
-        log.info("User registered: {}", savedUser.getEmail());
+        log.info("User registered: userId={}", savedUser.getId());
 
         return UserResponse.from(savedUser);
     }
@@ -94,7 +94,7 @@ public class AuthServiceImpl implements AuthService {
         );
         refreshTokenRepository.save(refreshTokenEntity);
 
-        log.info("User logged in: {}", user.getEmail());
+        log.info("User logged in: userId={}", user.getId());
 
         return TokenResponse.of(accessToken, refreshToken, accessTokenExpiry);
     }
@@ -140,7 +140,7 @@ public class AuthServiceImpl implements AuthService {
         );
         refreshTokenRepository.save(newRefreshTokenEntity);
 
-        log.info("Token refreshed for user: {}", user.getEmail());
+        log.info("Token refreshed: userId={}", user.getId());
 
         return TokenResponse.of(newAccessToken, newRefreshToken, accessTokenExpiry);
     }

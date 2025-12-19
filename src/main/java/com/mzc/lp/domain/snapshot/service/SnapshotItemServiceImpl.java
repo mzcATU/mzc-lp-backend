@@ -15,6 +15,7 @@ import com.mzc.lp.domain.snapshot.exception.SnapshotStateException;
 import com.mzc.lp.domain.snapshot.repository.CourseSnapshotRepository;
 import com.mzc.lp.domain.snapshot.repository.SnapshotItemRepository;
 import com.mzc.lp.domain.snapshot.repository.SnapshotLearningObjectRepository;
+import com.mzc.lp.common.context.TenantContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -32,15 +33,13 @@ public class SnapshotItemServiceImpl implements SnapshotItemService {
     private final SnapshotItemRepository snapshotItemRepository;
     private final SnapshotLearningObjectRepository snapshotLoRepository;
 
-    private static final Long DEFAULT_TENANT_ID = 1L;
-
     @Override
     public List<SnapshotItemResponse> getHierarchy(Long snapshotId) {
         log.debug("Getting item hierarchy: snapshotId={}", snapshotId);
 
         validateSnapshotExists(snapshotId);
 
-        List<SnapshotItem> rootItems = snapshotItemRepository.findRootItemsWithLo(snapshotId, DEFAULT_TENANT_ID);
+        List<SnapshotItem> rootItems = snapshotItemRepository.findRootItemsWithLo(snapshotId, TenantContext.getCurrentTenantId());
 
         return rootItems.stream()
                 .map(SnapshotItemResponse::fromWithChildren)
@@ -53,7 +52,7 @@ public class SnapshotItemServiceImpl implements SnapshotItemService {
 
         validateSnapshotExists(snapshotId);
 
-        List<SnapshotItem> items = snapshotItemRepository.findBySnapshotIdWithLo(snapshotId, DEFAULT_TENANT_ID);
+        List<SnapshotItem> items = snapshotItemRepository.findBySnapshotIdWithLo(snapshotId, TenantContext.getCurrentTenantId());
 
         return items.stream()
                 .map(SnapshotItemResponse::from)
@@ -172,12 +171,12 @@ public class SnapshotItemServiceImpl implements SnapshotItemService {
     // ===== Private Helper Methods =====
 
     private CourseSnapshot findSnapshotById(Long snapshotId) {
-        return snapshotRepository.findByIdAndTenantId(snapshotId, DEFAULT_TENANT_ID)
+        return snapshotRepository.findByIdAndTenantId(snapshotId, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new SnapshotNotFoundException(snapshotId));
     }
 
     private void validateSnapshotExists(Long snapshotId) {
-        if (!snapshotRepository.existsByIdAndTenantId(snapshotId, DEFAULT_TENANT_ID)) {
+        if (!snapshotRepository.existsByIdAndTenantId(snapshotId, TenantContext.getCurrentTenantId())) {
             throw new SnapshotNotFoundException(snapshotId);
         }
     }
@@ -195,7 +194,7 @@ public class SnapshotItemServiceImpl implements SnapshotItemService {
     }
 
     private SnapshotItem findItemById(Long itemId) {
-        return snapshotItemRepository.findByIdAndTenantId(itemId, DEFAULT_TENANT_ID)
+        return snapshotItemRepository.findByIdAndTenantId(itemId, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new SnapshotItemNotFoundException(itemId));
     }
 
@@ -203,7 +202,7 @@ public class SnapshotItemServiceImpl implements SnapshotItemService {
         if (parentId == null) {
             return null;
         }
-        SnapshotItem parent = snapshotItemRepository.findByIdAndTenantId(parentId, DEFAULT_TENANT_ID)
+        SnapshotItem parent = snapshotItemRepository.findByIdAndTenantId(parentId, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new SnapshotItemNotFoundException(parentId));
         validateItemBelongsToSnapshot(parent, snapshotId);
         return parent;
