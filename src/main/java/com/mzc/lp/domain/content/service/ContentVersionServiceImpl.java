@@ -89,7 +89,7 @@ public class ContentVersionServiceImpl implements ContentVersionService {
                 version.getFileSize(),
                 version.getFilePath()
         );
-        content.setThumbnailPath(version.getThumbnailPath());
+        content.updateThumbnailPath(version.getThumbnailPath());
         content.incrementVersion();
 
         log.info("Content restored to version {}: contentId={}", versionNumber, contentId);

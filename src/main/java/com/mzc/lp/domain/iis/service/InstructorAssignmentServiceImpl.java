@@ -18,6 +18,7 @@ import com.mzc.lp.domain.iis.exception.InstructorAssignmentNotFoundException;
 import com.mzc.lp.domain.iis.exception.MainInstructorAlreadyExistsException;
 import com.mzc.lp.domain.iis.repository.AssignmentHistoryRepository;
 import com.mzc.lp.domain.iis.repository.InstructorAssignmentRepository;
+import com.mzc.lp.domain.ts.repository.CourseTimeRepository;
 import com.mzc.lp.domain.user.entity.User;
 import com.mzc.lp.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +42,7 @@ public class InstructorAssignmentServiceImpl implements InstructorAssignmentServ
     private final InstructorAssignmentRepository assignmentRepository;
     private final AssignmentHistoryRepository historyRepository;
     private final UserRepository userRepository;
+    private final CourseTimeRepository courseTimeRepository;
 
     @Override
     @Transactional
@@ -49,13 +51,17 @@ public class InstructorAssignmentServiceImpl implements InstructorAssignmentServ
 
         Long tenantId = TenantContext.getCurrentTenantId();
 
-        // 중복 배정 체크
+        // [Race Condition 방지] CourseTime을 락 대상으로 사용하여 동시 배정 직렬화
+        courseTimeRepository.findByIdWithLock(timeId)
+                .orElseThrow(() -> new IllegalArgumentException("CourseTime not found: " + timeId));
+
+        // 중복 배정 체크 (락 상태에서)
         if (assignmentRepository.existsByTimeKeyAndUserKeyAndTenantIdAndStatus(
                 timeId, request.userId(), tenantId, AssignmentStatus.ACTIVE)) {
             throw new InstructorAlreadyAssignedException(request.userId(), timeId);
         }
 
-        // MAIN 역할인 경우 기존 MAIN 강사 체크
+        // MAIN 역할인 경우 기존 MAIN 강사 체크 (락 상태에서)
         if (request.role() == InstructorRole.MAIN) {
             assignmentRepository.findActiveByTimeKeyAndRole(timeId, tenantId, InstructorRole.MAIN)
                     .ifPresent(existing -> {
@@ -155,8 +161,11 @@ public class InstructorAssignmentServiceImpl implements InstructorAssignmentServ
         InstructorRole oldRole = assignment.getRole();
         Long tenantId = TenantContext.getCurrentTenantId();
 
-        // MAIN으로 변경 시 기존 MAIN 체크
+        // [Race Condition 방지] MAIN으로 변경 시 CourseTime 락
         if (request.role() == InstructorRole.MAIN && oldRole != InstructorRole.MAIN) {
+            courseTimeRepository.findByIdWithLock(assignment.getTimeKey())
+                    .orElseThrow(() -> new IllegalArgumentException("CourseTime not found: " + assignment.getTimeKey()));
+
             assignmentRepository.findActiveByTimeKeyAndRole(assignment.getTimeKey(), tenantId, InstructorRole.MAIN)
                     .ifPresent(existing -> {
                         throw new MainInstructorAlreadyExistsException(assignment.getTimeKey());
@@ -189,7 +198,11 @@ public class InstructorAssignmentServiceImpl implements InstructorAssignmentServ
         Long tenantId = TenantContext.getCurrentTenantId();
         Long timeId = oldAssignment.getTimeKey();
 
-        // 새 강사 중복 배정 체크
+        // [Race Condition 방지] CourseTime 락으로 동시 교체 직렬화
+        courseTimeRepository.findByIdWithLock(timeId)
+                .orElseThrow(() -> new IllegalArgumentException("CourseTime not found: " + timeId));
+
+        // 새 강사 중복 배정 체크 (락 상태에서)
         if (assignmentRepository.existsByTimeKeyAndUserKeyAndTenantIdAndStatus(
                 timeId, request.newUserId(), tenantId, AssignmentStatus.ACTIVE)) {
             throw new InstructorAlreadyAssignedException(request.newUserId(), timeId);

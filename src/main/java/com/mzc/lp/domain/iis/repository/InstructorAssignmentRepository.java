@@ -3,9 +3,11 @@ package com.mzc.lp.domain.iis.repository;
 import com.mzc.lp.domain.iis.constant.AssignmentStatus;
 import com.mzc.lp.domain.iis.constant.InstructorRole;
 import com.mzc.lp.domain.iis.entity.InstructorAssignment;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -41,6 +43,18 @@ public interface InstructorAssignmentRepository extends JpaRepository<Instructor
             "AND ia.role = :role " +
             "AND ia.status = 'ACTIVE'")
     Optional<InstructorAssignment> findActiveByTimeKeyAndRole(
+            @Param("timeKey") Long timeKey,
+            @Param("tenantId") Long tenantId,
+            @Param("role") InstructorRole role);
+
+    // [Race Condition 방지] 비관적 락으로 ACTIVE 주강사 조회
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT ia FROM InstructorAssignment ia " +
+            "WHERE ia.timeKey = :timeKey " +
+            "AND ia.tenantId = :tenantId " +
+            "AND ia.role = :role " +
+            "AND ia.status = 'ACTIVE'")
+    Optional<InstructorAssignment> findActiveByTimeKeyAndRoleWithLock(
             @Param("timeKey") Long timeKey,
             @Param("tenantId") Long tenantId,
             @Param("role") InstructorRole role);

@@ -9,6 +9,10 @@ import com.mzc.lp.domain.iis.dto.request.UpdateRoleRequest;
 import com.mzc.lp.domain.iis.entity.InstructorAssignment;
 import com.mzc.lp.domain.iis.repository.AssignmentHistoryRepository;
 import com.mzc.lp.domain.iis.repository.InstructorAssignmentRepository;
+import com.mzc.lp.domain.ts.constant.DeliveryType;
+import com.mzc.lp.domain.ts.constant.EnrollmentMethod;
+import com.mzc.lp.domain.ts.entity.CourseTime;
+import com.mzc.lp.domain.ts.repository.CourseTimeRepository;
 import com.mzc.lp.domain.user.constant.TenantRole;
 import com.mzc.lp.domain.user.dto.request.LoginRequest;
 import com.mzc.lp.domain.user.entity.User;
@@ -26,6 +30,9 @@ import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -65,12 +72,16 @@ class InstructorAssignmentControllerTest extends TenantTestSupport {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private CourseTimeRepository courseTimeRepository;
+
     private static final Long TIME_ID = 100L;
 
     @BeforeEach
     void setUp() {
         historyRepository.deleteAll();
         assignmentRepository.deleteAll();
+        courseTimeRepository.deleteAll();
         userCourseRoleRepository.deleteAll();
         refreshTokenRepository.deleteAll();
         userRepository.deleteAll();
@@ -104,6 +115,27 @@ class InstructorAssignmentControllerTest extends TenantTestSupport {
 
     private InstructorAssignment createAssignment(Long userId, Long timeId, InstructorRole role) {
         return assignmentRepository.save(InstructorAssignment.create(userId, timeId, role, 1L));
+    }
+
+    private CourseTime createCourseTime() {
+        CourseTime courseTime = CourseTime.create(
+                "테스트 차수",
+                DeliveryType.ONLINE,
+                LocalDate.now().minusDays(1),
+                LocalDate.now().plusDays(7),
+                LocalDate.now().plusDays(7),
+                LocalDate.now().plusDays(30),
+                30,
+                5,
+                EnrollmentMethod.FIRST_COME,
+                80,
+                new BigDecimal("100000"),
+                false,
+                null,
+                true,
+                1L
+        );
+        return courseTimeRepository.save(courseTime);
     }
 
     // ==================== 배정 단건 조회 API 테스트 ====================
@@ -161,7 +193,9 @@ class InstructorAssignmentControllerTest extends TenantTestSupport {
             User instructor = createInstructorUser();
             String token = loginAndGetAccessToken("operator@example.com", "Password123!");
 
-            InstructorAssignment assignment = createAssignment(instructor.getId(), TIME_ID, InstructorRole.SUB);
+            // Race Condition 방지를 위해 CourseTime이 필요함
+            CourseTime courseTime = createCourseTime();
+            InstructorAssignment assignment = createAssignment(instructor.getId(), courseTime.getId(), InstructorRole.SUB);
 
             UpdateRoleRequest request = new UpdateRoleRequest(InstructorRole.MAIN, "주강사 승격");
 
@@ -194,7 +228,9 @@ class InstructorAssignmentControllerTest extends TenantTestSupport {
 
             String token = loginAndGetAccessToken("operator@example.com", "Password123!");
 
-            InstructorAssignment assignment = createAssignment(instructor1.getId(), TIME_ID, InstructorRole.MAIN);
+            // Race Condition 방지를 위해 CourseTime이 필요함
+            CourseTime courseTime = createCourseTime();
+            InstructorAssignment assignment = createAssignment(instructor1.getId(), courseTime.getId(), InstructorRole.MAIN);
 
             ReplaceInstructorRequest request = new ReplaceInstructorRequest(
                     instructor2.getId(), InstructorRole.MAIN, "강사 교체");
@@ -270,7 +306,9 @@ class InstructorAssignmentControllerTest extends TenantTestSupport {
             User instructor = createInstructorUser();
             String token = loginAndGetAccessToken("operator@example.com", "Password123!");
 
-            InstructorAssignment assignment = createAssignment(instructor.getId(), TIME_ID, InstructorRole.SUB);
+            // Race Condition 방지를 위해 CourseTime이 필요함
+            CourseTime courseTime = createCourseTime();
+            InstructorAssignment assignment = createAssignment(instructor.getId(), courseTime.getId(), InstructorRole.SUB);
 
             // 역할 변경하여 ROLE_CHANGE 이력 생성
             UpdateRoleRequest updateRequest = new UpdateRoleRequest(InstructorRole.MAIN, "주강사 승격");
