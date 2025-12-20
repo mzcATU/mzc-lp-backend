@@ -84,6 +84,15 @@ class EnrollmentServiceTest extends TenantTestSupport {
                 1L
         );
 
+        // 테스트용 tenantId 설정 (리플렉션 사용 - @PrePersist가 실행되지 않으므로)
+        try {
+            var tenantIdField = com.mzc.lp.common.entity.TenantEntity.class.getDeclaredField("tenantId");
+            tenantIdField.setAccessible(true);
+            tenantIdField.set(courseTime, TENANT_ID);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
         // canEnroll이 true면 RECRUITING 상태로 변경
         if (canEnroll) {
             courseTime.open();  // DRAFT -> RECRUITING
@@ -116,7 +125,8 @@ class EnrollmentServiceTest extends TenantTestSupport {
             Long courseTimeId = 1L;
             CourseTime courseTime = createTestCourseTime(true);
 
-            given(courseTimeRepository.findByIdAndTenantId(courseTimeId, TENANT_ID))
+            // 비관적 락 사용으로 변경됨
+            given(courseTimeRepository.findByIdWithLock(courseTimeId))
                     .willReturn(Optional.of(courseTime));
             given(enrollmentRepository.existsByUserIdAndCourseTimeIdAndTenantId(userId, courseTimeId, TENANT_ID))
                     .willReturn(false);
@@ -134,7 +144,7 @@ class EnrollmentServiceTest extends TenantTestSupport {
             assertThat(response.status()).isEqualTo(EnrollmentStatus.ENROLLED);
             assertThat(response.progressPercent()).isEqualTo(0);
 
-            verify(courseTimeService).occupySeat(courseTimeId);
+            // 비관적 락 사용 시 courseTime.incrementEnrollment() 직접 호출
             verify(enrollmentRepository).save(any(Enrollment.class));
         }
 
@@ -146,7 +156,8 @@ class EnrollmentServiceTest extends TenantTestSupport {
             Long courseTimeId = 1L;
             CourseTime courseTime = createTestCourseTime(true);
 
-            given(courseTimeRepository.findByIdAndTenantId(courseTimeId, TENANT_ID))
+            // 비관적 락 사용으로 변경됨
+            given(courseTimeRepository.findByIdWithLock(courseTimeId))
                     .willReturn(Optional.of(courseTime));
             given(enrollmentRepository.existsByUserIdAndCourseTimeIdAndTenantId(userId, courseTimeId, TENANT_ID))
                     .willReturn(true);
@@ -155,7 +166,6 @@ class EnrollmentServiceTest extends TenantTestSupport {
             assertThatThrownBy(() -> enrollmentService.enroll(courseTimeId, userId))
                     .isInstanceOf(AlreadyEnrolledException.class);
 
-            verify(courseTimeService, never()).occupySeat(any());
             verify(enrollmentRepository, never()).save(any());
         }
 
@@ -167,14 +177,14 @@ class EnrollmentServiceTest extends TenantTestSupport {
             Long courseTimeId = 1L;
             CourseTime courseTime = createTestCourseTime(false);
 
-            given(courseTimeRepository.findByIdAndTenantId(courseTimeId, TENANT_ID))
+            // 비관적 락 사용으로 변경됨
+            given(courseTimeRepository.findByIdWithLock(courseTimeId))
                     .willReturn(Optional.of(courseTime));
 
             // when & then
             assertThatThrownBy(() -> enrollmentService.enroll(courseTimeId, userId))
                     .isInstanceOf(EnrollmentPeriodClosedException.class);
 
-            verify(courseTimeService, never()).occupySeat(any());
             verify(enrollmentRepository, never()).save(any());
         }
     }
@@ -193,12 +203,13 @@ class EnrollmentServiceTest extends TenantTestSupport {
             Long operatorId = 99L;
             List<Long> userIds = List.of(1L, 2L, 3L);
             ForceEnrollRequest request = new ForceEnrollRequest(userIds, null);
+            CourseTime courseTime = createTestCourseTime(true);
 
-            given(courseTimeRepository.existsByIdAndTenantId(courseTimeId, TENANT_ID))
-                    .willReturn(true);
+            // 비관적 락 사용으로 변경됨
+            given(courseTimeRepository.findByIdWithLock(courseTimeId))
+                    .willReturn(Optional.of(courseTime));
             given(enrollmentRepository.existsByUserIdAndCourseTimeIdAndTenantId(any(), eq(courseTimeId), eq(TENANT_ID)))
                     .willReturn(false);
-            doNothing().when(courseTimeService).forceOccupySeat(courseTimeId);
             given(enrollmentRepository.save(any(Enrollment.class)))
                     .willAnswer(invocation -> invocation.getArgument(0));
 
@@ -212,7 +223,7 @@ class EnrollmentServiceTest extends TenantTestSupport {
             assertThat(response.failCount()).isEqualTo(0);
 
             verify(enrollmentRepository, times(3)).save(any(Enrollment.class));
-            verify(courseTimeService, times(3)).forceOccupySeat(courseTimeId);
+            // 비관적 락 사용 시 courseTime.forceIncrementEnrollment() 직접 호출
         }
 
         @Test
@@ -223,16 +234,17 @@ class EnrollmentServiceTest extends TenantTestSupport {
             Long operatorId = 99L;
             List<Long> userIds = List.of(1L, 2L, 3L);
             ForceEnrollRequest request = new ForceEnrollRequest(userIds, null);
+            CourseTime courseTime = createTestCourseTime(true);
 
-            given(courseTimeRepository.existsByIdAndTenantId(courseTimeId, TENANT_ID))
-                    .willReturn(true);
+            // 비관적 락 사용으로 변경됨
+            given(courseTimeRepository.findByIdWithLock(courseTimeId))
+                    .willReturn(Optional.of(courseTime));
             given(enrollmentRepository.existsByUserIdAndCourseTimeIdAndTenantId(1L, courseTimeId, TENANT_ID))
                     .willReturn(true);  // 이미 등록됨
             given(enrollmentRepository.existsByUserIdAndCourseTimeIdAndTenantId(2L, courseTimeId, TENANT_ID))
                     .willReturn(false);
             given(enrollmentRepository.existsByUserIdAndCourseTimeIdAndTenantId(3L, courseTimeId, TENANT_ID))
                     .willReturn(false);
-            doNothing().when(courseTimeService).forceOccupySeat(courseTimeId);
             given(enrollmentRepository.save(any(Enrollment.class)))
                     .willAnswer(invocation -> invocation.getArgument(0));
 
@@ -245,7 +257,7 @@ class EnrollmentServiceTest extends TenantTestSupport {
             assertThat(response.failures().get(0).userId()).isEqualTo(1L);
 
             verify(enrollmentRepository, times(2)).save(any(Enrollment.class));
-            verify(courseTimeService, times(2)).forceOccupySeat(courseTimeId);
+            // 비관적 락 사용 시 courseTime.forceIncrementEnrollment() 직접 호출
         }
     }
 

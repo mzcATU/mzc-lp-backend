@@ -20,6 +20,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Content extends TenantEntity {
 
+    // 낙관적 락 (동시 수정 감지)
+    @Version
+    private Long version;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private ContentStatus status;
@@ -101,28 +105,28 @@ public class Content extends TenantEntity {
     }
 
     // 비즈니스 메서드 - 비디오 메타데이터 설정
-    public void setVideoMetadata(Integer duration, String resolution) {
+    public void updateVideoMetadata(Integer duration, String resolution) {
         this.duration = duration;
         this.resolution = resolution;
     }
 
     // 비즈니스 메서드 - 오디오 메타데이터 설정
-    public void setAudioMetadata(Integer duration) {
+    public void updateAudioMetadata(Integer duration) {
         this.duration = duration;
     }
 
     // 비즈니스 메서드 - 문서 메타데이터 설정
-    public void setDocumentMetadata(Integer pageCount) {
+    public void updateDocumentMetadata(Integer pageCount) {
         this.pageCount = pageCount;
     }
 
     // 비즈니스 메서드 - 이미지 메타데이터 설정
-    public void setImageMetadata(String resolution) {
+    public void updateImageMetadata(String resolution) {
         this.resolution = resolution;
     }
 
     // 비즈니스 메서드 - 외부 링크 메타데이터 설정 (YouTube 등)
-    public void setExternalLinkMetadata(Integer duration) {
+    public void updateExternalLinkMetadata(Integer duration) {
         this.duration = duration;
     }
 
@@ -149,7 +153,7 @@ public class Content extends TenantEntity {
     }
 
     // 비즈니스 메서드 - 썸네일 설정
-    public void setThumbnailPath(String thumbnailPath) {
+    public void updateThumbnailPath(String thumbnailPath) {
         this.thumbnailPath = thumbnailPath;
     }
 

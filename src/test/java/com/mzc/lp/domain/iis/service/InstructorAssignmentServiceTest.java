@@ -18,6 +18,10 @@ import com.mzc.lp.domain.iis.exception.InstructorAssignmentNotFoundException;
 import com.mzc.lp.domain.iis.exception.MainInstructorAlreadyExistsException;
 import com.mzc.lp.domain.iis.repository.AssignmentHistoryRepository;
 import com.mzc.lp.domain.iis.repository.InstructorAssignmentRepository;
+import com.mzc.lp.domain.ts.constant.DeliveryType;
+import com.mzc.lp.domain.ts.constant.EnrollmentMethod;
+import com.mzc.lp.domain.ts.entity.CourseTime;
+import com.mzc.lp.domain.ts.repository.CourseTimeRepository;
 import com.mzc.lp.domain.user.entity.User;
 import com.mzc.lp.domain.user.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -32,6 +36,8 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -56,6 +62,9 @@ class InstructorAssignmentServiceTest extends TenantTestSupport {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private CourseTimeRepository courseTimeRepository;
 
     private static final Long TENANT_ID = 1L;
     private static final Long TIME_ID = 100L;
@@ -87,6 +96,35 @@ class InstructorAssignmentServiceTest extends TenantTestSupport {
         return user;
     }
 
+    private CourseTime createTestCourseTime() {
+        CourseTime courseTime = CourseTime.create(
+                "테스트 차수",
+                DeliveryType.ONLINE,
+                LocalDate.now().minusDays(1),
+                LocalDate.now().plusDays(7),
+                LocalDate.now().plusDays(7),
+                LocalDate.now().plusDays(30),
+                30,
+                5,
+                EnrollmentMethod.FIRST_COME,
+                80,
+                new BigDecimal("100000"),
+                false,
+                null,
+                true,
+                1L
+        );
+        // 테스트용 tenantId 설정 (리플렉션 사용)
+        try {
+            var tenantIdField = com.mzc.lp.common.entity.TenantEntity.class.getDeclaredField("tenantId");
+            tenantIdField.setAccessible(true);
+            tenantIdField.set(courseTime, TENANT_ID);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return courseTime;
+    }
+
     // ==================== 배정 테스트 ====================
 
     @Nested
@@ -100,7 +138,10 @@ class InstructorAssignmentServiceTest extends TenantTestSupport {
             AssignInstructorRequest request = new AssignInstructorRequest(USER_ID, InstructorRole.MAIN);
             InstructorAssignment saved = createTestAssignment(1L, USER_ID, TIME_ID, InstructorRole.MAIN);
             User user = createTestUser(USER_ID, "강사", "instructor@example.com");
+            CourseTime courseTime = createTestCourseTime();
 
+            // Race Condition 방지를 위한 비관적 락
+            given(courseTimeRepository.findByIdWithLock(TIME_ID)).willReturn(Optional.of(courseTime));
             given(assignmentRepository.existsByTimeKeyAndUserKeyAndTenantIdAndStatus(
                     TIME_ID, USER_ID, TENANT_ID, AssignmentStatus.ACTIVE)).willReturn(false);
             given(assignmentRepository.findActiveByTimeKeyAndRole(TIME_ID, TENANT_ID, InstructorRole.MAIN))
@@ -127,7 +168,10 @@ class InstructorAssignmentServiceTest extends TenantTestSupport {
             AssignInstructorRequest request = new AssignInstructorRequest(USER_ID, InstructorRole.SUB);
             InstructorAssignment saved = createTestAssignment(1L, USER_ID, TIME_ID, InstructorRole.SUB);
             User user = createTestUser(USER_ID, "부강사", "sub@example.com");
+            CourseTime courseTime = createTestCourseTime();
 
+            // Race Condition 방지를 위한 비관적 락
+            given(courseTimeRepository.findByIdWithLock(TIME_ID)).willReturn(Optional.of(courseTime));
             given(assignmentRepository.existsByTimeKeyAndUserKeyAndTenantIdAndStatus(
                     TIME_ID, USER_ID, TENANT_ID, AssignmentStatus.ACTIVE)).willReturn(false);
             given(assignmentRepository.save(any())).willReturn(saved);
@@ -145,7 +189,10 @@ class InstructorAssignmentServiceTest extends TenantTestSupport {
         void assignInstructor_fail_alreadyAssigned() {
             // given
             AssignInstructorRequest request = new AssignInstructorRequest(USER_ID, InstructorRole.MAIN);
+            CourseTime courseTime = createTestCourseTime();
 
+            // Race Condition 방지를 위한 비관적 락
+            given(courseTimeRepository.findByIdWithLock(TIME_ID)).willReturn(Optional.of(courseTime));
             given(assignmentRepository.existsByTimeKeyAndUserKeyAndTenantIdAndStatus(
                     TIME_ID, USER_ID, TENANT_ID, AssignmentStatus.ACTIVE)).willReturn(true);
 
@@ -160,7 +207,10 @@ class InstructorAssignmentServiceTest extends TenantTestSupport {
             // given
             AssignInstructorRequest request = new AssignInstructorRequest(USER_ID, InstructorRole.MAIN);
             InstructorAssignment existingMain = createTestAssignment(99L, 999L, TIME_ID, InstructorRole.MAIN);
+            CourseTime courseTime = createTestCourseTime();
 
+            // Race Condition 방지를 위한 비관적 락
+            given(courseTimeRepository.findByIdWithLock(TIME_ID)).willReturn(Optional.of(courseTime));
             given(assignmentRepository.existsByTimeKeyAndUserKeyAndTenantIdAndStatus(
                     TIME_ID, USER_ID, TENANT_ID, AssignmentStatus.ACTIVE)).willReturn(false);
             given(assignmentRepository.findActiveByTimeKeyAndRole(TIME_ID, TENANT_ID, InstructorRole.MAIN))
@@ -301,8 +351,11 @@ class InstructorAssignmentServiceTest extends TenantTestSupport {
             InstructorAssignment assignment = createTestAssignment(1L, USER_ID, TIME_ID, InstructorRole.SUB);
             UpdateRoleRequest request = new UpdateRoleRequest(InstructorRole.MAIN, "주강사 승격");
             User user = createTestUser(USER_ID, "강사", "instructor@example.com");
+            CourseTime courseTime = createTestCourseTime();
 
             given(assignmentRepository.findByIdAndTenantId(1L, TENANT_ID)).willReturn(Optional.of(assignment));
+            // MAIN으로 변경 시 Race Condition 방지를 위한 비관적 락
+            given(courseTimeRepository.findByIdWithLock(TIME_ID)).willReturn(Optional.of(courseTime));
             given(assignmentRepository.findActiveByTimeKeyAndRole(TIME_ID, TENANT_ID, InstructorRole.MAIN))
                     .willReturn(Optional.empty());
             given(userRepository.findById(USER_ID)).willReturn(Optional.of(user));
@@ -337,8 +390,11 @@ class InstructorAssignmentServiceTest extends TenantTestSupport {
             InstructorAssignment assignment = createTestAssignment(1L, USER_ID, TIME_ID, InstructorRole.SUB);
             InstructorAssignment existingMain = createTestAssignment(99L, 999L, TIME_ID, InstructorRole.MAIN);
             UpdateRoleRequest request = new UpdateRoleRequest(InstructorRole.MAIN, "주강사 승격");
+            CourseTime courseTime = createTestCourseTime();
 
             given(assignmentRepository.findByIdAndTenantId(1L, TENANT_ID)).willReturn(Optional.of(assignment));
+            // MAIN으로 변경 시 Race Condition 방지를 위한 비관적 락
+            given(courseTimeRepository.findByIdWithLock(TIME_ID)).willReturn(Optional.of(courseTime));
             given(assignmentRepository.findActiveByTimeKeyAndRole(TIME_ID, TENANT_ID, InstructorRole.MAIN))
                     .willReturn(Optional.of(existingMain));
 
@@ -363,8 +419,11 @@ class InstructorAssignmentServiceTest extends TenantTestSupport {
             InstructorAssignment newAssignment = createTestAssignment(2L, newUserId, TIME_ID, InstructorRole.MAIN);
             ReplaceInstructorRequest request = new ReplaceInstructorRequest(newUserId, InstructorRole.MAIN, "교체 사유");
             User newUser = createTestUser(newUserId, "새강사", "new@example.com");
+            CourseTime courseTime = createTestCourseTime();
 
             given(assignmentRepository.findByIdAndTenantId(1L, TENANT_ID)).willReturn(Optional.of(oldAssignment));
+            // Race Condition 방지를 위한 비관적 락
+            given(courseTimeRepository.findByIdWithLock(TIME_ID)).willReturn(Optional.of(courseTime));
             given(assignmentRepository.existsByTimeKeyAndUserKeyAndTenantIdAndStatus(
                     TIME_ID, newUserId, TENANT_ID, AssignmentStatus.ACTIVE)).willReturn(false);
             given(assignmentRepository.save(any())).willReturn(newAssignment);
@@ -386,8 +445,11 @@ class InstructorAssignmentServiceTest extends TenantTestSupport {
             Long newUserId = 20L;
             InstructorAssignment oldAssignment = createTestAssignment(1L, USER_ID, TIME_ID, InstructorRole.MAIN);
             ReplaceInstructorRequest request = new ReplaceInstructorRequest(newUserId, InstructorRole.MAIN, "교체 사유");
+            CourseTime courseTime = createTestCourseTime();
 
             given(assignmentRepository.findByIdAndTenantId(1L, TENANT_ID)).willReturn(Optional.of(oldAssignment));
+            // Race Condition 방지를 위한 비관적 락
+            given(courseTimeRepository.findByIdWithLock(TIME_ID)).willReturn(Optional.of(courseTime));
             given(assignmentRepository.existsByTimeKeyAndUserKeyAndTenantIdAndStatus(
                     TIME_ID, newUserId, TENANT_ID, AssignmentStatus.ACTIVE)).willReturn(true);
 

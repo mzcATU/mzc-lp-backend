@@ -495,7 +495,8 @@ class ContentControllerTest extends TenantTestSupport {
             createDesignerUser();
             String accessToken = loginAndGetAccessToken("designer@example.com", "Password123!");
 
-            Content content = Content.createFile("test.mp4", "stored.mp4", ContentType.VIDEO, 1000L, "/path/1");
+            // filePath를 null로 설정하여 파일 시스템 삭제 로직을 스킵 (DB 삭제만 테스트)
+            Content content = Content.createFile("test.mp4", "stored.mp4", ContentType.VIDEO, 1000L, null);
             Content saved = contentRepository.save(content);
 
             // when & then

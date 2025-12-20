@@ -205,6 +205,31 @@ class CourseTimeRepositoryTest extends TenantTestSupport {
         }
 
         @Test
+        @DisplayName("성공 - ID로 비관적 락과 함께 조회")
+        void findByIdWithLock_success() {
+            // given
+            CourseTime saved = courseTimeRepository.save(testCourseTime);
+
+            // when - 비관적 락을 사용한 조회
+            Optional<CourseTime> found = courseTimeRepository.findByIdWithLock(saved.getId());
+
+            // then
+            assertThat(found).isPresent();
+            assertThat(found.get().getId()).isEqualTo(saved.getId());
+            assertThat(found.get().getTitle()).isEqualTo("테스트 차수");
+        }
+
+        @Test
+        @DisplayName("실패 - 존재하지 않는 ID로 비관적 락 조회")
+        void findByIdWithLock_fail_notFound() {
+            // when
+            Optional<CourseTime> found = courseTimeRepository.findByIdWithLock(99999L);
+
+            // then
+            assertThat(found).isEmpty();
+        }
+
+        @Test
         @DisplayName("실패 - 다른 TenantId로 조회")
         void findByIdAndTenantId_fail_wrongTenant() {
             // given

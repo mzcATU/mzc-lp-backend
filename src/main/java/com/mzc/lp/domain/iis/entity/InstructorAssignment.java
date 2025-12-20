@@ -31,6 +31,10 @@ import java.time.Instant;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class InstructorAssignment extends TenantEntity {
 
+    // 낙관적 락 (동시 수정 감지)
+    @Version
+    private Long version;
+
     // 필수 필드
     @Column(name = "user_key", nullable = false)
     private Long userKey;

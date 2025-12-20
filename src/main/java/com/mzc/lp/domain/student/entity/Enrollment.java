@@ -30,6 +30,10 @@ public class Enrollment extends TenantEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // 낙관적 락 (동시 수정 감지)
+    @Version
+    private Long version;
+
     @Column(name = "user_id", nullable = false)
     private Long userId;
 

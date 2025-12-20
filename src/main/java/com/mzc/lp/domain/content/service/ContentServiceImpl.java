@@ -313,7 +313,7 @@ public class ContentServiceImpl implements ContentService {
             Path absolutePath = Paths.get(uploadDir).toAbsolutePath().normalize().resolve(relativePath);
 
             thumbnailService.generateThumbnail(absolutePath, contentType)
-                    .ifPresent(content::setThumbnailPath);
+                    .ifPresent(content::updateThumbnailPath);
         } catch (Exception e) {
             log.warn("Failed to generate thumbnail for content: {}", filePath, e);
         }
