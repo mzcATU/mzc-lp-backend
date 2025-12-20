@@ -80,6 +80,13 @@ public class FileStorageServiceImpl implements FileStorageService {
                     : filePath;
 
             Path file = this.uploadPath.resolve(relativePath).normalize();
+
+            // Path Traversal 방지: 파일이 uploadPath 내에 있는지 확인
+            if (!file.startsWith(this.uploadPath)) {
+                log.error("Path traversal attempt detected: {}", filePath);
+                throw new FileStorageException(ErrorCode.FILE_NOT_FOUND, "Invalid file path: " + filePath);
+            }
+
             Resource resource = new UrlResource(file.toUri());
 
             if (resource.exists() && resource.isReadable()) {
@@ -102,6 +109,13 @@ public class FileStorageServiceImpl implements FileStorageService {
                     : filePath;
 
             Path file = this.uploadPath.resolve(relativePath).normalize();
+
+            // Path Traversal 방지: 파일이 uploadPath 내에 있는지 확인
+            if (!file.startsWith(this.uploadPath)) {
+                log.error("Path traversal attempt detected on delete: {}", filePath);
+                throw new FileStorageException("Invalid file path: " + filePath);
+            }
+
             Files.deleteIfExists(file);
             log.info("File deleted: {}", filePath);
         } catch (IOException e) {

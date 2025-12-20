@@ -8,8 +8,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -23,13 +23,20 @@ import java.io.IOException;
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 10) // SecurityFilter 다음에 실행
 @Slf4j
-@RequiredArgsConstructor
 public class TenantFilter implements Filter {
 
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
 
     private final JwtProvider jwtProvider;
+    private final Long defaultTenantId;
+
+    public TenantFilter(
+            JwtProvider jwtProvider,
+            @Value("${tenant.default-id:1}") Long defaultTenantId) {
+        this.jwtProvider = jwtProvider;
+        this.defaultTenantId = defaultTenantId;
+    }
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
@@ -53,10 +60,10 @@ public class TenantFilter implements Filter {
                     log.debug("TenantId set in context: {} for request: {} {}",
                             tenantId, httpRequest.getMethod(), httpRequest.getRequestURI());
                 } else {
-                    // Public API나 인증 불필요 경로는 기본 테넌트 (임시)
-                    TenantContext.setTenantId(1L);
-                    log.debug("Default TenantId (1L) set for request: {} {}",
-                            httpRequest.getMethod(), httpRequest.getRequestURI());
+                    // Public API나 인증 불필요 경로는 기본 테넌트 사용
+                    TenantContext.setTenantId(defaultTenantId);
+                    log.debug("Default TenantId ({}) set for request: {} {}",
+                            defaultTenantId, httpRequest.getMethod(), httpRequest.getRequestURI());
                 }
             } else {
                 log.debug("TenantContext already set (tenantId: {}), skipping for request: {} {}",

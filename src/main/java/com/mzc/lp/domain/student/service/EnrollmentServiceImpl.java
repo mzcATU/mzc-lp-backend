@@ -82,9 +82,10 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
         Long tenantId = TenantContext.getCurrentTenantId();
 
-        // 차수 조회 및 검증
-        CourseTime courseTime = courseTimeRepository.findByIdAndTenantId(courseTimeId, tenantId)
-                .orElseThrow(() -> new CourseTimeNotFoundException(courseTimeId));
+        // 차수 존재 여부 검증
+        if (!courseTimeRepository.existsByIdAndTenantId(courseTimeId, tenantId)) {
+            throw new CourseTimeNotFoundException(courseTimeId);
+        }
 
         List<EnrollmentResponse> enrollments = new ArrayList<>();
         List<ForceEnrollResultResponse.FailureDetail> failures = new ArrayList<>();
@@ -97,8 +98,8 @@ public class EnrollmentServiceImpl implements EnrollmentService {
                     continue;
                 }
 
-                // 정원 확보 (강제 배정은 정원 초과 무시 가능하도록 직접 증가)
-                courseTime.incrementEnrollment();
+                // 정원 확보 (Lock 적용, 정원 초과 허용)
+                courseTimeService.forceOccupySeat(courseTimeId);
 
                 // 수강 생성
                 Enrollment enrollment = Enrollment.createMandatory(userId, courseTimeId, operatorId);

@@ -441,6 +441,21 @@ public class CourseTimeServiceImpl implements CourseTimeService {
                 courseTimeId, courseTime.getCurrentEnrollment());
     }
 
+    @Override
+    @Transactional
+    public void forceOccupySeat(Long courseTimeId) {
+        log.info("Force occupying seat: courseTimeId={}", courseTimeId);
+
+        // 비관적 락으로 조회 (정원 초과 허용)
+        CourseTime courseTime = courseTimeRepository.findByIdWithLock(courseTimeId)
+                .orElseThrow(() -> new CourseTimeNotFoundException(courseTimeId));
+
+        // 정원 체크 없이 증가 (강제 배정)
+        courseTime.incrementEnrollment();
+        log.info("Seat force occupied: courseTimeId={}, currentEnrollment={}",
+                courseTimeId, courseTime.getCurrentEnrollment());
+    }
+
     // ========== Public API ==========
 
     @Override

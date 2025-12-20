@@ -44,6 +44,12 @@ public interface CourseTimeService {
 
     void releaseSeat(Long courseTimeId);
 
+    /**
+     * 강제 배정용 정원 증가 (정원 초과 허용, Lock 적용)
+     * 관리자가 강제로 수강 신청시킬 때 사용
+     */
+    void forceOccupySeat(Long courseTimeId);
+
     // Public API
     CapacityResponse getCapacity(Long id);
 
