@@ -19,6 +19,10 @@ import com.mzc.lp.domain.snapshot.exception.SnapshotStateException;
 import com.mzc.lp.domain.snapshot.repository.CourseSnapshotRepository;
 import com.mzc.lp.domain.snapshot.repository.SnapshotItemRepository;
 import com.mzc.lp.domain.snapshot.repository.SnapshotLearningObjectRepository;
+import com.mzc.lp.domain.snapshot.repository.SnapshotRelationRepository;
+import com.mzc.lp.domain.snapshot.entity.SnapshotRelation;
+import com.mzc.lp.domain.course.repository.CourseRelationRepository;
+import com.mzc.lp.domain.course.entity.CourseRelation;
 import com.mzc.lp.common.context.TenantContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,8 +44,10 @@ public class SnapshotServiceImpl implements SnapshotService {
     private final CourseSnapshotRepository snapshotRepository;
     private final SnapshotItemRepository snapshotItemRepository;
     private final SnapshotLearningObjectRepository snapshotLoRepository;
+    private final SnapshotRelationRepository snapshotRelationRepository;
     private final CourseRepository courseRepository;
     private final CourseItemRepository courseItemRepository;
+    private final CourseRelationRepository courseRelationRepository;
 
     @Override
     @Transactional
@@ -57,7 +63,10 @@ public class SnapshotServiceImpl implements SnapshotService {
         List<CourseItem> courseItems = courseItemRepository.findByCourseIdOrderByDepthAndSortOrder(
                 courseId, TenantContext.getCurrentTenantId());
 
-        copyItemsFromCourse(savedSnapshot, courseItems);
+        Map<Long, SnapshotItem> itemMapping = copyItemsFromCourse(savedSnapshot, courseItems);
+
+        // CourseRelation을 SnapshotRelation으로 복사
+        copyRelationsFromCourse(savedSnapshot, courseId, itemMapping);
 
         Long itemCount = snapshotRepository.countItemsBySnapshotId(savedSnapshot.getId());
         Long totalDuration = snapshotRepository.sumDurationBySnapshotId(savedSnapshot.getId());
@@ -233,7 +242,11 @@ public class SnapshotServiceImpl implements SnapshotService {
         return SnapshotResponse.from(snapshot);
     }
 
-    private void copyItemsFromCourse(CourseSnapshot snapshot, List<CourseItem> courseItems) {
+    /**
+     * Course의 Item들을 Snapshot으로 복사
+     * @return CourseItem.id -> SnapshotItem 매핑 (Relation 복사에 사용)
+     */
+    private Map<Long, SnapshotItem> copyItemsFromCourse(CourseSnapshot snapshot, List<CourseItem> courseItems) {
         Map<Long, SnapshotItem> itemMapping = new HashMap<>();
 
         for (CourseItem courseItem : courseItems) {
@@ -266,5 +279,61 @@ public class SnapshotServiceImpl implements SnapshotService {
             SnapshotItem savedItem = snapshotItemRepository.save(snapshotItem);
             itemMapping.put(courseItem.getId(), savedItem);
         }
+
+        return itemMapping;
+    }
+
+    /**
+     * Course의 학습 순서(Relation)를 Snapshot으로 복사
+     * CourseRelation의 Linked List 구조를 SnapshotRelation으로 변환
+     */
+    private void copyRelationsFromCourse(CourseSnapshot snapshot, Long courseId, Map<Long, SnapshotItem> itemMapping) {
+        List<CourseRelation> courseRelations = courseRelationRepository.findByCourseIdWithItems(
+                courseId, TenantContext.getCurrentTenantId());
+
+        if (courseRelations.isEmpty()) {
+            log.debug("No course relations found for courseId={}", courseId);
+            return;
+        }
+
+        for (CourseRelation courseRelation : courseRelations) {
+            SnapshotItem fromItem = null;
+            SnapshotItem toItem = null;
+
+            // fromItem 매핑 (시작점의 경우 null일 수 있음)
+            if (courseRelation.getFromItem() != null) {
+                fromItem = itemMapping.get(courseRelation.getFromItem().getId());
+                if (fromItem == null) {
+                    log.warn("fromItem not found in mapping: courseItemId={}", courseRelation.getFromItem().getId());
+                    continue;
+                }
+            }
+
+            // toItem 매핑 (필수)
+            if (courseRelation.getToItem() != null) {
+                toItem = itemMapping.get(courseRelation.getToItem().getId());
+                if (toItem == null) {
+                    log.warn("toItem not found in mapping: courseItemId={}", courseRelation.getToItem().getId());
+                    continue;
+                }
+            } else {
+                log.warn("toItem is null in courseRelation: relationId={}", courseRelation.getId());
+                continue;
+            }
+
+            // SnapshotRelation 생성
+            SnapshotRelation snapshotRelation;
+            if (fromItem == null) {
+                // 시작점 (fromItem이 null인 경우)
+                snapshotRelation = SnapshotRelation.createStartPoint(snapshot, toItem);
+            } else {
+                snapshotRelation = SnapshotRelation.create(snapshot, fromItem, toItem);
+            }
+
+            snapshotRelationRepository.save(snapshotRelation);
+        }
+
+        log.info("Copied {} relations from course {} to snapshot {}",
+                courseRelations.size(), courseId, snapshot.getId());
     }
 }
