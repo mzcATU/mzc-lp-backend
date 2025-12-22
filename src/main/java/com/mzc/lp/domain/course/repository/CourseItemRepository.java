@@ -40,4 +40,12 @@ public interface CourseItemRepository extends JpaRepository<CourseItem, Long> {
     long countByCourseIdAndTenantId(Long courseId, Long tenantId);
 
     long countByCourseIdAndTenantIdAndLearningObjectIdIsNotNull(Long courseId, Long tenantId);
+
+    /**
+     * 특정 콘텐츠가 LearningObject를 통해 강의(Course)에 포함되어 있는지 확인
+     */
+    @Query("SELECT CASE WHEN COUNT(ci) > 0 THEN true ELSE false END " +
+           "FROM CourseItem ci WHERE ci.learningObjectId IN " +
+           "(SELECT lo.id FROM LearningObject lo WHERE lo.content.id = :contentId)")
+    boolean existsByContentIdThroughLearningObject(@Param("contentId") Long contentId);
 }
