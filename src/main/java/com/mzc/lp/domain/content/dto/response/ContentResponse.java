@@ -22,10 +22,15 @@ public record ContentResponse(
         String thumbnailPath,
         Long createdBy,
         Integer currentVersion,
+        Boolean inCourse,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
     public static ContentResponse from(Content content) {
+        return from(content, null);
+    }
+
+    public static ContentResponse from(Content content, Boolean inCourse) {
         return new ContentResponse(
                 content.getId(),
                 content.getOriginalFileName(),
@@ -41,6 +46,7 @@ public record ContentResponse(
                 content.getThumbnailPath(),
                 content.getCreatedBy(),
                 content.getCurrentVersion(),
+                inCourse,
                 content.getCreatedAt() != null
                         ? LocalDateTime.ofInstant(content.getCreatedAt(), ZoneId.systemDefault())
                         : null,

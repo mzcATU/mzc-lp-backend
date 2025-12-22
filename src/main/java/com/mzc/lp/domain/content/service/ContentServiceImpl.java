@@ -16,6 +16,7 @@ import com.mzc.lp.domain.content.exception.FileStorageException;
 import com.mzc.lp.domain.content.exception.UnauthorizedContentAccessException;
 import com.mzc.lp.domain.content.exception.UnsupportedContentTypeException;
 import com.mzc.lp.domain.content.repository.ContentRepository;
+import com.mzc.lp.domain.course.repository.CourseItemRepository;
 import com.mzc.lp.domain.learning.repository.LearningObjectRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,6 +45,7 @@ public class ContentServiceImpl implements ContentService {
     private final ThumbnailService thumbnailService;
     private final ContentVersionService contentVersionService;
     private final LearningObjectRepository learningObjectRepository;
+    private final CourseItemRepository courseItemRepository;
     private final ApplicationEventPublisher eventPublisher;
 
     @Value("${file.upload-dir:./uploads}")
@@ -138,7 +140,8 @@ public class ContentServiceImpl implements ContentService {
     @Override
     public ContentResponse getContent(Long contentId, Long tenantId) {
         Content content = findContentOrThrow(contentId, tenantId);
-        return ContentResponse.from(content);
+        boolean inCourse = isContentInCourse(contentId);
+        return ContentResponse.from(content, inCourse);
     }
 
     @Override
@@ -374,8 +377,21 @@ public class ContentServiceImpl implements ContentService {
     }
 
     private void validateContentNotInUse(Long contentId) {
-        if (learningObjectRepository.existsByContentId(contentId)) {
+        if (isContentInCourse(contentId)) {
             throw new ContentInUseException(contentId);
         }
+    }
+
+    /**
+     * 콘텐츠가 강의(Course)에 포함되어 있는지 확인
+     * Content → LearningObject → CourseItem 연결 확인
+     */
+    public boolean isContentInCourse(Long contentId) {
+        // LearningObject가 없으면 Course에도 포함될 수 없음
+        if (!learningObjectRepository.existsByContentId(contentId)) {
+            return false;
+        }
+        // LearningObject가 CourseItem에 포함되어 있는지 확인
+        return courseItemRepository.existsByContentIdThroughLearningObject(contentId);
     }
 }
