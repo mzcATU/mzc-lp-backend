@@ -21,6 +21,12 @@ public interface ContentFolderRepository extends JpaRepository<ContentFolder, Lo
     @Query("SELECT cf FROM ContentFolder cf WHERE cf.tenantId = :tenantId ORDER BY cf.depth ASC, cf.folderName ASC")
     List<ContentFolder> findAllByTenantIdOrdered(@Param("tenantId") Long tenantId);
 
+    @Query("SELECT DISTINCT cf FROM ContentFolder cf " +
+            "LEFT JOIN FETCH cf.children " +
+            "WHERE cf.tenantId = :tenantId " +
+            "ORDER BY cf.depth ASC, cf.folderName ASC")
+    List<ContentFolder> findAllWithChildrenByTenantId(@Param("tenantId") Long tenantId);
+
     boolean existsByTenantIdAndParentIdAndFolderName(Long tenantId, Long parentId, String folderName);
 
     boolean existsByTenantIdAndParentIsNullAndFolderName(Long tenantId, String folderName);
