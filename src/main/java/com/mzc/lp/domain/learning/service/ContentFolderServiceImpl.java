@@ -53,10 +53,13 @@ public class ContentFolderServiceImpl implements ContentFolderService {
 
     @Override
     public List<ContentFolderResponse> getFolderTree(Long tenantId) {
-        List<ContentFolder> rootFolders = contentFolderRepository
-                .findByTenantIdAndParentIsNullOrderByFolderNameAsc(tenantId);
+        // JOIN FETCH로 모든 폴더를 한 번에 조회 (N+1 최적화)
+        List<ContentFolder> allFolders = contentFolderRepository
+                .findAllWithChildrenByTenantId(tenantId);
 
-        return rootFolders.stream()
+        // 루트 폴더만 필터링 (children은 이미 로드됨)
+        return allFolders.stream()
+                .filter(folder -> folder.getParent() == null)
                 .map(ContentFolderResponse::fromWithChildren)
                 .toList();
     }
