@@ -18,6 +18,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class SnapshotRelation extends TenantEntity {
 
+    // 낙관적 락 (동시 수정 감지)
+    @Version
+    private Long version;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "snapshot_id", nullable = false)
     private CourseSnapshot snapshot;

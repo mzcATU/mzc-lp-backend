@@ -16,6 +16,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class SnapshotLearningObject extends TenantEntity {
 
+    // 낙관적 락 (동시 수정 감지)
+    @Version
+    private Long version;
+
     @Column(name = "source_lo_id")
     private Long sourceLoId;
 
