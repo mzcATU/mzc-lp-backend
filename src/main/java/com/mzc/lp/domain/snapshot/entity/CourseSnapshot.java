@@ -3,6 +3,7 @@ package com.mzc.lp.domain.snapshot.entity;
 import com.mzc.lp.common.entity.TenantEntity;
 import com.mzc.lp.domain.course.entity.Course;
 import com.mzc.lp.domain.snapshot.constant.SnapshotStatus;
+import com.mzc.lp.domain.snapshot.exception.SnapshotStateException;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -113,21 +114,21 @@ public class CourseSnapshot extends TenantEntity {
 
     public void publish() {
         if (this.status != SnapshotStatus.DRAFT) {
-            throw new IllegalStateException("DRAFT 상태에서만 발행할 수 있습니다");
+            throw new SnapshotStateException(this.status, "발행");
         }
         this.status = SnapshotStatus.ACTIVE;
     }
 
     public void complete() {
         if (this.status != SnapshotStatus.ACTIVE) {
-            throw new IllegalStateException("ACTIVE 상태에서만 완료할 수 있습니다");
+            throw new SnapshotStateException(this.status, "완료");
         }
         this.status = SnapshotStatus.COMPLETED;
     }
 
     public void archive() {
         if (this.status != SnapshotStatus.COMPLETED) {
-            throw new IllegalStateException("COMPLETED 상태에서만 보관할 수 있습니다");
+            throw new SnapshotStateException(this.status, "보관");
         }
         this.status = SnapshotStatus.ARCHIVED;
     }
@@ -162,7 +163,7 @@ public class CourseSnapshot extends TenantEntity {
     // ===== Private 검증 메서드 =====
     private void validateModifiable() {
         if (!isModifiable()) {
-            throw new IllegalStateException("수정할 수 없는 상태입니다: " + this.status);
+            throw new SnapshotStateException(this.status, "수정");
         }
     }
 
