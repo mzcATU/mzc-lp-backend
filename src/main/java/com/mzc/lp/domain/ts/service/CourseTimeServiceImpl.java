@@ -124,24 +124,22 @@ public class CourseTimeServiceImpl implements CourseTimeService {
     public Page<CourseTimeResponse> getCourseTimes(CourseTimeStatus status, Long cmCourseId, Pageable pageable) {
         log.debug("Getting course times: status={}, cmCourseId={}", status, cmCourseId);
 
+        Long tenantId = TenantContext.getCurrentTenantId();
         Page<CourseTime> courseTimePage;
 
-        if (cmCourseId != null) {
-            List<CourseTime> filtered = courseTimeRepository
-                    .findByCmCourseIdAndTenantId(cmCourseId, TenantContext.getCurrentTenantId())
-                    .stream()
-                    .filter(ct -> status == null || ct.getStatus() == status)
-                    .toList();
-            courseTimePage = new org.springframework.data.domain.PageImpl<>(filtered, pageable, filtered.size());
+        if (cmCourseId != null && status != null) {
+            courseTimePage = courseTimeRepository.findByCmCourseIdAndTenantIdAndStatus(
+                    cmCourseId, tenantId, status, pageable);
+        } else if (cmCourseId != null) {
+            courseTimePage = courseTimeRepository.findByCmCourseIdAndTenantId(
+                    cmCourseId, tenantId, pageable);
         } else if (status != null) {
             courseTimePage = courseTimeRepository.findByTenantIdAndStatus(
-                    TenantContext.getCurrentTenantId(), status, pageable);
+                    tenantId, status, pageable);
         } else {
-            courseTimePage = courseTimeRepository.findByTenantId(
-                    TenantContext.getCurrentTenantId(), pageable);
+            courseTimePage = courseTimeRepository.findByTenantId(tenantId, pageable);
         }
 
-        // 벌크 조회로 N+1 방지
         List<Long> timeIds = courseTimePage.getContent().stream()
                 .map(CourseTime::getId)
                 .toList();
