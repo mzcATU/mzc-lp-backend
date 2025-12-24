@@ -4,6 +4,7 @@ import com.mzc.lp.domain.learning.entity.LearningObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -40,4 +41,8 @@ public interface LearningObjectRepository extends JpaRepository<LearningObject, 
      * 콘텐츠가 강의(LearningObject)에서 참조되고 있는지 확인
      */
     boolean existsByContentId(Long contentId);
+
+    @Modifying
+    @Query("DELETE FROM LearningObject lo WHERE lo.content.id = :contentId")
+    void deleteByContentId(@Param("contentId") Long contentId);
 }

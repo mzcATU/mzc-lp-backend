@@ -16,6 +16,7 @@ import com.mzc.lp.domain.content.exception.FileStorageException;
 import com.mzc.lp.domain.content.exception.UnauthorizedContentAccessException;
 import com.mzc.lp.domain.content.exception.UnsupportedContentTypeException;
 import com.mzc.lp.domain.content.repository.ContentRepository;
+import com.mzc.lp.domain.content.repository.ContentVersionRepository;
 import com.mzc.lp.domain.course.repository.CourseItemRepository;
 import com.mzc.lp.domain.learning.repository.LearningObjectRepository;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +42,7 @@ import java.util.Set;
 public class ContentServiceImpl implements ContentService {
 
     private final ContentRepository contentRepository;
+    private final ContentVersionRepository contentVersionRepository;
     private final FileStorageService fileStorageService;
     private final ThumbnailService thumbnailService;
     private final ContentVersionService contentVersionService;
@@ -207,6 +209,15 @@ public class ContentServiceImpl implements ContentService {
     @Transactional
     public void deleteContent(Long contentId, Long tenantId) {
         Content content = findContentOrThrow(contentId, tenantId);
+
+        // 강의에서 사용 중인 콘텐츠는 삭제 불가
+        validateContentNotInUse(contentId);
+
+        // LearningObject 먼저 삭제 (FK 제약조건)
+        learningObjectRepository.deleteByContentId(contentId);
+
+        // 버전 히스토리 삭제 (FK 제약조건)
+        contentVersionRepository.deleteByContentId(contentId);
 
         if (content.getFilePath() != null) {
             fileStorageService.deleteFile(content.getFilePath());
