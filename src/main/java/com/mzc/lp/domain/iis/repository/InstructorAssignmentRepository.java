@@ -129,5 +129,5 @@ public interface InstructorAssignmentRepository extends JpaRepository<Instructor
             "SUM(CASE WHEN ia.role = 'SUB' THEN 1 ELSE 0 END) " +
             "FROM InstructorAssignment ia " +
             "WHERE ia.tenantId = :tenantId AND ia.userKey = :userKey AND ia.status = 'ACTIVE'")
-    Object[] getInstructorStatisticsByUserId(@Param("tenantId") Long tenantId, @Param("userKey") Long userKey);
+    List<Object[]> getInstructorStatisticsByUserId(@Param("tenantId") Long tenantId, @Param("userKey") Long userKey);
 }
