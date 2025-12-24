@@ -58,3 +58,15 @@ spring.servlet.multipart:
   enabled: true
   max-file-size: 2GB
   max-request-size: 2GB
+
+# Springdoc OpenAPI
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: alpha
+    tags-sorter: alpha
+    display-request-duration: true
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/json

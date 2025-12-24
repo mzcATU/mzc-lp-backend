@@ -449,7 +449,7 @@ class ContentControllerTest extends TenantTestSupport {
     // ==================== 콘텐츠 수정 테스트 ====================
 
     @Nested
-    @DisplayName("PATCH /api/contents/{contentId} - 콘텐츠 메타데이터 수정")
+    @DisplayName("PUT /api/contents/{contentId} - 콘텐츠 메타데이터 수정")
     class UpdateContent {
 
         @Test
@@ -469,7 +469,7 @@ class ContentControllerTest extends TenantTestSupport {
             );
 
             // when & then
-            mockMvc.perform(patch("/api/contents/{contentId}", saved.getId())
+            mockMvc.perform(put("/api/contents/{contentId}", saved.getId())
                             .header("Authorization", "Bearer " + accessToken)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))

@@ -10,6 +10,7 @@ import java.time.ZoneId;
 public record ContentResponse(
         Long id,
         String originalFileName,
+        String uploadedFileName,
         String storedFileName,
         ContentType contentType,
         ContentStatus status,
@@ -34,6 +35,7 @@ public record ContentResponse(
         return new ContentResponse(
                 content.getId(),
                 content.getOriginalFileName(),
+                content.getUploadedFileName(),
                 content.getStoredFileName(),
                 content.getContentType(),
                 content.getStatus(),

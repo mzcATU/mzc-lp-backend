@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -130,4 +131,102 @@ public interface InstructorAssignmentRepository extends JpaRepository<Instructor
             "FROM InstructorAssignment ia " +
             "WHERE ia.tenantId = :tenantId AND ia.userKey = :userKey AND ia.status = 'ACTIVE'")
     List<Object[]> getInstructorStatisticsByUserId(@Param("tenantId") Long tenantId, @Param("userKey") Long userKey);
+
+    // ========== 기간 필터링 통계 API용 메서드 ==========
+
+    // 기간별 전체 배정 건수
+    @Query("SELECT COUNT(ia) FROM InstructorAssignment ia " +
+            "WHERE ia.tenantId = :tenantId " +
+            "AND CAST(ia.assignedAt AS LocalDate) >= :startDate " +
+            "AND CAST(ia.assignedAt AS LocalDate) <= :endDate")
+    long countByTenantIdAndDateRange(
+            @Param("tenantId") Long tenantId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
+
+    // 기간별 상태별 배정 건수
+    @Query("SELECT COUNT(ia) FROM InstructorAssignment ia " +
+            "WHERE ia.tenantId = :tenantId " +
+            "AND ia.status = :status " +
+            "AND CAST(ia.assignedAt AS LocalDate) >= :startDate " +
+            "AND CAST(ia.assignedAt AS LocalDate) <= :endDate")
+    long countByTenantIdAndStatusAndDateRange(
+            @Param("tenantId") Long tenantId,
+            @Param("status") AssignmentStatus status,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
+
+    // 기간별 역할별 집계
+    @Query("SELECT ia.role, COUNT(ia) FROM InstructorAssignment ia " +
+            "WHERE ia.tenantId = :tenantId " +
+            "AND CAST(ia.assignedAt AS LocalDate) >= :startDate " +
+            "AND CAST(ia.assignedAt AS LocalDate) <= :endDate " +
+            "GROUP BY ia.role")
+    List<Object[]> countGroupByRoleAndDateRange(
+            @Param("tenantId") Long tenantId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
+
+    // 기간별 상태별 집계
+    @Query("SELECT ia.status, COUNT(ia) FROM InstructorAssignment ia " +
+            "WHERE ia.tenantId = :tenantId " +
+            "AND CAST(ia.assignedAt AS LocalDate) >= :startDate " +
+            "AND CAST(ia.assignedAt AS LocalDate) <= :endDate " +
+            "GROUP BY ia.status")
+    List<Object[]> countGroupByStatusAndDateRange(
+            @Param("tenantId") Long tenantId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
+
+    // 기간별 강사별 통계 (ACTIVE 상태만)
+    @Query("SELECT ia.userKey, COUNT(ia), " +
+            "SUM(CASE WHEN ia.role = 'MAIN' THEN 1 ELSE 0 END), " +
+            "SUM(CASE WHEN ia.role = 'SUB' THEN 1 ELSE 0 END) " +
+            "FROM InstructorAssignment ia " +
+            "WHERE ia.tenantId = :tenantId AND ia.status = 'ACTIVE' " +
+            "AND CAST(ia.assignedAt AS LocalDate) >= :startDate " +
+            "AND CAST(ia.assignedAt AS LocalDate) <= :endDate " +
+            "GROUP BY ia.userKey")
+    List<Object[]> getInstructorStatisticsWithDateRange(
+            @Param("tenantId") Long tenantId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
+
+    // 기간별 특정 강사의 통계
+    @Query("SELECT COUNT(ia), " +
+            "SUM(CASE WHEN ia.role = 'MAIN' THEN 1 ELSE 0 END), " +
+            "SUM(CASE WHEN ia.role = 'SUB' THEN 1 ELSE 0 END) " +
+            "FROM InstructorAssignment ia " +
+            "WHERE ia.tenantId = :tenantId AND ia.userKey = :userKey AND ia.status = 'ACTIVE' " +
+            "AND CAST(ia.assignedAt AS LocalDate) >= :startDate " +
+            "AND CAST(ia.assignedAt AS LocalDate) <= :endDate")
+    List<Object[]> getInstructorStatisticsByUserIdAndDateRange(
+            @Param("tenantId") Long tenantId,
+            @Param("userKey") Long userKey,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
+
+    // 특정 강사의 ACTIVE 배정 목록 조회 (차수별 통계용)
+    @Query("SELECT ia FROM InstructorAssignment ia " +
+            "WHERE ia.tenantId = :tenantId " +
+            "AND ia.userKey = :userKey " +
+            "AND ia.status = 'ACTIVE' " +
+            "ORDER BY ia.assignedAt DESC")
+    List<InstructorAssignment> findActiveByUserKey(
+            @Param("tenantId") Long tenantId,
+            @Param("userKey") Long userKey);
+
+    // 기간별 특정 강사의 ACTIVE 배정 목록 조회 (차수별 통계용)
+    @Query("SELECT ia FROM InstructorAssignment ia " +
+            "WHERE ia.tenantId = :tenantId " +
+            "AND ia.userKey = :userKey " +
+            "AND ia.status = 'ACTIVE' " +
+            "AND CAST(ia.assignedAt AS LocalDate) >= :startDate " +
+            "AND CAST(ia.assignedAt AS LocalDate) <= :endDate " +
+            "ORDER BY ia.assignedAt DESC")
+    List<InstructorAssignment> findActiveByUserKeyAndDateRange(
+            @Param("tenantId") Long tenantId,
+            @Param("userKey") Long userKey,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
 }

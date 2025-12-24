@@ -9,7 +9,9 @@ import com.mzc.lp.domain.iis.dto.request.CancelAssignmentRequest;
 import com.mzc.lp.domain.iis.dto.request.ReplaceInstructorRequest;
 import com.mzc.lp.domain.iis.dto.request.UpdateRoleRequest;
 import com.mzc.lp.domain.iis.dto.response.AssignmentHistoryResponse;
+import com.mzc.lp.domain.iis.dto.response.CourseTimeStatResponse;
 import com.mzc.lp.domain.iis.dto.response.InstructorAssignmentResponse;
+import com.mzc.lp.domain.iis.dto.response.InstructorDetailStatResponse;
 import com.mzc.lp.domain.iis.dto.response.InstructorStatResponse;
 import com.mzc.lp.domain.iis.dto.response.InstructorStatisticsResponse;
 import com.mzc.lp.domain.iis.entity.AssignmentHistory;
@@ -20,6 +22,9 @@ import com.mzc.lp.domain.iis.exception.InstructorAssignmentNotFoundException;
 import com.mzc.lp.domain.iis.exception.MainInstructorAlreadyExistsException;
 import com.mzc.lp.domain.iis.repository.AssignmentHistoryRepository;
 import com.mzc.lp.domain.iis.repository.InstructorAssignmentRepository;
+import com.mzc.lp.domain.student.dto.response.CourseTimeEnrollmentStatsResponse;
+import com.mzc.lp.domain.student.service.EnrollmentStatsService;
+import com.mzc.lp.domain.ts.entity.CourseTime;
 import com.mzc.lp.domain.ts.repository.CourseTimeRepository;
 import com.mzc.lp.domain.user.entity.User;
 import com.mzc.lp.domain.user.repository.UserRepository;
@@ -30,6 +35,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
@@ -47,6 +54,7 @@ public class InstructorAssignmentServiceImpl implements InstructorAssignmentServ
     private final AssignmentHistoryRepository historyRepository;
     private final UserRepository userRepository;
     private final CourseTimeRepository courseTimeRepository;
+    private final EnrollmentStatsService enrollmentStatsService;
 
     @Override
     @Transactional
@@ -393,7 +401,167 @@ public class InstructorAssignmentServiceImpl implements InstructorAssignmentServ
         return InstructorStatResponse.of(userId, userName, totalCount, mainCount, subCount);
     }
 
+    @Override
+    public InstructorStatisticsResponse getStatistics(LocalDate startDate, LocalDate endDate) {
+        log.debug("Getting instructor assignment statistics with date range: {} ~ {}", startDate, endDate);
+
+        // 기간이 지정되지 않은 경우 기본 메서드 호출
+        if (startDate == null || endDate == null) {
+            return getStatistics();
+        }
+
+        Long tenantId = TenantContext.getCurrentTenantId();
+
+        // 전체/활성 배정 건수 (기간 필터)
+        long totalAssignments = assignmentRepository.countByTenantIdAndDateRange(tenantId, startDate, endDate);
+        long activeAssignments = assignmentRepository.countByTenantIdAndStatusAndDateRange(
+                tenantId, AssignmentStatus.ACTIVE, startDate, endDate);
+
+        // 역할별 집계 (기간 필터)
+        Map<InstructorRole, Long> byRole = new EnumMap<>(InstructorRole.class);
+        for (InstructorRole role : InstructorRole.values()) {
+            byRole.put(role, 0L);
+        }
+        assignmentRepository.countGroupByRoleAndDateRange(tenantId, startDate, endDate).forEach(row -> {
+            InstructorRole role = (InstructorRole) row[0];
+            Long count = (Long) row[1];
+            byRole.put(role, count);
+        });
+
+        // 상태별 집계 (기간 필터)
+        Map<AssignmentStatus, Long> byStatus = new EnumMap<>(AssignmentStatus.class);
+        for (AssignmentStatus status : AssignmentStatus.values()) {
+            byStatus.put(status, 0L);
+        }
+        assignmentRepository.countGroupByStatusAndDateRange(tenantId, startDate, endDate).forEach(row -> {
+            AssignmentStatus status = (AssignmentStatus) row[0];
+            Long count = (Long) row[1];
+            byStatus.put(status, count);
+        });
+
+        // 강사별 통계 (기간 필터)
+        List<Object[]> rawStats = assignmentRepository.getInstructorStatisticsWithDateRange(tenantId, startDate, endDate);
+        List<Long> userIds = rawStats.stream()
+                .map(row -> ((Number) row[0]).longValue())
+                .toList();
+
+        Map<Long, User> userMap = userRepository.findAllById(userIds).stream()
+                .collect(Collectors.toMap(User::getId, Function.identity()));
+
+        List<InstructorStatResponse> instructorStats = new ArrayList<>();
+        for (Object[] row : rawStats) {
+            Long userId = ((Number) row[0]).longValue();
+            Long totalCount = ((Number) row[1]).longValue();
+            Long mainCount = row[2] != null ? ((Number) row[2]).longValue() : 0L;
+            Long subCount = row[3] != null ? ((Number) row[3]).longValue() : 0L;
+
+            User user = userMap.get(userId);
+            String userName = user != null ? user.getName() : null;
+
+            instructorStats.add(InstructorStatResponse.of(userId, userName, totalCount, mainCount, subCount));
+        }
+
+        return InstructorStatisticsResponse.of(totalAssignments, activeAssignments, byRole, byStatus, instructorStats);
+    }
+
+    @Override
+    public InstructorDetailStatResponse getInstructorDetailStatistics(Long userId, LocalDate startDate, LocalDate endDate) {
+        log.debug("Getting instructor detail statistics: userId={}, dateRange={} ~ {}", userId, startDate, endDate);
+
+        Long tenantId = TenantContext.getCurrentTenantId();
+
+        User user = userRepository.findById(userId).orElse(null);
+        String userName = user != null ? user.getName() : null;
+
+        // 기본 통계 조회
+        List<Object[]> result;
+        if (startDate != null && endDate != null) {
+            result = assignmentRepository.getInstructorStatisticsByUserIdAndDateRange(tenantId, userId, startDate, endDate);
+        } else {
+            result = assignmentRepository.getInstructorStatisticsByUserId(tenantId, userId);
+        }
+
+        Long totalCount = 0L;
+        Long mainCount = 0L;
+        Long subCount = 0L;
+
+        if (result != null && !result.isEmpty() && result.get(0)[0] != null) {
+            Object[] stats = result.get(0);
+            totalCount = ((Number) stats[0]).longValue();
+            mainCount = stats[1] != null ? ((Number) stats[1]).longValue() : 0L;
+            subCount = stats[2] != null ? ((Number) stats[2]).longValue() : 0L;
+        }
+
+        // 차수별 통계 조회
+        List<InstructorAssignment> assignments;
+        if (startDate != null && endDate != null) {
+            assignments = assignmentRepository.findActiveByUserKeyAndDateRange(tenantId, userId, startDate, endDate);
+        } else {
+            assignments = assignmentRepository.findActiveByUserKey(tenantId, userId);
+        }
+
+        List<CourseTimeStatResponse> courseTimeStats = buildCourseTimeStats(assignments);
+
+        return InstructorDetailStatResponse.of(userId, userName, totalCount, mainCount, subCount, courseTimeStats);
+    }
+
     // ========== Private Methods ==========
+
+    /**
+     * 차수별 통계 빌드 (수강생 통계 포함)
+     */
+    private List<CourseTimeStatResponse> buildCourseTimeStats(List<InstructorAssignment> assignments) {
+        if (assignments.isEmpty()) {
+            return List.of();
+        }
+
+        // CourseTime 정보 조회
+        List<Long> timeKeys = assignments.stream()
+                .map(InstructorAssignment::getTimeKey)
+                .distinct()
+                .toList();
+
+        Map<Long, CourseTime> courseTimeMap = courseTimeRepository.findAllById(timeKeys).stream()
+                .collect(Collectors.toMap(CourseTime::getId, Function.identity()));
+
+        List<CourseTimeStatResponse> result = new ArrayList<>();
+
+        for (InstructorAssignment assignment : assignments) {
+            CourseTime courseTime = courseTimeMap.get(assignment.getTimeKey());
+            if (courseTime == null) {
+                continue;
+            }
+
+            // 수강생 통계 조회 (SIS 연동)
+            Long totalStudents = null;
+            Long completedStudents = null;
+            BigDecimal completionRate = null;
+
+            try {
+                CourseTimeEnrollmentStatsResponse enrollmentStats =
+                        enrollmentStatsService.getCourseTimeStats(courseTime.getId());
+                if (enrollmentStats != null) {
+                    totalStudents = enrollmentStats.totalEnrollments();
+                    completedStudents = enrollmentStats.completedCount();
+                    completionRate = enrollmentStats.completionRate();
+                }
+            } catch (Exception e) {
+                log.warn("Failed to get enrollment stats for courseTime: {}", courseTime.getId(), e);
+            }
+
+            result.add(CourseTimeStatResponse.of(
+                    assignment.getTimeKey(),
+                    courseTime.getTitle(),
+                    courseTime.getTitle(), // timeName은 title로 대체
+                    assignment.getRole(),
+                    totalStudents,
+                    completedStudents,
+                    completionRate
+            ));
+        }
+
+        return result;
+    }
 
     private InstructorAssignment findAssignmentById(Long id) {
         Long tenantId = TenantContext.getCurrentTenantId();
