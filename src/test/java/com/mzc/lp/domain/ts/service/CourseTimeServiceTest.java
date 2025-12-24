@@ -6,9 +6,12 @@ import com.mzc.lp.domain.ts.constant.EnrollmentMethod;
 import com.mzc.lp.domain.ts.dto.response.CapacityResponse;
 import com.mzc.lp.domain.ts.dto.response.PriceResponse;
 import com.mzc.lp.domain.ts.entity.CourseTime;
+import com.mzc.lp.domain.ts.dto.request.CreateCourseTimeRequest;
 import com.mzc.lp.domain.ts.exception.CapacityExceededException;
 import com.mzc.lp.domain.ts.exception.CourseTimeNotFoundException;
+import com.mzc.lp.domain.ts.exception.InvalidDateRangeException;
 import com.mzc.lp.domain.ts.repository.CourseTimeRepository;
+import com.mzc.lp.domain.iis.service.InstructorAssignmentService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -34,6 +37,9 @@ class CourseTimeServiceTest extends TenantTestSupport {
 
     @Mock
     private CourseTimeRepository courseTimeRepository;
+
+    @Mock
+    private InstructorAssignmentService instructorAssignmentService;
 
     private CourseTime createTestCourseTime(Integer capacity, int currentEnrollment) {
         CourseTime courseTime = CourseTime.create(
@@ -177,7 +183,7 @@ class CourseTimeServiceTest extends TenantTestSupport {
         void getCapacity_success_limited() {
             // given
             CourseTime courseTime = createTestCourseTime(30, 10);
-            given(courseTimeRepository.findById(1L)).willReturn(Optional.of(courseTime));
+            given(courseTimeRepository.findByIdAndTenantId(1L, DEFAULT_TENANT_ID)).willReturn(Optional.of(courseTime));
 
             // when
             CapacityResponse response = courseTimeService.getCapacity(1L);
@@ -194,7 +200,7 @@ class CourseTimeServiceTest extends TenantTestSupport {
         void getCapacity_success_unlimited() {
             // given
             CourseTime courseTime = createTestCourseTime(null, 100);
-            given(courseTimeRepository.findById(1L)).willReturn(Optional.of(courseTime));
+            given(courseTimeRepository.findByIdAndTenantId(1L, DEFAULT_TENANT_ID)).willReturn(Optional.of(courseTime));
 
             // when
             CapacityResponse response = courseTimeService.getCapacity(1L);
@@ -216,7 +222,7 @@ class CourseTimeServiceTest extends TenantTestSupport {
         void getPrice_success_paid() {
             // given
             CourseTime courseTime = createTestCourseTime(30, 0);
-            given(courseTimeRepository.findById(1L)).willReturn(Optional.of(courseTime));
+            given(courseTimeRepository.findByIdAndTenantId(1L, DEFAULT_TENANT_ID)).willReturn(Optional.of(courseTime));
 
             // when
             PriceResponse response = courseTimeService.getPrice(1L);
@@ -247,7 +253,7 @@ class CourseTimeServiceTest extends TenantTestSupport {
                     true,
                     1L
             );
-            given(courseTimeRepository.findById(1L)).willReturn(Optional.of(courseTime));
+            given(courseTimeRepository.findByIdAndTenantId(1L, DEFAULT_TENANT_ID)).willReturn(Optional.of(courseTime));
 
             // when
             PriceResponse response = courseTimeService.getPrice(1L);
@@ -255,6 +261,107 @@ class CourseTimeServiceTest extends TenantTestSupport {
             // then
             assertThat(response.price()).isEqualByComparingTo(BigDecimal.ZERO);
             assertThat(response.free()).isTrue();
+        }
+    }
+
+    // ==================== 차수 생성 - 날짜 검증 테스트 ====================
+
+    @Nested
+    @DisplayName("createCourseTime - 날짜 검증")
+    class CreateCourseTimeDateValidation {
+
+        @Test
+        @DisplayName("실패 - [R-DATE-03] 모집 종료일이 학습 시작일보다 늦은 경우")
+        void createCourseTime_fail_enrollEndDateAfterClassStartDate() {
+            // given
+            LocalDate today = LocalDate.now();
+            CreateCourseTimeRequest request = new CreateCourseTimeRequest(
+                    null,
+                    null,
+                    "테스트 차수",
+                    DeliveryType.ONLINE,
+                    today,                      // enrollStartDate
+                    today.plusDays(10),         // enrollEndDate - 학습 시작일보다 늦음
+                    today.plusDays(7),          // classStartDate - 모집 종료일보다 빠름
+                    today.plusDays(30),         // classEndDate
+                    30,
+                    5,
+                    EnrollmentMethod.FIRST_COME,
+                    80,
+                    new BigDecimal("100000"),
+                    false,
+                    null,
+                    true
+            );
+
+            // when & then
+            assertThatThrownBy(() -> courseTimeService.createCourseTime(request, 1L))
+                    .isInstanceOf(InvalidDateRangeException.class)
+                    .hasMessageContaining("모집 종료일은 학습 시작일 이전이어야 합니다");
+        }
+
+        @Test
+        @DisplayName("실패 - [R-DATE-04] 과거 날짜로 모집 시작일 설정 시")
+        void createCourseTime_fail_enrollStartDateInPast() {
+            // given
+            LocalDate today = LocalDate.now();
+            CreateCourseTimeRequest request = new CreateCourseTimeRequest(
+                    null,
+                    null,
+                    "테스트 차수",
+                    DeliveryType.ONLINE,
+                    today.minusDays(1),         // enrollStartDate - 과거 날짜
+                    today.plusDays(7),          // enrollEndDate
+                    today.plusDays(7),          // classStartDate
+                    today.plusDays(30),         // classEndDate
+                    30,
+                    5,
+                    EnrollmentMethod.FIRST_COME,
+                    80,
+                    new BigDecimal("100000"),
+                    false,
+                    null,
+                    true
+            );
+
+            // when & then
+            assertThatThrownBy(() -> courseTimeService.createCourseTime(request, 1L))
+                    .isInstanceOf(InvalidDateRangeException.class)
+                    .hasMessageContaining("모집 시작일은 오늘 이후여야 합니다");
+        }
+
+        @Test
+        @DisplayName("성공 - 오늘 날짜로 모집 시작일 설정 가능")
+        void createCourseTime_success_enrollStartDateToday() {
+            // given
+            LocalDate today = LocalDate.now();
+            CreateCourseTimeRequest request = new CreateCourseTimeRequest(
+                    null,
+                    null,
+                    "테스트 차수",
+                    DeliveryType.ONLINE,
+                    today,                      // enrollStartDate - 오늘
+                    today.plusDays(7),          // enrollEndDate
+                    today.plusDays(7),          // classStartDate
+                    today.plusDays(30),         // classEndDate
+                    30,
+                    5,
+                    EnrollmentMethod.FIRST_COME,
+                    80,
+                    new BigDecimal("100000"),
+                    false,
+                    null,
+                    true
+            );
+
+            CourseTime savedCourseTime = createTestCourseTime(30, 0);
+            given(courseTimeRepository.save(org.mockito.ArgumentMatchers.any(CourseTime.class)))
+                    .willReturn(savedCourseTime);
+
+            // when & then - 날짜 검증 통과, repository.save 호출됨
+            courseTimeService.createCourseTime(request, 1L);
+
+            verify(courseTimeRepository).save(org.mockito.ArgumentMatchers.any(CourseTime.class));
         }
     }
 }
