@@ -127,6 +127,17 @@ public class InstructorAssignmentController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
+    @GetMapping("/api/users/me/instructor-statistics")
+    public ResponseEntity<ApiResponse<InstructorDetailStatResponse>> getMyInstructorStatistics(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
+    ) {
+        InstructorDetailStatResponse response = assignmentService.getInstructorDetailStatistics(
+                principal.id(), startDate, endDate);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
     @GetMapping("/api/users/{userId}/instructor-statistics")
     @PreAuthorize("hasAnyRole('OPERATOR', 'TENANT_ADMIN')")
     public ResponseEntity<ApiResponse<InstructorDetailStatResponse>> getInstructorStatistics(
