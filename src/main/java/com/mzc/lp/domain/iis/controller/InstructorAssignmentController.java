@@ -9,6 +9,8 @@ import com.mzc.lp.domain.iis.dto.request.ReplaceInstructorRequest;
 import com.mzc.lp.domain.iis.dto.request.UpdateRoleRequest;
 import com.mzc.lp.domain.iis.dto.response.AssignmentHistoryResponse;
 import com.mzc.lp.domain.iis.dto.response.InstructorAssignmentResponse;
+import com.mzc.lp.domain.iis.dto.response.InstructorStatResponse;
+import com.mzc.lp.domain.iis.dto.response.InstructorStatisticsResponse;
 import com.mzc.lp.domain.iis.service.InstructorAssignmentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -107,6 +109,24 @@ public class InstructorAssignmentController {
             @AuthenticationPrincipal UserPrincipal principal
     ) {
         List<InstructorAssignmentResponse> response = assignmentService.getMyAssignments(principal.id());
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    // ========== 통계 API ==========
+
+    @GetMapping("/api/instructor-assignments/statistics")
+    @PreAuthorize("hasAnyRole('OPERATOR', 'TENANT_ADMIN')")
+    public ResponseEntity<ApiResponse<InstructorStatisticsResponse>> getStatistics() {
+        InstructorStatisticsResponse response = assignmentService.getStatistics();
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @GetMapping("/api/users/{userId}/instructor-statistics")
+    @PreAuthorize("hasAnyRole('OPERATOR', 'TENANT_ADMIN')")
+    public ResponseEntity<ApiResponse<InstructorStatResponse>> getInstructorStatistics(
+            @PathVariable Long userId
+    ) {
+        InstructorStatResponse response = assignmentService.getInstructorStatistics(userId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 }
