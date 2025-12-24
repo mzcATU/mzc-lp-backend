@@ -2,6 +2,8 @@ package com.mzc.lp.common.exception;
 
 import com.mzc.lp.common.constant.ErrorCode;
 import com.mzc.lp.common.dto.ApiResponse;
+import com.mzc.lp.domain.iis.dto.response.ScheduleConflictResponse;
+import com.mzc.lp.domain.iis.exception.InstructorScheduleConflictException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -9,9 +11,22 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.util.List;
+
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(InstructorScheduleConflictException.class)
+    protected ResponseEntity<ApiResponse<List<ScheduleConflictResponse>>> handleInstructorScheduleConflictException(
+            InstructorScheduleConflictException e) {
+        log.error("InstructorScheduleConflictException: {}", e.getMessage());
+        ErrorCode errorCode = e.getErrorCode();
+        return ResponseEntity
+                .status(errorCode.getStatus())
+                .body(new ApiResponse<>(false, e.getConflicts(),
+                        ApiResponse.ErrorInfo.of(errorCode, e.getMessage())));
+    }
 
     @ExceptionHandler(BusinessException.class)
     protected ResponseEntity<ApiResponse<Void>> handleBusinessException(BusinessException e) {

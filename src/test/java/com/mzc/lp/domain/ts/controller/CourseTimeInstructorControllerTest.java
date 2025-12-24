@@ -167,7 +167,7 @@ class CourseTimeInstructorControllerTest extends TenantTestSupport {
             CourseTime courseTime = createTestCourseTime();
             String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
 
-            AssignInstructorRequest request = new AssignInstructorRequest(instructor.getId(), InstructorRole.MAIN);
+            AssignInstructorRequest request = new AssignInstructorRequest(instructor.getId(), InstructorRole.MAIN, null);
 
             // when & then
             mockMvc.perform(post("/api/times/{timeId}/instructors", courseTime.getId())
@@ -200,7 +200,7 @@ class CourseTimeInstructorControllerTest extends TenantTestSupport {
             courseTimeRepository.save(courseTime);
             String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
 
-            AssignInstructorRequest request = new AssignInstructorRequest(instructor.getId(), InstructorRole.SUB);
+            AssignInstructorRequest request = new AssignInstructorRequest(instructor.getId(), InstructorRole.SUB, null);
 
             // when & then
             mockMvc.perform(post("/api/times/{timeId}/instructors", courseTime.getId())
@@ -222,7 +222,7 @@ class CourseTimeInstructorControllerTest extends TenantTestSupport {
             CourseTime courseTime = createOngoingCourseTime();
             String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
 
-            AssignInstructorRequest request = new AssignInstructorRequest(instructor.getId(), InstructorRole.ASSISTANT);
+            AssignInstructorRequest request = new AssignInstructorRequest(instructor.getId(), InstructorRole.ASSISTANT, null);
 
             // when & then
             mockMvc.perform(post("/api/times/{timeId}/instructors", courseTime.getId())
@@ -244,7 +244,7 @@ class CourseTimeInstructorControllerTest extends TenantTestSupport {
             CourseTime courseTime = createClosedCourseTime();
             String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
 
-            AssignInstructorRequest request = new AssignInstructorRequest(instructor.getId(), InstructorRole.MAIN);
+            AssignInstructorRequest request = new AssignInstructorRequest(instructor.getId(), InstructorRole.MAIN, null);
 
             // when & then
             mockMvc.perform(post("/api/times/{timeId}/instructors", courseTime.getId())
@@ -268,7 +268,7 @@ class CourseTimeInstructorControllerTest extends TenantTestSupport {
             courseTimeRepository.save(courseTime);
             String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
 
-            AssignInstructorRequest request = new AssignInstructorRequest(instructor.getId(), InstructorRole.MAIN);
+            AssignInstructorRequest request = new AssignInstructorRequest(instructor.getId(), InstructorRole.MAIN, null);
 
             // when & then
             mockMvc.perform(post("/api/times/{timeId}/instructors", courseTime.getId())
@@ -288,7 +288,7 @@ class CourseTimeInstructorControllerTest extends TenantTestSupport {
             createOperatorUser();
             String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
 
-            AssignInstructorRequest request = new AssignInstructorRequest(100L, InstructorRole.MAIN);
+            AssignInstructorRequest request = new AssignInstructorRequest(100L, InstructorRole.MAIN, null);
 
             // when & then
             mockMvc.perform(post("/api/times/{timeId}/instructors", 99999L)
@@ -309,7 +309,7 @@ class CourseTimeInstructorControllerTest extends TenantTestSupport {
             CourseTime courseTime = createTestCourseTime();
             String accessToken = loginAndGetAccessToken("user@example.com", "Password123!");
 
-            AssignInstructorRequest request = new AssignInstructorRequest(instructor.getId(), InstructorRole.MAIN);
+            AssignInstructorRequest request = new AssignInstructorRequest(instructor.getId(), InstructorRole.MAIN, null);
 
             // when & then
             mockMvc.perform(post("/api/times/{timeId}/instructors", courseTime.getId())
@@ -332,7 +332,7 @@ class CourseTimeInstructorControllerTest extends TenantTestSupport {
             // 먼저 강사 배정
             createInstructorAssignment(instructor.getId(), courseTime.getId(), InstructorRole.SUB, operator.getId());
 
-            AssignInstructorRequest request = new AssignInstructorRequest(instructor.getId(), InstructorRole.ASSISTANT);
+            AssignInstructorRequest request = new AssignInstructorRequest(instructor.getId(), InstructorRole.ASSISTANT, null);
 
             // when & then
             mockMvc.perform(post("/api/times/{timeId}/instructors", courseTime.getId())
@@ -358,7 +358,7 @@ class CourseTimeInstructorControllerTest extends TenantTestSupport {
             // 먼저 MAIN 강사 배정
             createInstructorAssignment(instructor1.getId(), courseTime.getId(), InstructorRole.MAIN, operator.getId());
 
-            AssignInstructorRequest request = new AssignInstructorRequest(instructor2.getId(), InstructorRole.MAIN);
+            AssignInstructorRequest request = new AssignInstructorRequest(instructor2.getId(), InstructorRole.MAIN, null);
 
             // when & then
             mockMvc.perform(post("/api/times/{timeId}/instructors", courseTime.getId())

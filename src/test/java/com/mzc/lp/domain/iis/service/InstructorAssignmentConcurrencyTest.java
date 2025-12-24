@@ -114,7 +114,7 @@ class InstructorAssignmentConcurrencyTest extends TenantTestSupport {
         for (int i = 0; i < threadCount; i++) {
             executorService.submit(() -> {
                 try {
-                    AssignInstructorRequest request = new AssignInstructorRequest(instructorId, InstructorRole.SUB);
+                    AssignInstructorRequest request = new AssignInstructorRequest(instructorId, InstructorRole.SUB, null);
                     assignmentService.assignInstructor(timeId, request, 1L);
                     successCount.incrementAndGet();
                 } catch (Exception e) {
@@ -164,7 +164,7 @@ class InstructorAssignmentConcurrencyTest extends TenantTestSupport {
             final Long instructorId = instructors.get(i).getId();
             executorService.submit(() -> {
                 try {
-                    AssignInstructorRequest request = new AssignInstructorRequest(instructorId, InstructorRole.MAIN);
+                    AssignInstructorRequest request = new AssignInstructorRequest(instructorId, InstructorRole.MAIN, null);
                     assignmentService.assignInstructor(timeId, request, 1L);
                     successCount.incrementAndGet();
                 } catch (Exception e) {
