@@ -9,6 +9,8 @@ import com.mzc.lp.domain.iis.dto.request.ReplaceInstructorRequest;
 import com.mzc.lp.domain.iis.dto.request.UpdateRoleRequest;
 import com.mzc.lp.domain.iis.dto.response.AssignmentHistoryResponse;
 import com.mzc.lp.domain.iis.dto.response.InstructorAssignmentResponse;
+import com.mzc.lp.domain.iis.dto.response.InstructorStatResponse;
+import com.mzc.lp.domain.iis.dto.response.InstructorStatisticsResponse;
 import com.mzc.lp.domain.iis.constant.AssignmentAction;
 import com.mzc.lp.domain.iis.entity.AssignmentHistory;
 import com.mzc.lp.domain.iis.entity.InstructorAssignment;
@@ -39,6 +41,7 @@ import org.springframework.data.domain.Pageable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -554,6 +557,222 @@ class InstructorAssignmentServiceTest extends TenantTestSupport {
             // when & then
             assertThatThrownBy(() -> assignmentService.getAssignmentHistories(999L, null))
                     .isInstanceOf(InstructorAssignmentNotFoundException.class);
+        }
+    }
+
+    // ==================== TS 모듈 연동 테스트 ====================
+
+    @Nested
+    @DisplayName("existsMainInstructor - MAIN 강사 존재 확인")
+    class ExistsMainInstructor {
+
+        @Test
+        @DisplayName("성공 - MAIN 강사 존재")
+        void existsMainInstructor_success_exists() {
+            // given
+            given(assignmentRepository.existsActiveMainInstructor(TIME_ID, TENANT_ID)).willReturn(true);
+
+            // when
+            boolean result = assignmentService.existsMainInstructor(TIME_ID);
+
+            // then
+            assertThat(result).isTrue();
+        }
+
+        @Test
+        @DisplayName("성공 - MAIN 강사 없음")
+        void existsMainInstructor_success_notExists() {
+            // given
+            given(assignmentRepository.existsActiveMainInstructor(TIME_ID, TENANT_ID)).willReturn(false);
+
+            // when
+            boolean result = assignmentService.existsMainInstructor(TIME_ID);
+
+            // then
+            assertThat(result).isFalse();
+        }
+    }
+
+    @Nested
+    @DisplayName("getInstructorsByTimeIds - 여러 차수의 강사 조회")
+    class GetInstructorsByTimeIds {
+
+        @Test
+        @DisplayName("성공 - 여러 차수 강사 조회")
+        void getInstructorsByTimeIds_success() {
+            // given
+            List<Long> timeIds = List.of(100L, 200L);
+            List<InstructorAssignment> assignments = List.of(
+                    createTestAssignment(1L, 10L, 100L, InstructorRole.MAIN),
+                    createTestAssignment(2L, 20L, 100L, InstructorRole.SUB),
+                    createTestAssignment(3L, 30L, 200L, InstructorRole.MAIN)
+            );
+            List<User> users = List.of(
+                    createTestUser(10L, "강사1", "instructor1@example.com"),
+                    createTestUser(20L, "강사2", "instructor2@example.com"),
+                    createTestUser(30L, "강사3", "instructor3@example.com")
+            );
+
+            given(assignmentRepository.findActiveByTimeKeyIn(timeIds, TENANT_ID)).willReturn(assignments);
+            given(userRepository.findAllById(List.of(10L, 20L, 30L))).willReturn(users);
+
+            // when
+            Map<Long, List<InstructorAssignmentResponse>> result = assignmentService.getInstructorsByTimeIds(timeIds);
+
+            // then
+            assertThat(result).hasSize(2);
+            assertThat(result.get(100L)).hasSize(2);
+            assertThat(result.get(200L)).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("성공 - 빈 목록")
+        void getInstructorsByTimeIds_success_empty() {
+            // given
+            List<Long> timeIds = List.of();
+
+            // when
+            Map<Long, List<InstructorAssignmentResponse>> result = assignmentService.getInstructorsByTimeIds(timeIds);
+
+            // then
+            assertThat(result).isEmpty();
+        }
+    }
+
+    // ==================== 통계 API 테스트 ====================
+
+    @Nested
+    @DisplayName("getStatistics - 전체 통계 조회")
+    class GetStatistics {
+
+        @Test
+        @DisplayName("성공 - 전체 통계 조회")
+        void getStatistics_success() {
+            // given
+            given(assignmentRepository.countByTenantId(TENANT_ID)).willReturn(50L);
+            given(assignmentRepository.countByTenantIdAndStatus(TENANT_ID, AssignmentStatus.ACTIVE)).willReturn(35L);
+
+            List<Object[]> roleStats = List.of(
+                    new Object[]{InstructorRole.MAIN, 20L},
+                    new Object[]{InstructorRole.SUB, 15L}
+            );
+            given(assignmentRepository.countGroupByRole(TENANT_ID)).willReturn(roleStats);
+
+            List<Object[]> statusStats = List.of(
+                    new Object[]{AssignmentStatus.ACTIVE, 35L},
+                    new Object[]{AssignmentStatus.CANCELLED, 10L},
+                    new Object[]{AssignmentStatus.REPLACED, 5L}
+            );
+            given(assignmentRepository.countGroupByStatus(TENANT_ID)).willReturn(statusStats);
+
+            List<Object[]> instructorStats = List.of(
+                    new Object[]{10L, 5L, 3L, 2L},
+                    new Object[]{20L, 3L, 1L, 2L}
+            );
+            given(assignmentRepository.getInstructorStatistics(TENANT_ID)).willReturn(instructorStats);
+
+            List<User> users = List.of(
+                    createTestUser(10L, "강사1", "instructor1@example.com"),
+                    createTestUser(20L, "강사2", "instructor2@example.com")
+            );
+            given(userRepository.findAllById(List.of(10L, 20L))).willReturn(users);
+
+            // when
+            InstructorStatisticsResponse result = assignmentService.getStatistics();
+
+            // then
+            assertThat(result.totalAssignments()).isEqualTo(50L);
+            assertThat(result.activeAssignments()).isEqualTo(35L);
+            assertThat(result.byRole().get(InstructorRole.MAIN)).isEqualTo(20L);
+            assertThat(result.byRole().get(InstructorRole.SUB)).isEqualTo(15L);
+            assertThat(result.byStatus().get(AssignmentStatus.ACTIVE)).isEqualTo(35L);
+            assertThat(result.instructorStats()).hasSize(2);
+        }
+
+        @Test
+        @DisplayName("성공 - 데이터 없음")
+        void getStatistics_success_noData() {
+            // given
+            given(assignmentRepository.countByTenantId(TENANT_ID)).willReturn(0L);
+            given(assignmentRepository.countByTenantIdAndStatus(TENANT_ID, AssignmentStatus.ACTIVE)).willReturn(0L);
+            given(assignmentRepository.countGroupByRole(TENANT_ID)).willReturn(List.of());
+            given(assignmentRepository.countGroupByStatus(TENANT_ID)).willReturn(List.of());
+            given(assignmentRepository.getInstructorStatistics(TENANT_ID)).willReturn(List.of());
+            given(userRepository.findAllById(List.of())).willReturn(List.of());
+
+            // when
+            InstructorStatisticsResponse result = assignmentService.getStatistics();
+
+            // then
+            assertThat(result.totalAssignments()).isEqualTo(0L);
+            assertThat(result.activeAssignments()).isEqualTo(0L);
+            assertThat(result.byRole().get(InstructorRole.MAIN)).isEqualTo(0L);
+            assertThat(result.instructorStats()).isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("getInstructorStatistics - 강사 개인 통계 조회")
+    class GetInstructorStatistics {
+
+        @Test
+        @DisplayName("성공 - 강사 개인 통계 조회")
+        void getInstructorStatistics_success() {
+            // given
+            User user = createTestUser(USER_ID, "강사", "instructor@example.com");
+            Object[] stats = new Object[]{5L, 3L, 2L};
+
+            given(userRepository.findById(USER_ID)).willReturn(Optional.of(user));
+            given(assignmentRepository.getInstructorStatisticsByUserId(TENANT_ID, USER_ID)).willReturn(List.<Object[]>of(stats));
+
+            // when
+            InstructorStatResponse result = assignmentService.getInstructorStatistics(USER_ID);
+
+            // then
+            assertThat(result.userId()).isEqualTo(USER_ID);
+            assertThat(result.userName()).isEqualTo("강사");
+            assertThat(result.totalCount()).isEqualTo(5L);
+            assertThat(result.mainCount()).isEqualTo(3L);
+            assertThat(result.subCount()).isEqualTo(2L);
+        }
+
+        @Test
+        @DisplayName("성공 - 배정 없는 강사")
+        void getInstructorStatistics_success_noAssignment() {
+            // given
+            User user = createTestUser(USER_ID, "강사", "instructor@example.com");
+            Object[] stats = new Object[]{null, null, null};
+
+            given(userRepository.findById(USER_ID)).willReturn(Optional.of(user));
+            given(assignmentRepository.getInstructorStatisticsByUserId(TENANT_ID, USER_ID)).willReturn(List.<Object[]>of(stats));
+
+            // when
+            InstructorStatResponse result = assignmentService.getInstructorStatistics(USER_ID);
+
+            // then
+            assertThat(result.userId()).isEqualTo(USER_ID);
+            assertThat(result.userName()).isEqualTo("강사");
+            assertThat(result.totalCount()).isEqualTo(0L);
+            assertThat(result.mainCount()).isEqualTo(0L);
+            assertThat(result.subCount()).isEqualTo(0L);
+        }
+
+        @Test
+        @DisplayName("성공 - 존재하지 않는 사용자")
+        void getInstructorStatistics_success_userNotFound() {
+            // given
+            Object[] stats = new Object[]{null, null, null};
+
+            given(userRepository.findById(USER_ID)).willReturn(Optional.empty());
+            given(assignmentRepository.getInstructorStatisticsByUserId(TENANT_ID, USER_ID)).willReturn(List.<Object[]>of(stats));
+
+            // when
+            InstructorStatResponse result = assignmentService.getInstructorStatistics(USER_ID);
+
+            // then
+            assertThat(result.userId()).isEqualTo(USER_ID);
+            assertThat(result.userName()).isNull();
+            assertThat(result.totalCount()).isEqualTo(0L);
         }
     }
 }
