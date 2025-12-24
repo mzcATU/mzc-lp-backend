@@ -143,6 +143,10 @@ class CourseTimeControllerTest extends TenantTestSupport {
     }
 
     private CourseTime createTestCourseTime() {
+        return createTestCourseTime(1L);
+    }
+
+    private CourseTime createTestCourseTime(Long createdBy) {
         CourseTime courseTime = CourseTime.create(
                 "테스트 차수",
                 DeliveryType.ONLINE,
@@ -158,7 +162,7 @@ class CourseTimeControllerTest extends TenantTestSupport {
                 false,
                 null,
                 true,
-                1L
+                createdBy
         );
         return courseTimeRepository.save(courseTime);
     }
@@ -485,8 +489,8 @@ class CourseTimeControllerTest extends TenantTestSupport {
         @DisplayName("성공 - DRAFT 상태 차수 삭제")
         void deleteCourseTime_success() throws Exception {
             // given
-            createOperatorUser();
-            CourseTime courseTime = createTestCourseTime();
+            User operator = createOperatorUser();
+            CourseTime courseTime = createTestCourseTime(operator.getId());
             String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
 
             // when & then
@@ -505,8 +509,8 @@ class CourseTimeControllerTest extends TenantTestSupport {
         @DisplayName("실패 - RECRUITING 상태 차수 삭제")
         void deleteCourseTime_fail_recruiting() throws Exception {
             // given
-            createOperatorUser();
-            CourseTime courseTime = createTestCourseTime();
+            User operator = createOperatorUser();
+            CourseTime courseTime = createTestCourseTime(operator.getId());
             courseTime.open();
             courseTimeRepository.save(courseTime);
             String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");

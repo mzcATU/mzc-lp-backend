@@ -114,7 +114,11 @@ class InstructorAssignmentControllerTest extends TenantTestSupport {
     }
 
     private InstructorAssignment createAssignment(Long userId, Long timeId, InstructorRole role) {
-        return assignmentRepository.save(InstructorAssignment.create(userId, timeId, role, 1L));
+        return createAssignment(userId, timeId, role, 1L);
+    }
+
+    private InstructorAssignment createAssignment(Long userId, Long timeId, InstructorRole role, Long assignedBy) {
+        return assignmentRepository.save(InstructorAssignment.create(userId, timeId, role, assignedBy));
     }
 
     private CourseTime createCourseTime() {
@@ -256,11 +260,11 @@ class InstructorAssignmentControllerTest extends TenantTestSupport {
         @DisplayName("성공 - 배정 취소")
         void cancelAssignment_success() throws Exception {
             // given
-            createOperatorUser();
+            User operator = createOperatorUser();
             User instructor = createInstructorUser();
             String token = loginAndGetAccessToken("operator@example.com", "Password123!");
 
-            InstructorAssignment assignment = createAssignment(instructor.getId(), TIME_ID, InstructorRole.MAIN);
+            InstructorAssignment assignment = createAssignment(instructor.getId(), TIME_ID, InstructorRole.MAIN, operator.getId());
 
             CancelAssignmentRequest request = new CancelAssignmentRequest("취소 사유");
 

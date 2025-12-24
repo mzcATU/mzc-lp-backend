@@ -72,9 +72,11 @@ public class CourseTimeController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('OPERATOR', 'TENANT_ADMIN')")
     public ResponseEntity<Void> deleteCourseTime(
-            @PathVariable Long id
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserPrincipal principal
     ) {
-        courseTimeService.deleteCourseTime(id);
+        boolean isTenantAdmin = "TENANT_ADMIN".equals(principal.role());
+        courseTimeService.deleteCourseTime(id, principal.id(), isTenantAdmin);
         return ResponseEntity.noContent().build();
     }
 
