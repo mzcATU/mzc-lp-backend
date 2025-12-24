@@ -37,6 +37,9 @@ public class Content extends TenantEntity {
     @Column(name = "original_file_name", length = 500)
     private String originalFileName;
 
+    @Column(name = "uploaded_file_name", length = 500)
+    private String uploadedFileName;
+
     @Column(name = "stored_file_name", length = 255)
     private String storedFileName;
 
@@ -80,6 +83,7 @@ public class Content extends TenantEntity {
         content.createdBy = createdBy;
         content.currentVersion = 1;
         content.originalFileName = originalFileName;
+        content.uploadedFileName = originalFileName;  // 원래 업로드한 파일명 보존
         content.storedFileName = storedFileName;
         content.contentType = contentType;
         content.fileSize = fileSize;
@@ -143,10 +147,10 @@ public class Content extends TenantEntity {
         }
     }
 
-    // 비즈니스 메서드 - 파일 교체
-    public void replaceFile(String originalFileName, String storedFileName,
+    // 비즈니스 메서드 - 파일 교체 (콘텐츠 이름은 유지, 파일 정보만 교체)
+    public void replaceFile(String uploadedFileName, String storedFileName,
                            Long fileSize, String filePath) {
-        this.originalFileName = originalFileName;
+        this.uploadedFileName = uploadedFileName;
         this.storedFileName = storedFileName;
         this.fileSize = fileSize;
         this.filePath = filePath;

@@ -32,6 +32,9 @@ public class ContentVersion extends TenantEntity {
     @Column(name = "original_file_name", length = 500)
     private String originalFileName;
 
+    @Column(name = "uploaded_file_name", length = 500)
+    private String uploadedFileName;
+
     @Column(name = "stored_file_name", length = 255)
     private String storedFileName;
 
@@ -76,6 +79,7 @@ public class ContentVersion extends TenantEntity {
         version.changeType = changeType;
         // Content 현재 상태 스냅샷
         version.originalFileName = content.getOriginalFileName();
+        version.uploadedFileName = content.getUploadedFileName();
         version.storedFileName = content.getStoredFileName();
         version.contentType = content.getContentType();
         version.fileSize = content.getFileSize();

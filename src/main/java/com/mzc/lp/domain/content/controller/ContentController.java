@@ -136,7 +136,7 @@ public class ContentController {
                 .body(downloadInfo.resource());
     }
 
-    @PatchMapping("/{contentId}")
+    @PutMapping("/{contentId}")
     @PreAuthorize("hasAnyRole('DESIGNER', 'OPERATOR', 'TENANT_ADMIN')")
     public ResponseEntity<ApiResponse<ContentResponse>> updateContent(
             @PathVariable Long contentId,
