@@ -112,6 +112,9 @@ class CourseRelationControllerTest extends TenantTestSupport {
                 CourseType.ONLINE,
                 10,
                 1L,
+                null,
+                null,
+                null,
                 null
         );
         return courseRepository.save(course);

@@ -8,6 +8,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,6 +45,17 @@ public class Course extends TenantEntity {
     @Column
     private Long categoryId;
 
+    @Column
+    private LocalDate startDate;
+
+    @Column
+    private LocalDate endDate;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "cm_course_tags", joinColumns = @JoinColumn(name = "course_id"))
+    @Column(name = "tag", length = 100)
+    private List<String> tags = new ArrayList<>();
+
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CourseItem> items = new ArrayList<>();
 
@@ -56,7 +68,8 @@ public class Course extends TenantEntity {
 
     public static Course create(String title, String description, CourseLevel level,
                                 CourseType type, Integer estimatedHours,
-                                Long categoryId, String thumbnailUrl) {
+                                Long categoryId, String thumbnailUrl,
+                                LocalDate startDate, LocalDate endDate, List<String> tags) {
         Course course = new Course();
         course.title = title;
         course.description = description;
@@ -65,6 +78,9 @@ public class Course extends TenantEntity {
         course.estimatedHours = estimatedHours;
         course.categoryId = categoryId;
         course.thumbnailUrl = thumbnailUrl;
+        course.startDate = startDate;
+        course.endDate = endDate;
+        course.tags = tags != null ? new ArrayList<>(tags) : new ArrayList<>();
         return course;
     }
 
@@ -98,9 +114,22 @@ public class Course extends TenantEntity {
         this.categoryId = categoryId;
     }
 
+    public void updateStartDate(LocalDate startDate) {
+        this.startDate = startDate;
+    }
+
+    public void updateEndDate(LocalDate endDate) {
+        this.endDate = endDate;
+    }
+
+    public void updateTags(List<String> tags) {
+        this.tags = tags != null ? new ArrayList<>(tags) : new ArrayList<>();
+    }
+
     public void update(String title, String description, CourseLevel level,
                        CourseType type, Integer estimatedHours,
-                       Long categoryId, String thumbnailUrl) {
+                       Long categoryId, String thumbnailUrl,
+                       LocalDate startDate, LocalDate endDate, List<String> tags) {
         if (title != null) {
             updateTitle(title);
         }
@@ -110,6 +139,9 @@ public class Course extends TenantEntity {
         this.estimatedHours = estimatedHours;
         this.categoryId = categoryId;
         this.thumbnailUrl = thumbnailUrl;
+        this.startDate = startDate;
+        this.endDate = endDate;
+        this.tags = tags != null ? new ArrayList<>(tags) : new ArrayList<>();
     }
 
     // ===== 연관관계 편의 메서드 =====
