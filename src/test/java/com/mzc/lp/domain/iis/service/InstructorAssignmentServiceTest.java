@@ -9,6 +9,7 @@ import com.mzc.lp.domain.iis.dto.request.ReplaceInstructorRequest;
 import com.mzc.lp.domain.iis.dto.request.UpdateRoleRequest;
 import com.mzc.lp.domain.iis.dto.response.AssignmentHistoryResponse;
 import com.mzc.lp.domain.iis.dto.response.InstructorAssignmentResponse;
+import com.mzc.lp.domain.iis.dto.response.InstructorDetailStatResponse;
 import com.mzc.lp.domain.iis.dto.response.InstructorStatResponse;
 import com.mzc.lp.domain.iis.dto.response.InstructorStatisticsResponse;
 import com.mzc.lp.domain.iis.constant.AssignmentAction;
@@ -20,6 +21,7 @@ import com.mzc.lp.domain.iis.exception.InstructorAssignmentNotFoundException;
 import com.mzc.lp.domain.iis.exception.MainInstructorAlreadyExistsException;
 import com.mzc.lp.domain.iis.repository.AssignmentHistoryRepository;
 import com.mzc.lp.domain.iis.repository.InstructorAssignmentRepository;
+import com.mzc.lp.domain.student.service.EnrollmentStatsService;
 import com.mzc.lp.domain.ts.constant.DeliveryType;
 import com.mzc.lp.domain.ts.constant.EnrollmentMethod;
 import com.mzc.lp.domain.ts.entity.CourseTime;
@@ -68,6 +70,9 @@ class InstructorAssignmentServiceTest extends TenantTestSupport {
 
     @Mock
     private CourseTimeRepository courseTimeRepository;
+
+    @Mock
+    private EnrollmentStatsService enrollmentStatsService;
 
     private static final Long TENANT_ID = 1L;
     private static final Long TIME_ID = 100L;
@@ -773,6 +778,152 @@ class InstructorAssignmentServiceTest extends TenantTestSupport {
             assertThat(result.userId()).isEqualTo(USER_ID);
             assertThat(result.userName()).isNull();
             assertThat(result.totalCount()).isEqualTo(0L);
+        }
+    }
+
+    // ==================== 기간 필터링 통계 테스트 ====================
+
+    @Nested
+    @DisplayName("getStatistics (기간 필터링) - 전체 통계 조회")
+    class GetStatisticsWithDateRange {
+
+        @Test
+        @DisplayName("성공 - 기간 필터링 통계 조회")
+        void getStatistics_withDateRange_success() {
+            // given
+            LocalDate startDate = LocalDate.of(2024, 1, 1);
+            LocalDate endDate = LocalDate.of(2024, 12, 31);
+
+            given(assignmentRepository.countByTenantIdAndDateRange(TENANT_ID, startDate, endDate)).willReturn(30L);
+            given(assignmentRepository.countByTenantIdAndStatusAndDateRange(TENANT_ID, AssignmentStatus.ACTIVE, startDate, endDate)).willReturn(20L);
+
+            List<Object[]> roleStats = List.of(
+                    new Object[]{InstructorRole.MAIN, 15L},
+                    new Object[]{InstructorRole.SUB, 15L}
+            );
+            given(assignmentRepository.countGroupByRoleAndDateRange(TENANT_ID, startDate, endDate)).willReturn(roleStats);
+
+            List<Object[]> statusStats = List.of(
+                    new Object[]{AssignmentStatus.ACTIVE, 20L},
+                    new Object[]{AssignmentStatus.CANCELLED, 5L},
+                    new Object[]{AssignmentStatus.REPLACED, 5L}
+            );
+            given(assignmentRepository.countGroupByStatusAndDateRange(TENANT_ID, startDate, endDate)).willReturn(statusStats);
+
+            Object[] instructorStat = new Object[]{10L, 3L, 2L, 1L};
+            List<Object[]> instructorStats = List.<Object[]>of(instructorStat);
+            given(assignmentRepository.getInstructorStatisticsWithDateRange(TENANT_ID, startDate, endDate)).willReturn(instructorStats);
+
+            List<User> users = List.of(createTestUser(10L, "강사1", "instructor1@example.com"));
+            given(userRepository.findAllById(List.of(10L))).willReturn(users);
+
+            // when
+            InstructorStatisticsResponse result = assignmentService.getStatistics(startDate, endDate);
+
+            // then
+            assertThat(result.totalAssignments()).isEqualTo(30L);
+            assertThat(result.activeAssignments()).isEqualTo(20L);
+            assertThat(result.byRole().get(InstructorRole.MAIN)).isEqualTo(15L);
+            assertThat(result.instructorStats()).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("성공 - 기간 미지정시 전체 조회")
+        void getStatistics_withoutDateRange_success() {
+            // given
+            given(assignmentRepository.countByTenantId(TENANT_ID)).willReturn(50L);
+            given(assignmentRepository.countByTenantIdAndStatus(TENANT_ID, AssignmentStatus.ACTIVE)).willReturn(35L);
+            given(assignmentRepository.countGroupByRole(TENANT_ID)).willReturn(List.of());
+            given(assignmentRepository.countGroupByStatus(TENANT_ID)).willReturn(List.of());
+            given(assignmentRepository.getInstructorStatistics(TENANT_ID)).willReturn(List.of());
+            given(userRepository.findAllById(List.of())).willReturn(List.of());
+
+            // when
+            InstructorStatisticsResponse result = assignmentService.getStatistics(null, null);
+
+            // then
+            assertThat(result.totalAssignments()).isEqualTo(50L);
+            assertThat(result.activeAssignments()).isEqualTo(35L);
+        }
+    }
+
+    @Nested
+    @DisplayName("getInstructorDetailStatistics - 강사 상세 통계 조회")
+    class GetInstructorDetailStatistics {
+
+        @Test
+        @DisplayName("성공 - 강사 상세 통계 조회 (차수별 통계 포함)")
+        void getInstructorDetailStatistics_success() {
+            // given
+            User user = createTestUser(USER_ID, "강사", "instructor@example.com");
+            Object[] stats = new Object[]{5L, 3L, 2L};
+
+            given(userRepository.findById(USER_ID)).willReturn(Optional.of(user));
+            given(assignmentRepository.getInstructorStatisticsByUserId(TENANT_ID, USER_ID)).willReturn(List.<Object[]>of(stats));
+
+            // 배정 목록
+            InstructorAssignment assignment = createTestAssignment(1L, USER_ID, TIME_ID, InstructorRole.MAIN);
+            given(assignmentRepository.findActiveByUserKey(TENANT_ID, USER_ID)).willReturn(List.of(assignment));
+
+            // CourseTime 정보
+            // courseTimeRepository.findAllById 모킹 필요
+
+            // when
+            InstructorDetailStatResponse result = assignmentService.getInstructorDetailStatistics(USER_ID, null, null);
+
+            // then
+            assertThat(result.userId()).isEqualTo(USER_ID);
+            assertThat(result.userName()).isEqualTo("강사");
+            assertThat(result.totalCount()).isEqualTo(5L);
+            assertThat(result.mainCount()).isEqualTo(3L);
+            assertThat(result.subCount()).isEqualTo(2L);
+        }
+
+        @Test
+        @DisplayName("성공 - 기간 필터링 적용")
+        void getInstructorDetailStatistics_withDateRange_success() {
+            // given
+            LocalDate startDate = LocalDate.of(2024, 1, 1);
+            LocalDate endDate = LocalDate.of(2024, 12, 31);
+
+            User user = createTestUser(USER_ID, "강사", "instructor@example.com");
+            Object[] stats = new Object[]{3L, 2L, 1L};
+
+            given(userRepository.findById(USER_ID)).willReturn(Optional.of(user));
+            given(assignmentRepository.getInstructorStatisticsByUserIdAndDateRange(TENANT_ID, USER_ID, startDate, endDate))
+                    .willReturn(List.<Object[]>of(stats));
+            given(assignmentRepository.findActiveByUserKeyAndDateRange(TENANT_ID, USER_ID, startDate, endDate))
+                    .willReturn(List.of());
+
+            // when
+            InstructorDetailStatResponse result = assignmentService.getInstructorDetailStatistics(USER_ID, startDate, endDate);
+
+            // then
+            assertThat(result.userId()).isEqualTo(USER_ID);
+            assertThat(result.totalCount()).isEqualTo(3L);
+            assertThat(result.courseTimeStats()).isEmpty();
+        }
+
+        @Test
+        @DisplayName("성공 - 배정 없는 강사")
+        void getInstructorDetailStatistics_noAssignment_success() {
+            // given
+            User user = createTestUser(USER_ID, "강사", "instructor@example.com");
+            Object[] stats = new Object[]{null, null, null};
+
+            given(userRepository.findById(USER_ID)).willReturn(Optional.of(user));
+            given(assignmentRepository.getInstructorStatisticsByUserId(TENANT_ID, USER_ID)).willReturn(List.<Object[]>of(stats));
+            given(assignmentRepository.findActiveByUserKey(TENANT_ID, USER_ID)).willReturn(List.of());
+
+            // when
+            InstructorDetailStatResponse result = assignmentService.getInstructorDetailStatistics(USER_ID, null, null);
+
+            // then
+            assertThat(result.userId()).isEqualTo(USER_ID);
+            assertThat(result.totalCount()).isEqualTo(0L);
+            assertThat(result.mainCount()).isEqualTo(0L);
+            assertThat(result.subCount()).isEqualTo(0L);
+            assertThat(result.courseTimeStats()).isEmpty();
         }
     }
 }
