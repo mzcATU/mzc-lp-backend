@@ -360,7 +360,8 @@ public class CourseTimeServiceImpl implements CourseTimeService {
                 request.enrollStartDate(),
                 request.enrollEndDate(),
                 request.classStartDate(),
-                request.classEndDate()
+                request.classEndDate(),
+                true
         );
     }
 
@@ -370,19 +371,34 @@ public class CourseTimeServiceImpl implements CourseTimeService {
             LocalDate classStartDate,
             LocalDate classEndDate
     ) {
-        // [R09] enroll_end_date <= class_end_date
-        if (enrollEndDate.isAfter(classEndDate)) {
-            throw new InvalidDateRangeException("모집 종료일은 학습 종료일 이전이어야 합니다");
+        validateDateRange(enrollStartDate, enrollEndDate, classStartDate, classEndDate, false);
+    }
+
+    private void validateDateRange(
+            LocalDate enrollStartDate,
+            LocalDate enrollEndDate,
+            LocalDate classStartDate,
+            LocalDate classEndDate,
+            boolean isNewCreation
+    ) {
+        // [R-DATE-04] 모집 시작일 >= 오늘 (신규 생성 시)
+        if (isNewCreation && enrollStartDate.isBefore(LocalDate.now())) {
+            throw new InvalidDateRangeException("모집 시작일은 오늘 이후여야 합니다");
         }
 
-        // 모집 시작일 <= 모집 종료일
+        // [R-DATE-01] 모집 시작일 <= 모집 종료일
         if (enrollStartDate.isAfter(enrollEndDate)) {
             throw new InvalidDateRangeException("모집 시작일은 모집 종료일 이전이어야 합니다");
         }
 
-        // 학습 시작일 <= 학습 종료일
+        // [R-DATE-02] 학습 시작일 <= 학습 종료일
         if (classStartDate.isAfter(classEndDate)) {
             throw new InvalidDateRangeException("학습 시작일은 학습 종료일 이전이어야 합니다");
+        }
+
+        // [R-DATE-03] 모집 종료일 <= 학습 시작일
+        if (enrollEndDate.isAfter(classStartDate)) {
+            throw new InvalidDateRangeException("모집 종료일은 학습 시작일 이전이어야 합니다");
         }
     }
 
