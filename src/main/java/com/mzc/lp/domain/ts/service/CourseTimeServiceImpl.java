@@ -124,24 +124,22 @@ public class CourseTimeServiceImpl implements CourseTimeService {
     public Page<CourseTimeResponse> getCourseTimes(CourseTimeStatus status, Long cmCourseId, Pageable pageable) {
         log.debug("Getting course times: status={}, cmCourseId={}", status, cmCourseId);
 
+        Long tenantId = TenantContext.getCurrentTenantId();
         Page<CourseTime> courseTimePage;
 
-        if (cmCourseId != null) {
-            List<CourseTime> filtered = courseTimeRepository
-                    .findByCmCourseIdAndTenantId(cmCourseId, TenantContext.getCurrentTenantId())
-                    .stream()
-                    .filter(ct -> status == null || ct.getStatus() == status)
-                    .toList();
-            courseTimePage = new org.springframework.data.domain.PageImpl<>(filtered, pageable, filtered.size());
+        if (cmCourseId != null && status != null) {
+            courseTimePage = courseTimeRepository.findByCmCourseIdAndTenantIdAndStatus(
+                    cmCourseId, tenantId, status, pageable);
+        } else if (cmCourseId != null) {
+            courseTimePage = courseTimeRepository.findByCmCourseIdAndTenantId(
+                    cmCourseId, tenantId, pageable);
         } else if (status != null) {
             courseTimePage = courseTimeRepository.findByTenantIdAndStatus(
-                    TenantContext.getCurrentTenantId(), status, pageable);
+                    tenantId, status, pageable);
         } else {
-            courseTimePage = courseTimeRepository.findByTenantId(
-                    TenantContext.getCurrentTenantId(), pageable);
+            courseTimePage = courseTimeRepository.findByTenantId(tenantId, pageable);
         }
 
-        // 벌크 조회로 N+1 방지
         List<Long> timeIds = courseTimePage.getContent().stream()
                 .map(CourseTime::getId)
                 .toList();
@@ -362,7 +360,8 @@ public class CourseTimeServiceImpl implements CourseTimeService {
                 request.enrollStartDate(),
                 request.enrollEndDate(),
                 request.classStartDate(),
-                request.classEndDate()
+                request.classEndDate(),
+                true
         );
     }
 
@@ -372,19 +371,34 @@ public class CourseTimeServiceImpl implements CourseTimeService {
             LocalDate classStartDate,
             LocalDate classEndDate
     ) {
-        // [R09] enroll_end_date <= class_end_date
-        if (enrollEndDate.isAfter(classEndDate)) {
-            throw new InvalidDateRangeException("모집 종료일은 학습 종료일 이전이어야 합니다");
+        validateDateRange(enrollStartDate, enrollEndDate, classStartDate, classEndDate, false);
+    }
+
+    private void validateDateRange(
+            LocalDate enrollStartDate,
+            LocalDate enrollEndDate,
+            LocalDate classStartDate,
+            LocalDate classEndDate,
+            boolean isNewCreation
+    ) {
+        // [R-DATE-04] 모집 시작일 >= 오늘 (신규 생성 시)
+        if (isNewCreation && enrollStartDate.isBefore(LocalDate.now())) {
+            throw new InvalidDateRangeException("모집 시작일은 오늘 이후여야 합니다");
         }
 
-        // 모집 시작일 <= 모집 종료일
+        // [R-DATE-01] 모집 시작일 <= 모집 종료일
         if (enrollStartDate.isAfter(enrollEndDate)) {
             throw new InvalidDateRangeException("모집 시작일은 모집 종료일 이전이어야 합니다");
         }
 
-        // 학습 시작일 <= 학습 종료일
+        // [R-DATE-02] 학습 시작일 <= 학습 종료일
         if (classStartDate.isAfter(classEndDate)) {
             throw new InvalidDateRangeException("학습 시작일은 학습 종료일 이전이어야 합니다");
+        }
+
+        // [R-DATE-03] 모집 종료일 <= 학습 시작일
+        if (enrollEndDate.isAfter(classStartDate)) {
+            throw new InvalidDateRangeException("모집 종료일은 학습 시작일 이전이어야 합니다");
         }
     }
 
@@ -462,7 +476,7 @@ public class CourseTimeServiceImpl implements CourseTimeService {
     public CapacityResponse getCapacity(Long id) {
         log.debug("Getting capacity: id={}", id);
 
-        CourseTime courseTime = courseTimeRepository.findById(id)
+        CourseTime courseTime = courseTimeRepository.findByIdAndTenantId(id, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new CourseTimeNotFoundException(id));
 
         return CapacityResponse.from(courseTime);
@@ -472,7 +486,7 @@ public class CourseTimeServiceImpl implements CourseTimeService {
     public PriceResponse getPrice(Long id) {
         log.debug("Getting price: id={}", id);
 
-        CourseTime courseTime = courseTimeRepository.findById(id)
+        CourseTime courseTime = courseTimeRepository.findByIdAndTenantId(id, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new CourseTimeNotFoundException(id));
 
         return PriceResponse.from(courseTime);

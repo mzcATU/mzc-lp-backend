@@ -344,7 +344,7 @@ public class InstructorAssignmentServiceImpl implements InstructorAssignmentServ
         // 강사별 통계
         List<Object[]> rawStats = assignmentRepository.getInstructorStatistics(tenantId);
         List<Long> userIds = rawStats.stream()
-                .map(row -> (Long) row[0])
+                .map(row -> ((Number) row[0]).longValue())
                 .toList();
 
         Map<Long, User> userMap = userRepository.findAllById(userIds).stream()
@@ -352,10 +352,11 @@ public class InstructorAssignmentServiceImpl implements InstructorAssignmentServ
 
         List<InstructorStatResponse> instructorStats = new ArrayList<>();
         for (Object[] row : rawStats) {
-            Long userId = (Long) row[0];
-            Long totalCount = (Long) row[1];
-            Long mainCount = (Long) row[2];
-            Long subCount = (Long) row[3];
+            // Number 타입으로 캐스팅하여 DB별 타입 차이 대응
+            Long userId = ((Number) row[0]).longValue();
+            Long totalCount = ((Number) row[1]).longValue();
+            Long mainCount = row[2] != null ? ((Number) row[2]).longValue() : 0L;
+            Long subCount = row[3] != null ? ((Number) row[3]).longValue() : 0L;
 
             User user = userMap.get(userId);
             String userName = user != null ? user.getName() : null;
@@ -375,15 +376,19 @@ public class InstructorAssignmentServiceImpl implements InstructorAssignmentServ
         User user = userRepository.findById(userId).orElse(null);
         String userName = user != null ? user.getName() : null;
 
-        Object[] stats = assignmentRepository.getInstructorStatisticsByUserId(tenantId, userId);
+        List<Object[]> result = assignmentRepository.getInstructorStatisticsByUserId(tenantId, userId);
 
-        if (stats == null || stats[0] == null) {
+        if (result == null || result.isEmpty() || result.get(0)[0] == null) {
             return InstructorStatResponse.of(userId, userName, 0L, 0L, 0L);
         }
 
-        Long totalCount = (Long) stats[0];
-        Long mainCount = (Long) stats[1];
-        Long subCount = (Long) stats[2];
+        Object[] stats = result.get(0);
+
+        // Number 타입으로 캐스팅하여 DB별 타입 차이 대응 (Long, Integer 등)
+        // SUM은 결과가 없으면 null을 반환하므로 null 체크 필요
+        Long totalCount = ((Number) stats[0]).longValue();
+        Long mainCount = stats[1] != null ? ((Number) stats[1]).longValue() : 0L;
+        Long subCount = stats[2] != null ? ((Number) stats[2]).longValue() : 0L;
 
         return InstructorStatResponse.of(userId, userName, totalCount, mainCount, subCount);
     }

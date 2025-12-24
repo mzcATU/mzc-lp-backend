@@ -44,6 +44,16 @@ public interface CourseTimeRepository extends JpaRepository<CourseTime, Long> {
             @Param("statuses") List<CourseTimeStatus> statuses
     );
 
+    Page<CourseTime> findByCmCourseIdAndTenantId(Long cmCourseId, Long tenantId, Pageable pageable);
+
+    @Query("SELECT ct FROM CourseTime ct WHERE ct.cmCourseId = :cmCourseId AND ct.tenantId = :tenantId AND ct.status = :status")
+    Page<CourseTime> findByCmCourseIdAndTenantIdAndStatus(
+            @Param("cmCourseId") Long cmCourseId,
+            @Param("tenantId") Long tenantId,
+            @Param("status") CourseTimeStatus status,
+            Pageable pageable
+    );
+
     boolean existsByCmCourseIdAndTenantIdAndStatus(Long cmCourseId, Long tenantId, CourseTimeStatus status);
 
     // ===== 배치 Job용 쿼리 =====
