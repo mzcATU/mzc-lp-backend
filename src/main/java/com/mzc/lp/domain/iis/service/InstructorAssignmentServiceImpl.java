@@ -10,6 +10,8 @@ import com.mzc.lp.domain.iis.dto.request.ReplaceInstructorRequest;
 import com.mzc.lp.domain.iis.dto.request.UpdateRoleRequest;
 import com.mzc.lp.domain.iis.dto.response.AssignmentHistoryResponse;
 import com.mzc.lp.domain.iis.dto.response.InstructorAssignmentResponse;
+import com.mzc.lp.domain.iis.dto.response.InstructorStatResponse;
+import com.mzc.lp.domain.iis.dto.response.InstructorStatisticsResponse;
 import com.mzc.lp.domain.iis.entity.AssignmentHistory;
 import com.mzc.lp.domain.iis.entity.InstructorAssignment;
 import com.mzc.lp.domain.iis.exception.CannotModifyInactiveAssignmentException;
@@ -28,6 +30,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -301,6 +305,87 @@ public class InstructorAssignmentServiceImpl implements InstructorAssignmentServ
         return histories.stream()
                 .map(AssignmentHistoryResponse::from)
                 .toList();
+    }
+
+    // ========== 통계 API ==========
+
+    @Override
+    public InstructorStatisticsResponse getStatistics() {
+        log.debug("Getting instructor assignment statistics");
+
+        Long tenantId = TenantContext.getCurrentTenantId();
+
+        // 전체/활성 배정 건수
+        long totalAssignments = assignmentRepository.countByTenantId(tenantId);
+        long activeAssignments = assignmentRepository.countByTenantIdAndStatus(tenantId, AssignmentStatus.ACTIVE);
+
+        // 역할별 집계
+        Map<InstructorRole, Long> byRole = new EnumMap<>(InstructorRole.class);
+        for (InstructorRole role : InstructorRole.values()) {
+            byRole.put(role, 0L);
+        }
+        assignmentRepository.countGroupByRole(tenantId).forEach(row -> {
+            InstructorRole role = (InstructorRole) row[0];
+            Long count = (Long) row[1];
+            byRole.put(role, count);
+        });
+
+        // 상태별 집계
+        Map<AssignmentStatus, Long> byStatus = new EnumMap<>(AssignmentStatus.class);
+        for (AssignmentStatus status : AssignmentStatus.values()) {
+            byStatus.put(status, 0L);
+        }
+        assignmentRepository.countGroupByStatus(tenantId).forEach(row -> {
+            AssignmentStatus status = (AssignmentStatus) row[0];
+            Long count = (Long) row[1];
+            byStatus.put(status, count);
+        });
+
+        // 강사별 통계
+        List<Object[]> rawStats = assignmentRepository.getInstructorStatistics(tenantId);
+        List<Long> userIds = rawStats.stream()
+                .map(row -> (Long) row[0])
+                .toList();
+
+        Map<Long, User> userMap = userRepository.findAllById(userIds).stream()
+                .collect(Collectors.toMap(User::getId, Function.identity()));
+
+        List<InstructorStatResponse> instructorStats = new ArrayList<>();
+        for (Object[] row : rawStats) {
+            Long userId = (Long) row[0];
+            Long totalCount = (Long) row[1];
+            Long mainCount = (Long) row[2];
+            Long subCount = (Long) row[3];
+
+            User user = userMap.get(userId);
+            String userName = user != null ? user.getName() : null;
+
+            instructorStats.add(InstructorStatResponse.of(userId, userName, totalCount, mainCount, subCount));
+        }
+
+        return InstructorStatisticsResponse.of(totalAssignments, activeAssignments, byRole, byStatus, instructorStats);
+    }
+
+    @Override
+    public InstructorStatResponse getInstructorStatistics(Long userId) {
+        log.debug("Getting instructor statistics: userId={}", userId);
+
+        Long tenantId = TenantContext.getCurrentTenantId();
+
+        User user = userRepository.findById(userId).orElse(null);
+        String userName = user != null ? user.getName() : null;
+
+        Object[] stats = assignmentRepository.getInstructorStatisticsByUserId(tenantId, userId);
+
+        if (stats == null || stats[0] == null) {
+            return InstructorStatResponse.of(userId, userName, 0L, 0L, 0L);
+        }
+
+        Long totalCount = (Long) stats[0];
+        Long mainCount = (Long) stats[1];
+        Long subCount = (Long) stats[2];
+
+        return InstructorStatResponse.of(userId, userName, totalCount, mainCount, subCount);
     }
 
     // ========== Private Methods ==========

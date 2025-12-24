@@ -8,6 +8,8 @@ import com.mzc.lp.domain.iis.dto.request.ReplaceInstructorRequest;
 import com.mzc.lp.domain.iis.dto.request.UpdateRoleRequest;
 import com.mzc.lp.domain.iis.dto.response.AssignmentHistoryResponse;
 import com.mzc.lp.domain.iis.dto.response.InstructorAssignmentResponse;
+import com.mzc.lp.domain.iis.dto.response.InstructorStatResponse;
+import com.mzc.lp.domain.iis.dto.response.InstructorStatisticsResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -59,4 +61,19 @@ public interface InstructorAssignmentService {
      * @return 이력 목록 (최신순 정렬)
      */
     List<AssignmentHistoryResponse> getAssignmentHistories(Long assignmentId, AssignmentAction action);
+
+    // ========== 통계 API ==========
+
+    /**
+     * 전체 강사 배정 통계 조회
+     * @return 전체 통계 (역할별, 상태별, 강사별)
+     */
+    InstructorStatisticsResponse getStatistics();
+
+    /**
+     * 특정 강사의 배정 통계 조회
+     * @param userId 강사 ID
+     * @return 강사 개인 통계
+     */
+    InstructorStatResponse getInstructorStatistics(Long userId);
 }

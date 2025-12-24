@@ -93,4 +93,41 @@ public interface InstructorAssignmentRepository extends JpaRepository<Instructor
     List<InstructorAssignment> findActiveByTimeKeyIn(
             @Param("timeKeys") List<Long> timeKeys,
             @Param("tenantId") Long tenantId);
+
+    // ========== 통계 API용 메서드 ==========
+
+    // 전체 배정 건수
+    long countByTenantId(Long tenantId);
+
+    // 상태별 배정 건수
+    long countByTenantIdAndStatus(Long tenantId, AssignmentStatus status);
+
+    // 역할별 집계
+    @Query("SELECT ia.role, COUNT(ia) FROM InstructorAssignment ia " +
+            "WHERE ia.tenantId = :tenantId " +
+            "GROUP BY ia.role")
+    List<Object[]> countGroupByRole(@Param("tenantId") Long tenantId);
+
+    // 상태별 집계
+    @Query("SELECT ia.status, COUNT(ia) FROM InstructorAssignment ia " +
+            "WHERE ia.tenantId = :tenantId " +
+            "GROUP BY ia.status")
+    List<Object[]> countGroupByStatus(@Param("tenantId") Long tenantId);
+
+    // 강사별 통계 (ACTIVE 상태만)
+    @Query("SELECT ia.userKey, COUNT(ia), " +
+            "SUM(CASE WHEN ia.role = 'MAIN' THEN 1 ELSE 0 END), " +
+            "SUM(CASE WHEN ia.role = 'SUB' THEN 1 ELSE 0 END) " +
+            "FROM InstructorAssignment ia " +
+            "WHERE ia.tenantId = :tenantId AND ia.status = 'ACTIVE' " +
+            "GROUP BY ia.userKey")
+    List<Object[]> getInstructorStatistics(@Param("tenantId") Long tenantId);
+
+    // 특정 강사의 통계
+    @Query("SELECT COUNT(ia), " +
+            "SUM(CASE WHEN ia.role = 'MAIN' THEN 1 ELSE 0 END), " +
+            "SUM(CASE WHEN ia.role = 'SUB' THEN 1 ELSE 0 END) " +
+            "FROM InstructorAssignment ia " +
+            "WHERE ia.tenantId = :tenantId AND ia.userKey = :userKey AND ia.status = 'ACTIVE'")
+    Object[] getInstructorStatisticsByUserId(@Param("tenantId") Long tenantId, @Param("userKey") Long userKey);
 }
