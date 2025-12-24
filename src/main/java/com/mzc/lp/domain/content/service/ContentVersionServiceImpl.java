@@ -82,9 +82,9 @@ public class ContentVersionServiceImpl implements ContentVersionService {
         }
         createVersion(content, VersionChangeType.FILE_REPLACE, userId, summary);
 
-        // 버전 복원
+        // 버전 복원 (콘텐츠 이름은 유지, 파일 정보만 복원)
         content.replaceFile(
-                version.getOriginalFileName(),
+                version.getUploadedFileName(),
                 version.getStoredFileName(),
                 version.getFileSize(),
                 version.getFilePath()
