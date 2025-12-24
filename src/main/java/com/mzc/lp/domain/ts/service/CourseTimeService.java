@@ -28,7 +28,7 @@ public interface CourseTimeService {
 
     CourseTimeDetailResponse updateCourseTime(Long id, UpdateCourseTimeRequest request);
 
-    void deleteCourseTime(Long id);
+    void deleteCourseTime(Long id, Long currentUserId, boolean isTenantAdmin);
 
     // 상태 전이
     CourseTimeDetailResponse openCourseTime(Long id);

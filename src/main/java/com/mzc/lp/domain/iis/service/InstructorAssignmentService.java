@@ -37,7 +37,7 @@ public interface InstructorAssignmentService {
 
     InstructorAssignmentResponse replaceInstructor(Long id, ReplaceInstructorRequest request, Long operatorId);
 
-    void cancelAssignment(Long id, CancelAssignmentRequest request, Long operatorId);
+    void cancelAssignment(Long id, CancelAssignmentRequest request, Long operatorId, boolean isTenantAdmin);
 
     // ========== TS 모듈 연동용 메서드 ==========
 
