@@ -144,6 +144,10 @@ public class Program extends TenantEntity {
         this.approvedBy = operatorId;
         this.approvedAt = Instant.now();
         this.approvalComment = comment;
+
+        // 반려 정보 초기화
+        this.rejectionReason = null;
+        this.rejectedAt = null;
     }
 
     public void reject(Long operatorId, String reason) {
@@ -154,6 +158,11 @@ public class Program extends TenantEntity {
         this.status = ProgramStatus.REJECTED;
         this.rejectionReason = reason;
         this.rejectedAt = Instant.now();
+
+        // 승인 정보 초기화
+        this.approvedBy = null;
+        this.approvedAt = null;
+        this.approvalComment = null;
     }
 
     public void close() {
