@@ -83,6 +83,7 @@ public enum ErrorCode {
     INSTRUCTOR_ALREADY_ASSIGNED(HttpStatus.CONFLICT, "IIS002", "Instructor already assigned to this course time"),
     MAIN_INSTRUCTOR_ALREADY_EXISTS(HttpStatus.CONFLICT, "IIS003", "Main instructor already exists for this course time"),
     CANNOT_MODIFY_INACTIVE_ASSIGNMENT(HttpStatus.BAD_REQUEST, "IIS004", "Cannot modify inactive assignment"),
+    INSTRUCTOR_SCHEDULE_CONFLICT(HttpStatus.CONFLICT, "IIS005", "Instructor has schedule conflict with another course time"),
 
     // Tenant (TN)
     TENANT_NOT_FOUND(HttpStatus.NOT_FOUND, "TN001", "Tenant not found"),
