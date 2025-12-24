@@ -8,11 +8,13 @@ import com.mzc.lp.domain.iis.dto.request.ReplaceInstructorRequest;
 import com.mzc.lp.domain.iis.dto.request.UpdateRoleRequest;
 import com.mzc.lp.domain.iis.dto.response.AssignmentHistoryResponse;
 import com.mzc.lp.domain.iis.dto.response.InstructorAssignmentResponse;
+import com.mzc.lp.domain.iis.dto.response.InstructorDetailStatResponse;
 import com.mzc.lp.domain.iis.dto.response.InstructorStatResponse;
 import com.mzc.lp.domain.iis.dto.response.InstructorStatisticsResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -71,9 +73,26 @@ public interface InstructorAssignmentService {
     InstructorStatisticsResponse getStatistics();
 
     /**
+     * 전체 강사 배정 통계 조회 (기간 필터링)
+     * @param startDate 시작일 (null이면 전체 기간)
+     * @param endDate 종료일 (null이면 전체 기간)
+     * @return 전체 통계 (역할별, 상태별, 강사별)
+     */
+    InstructorStatisticsResponse getStatistics(LocalDate startDate, LocalDate endDate);
+
+    /**
      * 특정 강사의 배정 통계 조회
      * @param userId 강사 ID
      * @return 강사 개인 통계
      */
     InstructorStatResponse getInstructorStatistics(Long userId);
+
+    /**
+     * 특정 강사의 상세 배정 통계 조회 (차수별 통계 포함)
+     * @param userId 강사 ID
+     * @param startDate 시작일 (null이면 전체 기간)
+     * @param endDate 종료일 (null이면 전체 기간)
+     * @return 강사 개인 상세 통계 (차수별 통계 포함)
+     */
+    InstructorDetailStatResponse getInstructorDetailStatistics(Long userId, LocalDate startDate, LocalDate endDate);
 }

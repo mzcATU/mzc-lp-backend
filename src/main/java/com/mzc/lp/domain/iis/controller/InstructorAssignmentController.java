@@ -9,6 +9,7 @@ import com.mzc.lp.domain.iis.dto.request.ReplaceInstructorRequest;
 import com.mzc.lp.domain.iis.dto.request.UpdateRoleRequest;
 import com.mzc.lp.domain.iis.dto.response.AssignmentHistoryResponse;
 import com.mzc.lp.domain.iis.dto.response.InstructorAssignmentResponse;
+import com.mzc.lp.domain.iis.dto.response.InstructorDetailStatResponse;
 import com.mzc.lp.domain.iis.dto.response.InstructorStatResponse;
 import com.mzc.lp.domain.iis.dto.response.InstructorStatisticsResponse;
 import com.mzc.lp.domain.iis.service.InstructorAssignmentService;
@@ -17,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -24,6 +26,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -116,17 +119,22 @@ public class InstructorAssignmentController {
 
     @GetMapping("/api/instructor-assignments/statistics")
     @PreAuthorize("hasAnyRole('OPERATOR', 'TENANT_ADMIN')")
-    public ResponseEntity<ApiResponse<InstructorStatisticsResponse>> getStatistics() {
-        InstructorStatisticsResponse response = assignmentService.getStatistics();
+    public ResponseEntity<ApiResponse<InstructorStatisticsResponse>> getStatistics(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
+    ) {
+        InstructorStatisticsResponse response = assignmentService.getStatistics(startDate, endDate);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @GetMapping("/api/users/{userId}/instructor-statistics")
     @PreAuthorize("hasAnyRole('OPERATOR', 'TENANT_ADMIN')")
-    public ResponseEntity<ApiResponse<InstructorStatResponse>> getInstructorStatistics(
-            @PathVariable Long userId
+    public ResponseEntity<ApiResponse<InstructorDetailStatResponse>> getInstructorStatistics(
+            @PathVariable Long userId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
     ) {
-        InstructorStatResponse response = assignmentService.getInstructorStatistics(userId);
+        InstructorDetailStatResponse response = assignmentService.getInstructorDetailStatistics(userId, startDate, endDate);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 }
