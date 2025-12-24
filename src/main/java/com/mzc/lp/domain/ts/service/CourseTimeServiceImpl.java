@@ -462,7 +462,7 @@ public class CourseTimeServiceImpl implements CourseTimeService {
     public CapacityResponse getCapacity(Long id) {
         log.debug("Getting capacity: id={}", id);
 
-        CourseTime courseTime = courseTimeRepository.findById(id)
+        CourseTime courseTime = courseTimeRepository.findByIdAndTenantId(id, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new CourseTimeNotFoundException(id));
 
         return CapacityResponse.from(courseTime);
@@ -472,7 +472,7 @@ public class CourseTimeServiceImpl implements CourseTimeService {
     public PriceResponse getPrice(Long id) {
         log.debug("Getting price: id={}", id);
 
-        CourseTime courseTime = courseTimeRepository.findById(id)
+        CourseTime courseTime = courseTimeRepository.findByIdAndTenantId(id, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new CourseTimeNotFoundException(id));
 
         return PriceResponse.from(courseTime);
