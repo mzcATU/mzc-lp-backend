@@ -254,13 +254,6 @@ public class CourseTimeServiceImpl implements CourseTimeService {
         CourseTime courseTime = courseTimeRepository.findByIdAndTenantId(id, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new CourseTimeNotFoundException(id));
 
-        if (!courseTime.isDraft()) {
-            throw new InvalidStatusTransitionException(
-                    courseTime.getStatus(),
-                    CourseTimeStatus.RECRUITING
-            );
-        }
-
         // 장소 정보 필수 검증 (OFFLINE/BLENDED)
         if (courseTime.requiresLocationInfo() &&
                 (courseTime.getLocationInfo() == null || courseTime.getLocationInfo().isBlank())) {
@@ -272,6 +265,7 @@ public class CourseTimeServiceImpl implements CourseTimeService {
             throw new MainInstructorRequiredException(id);
         }
 
+        // 상태 전이 (Entity에서 DRAFT 상태 검증)
         courseTime.open();
         log.info("Course time opened: id={}", id);
 
@@ -289,13 +283,7 @@ public class CourseTimeServiceImpl implements CourseTimeService {
         CourseTime courseTime = courseTimeRepository.findByIdAndTenantId(id, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new CourseTimeNotFoundException(id));
 
-        if (!courseTime.isRecruiting()) {
-            throw new InvalidStatusTransitionException(
-                    courseTime.getStatus(),
-                    CourseTimeStatus.ONGOING
-            );
-        }
-
+        // 상태 전이 (Entity에서 RECRUITING 상태 검증)
         courseTime.startClass();
         log.info("Course time started: id={}", id);
 
@@ -313,13 +301,7 @@ public class CourseTimeServiceImpl implements CourseTimeService {
         CourseTime courseTime = courseTimeRepository.findByIdAndTenantId(id, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new CourseTimeNotFoundException(id));
 
-        if (!courseTime.isOngoing()) {
-            throw new InvalidStatusTransitionException(
-                    courseTime.getStatus(),
-                    CourseTimeStatus.CLOSED
-            );
-        }
-
+        // 상태 전이 (Entity에서 ONGOING 상태 검증)
         courseTime.close();
         log.info("Course time closed: id={}", id);
 
@@ -337,13 +319,7 @@ public class CourseTimeServiceImpl implements CourseTimeService {
         CourseTime courseTime = courseTimeRepository.findByIdAndTenantId(id, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new CourseTimeNotFoundException(id));
 
-        if (!courseTime.isClosed()) {
-            throw new InvalidStatusTransitionException(
-                    courseTime.getStatus(),
-                    CourseTimeStatus.ARCHIVED
-            );
-        }
-
+        // 상태 전이 (Entity에서 CLOSED 상태 검증)
         courseTime.archive();
         log.info("Course time archived: id={}", id);
 
