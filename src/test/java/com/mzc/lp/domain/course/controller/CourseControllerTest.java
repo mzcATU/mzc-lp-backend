@@ -111,6 +111,9 @@ class CourseControllerTest extends TenantTestSupport {
                 CourseType.ONLINE,
                 10,
                 1L,
+                null,
+                null,
+                null,
                 null
         );
         return courseRepository.save(course);
@@ -135,6 +138,9 @@ class CourseControllerTest extends TenantTestSupport {
                     CourseType.ONLINE,
                     20,
                     1L,
+                    null,
+                    null,
+                    null,
                     null
             );
 
@@ -166,6 +172,9 @@ class CourseControllerTest extends TenantTestSupport {
                     CourseType.BLENDED,
                     30,
                     2L,
+                    null,
+                    null,
+                    null,
                     null
             );
 
@@ -188,6 +197,9 @@ class CourseControllerTest extends TenantTestSupport {
             String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
             CreateCourseRequest request = new CreateCourseRequest(
                     "최소 강의",
+                    null,
+                    null,
+                    null,
                     null,
                     null,
                     null,
@@ -220,6 +232,9 @@ class CourseControllerTest extends TenantTestSupport {
                     CourseType.ONLINE,
                     10,
                     1L,
+                    null,
+                    null,
+                    null,
                     null
             );
 
@@ -246,6 +261,9 @@ class CourseControllerTest extends TenantTestSupport {
                     CourseType.ONLINE,
                     10,
                     1L,
+                    null,
+                    null,
+                    null,
                     null
             );
 
@@ -273,6 +291,9 @@ class CourseControllerTest extends TenantTestSupport {
                     CourseType.ONLINE,
                     10,
                     1L,
+                    null,
+                    null,
+                    null,
                     null
             );
 
@@ -299,6 +320,9 @@ class CourseControllerTest extends TenantTestSupport {
                     null,
                     null,
                     null,
+                    null,
+                    null,
+                    null,
                     null
             );
 
@@ -317,6 +341,9 @@ class CourseControllerTest extends TenantTestSupport {
             // given
             CreateCourseRequest request = new CreateCourseRequest(
                     "테스트 강의",
+                    null,
+                    null,
+                    null,
                     null,
                     null,
                     null,
@@ -387,9 +414,9 @@ class CourseControllerTest extends TenantTestSupport {
             createOperatorUser();
             String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
 
-            Course course1 = Course.create("Spring Boot", "설명", CourseLevel.BEGINNER, CourseType.ONLINE, 10, 1L, null);
-            Course course2 = Course.create("React", "설명", CourseLevel.BEGINNER, CourseType.ONLINE, 10, 2L, null);
-            Course course3 = Course.create("Docker", "설명", CourseLevel.BEGINNER, CourseType.ONLINE, 10, 1L, null);
+            Course course1 = Course.create("Spring Boot", "설명", CourseLevel.BEGINNER, CourseType.ONLINE, 10, 1L, null, null, null, null);
+            Course course2 = Course.create("React", "설명", CourseLevel.BEGINNER, CourseType.ONLINE, 10, 2L, null, null, null, null);
+            Course course3 = Course.create("Docker", "설명", CourseLevel.BEGINNER, CourseType.ONLINE, 10, 1L, null, null, null, null);
             courseRepository.save(course1);
             courseRepository.save(course2);
             courseRepository.save(course3);
@@ -508,6 +535,9 @@ class CourseControllerTest extends TenantTestSupport {
                     CourseType.BLENDED,
                     50,
                     2L,
+                    null,
+                    null,
+                    null,
                     null
             );
 
@@ -540,6 +570,9 @@ class CourseControllerTest extends TenantTestSupport {
                     null,
                     null,
                     null,
+                    null,
+                    null,
+                    null,
                     null
             );
 
@@ -562,6 +595,9 @@ class CourseControllerTest extends TenantTestSupport {
             String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
             UpdateCourseRequest request = new UpdateCourseRequest(
                     "수정 시도",
+                    null,
+                    null,
+                    null,
                     null,
                     null,
                     null,
@@ -590,6 +626,9 @@ class CourseControllerTest extends TenantTestSupport {
             Course course = createTestCourse("테스트 강의");
             UpdateCourseRequest request = new UpdateCourseRequest(
                     "수정 시도",
+                    null,
+                    null,
+                    null,
                     null,
                     null,
                     null,

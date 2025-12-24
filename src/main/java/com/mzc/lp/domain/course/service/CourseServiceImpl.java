@@ -38,7 +38,10 @@ public class CourseServiceImpl implements CourseService {
                 request.type(),
                 request.estimatedHours(),
                 request.categoryId(),
-                request.thumbnailUrl()
+                request.thumbnailUrl(),
+                request.startDate(),
+                request.endDate(),
+                request.tags()
         );
 
         Course savedCourse = courseRepository.save(course);
@@ -98,7 +101,10 @@ public class CourseServiceImpl implements CourseService {
                 request.type(),
                 request.estimatedHours(),
                 request.categoryId(),
-                request.thumbnailUrl()
+                request.thumbnailUrl(),
+                request.startDate(),
+                request.endDate(),
+                request.tags()
         );
 
         log.info("Course updated: id={}", courseId);
