@@ -20,6 +20,7 @@ import com.mzc.lp.domain.ts.exception.InvalidDateRangeException;
 import com.mzc.lp.domain.ts.exception.InvalidStatusTransitionException;
 import com.mzc.lp.domain.ts.exception.LocationRequiredException;
 import com.mzc.lp.domain.ts.exception.MainInstructorRequiredException;
+import com.mzc.lp.domain.ts.exception.UnauthorizedCourseTimeAccessException;
 import com.mzc.lp.domain.ts.repository.CourseTimeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -229,8 +230,8 @@ public class CourseTimeServiceImpl implements CourseTimeService {
 
     @Override
     @Transactional
-    public void deleteCourseTime(Long id) {
-        log.info("Deleting course time: id={}", id);
+    public void deleteCourseTime(Long id, Long currentUserId, boolean isTenantAdmin) {
+        log.info("Deleting course time: id={}, currentUserId={}, isTenantAdmin={}", id, currentUserId, isTenantAdmin);
 
         CourseTime courseTime = courseTimeRepository.findByIdAndTenantId(id, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new CourseTimeNotFoundException(id));
@@ -238,6 +239,11 @@ public class CourseTimeServiceImpl implements CourseTimeService {
         // DRAFT 상태에서만 삭제 가능
         if (!courseTime.isDraft()) {
             throw new InvalidStatusTransitionException();
+        }
+
+        // 소유권 검증: 본인이 생성한 차수 또는 TENANT_ADMIN만 삭제 가능
+        if (!isTenantAdmin && !currentUserId.equals(courseTime.getCreatedBy())) {
+            throw new UnauthorizedCourseTimeAccessException("본인이 생성한 차수만 삭제할 수 있습니다");
         }
 
         courseTimeRepository.delete(courseTime);

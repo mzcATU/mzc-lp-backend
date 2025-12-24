@@ -582,7 +582,7 @@ class InstructorAssignmentServiceTest extends TenantTestSupport {
             given(assignmentRepository.findByIdAndTenantId(1L, TENANT_ID)).willReturn(Optional.of(assignment));
 
             // when
-            assignmentService.cancelAssignment(1L, request, OPERATOR_ID);
+            assignmentService.cancelAssignment(1L, request, OPERATOR_ID, false);
 
             // then
             assertThat(assignment.getStatus()).isEqualTo(AssignmentStatus.CANCELLED);
@@ -600,7 +600,7 @@ class InstructorAssignmentServiceTest extends TenantTestSupport {
             given(assignmentRepository.findByIdAndTenantId(1L, TENANT_ID)).willReturn(Optional.of(assignment));
 
             // when & then
-            assertThatThrownBy(() -> assignmentService.cancelAssignment(1L, request, OPERATOR_ID))
+            assertThatThrownBy(() -> assignmentService.cancelAssignment(1L, request, OPERATOR_ID, false))
                     .isInstanceOf(CannotModifyInactiveAssignmentException.class);
         }
     }

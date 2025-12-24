@@ -22,6 +22,7 @@ import com.mzc.lp.domain.iis.exception.InstructorAlreadyAssignedException;
 import com.mzc.lp.domain.iis.exception.InstructorAssignmentNotFoundException;
 import com.mzc.lp.domain.iis.exception.InstructorScheduleConflictException;
 import com.mzc.lp.domain.iis.exception.MainInstructorAlreadyExistsException;
+import com.mzc.lp.domain.iis.exception.UnauthorizedAssignmentAccessException;
 import com.mzc.lp.domain.iis.repository.AssignmentHistoryRepository;
 import com.mzc.lp.domain.iis.repository.InstructorAssignmentRepository;
 import com.mzc.lp.domain.student.dto.response.CourseTimeEnrollmentStatsResponse;
@@ -250,13 +251,18 @@ public class InstructorAssignmentServiceImpl implements InstructorAssignmentServ
 
     @Override
     @Transactional
-    public void cancelAssignment(Long id, CancelAssignmentRequest request, Long operatorId) {
-        log.info("Cancelling assignment: id={}", id);
+    public void cancelAssignment(Long id, CancelAssignmentRequest request, Long operatorId, boolean isTenantAdmin) {
+        log.info("Cancelling assignment: id={}, operatorId={}, isTenantAdmin={}", id, operatorId, isTenantAdmin);
 
         InstructorAssignment assignment = findAssignmentById(id);
 
         // ACTIVE 상태 체크
         validateActiveStatus(assignment);
+
+        // 소유권 검증: 본인이 배정한 건 또는 TENANT_ADMIN만 취소 가능
+        if (!isTenantAdmin && !operatorId.equals(assignment.getAssignedBy())) {
+            throw new UnauthorizedAssignmentAccessException("본인이 배정한 강사만 취소할 수 있습니다");
+        }
 
         // 취소 처리
         assignment.cancel();

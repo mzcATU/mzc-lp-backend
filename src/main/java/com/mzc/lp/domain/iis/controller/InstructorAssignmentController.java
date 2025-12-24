@@ -76,9 +76,11 @@ public class InstructorAssignmentController {
             @AuthenticationPrincipal UserPrincipal principal,
             @Valid @RequestBody(required = false) CancelAssignmentRequest request
     ) {
+        boolean isTenantAdmin = "TENANT_ADMIN".equals(principal.role());
         assignmentService.cancelAssignment(id,
                 request != null ? request : new CancelAssignmentRequest(null),
-                principal.id());
+                principal.id(),
+                isTenantAdmin);
         return ResponseEntity.noContent().build();
     }
 
