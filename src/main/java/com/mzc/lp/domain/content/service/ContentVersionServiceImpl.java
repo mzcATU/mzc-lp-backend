@@ -11,7 +11,7 @@ import com.mzc.lp.domain.content.exception.ContentVersionNotFoundException;
 import com.mzc.lp.domain.content.exception.UnauthorizedContentAccessException;
 import com.mzc.lp.domain.content.repository.ContentRepository;
 import com.mzc.lp.domain.content.repository.ContentVersionRepository;
-import com.mzc.lp.domain.learning.repository.LearningObjectRepository;
+import com.mzc.lp.domain.course.repository.CourseItemRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,7 +27,7 @@ public class ContentVersionServiceImpl implements ContentVersionService {
 
     private final ContentRepository contentRepository;
     private final ContentVersionRepository contentVersionRepository;
-    private final LearningObjectRepository learningObjectRepository;
+    private final CourseItemRepository courseItemRepository;
 
     @Override
     @Transactional
@@ -109,7 +109,7 @@ public class ContentVersionServiceImpl implements ContentVersionService {
     }
 
     private void validateContentNotInUse(Long contentId) {
-        if (learningObjectRepository.existsByContentId(contentId)) {
+        if (courseItemRepository.existsByContentIdThroughLearningObject(contentId)) {
             throw new ContentInUseException(contentId);
         }
     }
