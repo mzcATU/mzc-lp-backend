@@ -1,6 +1,9 @@
 package com.mzc.lp.domain.ts.service;
 import com.mzc.lp.common.support.TenantTestSupport;
 
+import com.mzc.lp.domain.program.constant.ProgramStatus;
+import com.mzc.lp.domain.program.entity.Program;
+import com.mzc.lp.domain.program.repository.ProgramRepository;
 import com.mzc.lp.domain.ts.constant.DeliveryType;
 import com.mzc.lp.domain.ts.constant.EnrollmentMethod;
 import com.mzc.lp.domain.ts.dto.response.CapacityResponse;
@@ -19,6 +22,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -37,6 +41,9 @@ class CourseTimeServiceTest extends TenantTestSupport {
 
     @Mock
     private CourseTimeRepository courseTimeRepository;
+
+    @Mock
+    private ProgramRepository programRepository;
 
     @Mock
     private InstructorAssignmentService instructorAssignmentService;
@@ -64,6 +71,13 @@ class CourseTimeServiceTest extends TenantTestSupport {
             courseTime.incrementEnrollment();
         }
         return courseTime;
+    }
+
+    private Program createApprovedProgram() {
+        Program program = Program.create("테스트 프로그램", 1L);
+        ReflectionTestUtils.setField(program, "id", 1L);
+        ReflectionTestUtils.setField(program, "status", ProgramStatus.APPROVED);
+        return program;
     }
 
     // ==================== 좌석 점유 테스트 ====================
@@ -276,6 +290,7 @@ class CourseTimeServiceTest extends TenantTestSupport {
             // given
             LocalDate today = LocalDate.now();
             CreateCourseTimeRequest request = new CreateCourseTimeRequest(
+                    1L,  // programId
                     null,
                     null,
                     "테스트 차수",
@@ -294,6 +309,10 @@ class CourseTimeServiceTest extends TenantTestSupport {
                     true
             );
 
+            // Program Mock 설정
+            Program program = createApprovedProgram();
+            given(programRepository.findByIdAndTenantId(1L, DEFAULT_TENANT_ID)).willReturn(Optional.of(program));
+
             // when & then
             assertThatThrownBy(() -> courseTimeService.createCourseTime(request, 1L))
                     .isInstanceOf(InvalidDateRangeException.class)
@@ -306,6 +325,7 @@ class CourseTimeServiceTest extends TenantTestSupport {
             // given
             LocalDate today = LocalDate.now();
             CreateCourseTimeRequest request = new CreateCourseTimeRequest(
+                    1L,  // programId
                     null,
                     null,
                     "테스트 차수",
@@ -324,6 +344,10 @@ class CourseTimeServiceTest extends TenantTestSupport {
                     true
             );
 
+            // Program Mock 설정
+            Program program = createApprovedProgram();
+            given(programRepository.findByIdAndTenantId(1L, DEFAULT_TENANT_ID)).willReturn(Optional.of(program));
+
             // when & then
             assertThatThrownBy(() -> courseTimeService.createCourseTime(request, 1L))
                     .isInstanceOf(InvalidDateRangeException.class)
@@ -336,6 +360,7 @@ class CourseTimeServiceTest extends TenantTestSupport {
             // given
             LocalDate today = LocalDate.now();
             CreateCourseTimeRequest request = new CreateCourseTimeRequest(
+                    1L,  // programId
                     null,
                     null,
                     "테스트 차수",
@@ -353,6 +378,10 @@ class CourseTimeServiceTest extends TenantTestSupport {
                     null,
                     true
             );
+
+            // Program Mock 설정
+            Program program = createApprovedProgram();
+            given(programRepository.findByIdAndTenantId(1L, DEFAULT_TENANT_ID)).willReturn(Optional.of(program));
 
             CourseTime savedCourseTime = createTestCourseTime(30, 0);
             given(courseTimeRepository.save(org.mockito.ArgumentMatchers.any(CourseTime.class)))

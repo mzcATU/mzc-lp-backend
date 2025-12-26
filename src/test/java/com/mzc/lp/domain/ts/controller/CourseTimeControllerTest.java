@@ -3,6 +3,8 @@ import com.mzc.lp.common.support.TenantTestSupport;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mzc.lp.domain.iis.service.InstructorAssignmentService;
+import com.mzc.lp.domain.program.entity.Program;
+import com.mzc.lp.domain.program.repository.ProgramRepository;
 import com.mzc.lp.domain.ts.constant.CourseTimeStatus;
 import com.mzc.lp.domain.ts.constant.DeliveryType;
 import com.mzc.lp.domain.ts.constant.EnrollmentMethod;
@@ -64,8 +66,13 @@ class CourseTimeControllerTest extends TenantTestSupport {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private ProgramRepository programRepository;
+
     @MockitoBean
     private InstructorAssignmentService instructorAssignmentService;
+
+    private Program testProgram;
 
     @BeforeEach
     void setUp() {
@@ -73,6 +80,17 @@ class CourseTimeControllerTest extends TenantTestSupport {
         userCourseRoleRepository.deleteAll();
         refreshTokenRepository.deleteAll();
         userRepository.deleteAll();
+        programRepository.deleteAll();
+
+        // 승인된 테스트 프로그램 생성
+        testProgram = createApprovedProgram();
+    }
+
+    private Program createApprovedProgram() {
+        Program program = Program.create("테스트 프로그램", 1L);
+        program.submit();  // DRAFT -> PENDING
+        program.approve(1L, "테스트 승인"); // PENDING -> APPROVED
+        return programRepository.save(program);
     }
 
     // ========== Helper Methods ==========
@@ -102,6 +120,7 @@ class CourseTimeControllerTest extends TenantTestSupport {
 
     private CreateCourseTimeRequest createValidRequest() {
         return new CreateCourseTimeRequest(
+                testProgram.getId(),  // programId
                 null,
                 null,
                 "스프링 부트 마스터 1차",
@@ -123,6 +142,7 @@ class CourseTimeControllerTest extends TenantTestSupport {
 
     private CreateCourseTimeRequest createOfflineRequest() {
         return new CreateCourseTimeRequest(
+                testProgram.getId(),  // programId
                 null,
                 null,
                 "오프라인 교육 1차",
@@ -164,6 +184,7 @@ class CourseTimeControllerTest extends TenantTestSupport {
                 true,
                 createdBy
         );
+        courseTime.linkProgram(testProgram);
         return courseTimeRepository.save(courseTime);
     }
 
@@ -223,6 +244,7 @@ class CourseTimeControllerTest extends TenantTestSupport {
             createOperatorUser();
             String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
             CreateCourseTimeRequest request = new CreateCourseTimeRequest(
+                    testProgram.getId(),  // programId
                     null, null, "오프라인 교육",
                     DeliveryType.OFFLINE,
                     LocalDate.now(), LocalDate.now().plusDays(7),
@@ -251,6 +273,7 @@ class CourseTimeControllerTest extends TenantTestSupport {
             createOperatorUser();
             String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
             CreateCourseTimeRequest request = new CreateCourseTimeRequest(
+                    testProgram.getId(),  // programId
                     null, null, "날짜 오류 테스트",
                     DeliveryType.ONLINE,
                     LocalDate.now(), LocalDate.now().plusDays(60),  // 모집 종료일이 학습 종료일 이후

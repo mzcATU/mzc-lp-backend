@@ -8,8 +8,13 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public record CreateCourseTimeRequest(
+        @NotNull(message = "프로그램 ID는 필수입니다")
+        Long programId,
+
+        @Deprecated
         Long cmCourseId,
 
+        @Deprecated
         Long cmCourseVersionId,
 
         @NotBlank(message = "제목은 필수입니다")
