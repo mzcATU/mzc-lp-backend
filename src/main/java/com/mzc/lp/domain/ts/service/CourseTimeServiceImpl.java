@@ -22,6 +22,10 @@ import com.mzc.lp.domain.ts.exception.LocationRequiredException;
 import com.mzc.lp.domain.ts.exception.MainInstructorRequiredException;
 import com.mzc.lp.domain.ts.exception.UnauthorizedCourseTimeAccessException;
 import com.mzc.lp.domain.ts.repository.CourseTimeRepository;
+import com.mzc.lp.domain.program.entity.Program;
+import com.mzc.lp.domain.program.repository.ProgramRepository;
+import com.mzc.lp.domain.program.exception.ProgramNotFoundException;
+import com.mzc.lp.domain.program.exception.ProgramNotApprovedException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -41,6 +45,7 @@ public class CourseTimeServiceImpl implements CourseTimeService {
 
     private final CourseTimeRepository courseTimeRepository;
     private final InstructorAssignmentService instructorAssignmentService;
+    private final ProgramRepository programRepository;
 
     @Override
     public CourseTime getCourseTimeEntity(Long id) {
@@ -51,7 +56,16 @@ public class CourseTimeServiceImpl implements CourseTimeService {
     @Override
     @Transactional
     public CourseTimeDetailResponse createCourseTime(CreateCourseTimeRequest request, Long createdBy) {
-        log.info("Creating course time: title={}", request.title());
+        log.info("Creating course time: title={}, programId={}", request.title(), request.programId());
+
+        // Program 조회 및 검증
+        Program program = programRepository.findByIdAndTenantId(request.programId(), TenantContext.getCurrentTenantId())
+                .orElseThrow(() -> new ProgramNotFoundException(request.programId()));
+
+        // 승인된 Program만 차수 생성 가능
+        if (!program.canCreateTime()) {
+            throw new ProgramNotApprovedException(request.programId());
+        }
 
         // 비즈니스 규칙 검증
         validateDateRange(request);
@@ -76,13 +90,16 @@ public class CourseTimeServiceImpl implements CourseTimeService {
                 createdBy
         );
 
-        // CM 연결 (있는 경우)
+        // Program 연결
+        courseTime.linkProgram(program);
+
+        // CM 연결 (deprecated - 하위 호환성)
         if (request.cmCourseId() != null) {
             courseTime.linkCourse(request.cmCourseId(), request.cmCourseVersionId());
         }
 
         CourseTime savedCourseTime = courseTimeRepository.save(courseTime);
-        log.info("Course time created: id={}", savedCourseTime.getId());
+        log.info("Course time created: id={}, programId={}", savedCourseTime.getId(), request.programId());
 
         return CourseTimeDetailResponse.from(savedCourseTime);
     }
@@ -259,6 +276,16 @@ public class CourseTimeServiceImpl implements CourseTimeService {
 
         CourseTime courseTime = courseTimeRepository.findByIdAndTenantId(id, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new CourseTimeNotFoundException(id));
+
+        // Program 연결 여부 검증
+        if (courseTime.getProgram() == null) {
+            throw new ProgramNotFoundException();
+        }
+
+        // Program 승인 상태 검증
+        if (!courseTime.getProgram().isApproved()) {
+            throw new ProgramNotApprovedException(courseTime.getProgram().getId());
+        }
 
         // 장소 정보 필수 검증 (OFFLINE/BLENDED)
         if (courseTime.requiresLocationInfo() &&
