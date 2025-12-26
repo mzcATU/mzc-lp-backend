@@ -38,7 +38,7 @@ public class CourseController {
             @Valid @RequestBody CreateCourseRequest request,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        CourseResponse response = courseService.createCourse(request);
+        CourseResponse response = courseService.createCourse(request, principal.id());
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
     }
 
@@ -95,7 +95,8 @@ public class CourseController {
             @PathVariable @Positive Long courseId,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        courseService.deleteCourse(courseId);
+        boolean isTenantAdmin = "TENANT_ADMIN".equals(principal.role());
+        courseService.deleteCourse(courseId, principal.id(), isTenantAdmin);
         return ResponseEntity.noContent().build();
     }
 }
