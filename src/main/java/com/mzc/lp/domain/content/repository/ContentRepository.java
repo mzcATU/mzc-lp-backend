@@ -60,6 +60,13 @@ public interface ContentRepository extends JpaRepository<Content, Long> {
     Page<Content> findByTenantIdAndCreatedByAndStatus(Long tenantId, Long createdBy,
                                                        ContentStatus status, Pageable pageable);
 
+    Page<Content> findByTenantIdAndCreatedByAndContentType(Long tenantId, Long createdBy,
+                                                            ContentType contentType, Pageable pageable);
+
+    Page<Content> findByTenantIdAndCreatedByAndContentTypeAndStatus(Long tenantId, Long createdBy,
+                                                                     ContentType contentType,
+                                                                     ContentStatus status, Pageable pageable);
+
     @Query("SELECT c FROM Content c WHERE c.tenantId = :tenantId AND c.createdBy = :createdBy " +
            "AND LOWER(c.originalFileName) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     Page<Content> findByTenantIdAndCreatedByAndKeyword(@Param("tenantId") Long tenantId,
@@ -74,4 +81,22 @@ public interface ContentRepository extends JpaRepository<Content, Long> {
                                                                  @Param("status") ContentStatus status,
                                                                  @Param("keyword") String keyword,
                                                                  Pageable pageable);
+
+    @Query("SELECT c FROM Content c WHERE c.tenantId = :tenantId AND c.createdBy = :createdBy " +
+           "AND c.contentType = :contentType AND LOWER(c.originalFileName) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+    Page<Content> findByTenantIdAndCreatedByAndContentTypeAndKeyword(@Param("tenantId") Long tenantId,
+                                                                      @Param("createdBy") Long createdBy,
+                                                                      @Param("contentType") ContentType contentType,
+                                                                      @Param("keyword") String keyword,
+                                                                      Pageable pageable);
+
+    @Query("SELECT c FROM Content c WHERE c.tenantId = :tenantId AND c.createdBy = :createdBy " +
+           "AND c.contentType = :contentType AND c.status = :status " +
+           "AND LOWER(c.originalFileName) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+    Page<Content> findByTenantIdAndCreatedByAndContentTypeAndStatusAndKeyword(@Param("tenantId") Long tenantId,
+                                                                               @Param("createdBy") Long createdBy,
+                                                                               @Param("contentType") ContentType contentType,
+                                                                               @Param("status") ContentStatus status,
+                                                                               @Param("keyword") String keyword,
+                                                                               Pageable pageable);
 }

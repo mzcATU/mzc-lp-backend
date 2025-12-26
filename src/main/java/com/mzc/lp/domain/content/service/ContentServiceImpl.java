@@ -379,18 +379,34 @@ public class ContentServiceImpl implements ContentService {
 
     @Override
     public Page<ContentListResponse> getMyContents(Long tenantId, Long userId,
-                                                    ContentStatus status, String keyword,
-                                                    Pageable pageable) {
+                                                    ContentType contentType, ContentStatus status,
+                                                    String keyword, Pageable pageable) {
         Page<Content> contents;
 
-        // status가 null이면 전체 조회 (all 탭), 지정되면 해당 상태만 조회
-        if (status != null && keyword != null && !keyword.isBlank()) {
+        boolean hasType = contentType != null;
+        boolean hasStatus = status != null;
+        boolean hasKeyword = keyword != null && !keyword.isBlank();
+
+        // 조합별 쿼리 호출
+        if (hasType && hasStatus && hasKeyword) {
+            contents = contentRepository.findByTenantIdAndCreatedByAndContentTypeAndStatusAndKeyword(
+                    tenantId, userId, contentType, status, keyword, pageable);
+        } else if (hasType && hasStatus) {
+            contents = contentRepository.findByTenantIdAndCreatedByAndContentTypeAndStatus(
+                    tenantId, userId, contentType, status, pageable);
+        } else if (hasType && hasKeyword) {
+            contents = contentRepository.findByTenantIdAndCreatedByAndContentTypeAndKeyword(
+                    tenantId, userId, contentType, keyword, pageable);
+        } else if (hasStatus && hasKeyword) {
             contents = contentRepository.findByTenantIdAndCreatedByAndStatusAndKeyword(
                     tenantId, userId, status, keyword, pageable);
-        } else if (status != null) {
+        } else if (hasType) {
+            contents = contentRepository.findByTenantIdAndCreatedByAndContentType(
+                    tenantId, userId, contentType, pageable);
+        } else if (hasStatus) {
             contents = contentRepository.findByTenantIdAndCreatedByAndStatus(
                     tenantId, userId, status, pageable);
-        } else if (keyword != null && !keyword.isBlank()) {
+        } else if (hasKeyword) {
             contents = contentRepository.findByTenantIdAndCreatedByAndKeyword(
                     tenantId, userId, keyword, pageable);
         } else {

@@ -71,7 +71,7 @@ public interface ContentService {
     /**
      * 내 콘텐츠 목록 조회 (DESIGNER용)
      */
-    Page<ContentListResponse> getMyContents(Long tenantId, Long userId, ContentStatus status, String keyword, Pageable pageable);
+    Page<ContentListResponse> getMyContents(Long tenantId, Long userId, ContentType contentType, ContentStatus status, String keyword, Pageable pageable);
 
     /**
      * 콘텐츠 보관 (Archive)
