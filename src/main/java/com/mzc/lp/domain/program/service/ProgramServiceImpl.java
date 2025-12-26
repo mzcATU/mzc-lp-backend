@@ -71,17 +71,17 @@ public class ProgramServiceImpl implements ProgramService {
     }
 
     @Override
-    public Page<ProgramResponse> getPrograms(ProgramStatus status, Long creatorId, Pageable pageable) {
-        log.debug("Getting programs: status={}, creatorId={}", status, creatorId);
+    public Page<ProgramResponse> getPrograms(ProgramStatus status, Long createdBy, Pageable pageable) {
+        log.debug("Getting programs: status={}, createdBy={}", status, createdBy);
 
         Page<Program> programs;
 
-        if (status != null && creatorId != null) {
-            programs = programRepository.findByTenantIdAndStatusAndCreatorId(TenantContext.getCurrentTenantId(), status, creatorId, pageable);
+        if (status != null && createdBy != null) {
+            programs = programRepository.findByTenantIdAndStatusAndCreatedBy(TenantContext.getCurrentTenantId(), status, createdBy, pageable);
         } else if (status != null) {
             programs = programRepository.findByTenantIdAndStatus(TenantContext.getCurrentTenantId(), status, pageable);
-        } else if (creatorId != null) {
-            programs = programRepository.findByTenantIdAndCreatorId(TenantContext.getCurrentTenantId(), creatorId, pageable);
+        } else if (createdBy != null) {
+            programs = programRepository.findByTenantIdAndCreatedBy(TenantContext.getCurrentTenantId(), createdBy, pageable);
         } else {
             programs = programRepository.findByTenantId(TenantContext.getCurrentTenantId(), pageable);
         }
@@ -119,7 +119,7 @@ public class ProgramServiceImpl implements ProgramService {
                 .orElseThrow(() -> new ProgramNotFoundException(programId));
 
         // 소유권 검증: 본인이 생성한 프로그램 또는 TENANT_ADMIN만 삭제 가능
-        if (!isTenantAdmin && !currentUserId.equals(program.getCreatorId())) {
+        if (!isTenantAdmin && !currentUserId.equals(program.getCreatedBy())) {
             throw new ProgramOwnershipException("본인이 생성한 프로그램만 삭제할 수 있습니다");
         }
 

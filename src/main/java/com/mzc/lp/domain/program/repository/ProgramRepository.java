@@ -20,9 +20,9 @@ public interface ProgramRepository extends JpaRepository<Program, Long> {
 
     Page<Program> findByTenantIdAndStatus(Long tenantId, ProgramStatus status, Pageable pageable);
 
-    Page<Program> findByTenantIdAndCreatorId(Long tenantId, Long creatorId, Pageable pageable);
+    Page<Program> findByTenantIdAndCreatedBy(Long tenantId, Long createdBy, Pageable pageable);
 
-    Page<Program> findByTenantIdAndStatusAndCreatorId(Long tenantId, ProgramStatus status, Long creatorId, Pageable pageable);
+    Page<Program> findByTenantIdAndStatusAndCreatedBy(Long tenantId, ProgramStatus status, Long createdBy, Pageable pageable);
 
     @Query("SELECT p FROM Program p WHERE p.tenantId = :tenantId AND p.status = 'PENDING' ORDER BY p.submittedAt ASC")
     Page<Program> findPendingPrograms(@Param("tenantId") Long tenantId, Pageable pageable);
