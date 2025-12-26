@@ -42,11 +42,15 @@ public class ContentController {
     public ResponseEntity<ApiResponse<ContentResponse>> uploadFile(
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "folderId", required = false) Long folderId,
+            @RequestParam(value = "originalFileName", required = false) String originalFileName,
+            @RequestParam(value = "description", required = false) String description,
+            @RequestParam(value = "tags", required = false) String tags,
+            @RequestParam(value = "thumbnail", required = false) MultipartFile thumbnail,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
         Long tenantId = TenantContext.getCurrentTenantId();
         Long userId = principal.id();
-        ContentResponse response = contentService.uploadFile(file, folderId, tenantId, userId);
+        ContentResponse response = contentService.uploadFile(file, folderId, originalFileName, description, tags, thumbnail, tenantId, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
     }
 
@@ -176,6 +180,7 @@ public class ContentController {
     @GetMapping("/my")
     @PreAuthorize("hasRole('DESIGNER')")
     public ResponseEntity<ApiResponse<Page<ContentListResponse>>> getMyContents(
+            @RequestParam(required = false) ContentType contentType,
             @RequestParam(required = false) ContentStatus status,
             @RequestParam(required = false) String keyword,
             @PageableDefault(size = 20) Pageable pageable,
@@ -184,7 +189,7 @@ public class ContentController {
         Long tenantId = TenantContext.getCurrentTenantId();
         Long userId = principal.id();
         Page<ContentListResponse> response = contentService.getMyContents(
-                tenantId, userId, status, keyword, pageable);
+                tenantId, userId, contentType, status, keyword, pageable);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

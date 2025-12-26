@@ -65,20 +65,24 @@ public class ContentServiceImpl implements ContentService {
 
     @Override
     @Transactional
-    public ContentResponse uploadFile(MultipartFile file, Long folderId, Long tenantId, Long userId) {
-        String originalFileName = StringUtils.cleanPath(file.getOriginalFilename());
-        String extension = fileStorageService.getFileExtension(originalFileName);
+    public ContentResponse uploadFile(MultipartFile file, Long folderId, String displayName,
+                                       String description, String tags, MultipartFile thumbnail,
+                                       Long tenantId, Long userId) {
+        String uploadedFileName = StringUtils.cleanPath(file.getOriginalFilename());
+        String extension = fileStorageService.getFileExtension(uploadedFileName);
 
         ContentType contentType = ContentType.fromExtension(extension);
         if (contentType == null) {
             throw new UnsupportedContentTypeException(extension);
         }
 
-        String storedFileName = fileStorageService.generateStoredFileName(originalFileName);
+        String storedFileName = fileStorageService.generateStoredFileName(uploadedFileName);
         String filePath = fileStorageService.storeFile(file);
 
+        // uploadedFileName: 실제 업로드 파일명, displayName: 사용자 지정 콘텐츠 이름
         Content content = Content.createFile(
-                originalFileName,
+                uploadedFileName,
+                displayName,
                 storedFileName,
                 contentType,
                 file.getSize(),
@@ -86,11 +90,20 @@ public class ContentServiceImpl implements ContentService {
                 userId
         );
 
-        // 썸네일 자동 생성
-        generateAndSetThumbnail(content, filePath, contentType);
+        // 설명, 태그 설정
+        content.updateDescriptionAndTags(description, tags);
+
+        // 커스텀 썸네일이 있으면 저장
+        if (thumbnail != null && !thumbnail.isEmpty()) {
+            String customThumbnailPath = thumbnailService.storeCustomThumbnail(thumbnail);
+            content.updateCustomThumbnailPath(customThumbnailPath);
+        } else {
+            // 썸네일 자동 생성
+            generateAndSetThumbnail(content, filePath, contentType);
+        }
 
         Content savedContent = contentRepository.save(content);
-        log.info("Content created: id={}, type={}, file={}", savedContent.getId(), contentType, originalFileName);
+        log.info("Content created: id={}, type={}, file={}, displayName={}", savedContent.getId(), contentType, uploadedFileName, displayName);
 
         // 초기 버전 기록
         contentVersionService.createVersion(savedContent, VersionChangeType.FILE_UPLOAD, userId, "Initial upload");
@@ -125,15 +138,20 @@ public class ContentServiceImpl implements ContentService {
                                                   String keyword, Pageable pageable) {
         Page<Content> contents;
 
+        // 기본적으로 ACTIVE 상태만 조회 (ARCHIVED 콘텐츠 제외)
+        ContentStatus activeStatus = ContentStatus.ACTIVE;
+
         if (contentType != null && keyword != null && !keyword.isBlank()) {
-            contents = contentRepository.findByTenantIdAndContentTypeAndKeyword(
-                    tenantId, contentType, keyword, pageable);
+            contents = contentRepository.findByTenantIdAndStatusAndContentTypeAndKeyword(
+                    tenantId, activeStatus, contentType, keyword, pageable);
         } else if (contentType != null) {
-            contents = contentRepository.findByTenantIdAndContentType(tenantId, contentType, pageable);
+            contents = contentRepository.findByTenantIdAndStatusAndContentType(
+                    tenantId, activeStatus, contentType, pageable);
         } else if (keyword != null && !keyword.isBlank()) {
-            contents = contentRepository.findByTenantIdAndKeyword(tenantId, keyword, pageable);
+            contents = contentRepository.findByTenantIdAndStatusAndKeyword(
+                    tenantId, activeStatus, keyword, pageable);
         } else {
-            contents = contentRepository.findByTenantId(tenantId, pageable);
+            contents = contentRepository.findByTenantIdAndStatus(tenantId, activeStatus, pageable);
         }
 
         return contents.map(ContentListResponse::from);
@@ -255,10 +273,23 @@ public class ContentServiceImpl implements ContentService {
         }
 
         Resource resource = fileStorageService.loadFileAsResource(content.getFilePath());
-        String mimeType = determineMimeType(content.getContentType(),
-                fileStorageService.getFileExtension(content.getOriginalFileName()));
 
-        return new ContentDownloadInfo(resource, content.getOriginalFileName(), mimeType);
+        // originalFileName에 확장자가 없으면 storedFileName에서 확장자 추출
+        String originalFileName = content.getOriginalFileName();
+        String extension = fileStorageService.getFileExtension(originalFileName);
+        if (extension.isEmpty()) {
+            extension = fileStorageService.getFileExtension(content.getStoredFileName());
+        }
+
+        String mimeType = determineMimeType(content.getContentType(), extension);
+
+        // 다운로드 파일명에 확장자가 없으면 추가
+        String downloadFileName = originalFileName;
+        if (!originalFileName.contains(".") && !extension.isEmpty()) {
+            downloadFileName = originalFileName + "." + extension;
+        }
+
+        return new ContentDownloadInfo(resource, downloadFileName, mimeType);
     }
 
     private Content findContentOrThrow(Long contentId, Long tenantId) {
@@ -314,6 +345,14 @@ public class ContentServiceImpl implements ContentService {
                 case "pptx" -> "application/vnd.openxmlformats-officedocument.presentationml.presentation";
                 case "xls" -> "application/vnd.ms-excel";
                 case "xlsx" -> "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+                case "txt" -> "text/plain";
+                case "csv" -> "text/csv";
+                case "html", "htm" -> "text/html";
+                case "xml" -> "application/xml";
+                case "json" -> "application/json";
+                case "zip" -> "application/zip";
+                case "rar" -> "application/vnd.rar";
+                case "7z" -> "application/x-7z-compressed";
                 default -> "application/octet-stream";
             };
             default -> "application/octet-stream";
@@ -340,17 +379,34 @@ public class ContentServiceImpl implements ContentService {
 
     @Override
     public Page<ContentListResponse> getMyContents(Long tenantId, Long userId,
-                                                    ContentStatus status, String keyword,
-                                                    Pageable pageable) {
+                                                    ContentType contentType, ContentStatus status,
+                                                    String keyword, Pageable pageable) {
         Page<Content> contents;
 
-        if (status != null && keyword != null && !keyword.isBlank()) {
+        boolean hasType = contentType != null;
+        boolean hasStatus = status != null;
+        boolean hasKeyword = keyword != null && !keyword.isBlank();
+
+        // 조합별 쿼리 호출
+        if (hasType && hasStatus && hasKeyword) {
+            contents = contentRepository.findByTenantIdAndCreatedByAndContentTypeAndStatusAndKeyword(
+                    tenantId, userId, contentType, status, keyword, pageable);
+        } else if (hasType && hasStatus) {
+            contents = contentRepository.findByTenantIdAndCreatedByAndContentTypeAndStatus(
+                    tenantId, userId, contentType, status, pageable);
+        } else if (hasType && hasKeyword) {
+            contents = contentRepository.findByTenantIdAndCreatedByAndContentTypeAndKeyword(
+                    tenantId, userId, contentType, keyword, pageable);
+        } else if (hasStatus && hasKeyword) {
             contents = contentRepository.findByTenantIdAndCreatedByAndStatusAndKeyword(
                     tenantId, userId, status, keyword, pageable);
-        } else if (status != null) {
+        } else if (hasType) {
+            contents = contentRepository.findByTenantIdAndCreatedByAndContentType(
+                    tenantId, userId, contentType, pageable);
+        } else if (hasStatus) {
             contents = contentRepository.findByTenantIdAndCreatedByAndStatus(
                     tenantId, userId, status, pageable);
-        } else if (keyword != null && !keyword.isBlank()) {
+        } else if (hasKeyword) {
             contents = contentRepository.findByTenantIdAndCreatedByAndKeyword(
                     tenantId, userId, keyword, pageable);
         } else {

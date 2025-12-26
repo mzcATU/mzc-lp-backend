@@ -21,17 +21,18 @@ public class WebConfig implements WebMvcConfigurer {
                 .allowCredentials(true)
                 .maxAge(3600);
 
-        // uploads 경로도 CORS 허용
+        // uploads 경로에 대한 CORS 설정
         registry.addMapping("/uploads/**")
                 .allowedOrigins("http://localhost:3000")
                 .allowedMethods("GET")
                 .allowedHeaders("*")
-                .allowCredentials(true);
+                .allowCredentials(true)
+                .maxAge(3600);
     }
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // /uploads/** 경로로 정적 파일 서빙
+        // /uploads/** 경로로 접근 시 실제 파일 시스템의 uploads 디렉토리를 서빙
         registry.addResourceHandler("/uploads/**")
                 .addResourceLocations("file:" + uploadDir + "/");
     }

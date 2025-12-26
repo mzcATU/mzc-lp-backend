@@ -15,8 +15,14 @@ public interface ContentService {
 
     /**
      * 파일 업로드 및 Content 생성
+     * @param originalFileName 사용자가 지정한 원본 파일명 (null인 경우 업로드 파일명 사용)
+     * @param description 콘텐츠 설명
+     * @param tags 태그 (쉼표로 구분)
+     * @param thumbnail 커스텀 썸네일 이미지
      */
-    ContentResponse uploadFile(MultipartFile file, Long folderId, Long tenantId, Long userId);
+    ContentResponse uploadFile(MultipartFile file, Long folderId, String originalFileName,
+                               String description, String tags, MultipartFile thumbnail,
+                               Long tenantId, Long userId);
 
     /**
      * 외부 링크 등록
@@ -65,7 +71,7 @@ public interface ContentService {
     /**
      * 내 콘텐츠 목록 조회 (DESIGNER용)
      */
-    Page<ContentListResponse> getMyContents(Long tenantId, Long userId, ContentStatus status, String keyword, Pageable pageable);
+    Page<ContentListResponse> getMyContents(Long tenantId, Long userId, ContentType contentType, ContentStatus status, String keyword, Pageable pageable);
 
     /**
      * 콘텐츠 보관 (Archive)
