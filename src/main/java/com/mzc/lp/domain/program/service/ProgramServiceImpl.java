@@ -10,6 +10,7 @@ import com.mzc.lp.domain.program.dto.response.ProgramDetailResponse;
 import com.mzc.lp.domain.program.dto.response.ProgramResponse;
 import com.mzc.lp.domain.program.entity.Program;
 import com.mzc.lp.domain.program.exception.ProgramNotFoundException;
+import com.mzc.lp.domain.program.exception.ProgramOwnershipException;
 import com.mzc.lp.domain.program.repository.ProgramRepository;
 import com.mzc.lp.domain.snapshot.entity.CourseSnapshot;
 import com.mzc.lp.domain.snapshot.exception.SnapshotNotFoundException;
@@ -111,11 +112,16 @@ public class ProgramServiceImpl implements ProgramService {
 
     @Override
     @Transactional
-    public void deleteProgram(Long programId) {
-        log.info("Deleting program: id={}", programId);
+    public void deleteProgram(Long programId, Long currentUserId, boolean isTenantAdmin) {
+        log.info("Deleting program: id={}, currentUserId={}, isTenantAdmin={}", programId, currentUserId, isTenantAdmin);
 
         Program program = programRepository.findByIdAndTenantId(programId, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new ProgramNotFoundException(programId));
+
+        // 소유권 검증: 본인이 생성한 프로그램 또는 TENANT_ADMIN만 삭제 가능
+        if (!isTenantAdmin && !currentUserId.equals(program.getCreatorId())) {
+            throw new ProgramOwnershipException("본인이 생성한 프로그램만 삭제할 수 있습니다");
+        }
 
         // DRAFT 상태에서만 삭제 가능
         if (!program.isDraft()) {

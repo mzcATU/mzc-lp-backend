@@ -99,7 +99,8 @@ public class ProgramController {
             @PathVariable @Positive Long programId,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        programService.deleteProgram(programId);
+        boolean isTenantAdmin = "TENANT_ADMIN".equals(principal.role());
+        programService.deleteProgram(programId, principal.id(), isTenantAdmin);
         return ResponseEntity.noContent().build();
     }
 

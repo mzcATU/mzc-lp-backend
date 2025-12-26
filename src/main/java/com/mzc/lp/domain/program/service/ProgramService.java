@@ -22,7 +22,7 @@ public interface ProgramService {
 
     ProgramResponse updateProgram(Long programId, UpdateProgramRequest request);
 
-    void deleteProgram(Long programId);
+    void deleteProgram(Long programId, Long currentUserId, boolean isTenantAdmin);
 
     // 워크플로우
     ProgramResponse submitProgram(Long programId);

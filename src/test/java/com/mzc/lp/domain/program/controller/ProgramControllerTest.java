@@ -86,6 +86,12 @@ class ProgramControllerTest extends TenantTestSupport {
         return userRepository.save(user);
     }
 
+    private User createTenantAdminUser() {
+        User user = User.create("admin@example.com", "테넌트관리자", passwordEncoder.encode("Password123!"));
+        user.updateRole(TenantRole.TENANT_ADMIN);
+        return userRepository.save(user);
+    }
+
     private String loginAndGetAccessToken(String email, String password) throws Exception {
         LoginRequest request = new LoginRequest(email, password);
         MvcResult result = mockMvc.perform(post("/api/auth/login")
@@ -459,6 +465,45 @@ class ProgramControllerTest extends TenantTestSupport {
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.success").value(false))
                     .andExpect(jsonPath("$.error.code").value("PG001"));
+        }
+
+        @Test
+        @DisplayName("실패 - 다른 사용자가 생성한 프로그램 삭제 시도")
+        void deleteProgram_fail_notOwner() throws Exception {
+            // given
+            User designer = createDesignerUser();
+            User operator = createOperatorUser();
+            String operatorToken = loginAndGetAccessToken("operator@example.com", "Password123!");
+            Program program = createTestProgram("디자이너 프로그램", designer.getId());
+
+            // when & then
+            mockMvc.perform(delete("/api/programs/{programId}", program.getId())
+                            .header("Authorization", "Bearer " + operatorToken))
+                    .andDo(print())
+                    .andExpect(status().isForbidden())
+                    .andExpect(jsonPath("$.success").value(false))
+                    .andExpect(jsonPath("$.error.code").value("PG006"));
+        }
+
+        @Test
+        @DisplayName("성공 - TENANT_ADMIN이 다른 사용자의 프로그램 삭제")
+        void deleteProgram_success_tenantAdmin() throws Exception {
+            // given
+            User designer = createDesignerUser();
+            createTenantAdminUser();
+            String adminToken = loginAndGetAccessToken("admin@example.com", "Password123!");
+            Program program = createTestProgram("디자이너 프로그램", designer.getId());
+
+            // when & then
+            mockMvc.perform(delete("/api/programs/{programId}", program.getId())
+                            .header("Authorization", "Bearer " + adminToken))
+                    .andDo(print())
+                    .andExpect(status().isNoContent());
+
+            // 삭제 확인
+            mockMvc.perform(get("/api/programs/{programId}", program.getId())
+                            .header("Authorization", "Bearer " + adminToken))
+                    .andExpect(status().isNotFound());
         }
     }
 

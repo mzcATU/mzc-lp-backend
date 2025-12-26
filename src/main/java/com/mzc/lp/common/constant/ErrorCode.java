@@ -100,6 +100,7 @@ public enum ErrorCode {
     PROGRAM_NOT_MODIFIABLE(HttpStatus.BAD_REQUEST, "PG003", "Program is not modifiable in current status"),
     PROGRAM_NOT_APPROVED(HttpStatus.BAD_REQUEST, "PG004", "Program is not approved"),
     REJECTION_REASON_REQUIRED(HttpStatus.BAD_REQUEST, "PG005", "Rejection reason is required"),
+    UNAUTHORIZED_PROGRAM_ACCESS(HttpStatus.FORBIDDEN, "PG006", "Not authorized to access this program"),
 
     // Category (CAT)
     CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "CAT001", "Category not found"),
