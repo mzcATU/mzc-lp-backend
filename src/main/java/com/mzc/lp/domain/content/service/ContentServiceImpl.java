@@ -138,15 +138,20 @@ public class ContentServiceImpl implements ContentService {
                                                   String keyword, Pageable pageable) {
         Page<Content> contents;
 
+        // 기본적으로 ACTIVE 상태만 조회 (ARCHIVED 콘텐츠 제외)
+        ContentStatus activeStatus = ContentStatus.ACTIVE;
+
         if (contentType != null && keyword != null && !keyword.isBlank()) {
-            contents = contentRepository.findByTenantIdAndContentTypeAndKeyword(
-                    tenantId, contentType, keyword, pageable);
+            contents = contentRepository.findByTenantIdAndStatusAndContentTypeAndKeyword(
+                    tenantId, activeStatus, contentType, keyword, pageable);
         } else if (contentType != null) {
-            contents = contentRepository.findByTenantIdAndContentType(tenantId, contentType, pageable);
+            contents = contentRepository.findByTenantIdAndStatusAndContentType(
+                    tenantId, activeStatus, contentType, pageable);
         } else if (keyword != null && !keyword.isBlank()) {
-            contents = contentRepository.findByTenantIdAndKeyword(tenantId, keyword, pageable);
+            contents = contentRepository.findByTenantIdAndStatusAndKeyword(
+                    tenantId, activeStatus, keyword, pageable);
         } else {
-            contents = contentRepository.findByTenantId(tenantId, pageable);
+            contents = contentRepository.findByTenantIdAndStatus(tenantId, activeStatus, pageable);
         }
 
         return contents.map(ContentListResponse::from);
@@ -378,6 +383,7 @@ public class ContentServiceImpl implements ContentService {
                                                     Pageable pageable) {
         Page<Content> contents;
 
+        // status가 null이면 전체 조회 (all 탭), 지정되면 해당 상태만 조회
         if (status != null && keyword != null && !keyword.isBlank()) {
             contents = contentRepository.findByTenantIdAndCreatedByAndStatusAndKeyword(
                     tenantId, userId, status, keyword, pageable);
