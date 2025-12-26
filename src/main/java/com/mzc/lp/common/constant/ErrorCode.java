@@ -99,7 +99,11 @@ public enum ErrorCode {
     INVALID_PROGRAM_STATUS(HttpStatus.BAD_REQUEST, "PG002", "Invalid program status transition"),
     PROGRAM_NOT_MODIFIABLE(HttpStatus.BAD_REQUEST, "PG003", "Program is not modifiable in current status"),
     PROGRAM_NOT_APPROVED(HttpStatus.BAD_REQUEST, "PG004", "Program is not approved"),
-    REJECTION_REASON_REQUIRED(HttpStatus.BAD_REQUEST, "PG005", "Rejection reason is required");
+    REJECTION_REASON_REQUIRED(HttpStatus.BAD_REQUEST, "PG005", "Rejection reason is required"),
+
+    // Category (CAT)
+    CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "CAT001", "Category not found"),
+    DUPLICATE_CATEGORY_CODE(HttpStatus.CONFLICT, "CAT002", "Category code already exists");
 
     private final HttpStatus status;
     private final String code;
