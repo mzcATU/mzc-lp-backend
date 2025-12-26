@@ -65,7 +65,9 @@ public class ContentServiceImpl implements ContentService {
 
     @Override
     @Transactional
-    public ContentResponse uploadFile(MultipartFile file, Long folderId, String displayName, Long tenantId, Long userId) {
+    public ContentResponse uploadFile(MultipartFile file, Long folderId, String displayName,
+                                       String description, String tags, MultipartFile thumbnail,
+                                       Long tenantId, Long userId) {
         String uploadedFileName = StringUtils.cleanPath(file.getOriginalFilename());
         String extension = fileStorageService.getFileExtension(uploadedFileName);
 
@@ -88,8 +90,17 @@ public class ContentServiceImpl implements ContentService {
                 userId
         );
 
-        // 썸네일 자동 생성
-        generateAndSetThumbnail(content, filePath, contentType);
+        // 설명, 태그 설정
+        content.updateDescriptionAndTags(description, tags);
+
+        // 커스텀 썸네일이 있으면 저장
+        if (thumbnail != null && !thumbnail.isEmpty()) {
+            String customThumbnailPath = thumbnailService.storeCustomThumbnail(thumbnail);
+            content.updateCustomThumbnailPath(customThumbnailPath);
+        } else {
+            // 썸네일 자동 생성
+            generateAndSetThumbnail(content, filePath, contentType);
+        }
 
         Content savedContent = contentRepository.save(content);
         log.info("Content created: id={}, type={}, file={}, displayName={}", savedContent.getId(), contentType, uploadedFileName, displayName);

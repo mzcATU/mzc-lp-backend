@@ -68,6 +68,15 @@ public class Content extends TenantEntity {
     @Column(name = "thumbnail_path", length = 1000)
     private String thumbnailPath;
 
+    @Column(name = "custom_thumbnail_path", length = 1000)
+    private String customThumbnailPath;
+
+    @Column(name = "description", length = 500)
+    private String description;
+
+    @Column(name = "tags", length = 500)
+    private String tags;
+
     // 정적 팩토리 메서드 - 파일 업로드용 (하위 호환성 유지)
     public static Content createFile(String originalFileName, String storedFileName,
                                      ContentType contentType, Long fileSize, String filePath) {
@@ -153,6 +162,17 @@ public class Content extends TenantEntity {
         if (resolution != null && !resolution.isBlank()) {
             this.resolution = resolution;
         }
+    }
+
+    // 비즈니스 메서드 - 설명, 태그 설정
+    public void updateDescriptionAndTags(String description, String tags) {
+        this.description = description;
+        this.tags = tags;
+    }
+
+    // 비즈니스 메서드 - 커스텀 썸네일 설정
+    public void updateCustomThumbnailPath(String customThumbnailPath) {
+        this.customThumbnailPath = customThumbnailPath;
     }
 
     // 비즈니스 메서드 - 파일 교체 (콘텐츠 이름은 유지, 파일 정보만 교체)
