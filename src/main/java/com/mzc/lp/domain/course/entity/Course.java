@@ -46,6 +46,9 @@ public class Course extends TenantEntity {
     private Long categoryId;
 
     @Column
+    private Long createdBy;
+
+    @Column
     private LocalDate startDate;
 
     @Column
@@ -60,16 +63,18 @@ public class Course extends TenantEntity {
     private List<CourseItem> items = new ArrayList<>();
 
     // ===== 정적 팩토리 메서드 =====
-    public static Course create(String title) {
+    public static Course create(String title, Long createdBy) {
         Course course = new Course();
         course.title = title;
+        course.createdBy = createdBy;
         return course;
     }
 
     public static Course create(String title, String description, CourseLevel level,
                                 CourseType type, Integer estimatedHours,
                                 Long categoryId, String thumbnailUrl,
-                                LocalDate startDate, LocalDate endDate, List<String> tags) {
+                                LocalDate startDate, LocalDate endDate, List<String> tags,
+                                Long createdBy) {
         Course course = new Course();
         course.title = title;
         course.description = description;
@@ -81,6 +86,7 @@ public class Course extends TenantEntity {
         course.startDate = startDate;
         course.endDate = endDate;
         course.tags = tags != null ? new ArrayList<>(tags) : new ArrayList<>();
+        course.createdBy = createdBy;
         return course;
     }
 

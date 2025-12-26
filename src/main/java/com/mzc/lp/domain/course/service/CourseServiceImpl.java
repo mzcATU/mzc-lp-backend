@@ -7,6 +7,7 @@ import com.mzc.lp.domain.course.dto.response.CourseItemResponse;
 import com.mzc.lp.domain.course.dto.response.CourseResponse;
 import com.mzc.lp.domain.course.entity.Course;
 import com.mzc.lp.domain.course.exception.CourseNotFoundException;
+import com.mzc.lp.domain.course.exception.CourseOwnershipException;
 import com.mzc.lp.domain.course.repository.CourseRepository;
 import com.mzc.lp.common.context.TenantContext;
 import lombok.RequiredArgsConstructor;
@@ -28,8 +29,8 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     @Transactional
-    public CourseResponse createCourse(CreateCourseRequest request) {
-        log.info("Creating course: title={}", request.title());
+    public CourseResponse createCourse(CreateCourseRequest request, Long createdBy) {
+        log.info("Creating course: title={}, createdBy={}", request.title(), createdBy);
 
         Course course = Course.create(
                 request.title(),
@@ -41,7 +42,8 @@ public class CourseServiceImpl implements CourseService {
                 request.thumbnailUrl(),
                 request.startDate(),
                 request.endDate(),
-                request.tags()
+                request.tags(),
+                createdBy
         );
 
         Course savedCourse = courseRepository.save(course);
@@ -113,11 +115,16 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     @Transactional
-    public void deleteCourse(Long courseId) {
-        log.info("Deleting course: courseId={}", courseId);
+    public void deleteCourse(Long courseId, Long currentUserId, boolean isTenantAdmin) {
+        log.info("Deleting course: courseId={}, currentUserId={}, isTenantAdmin={}", courseId, currentUserId, isTenantAdmin);
 
         Course course = courseRepository.findByIdAndTenantId(courseId, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new CourseNotFoundException(courseId));
+
+        // 소유권 검증: 본인이 생성한 Course 또는 TENANT_ADMIN만 삭제 가능
+        if (!isTenantAdmin && !currentUserId.equals(course.getCreatedBy())) {
+            throw new CourseOwnershipException("본인이 생성한 강의만 삭제할 수 있습니다");
+        }
 
         courseRepository.delete(course);
         log.info("Course deleted: id={}", courseId);

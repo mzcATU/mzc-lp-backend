@@ -114,9 +114,33 @@ class CourseControllerTest extends TenantTestSupport {
                 null,
                 null,
                 null,
+                null,
                 null
         );
         return courseRepository.save(course);
+    }
+
+    private Course createTestCourseWithOwner(String title, Long createdBy) {
+        Course course = Course.create(
+                title,
+                "테스트 강의 설명",
+                CourseLevel.BEGINNER,
+                CourseType.ONLINE,
+                10,
+                1L,
+                null,
+                null,
+                null,
+                null,
+                createdBy
+        );
+        return courseRepository.save(course);
+    }
+
+    private User createDesignerUser() {
+        User user = User.create("designer@example.com", "설계자", passwordEncoder.encode("Password123!"));
+        user.updateRole(TenantRole.DESIGNER);
+        return userRepository.save(user);
     }
 
     // ==================== 강의 생성 테스트 ====================
@@ -414,9 +438,9 @@ class CourseControllerTest extends TenantTestSupport {
             createOperatorUser();
             String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
 
-            Course course1 = Course.create("Spring Boot", "설명", CourseLevel.BEGINNER, CourseType.ONLINE, 10, 1L, null, null, null, null);
-            Course course2 = Course.create("React", "설명", CourseLevel.BEGINNER, CourseType.ONLINE, 10, 2L, null, null, null, null);
-            Course course3 = Course.create("Docker", "설명", CourseLevel.BEGINNER, CourseType.ONLINE, 10, 1L, null, null, null, null);
+            Course course1 = Course.create("Spring Boot", "설명", CourseLevel.BEGINNER, CourseType.ONLINE, 10, 1L, null, null, null, null, null);
+            Course course2 = Course.create("React", "설명", CourseLevel.BEGINNER, CourseType.ONLINE, 10, 2L, null, null, null, null, null);
+            Course course3 = Course.create("Docker", "설명", CourseLevel.BEGINNER, CourseType.ONLINE, 10, 1L, null, null, null, null, null);
             courseRepository.save(course1);
             courseRepository.save(course2);
             courseRepository.save(course3);
@@ -654,12 +678,12 @@ class CourseControllerTest extends TenantTestSupport {
     class DeleteCourse {
 
         @Test
-        @DisplayName("성공 - OPERATOR가 강의 삭제")
-        void deleteCourse_success_operator() throws Exception {
+        @DisplayName("성공 - OPERATOR가 본인의 강의 삭제")
+        void deleteCourse_success_operatorDeletesOwn() throws Exception {
             // given
-            createOperatorUser();
+            User operator = createOperatorUser();
             String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
-            Course course = createTestCourse("삭제할 강의");
+            Course course = createTestCourseWithOwner("삭제할 강의", operator.getId());
 
             // when & then
             mockMvc.perform(delete("/api/courses/{courseId}", course.getId())
@@ -674,18 +698,37 @@ class CourseControllerTest extends TenantTestSupport {
         }
 
         @Test
-        @DisplayName("성공 - TENANT_ADMIN이 강의 삭제")
-        void deleteCourse_success_admin() throws Exception {
+        @DisplayName("성공 - TENANT_ADMIN이 타인의 강의 삭제")
+        void deleteCourse_success_adminDeletesOthers() throws Exception {
             // given
+            User designer = createDesignerUser();
             createAdminUser();
-            String accessToken = loginAndGetAccessToken("admin@example.com", "Password123!");
-            Course course = createTestCourse("삭제할 강의");
+            String adminToken = loginAndGetAccessToken("admin@example.com", "Password123!");
+            Course course = createTestCourseWithOwner("설계자의 강의", designer.getId());
 
             // when & then
             mockMvc.perform(delete("/api/courses/{courseId}", course.getId())
-                            .header("Authorization", "Bearer " + accessToken))
+                            .header("Authorization", "Bearer " + adminToken))
                     .andDo(print())
                     .andExpect(status().isNoContent());
+        }
+
+        @Test
+        @DisplayName("실패 - OPERATOR가 타인의 강의 삭제 시도")
+        void deleteCourse_fail_operatorDeletesOthers() throws Exception {
+            // given
+            User designer = createDesignerUser();
+            createOperatorUser();
+            String operatorToken = loginAndGetAccessToken("operator@example.com", "Password123!");
+            Course course = createTestCourseWithOwner("설계자의 강의", designer.getId());
+
+            // when & then
+            mockMvc.perform(delete("/api/courses/{courseId}", course.getId())
+                            .header("Authorization", "Bearer " + operatorToken))
+                    .andDo(print())
+                    .andExpect(status().isForbidden())
+                    .andExpect(jsonPath("$.success").value(false))
+                    .andExpect(jsonPath("$.error.code").value("CM010"));
         }
 
         @Test

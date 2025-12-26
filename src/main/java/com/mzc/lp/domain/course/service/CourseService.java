@@ -12,9 +12,10 @@ public interface CourseService {
     /**
      * 강의 생성
      * @param request 생성 요청 DTO
+     * @param createdBy 생성자 ID
      * @return 생성된 강의 정보
      */
-    CourseResponse createCourse(CreateCourseRequest request);
+    CourseResponse createCourse(CreateCourseRequest request, Long createdBy);
 
     /**
      * 강의 목록 조회 (페이징, 키워드 검색, 카테고리 필터)
@@ -43,6 +44,8 @@ public interface CourseService {
     /**
      * 강의 삭제
      * @param courseId 강의 ID
+     * @param currentUserId 현재 사용자 ID
+     * @param isTenantAdmin 테넌트 관리자 여부
      */
-    void deleteCourse(Long courseId);
+    void deleteCourse(Long courseId, Long currentUserId, boolean isTenantAdmin);
 }
