@@ -42,11 +42,12 @@ public class ContentController {
     public ResponseEntity<ApiResponse<ContentResponse>> uploadFile(
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "folderId", required = false) Long folderId,
+            @RequestParam(value = "originalFileName", required = false) String originalFileName,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
         Long tenantId = TenantContext.getCurrentTenantId();
         Long userId = principal.id();
-        ContentResponse response = contentService.uploadFile(file, folderId, tenantId, userId);
+        ContentResponse response = contentService.uploadFile(file, folderId, originalFileName, tenantId, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
     }
 

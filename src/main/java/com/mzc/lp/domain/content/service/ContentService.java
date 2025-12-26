@@ -15,8 +15,9 @@ public interface ContentService {
 
     /**
      * 파일 업로드 및 Content 생성
+     * @param originalFileName 사용자가 지정한 원본 파일명 (null인 경우 업로드 파일명 사용)
      */
-    ContentResponse uploadFile(MultipartFile file, Long folderId, Long tenantId, Long userId);
+    ContentResponse uploadFile(MultipartFile file, Long folderId, String originalFileName, Long tenantId, Long userId);
 
     /**
      * 외부 링크 등록

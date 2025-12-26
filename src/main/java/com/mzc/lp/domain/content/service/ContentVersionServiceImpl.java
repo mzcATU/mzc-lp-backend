@@ -75,12 +75,15 @@ public class ContentVersionServiceImpl implements ContentVersionService {
         ContentVersion version = contentVersionRepository.findByContentIdAndVersionNumber(contentId, versionNumber)
                 .orElseThrow(() -> new ContentVersionNotFoundException(contentId, versionNumber));
 
-        // 버전 복원 (콘텐츠 이름은 유지, 파일 정보만 복원)
-        content.replaceFile(
+        // 버전 복원 (모든 정보 복원)
+        content.restoreFromVersion(
+                version.getOriginalFileName(),
                 version.getUploadedFileName(),
                 version.getStoredFileName(),
                 version.getFileSize(),
-                version.getFilePath()
+                version.getFilePath(),
+                version.getDuration(),
+                version.getResolution()
         );
         content.updateThumbnailPath(version.getThumbnailPath());
         content.incrementVersion();

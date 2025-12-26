@@ -65,20 +65,22 @@ public class ContentServiceImpl implements ContentService {
 
     @Override
     @Transactional
-    public ContentResponse uploadFile(MultipartFile file, Long folderId, Long tenantId, Long userId) {
-        String originalFileName = StringUtils.cleanPath(file.getOriginalFilename());
-        String extension = fileStorageService.getFileExtension(originalFileName);
+    public ContentResponse uploadFile(MultipartFile file, Long folderId, String displayName, Long tenantId, Long userId) {
+        String uploadedFileName = StringUtils.cleanPath(file.getOriginalFilename());
+        String extension = fileStorageService.getFileExtension(uploadedFileName);
 
         ContentType contentType = ContentType.fromExtension(extension);
         if (contentType == null) {
             throw new UnsupportedContentTypeException(extension);
         }
 
-        String storedFileName = fileStorageService.generateStoredFileName(originalFileName);
+        String storedFileName = fileStorageService.generateStoredFileName(uploadedFileName);
         String filePath = fileStorageService.storeFile(file);
 
+        // uploadedFileName: 실제 업로드 파일명, displayName: 사용자 지정 콘텐츠 이름
         Content content = Content.createFile(
-                originalFileName,
+                uploadedFileName,
+                displayName,
                 storedFileName,
                 contentType,
                 file.getSize(),
@@ -90,7 +92,7 @@ public class ContentServiceImpl implements ContentService {
         generateAndSetThumbnail(content, filePath, contentType);
 
         Content savedContent = contentRepository.save(content);
-        log.info("Content created: id={}, type={}, file={}", savedContent.getId(), contentType, originalFileName);
+        log.info("Content created: id={}, type={}, file={}, displayName={}", savedContent.getId(), contentType, uploadedFileName, displayName);
 
         // 초기 버전 기록
         contentVersionService.createVersion(savedContent, VersionChangeType.FILE_UPLOAD, userId, "Initial upload");
