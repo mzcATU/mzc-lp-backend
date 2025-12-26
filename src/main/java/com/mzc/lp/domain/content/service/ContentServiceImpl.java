@@ -154,12 +154,13 @@ public class ContentServiceImpl implements ContentService {
         // 강의에서 사용 중인 콘텐츠는 수정 불가
         validateContentNotInUse(contentId);
 
-        // 버전 기록 (변경 전 상태 저장)
-        contentVersionService.createVersion(content, VersionChangeType.METADATA_UPDATE,
-                content.getCreatedBy(), "Metadata updated");
-
+        // 메타데이터 변경
         content.updateMetadata(request.originalFileName(), request.duration(), request.resolution());
         content.incrementVersion();
+
+        // 버전 기록 (변경 후 상태 저장)
+        contentVersionService.createVersion(content, VersionChangeType.METADATA_UPDATE,
+                content.getCreatedBy(), "Metadata updated");
 
         log.info("Content updated: id={}", contentId);
         return ContentResponse.from(content);
@@ -178,22 +179,24 @@ public class ContentServiceImpl implements ContentService {
                     "Cannot replace file for external link content");
         }
 
-        // 버전 기록 (변경 전 상태 저장)
-        contentVersionService.createVersion(content, VersionChangeType.FILE_REPLACE,
-                content.getCreatedBy(), "File replaced");
-
         String oldFilePath = content.getFilePath();
         String oldThumbnailPath = content.getThumbnailPath();
         String originalFileName = StringUtils.cleanPath(file.getOriginalFilename());
         String storedFileName = fileStorageService.generateStoredFileName(originalFileName);
         String newFilePath = fileStorageService.storeFile(file);
 
+        // 파일 교체
         content.replaceFile(originalFileName, storedFileName, file.getSize(), newFilePath);
         content.incrementVersion();
 
         // 썸네일 재생성
         generateAndSetThumbnail(content, newFilePath, content.getContentType());
 
+        // 버전 기록 (변경 후 상태 저장)
+        contentVersionService.createVersion(content, VersionChangeType.FILE_REPLACE,
+                content.getCreatedBy(), "File replaced");
+
+        // 이전 파일 삭제
         if (oldFilePath != null) {
             fileStorageService.deleteFile(oldFilePath);
         }

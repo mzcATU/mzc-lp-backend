@@ -75,13 +75,6 @@ public class ContentVersionServiceImpl implements ContentVersionService {
         ContentVersion version = contentVersionRepository.findByContentIdAndVersionNumber(contentId, versionNumber)
                 .orElseThrow(() -> new ContentVersionNotFoundException(contentId, versionNumber));
 
-        // 현재 상태 백업
-        String summary = "Before restore to v" + versionNumber;
-        if (changeSummary != null && !changeSummary.isBlank()) {
-            summary += ": " + changeSummary;
-        }
-        createVersion(content, VersionChangeType.FILE_REPLACE, userId, summary);
-
         // 버전 복원 (콘텐츠 이름은 유지, 파일 정보만 복원)
         content.replaceFile(
                 version.getUploadedFileName(),
@@ -91,6 +84,13 @@ public class ContentVersionServiceImpl implements ContentVersionService {
         );
         content.updateThumbnailPath(version.getThumbnailPath());
         content.incrementVersion();
+
+        // 복원 후 상태로 버전 기록
+        String summary = "Restored from v" + versionNumber;
+        if (changeSummary != null && !changeSummary.isBlank()) {
+            summary += ": " + changeSummary;
+        }
+        createVersion(content, VersionChangeType.FILE_REPLACE, userId, summary);
 
         log.info("Content restored to version {}: contentId={}", versionNumber, contentId);
 
