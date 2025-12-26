@@ -8,6 +8,7 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.PDFRenderer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -155,6 +156,39 @@ public class ThumbnailServiceImpl implements ThumbnailService {
         } catch (Exception e) {
             log.error("Error generating PDF thumbnail: {}", pdfPath, e);
             return Optional.empty();
+        }
+    }
+
+    @Override
+    public String storeCustomThumbnail(MultipartFile thumbnail) {
+        try {
+            String originalFileName = thumbnail.getOriginalFilename();
+            String extension = getFileExtension(originalFileName != null ? originalFileName : "image.jpg");
+
+            // jpg, jpeg, png만 허용
+            if (!extension.matches("(?i)jpg|jpeg|png")) {
+                extension = "jpg";
+            }
+
+            String outputFileName = UUID.randomUUID().toString() + "." + extension;
+            Path outputPath = getThumbnailOutputPath(outputFileName);
+
+            // 이미지 리사이즈 후 저장
+            BufferedImage originalImage = ImageIO.read(thumbnail.getInputStream());
+            if (originalImage != null) {
+                BufferedImage resizedImage = resizeImage(originalImage, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
+                ImageIO.write(resizedImage, extension.equalsIgnoreCase("png") ? "png" : "jpg", outputPath.toFile());
+            } else {
+                // 이미지 읽기 실패 시 원본 그대로 저장
+                Files.copy(thumbnail.getInputStream(), outputPath);
+            }
+
+            String relativePath = "/uploads/thumbnails/" + getDatePath() + "/" + outputFileName;
+            log.info("Custom thumbnail stored: {}", relativePath);
+            return relativePath;
+        } catch (IOException e) {
+            log.error("Failed to store custom thumbnail", e);
+            throw new RuntimeException("Failed to store custom thumbnail", e);
         }
     }
 

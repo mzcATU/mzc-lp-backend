@@ -16,6 +16,9 @@ public record ContentListResponse(
         Integer duration,
         String resolution,
         String thumbnailPath,
+        String customThumbnailPath,
+        String description,
+        String tags,
         Integer currentVersion,
         Boolean inCourse,
         LocalDateTime createdAt
@@ -34,6 +37,9 @@ public record ContentListResponse(
                 content.getDuration(),
                 content.getResolution(),
                 content.getThumbnailPath(),
+                content.getCustomThumbnailPath(),
+                content.getDescription(),
+                content.getTags(),
                 content.getCurrentVersion(),
                 inCourse,
                 content.getCreatedAt() != null

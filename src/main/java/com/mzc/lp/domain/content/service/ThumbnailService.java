@@ -1,6 +1,7 @@
 package com.mzc.lp.domain.content.service;
 
 import com.mzc.lp.domain.content.constant.ContentType;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.nio.file.Path;
 import java.util.Optional;
@@ -41,4 +42,11 @@ public interface ThumbnailService {
      * @param thumbnailPath 썸네일 경로
      */
     void deleteThumbnail(String thumbnailPath);
+
+    /**
+     * 커스텀 썸네일 저장
+     * @param thumbnail 썸네일 이미지 파일
+     * @return 저장된 썸네일 경로
+     */
+    String storeCustomThumbnail(MultipartFile thumbnail);
 }
