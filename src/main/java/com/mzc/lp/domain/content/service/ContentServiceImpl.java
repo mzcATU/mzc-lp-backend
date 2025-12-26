@@ -268,10 +268,23 @@ public class ContentServiceImpl implements ContentService {
         }
 
         Resource resource = fileStorageService.loadFileAsResource(content.getFilePath());
-        String mimeType = determineMimeType(content.getContentType(),
-                fileStorageService.getFileExtension(content.getOriginalFileName()));
 
-        return new ContentDownloadInfo(resource, content.getOriginalFileName(), mimeType);
+        // originalFileName에 확장자가 없으면 storedFileName에서 확장자 추출
+        String originalFileName = content.getOriginalFileName();
+        String extension = fileStorageService.getFileExtension(originalFileName);
+        if (extension.isEmpty()) {
+            extension = fileStorageService.getFileExtension(content.getStoredFileName());
+        }
+
+        String mimeType = determineMimeType(content.getContentType(), extension);
+
+        // 다운로드 파일명에 확장자가 없으면 추가
+        String downloadFileName = originalFileName;
+        if (!originalFileName.contains(".") && !extension.isEmpty()) {
+            downloadFileName = originalFileName + "." + extension;
+        }
+
+        return new ContentDownloadInfo(resource, downloadFileName, mimeType);
     }
 
     private Content findContentOrThrow(Long contentId, Long tenantId) {
@@ -327,6 +340,14 @@ public class ContentServiceImpl implements ContentService {
                 case "pptx" -> "application/vnd.openxmlformats-officedocument.presentationml.presentation";
                 case "xls" -> "application/vnd.ms-excel";
                 case "xlsx" -> "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+                case "txt" -> "text/plain";
+                case "csv" -> "text/csv";
+                case "html", "htm" -> "text/html";
+                case "xml" -> "application/xml";
+                case "json" -> "application/json";
+                case "zip" -> "application/zip";
+                case "rar" -> "application/vnd.rar";
+                case "7z" -> "application/x-7z-compressed";
                 default -> "application/octet-stream";
             };
             default -> "application/octet-stream";
