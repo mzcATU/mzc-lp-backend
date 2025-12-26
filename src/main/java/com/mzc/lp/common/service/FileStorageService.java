@@ -23,15 +23,17 @@ public class FileStorageService {
     private static final List<String> ALLOWED_IMAGE_TYPES = Arrays.asList("image/jpeg", "image/jpg", "image/png");
     private static final long MAX_FILE_SIZE = 5L * 1024 * 1024; // 5MB
 
-    @Value("${file.upload-dir:uploads/profile-images}")
+    @Value("${file.upload-dir:./uploads}")
     private String uploadDir;
+
+    private static final String PROFILE_IMAGES_SUBDIR = "profile-images";
 
     public String storeProfileImage(MultipartFile file) {
         validateFile(file);
 
         try {
-            // 업로드 디렉토리 생성
-            Path uploadPath = Paths.get(uploadDir);
+            // 프로필 이미지 전용 서브디렉토리 생성
+            Path uploadPath = Paths.get(uploadDir, PROFILE_IMAGES_SUBDIR);
             if (!Files.exists(uploadPath)) {
                 Files.createDirectories(uploadPath);
             }
@@ -48,7 +50,7 @@ public class FileStorageService {
             Files.copy(file.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
 
             log.info("Profile image stored: {}", filename);
-            return "/uploads/profile-images/" + filename;
+            return "/uploads/" + PROFILE_IMAGES_SUBDIR + "/" + filename;
 
         } catch (IOException e) {
             log.error("Failed to store profile image", e);
