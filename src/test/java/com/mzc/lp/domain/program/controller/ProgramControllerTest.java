@@ -104,7 +104,7 @@ class ProgramControllerTest extends TenantTestSupport {
         return objectMapper.readTree(response).get("data").get("accessToken").asText();
     }
 
-    private Program createTestProgram(String title, Long creatorId) {
+    private Program createTestProgram(String title, Long createdBy) {
         Program program = Program.create(
                 title,
                 "테스트 프로그램 설명",
@@ -112,13 +112,13 @@ class ProgramControllerTest extends TenantTestSupport {
                 ProgramLevel.BEGINNER,
                 ProgramType.ONLINE,
                 10,
-                creatorId
+                createdBy
         );
         return programRepository.save(program);
     }
 
-    private Program createTestProgramWithStatus(String title, Long creatorId, ProgramStatus status) {
-        Program program = createTestProgram(title, creatorId);
+    private Program createTestProgramWithStatus(String title, Long createdBy, ProgramStatus status) {
+        Program program = createTestProgram(title, createdBy);
 
         if (status == ProgramStatus.PENDING) {
             program.submit();
@@ -169,7 +169,7 @@ class ProgramControllerTest extends TenantTestSupport {
                     .andExpect(jsonPath("$.success").value(true))
                     .andExpect(jsonPath("$.data.title").value("Spring Boot 기초"))
                     .andExpect(jsonPath("$.data.status").value("DRAFT"))
-                    .andExpect(jsonPath("$.data.creatorId").value(designer.getId()));
+                    .andExpect(jsonPath("$.data.createdBy").value(designer.getId()));
         }
 
         @Test
@@ -313,7 +313,7 @@ class ProgramControllerTest extends TenantTestSupport {
             // when & then
             mockMvc.perform(get("/api/programs")
                             .header("Authorization", "Bearer " + accessToken)
-                            .param("creatorId", designer.getId().toString()))
+                            .param("createdBy", designer.getId().toString()))
                     .andDo(print())
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))

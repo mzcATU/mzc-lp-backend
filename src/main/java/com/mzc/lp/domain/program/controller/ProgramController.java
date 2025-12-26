@@ -53,11 +53,11 @@ public class ProgramController {
     @GetMapping
     public ResponseEntity<ApiResponse<Page<ProgramResponse>>> getPrograms(
             @RequestParam(required = false) ProgramStatus status,
-            @RequestParam(required = false) Long creatorId,
+            @RequestParam(required = false) Long createdBy,
             @PageableDefault(size = 20) Pageable pageable,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        Page<ProgramResponse> response = programService.getPrograms(status, creatorId, pageable);
+        Page<ProgramResponse> response = programService.getPrograms(status, createdBy, pageable);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

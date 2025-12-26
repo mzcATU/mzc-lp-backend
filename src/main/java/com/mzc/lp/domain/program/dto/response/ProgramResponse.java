@@ -16,7 +16,7 @@ public record ProgramResponse(
         ProgramType type,
         Integer estimatedHours,
         ProgramStatus status,
-        Long creatorId,
+        Long createdBy,
         Long snapshotId,
         Instant createdAt,
         Instant updatedAt
@@ -31,7 +31,7 @@ public record ProgramResponse(
                 program.getType(),
                 program.getEstimatedHours(),
                 program.getStatus(),
-                program.getCreatorId(),
+                program.getCreatedBy(),
                 program.getSnapshot() != null ? program.getSnapshot().getId() : null,
                 program.getCreatedAt(),
                 program.getUpdatedAt()

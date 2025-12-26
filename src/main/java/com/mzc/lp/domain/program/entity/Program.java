@@ -18,7 +18,7 @@ import java.time.Instant;
 @Table(name = "cm_programs", indexes = {
         @Index(name = "idx_program_tenant", columnList = "tenant_id"),
         @Index(name = "idx_program_status", columnList = "status"),
-        @Index(name = "idx_program_creator", columnList = "creator_id"),
+        @Index(name = "idx_program_created_by", columnList = "created_by"),
         @Index(name = "idx_program_snapshot", columnList = "snapshot_id")
 })
 @Getter
@@ -57,8 +57,8 @@ public class Program extends TenantEntity {
     @Column(nullable = false, length = 20)
     private ProgramStatus status;
 
-    @Column(name = "creator_id", nullable = false)
-    private Long creatorId;
+    @Column(name = "created_by", nullable = false)
+    private Long createdBy;
 
     // 승인 정보
     @Column(name = "approved_by")
@@ -82,17 +82,17 @@ public class Program extends TenantEntity {
     private Instant submittedAt;
 
     // ===== 정적 팩토리 메서드 =====
-    public static Program create(String title, Long creatorId) {
+    public static Program create(String title, Long createdBy) {
         Program program = new Program();
         program.title = title;
-        program.creatorId = creatorId;
+        program.createdBy = createdBy;
         program.status = ProgramStatus.DRAFT;
         return program;
     }
 
     public static Program create(String title, String description, String thumbnailUrl,
                                   ProgramLevel level, ProgramType type, Integer estimatedHours,
-                                  Long creatorId) {
+                                  Long createdBy) {
         Program program = new Program();
         program.title = title;
         program.description = description;
@@ -100,7 +100,7 @@ public class Program extends TenantEntity {
         program.level = level;
         program.type = type;
         program.estimatedHours = estimatedHours;
-        program.creatorId = creatorId;
+        program.createdBy = createdBy;
         program.status = ProgramStatus.DRAFT;
         return program;
     }

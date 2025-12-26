@@ -18,7 +18,7 @@ public interface ProgramService {
 
     ProgramDetailResponse getProgram(Long programId);
 
-    Page<ProgramResponse> getPrograms(ProgramStatus status, Long creatorId, Pageable pageable);
+    Page<ProgramResponse> getPrograms(ProgramStatus status, Long createdBy, Pageable pageable);
 
     ProgramResponse updateProgram(Long programId, UpdateProgramRequest request);
 

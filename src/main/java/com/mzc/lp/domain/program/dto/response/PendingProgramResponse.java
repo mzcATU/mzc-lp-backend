@@ -12,7 +12,7 @@ public record PendingProgramResponse(
         String thumbnailUrl,
         ProgramLevel level,
         ProgramType type,
-        Long creatorId,
+        Long createdBy,
         Instant submittedAt,
         Long snapshotId
 ) {
@@ -23,7 +23,7 @@ public record PendingProgramResponse(
                 program.getThumbnailUrl(),
                 program.getLevel(),
                 program.getType(),
-                program.getCreatorId(),
+                program.getCreatedBy(),
                 program.getSubmittedAt(),
                 program.getSnapshot() != null ? program.getSnapshot().getId() : null
         );

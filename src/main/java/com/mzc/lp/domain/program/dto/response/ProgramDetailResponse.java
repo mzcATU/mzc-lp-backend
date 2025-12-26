@@ -16,7 +16,7 @@ public record ProgramDetailResponse(
         ProgramType type,
         Integer estimatedHours,
         ProgramStatus status,
-        Long creatorId,
+        Long createdBy,
         Long snapshotId,
         String snapshotName,
         // 승인 정보
@@ -41,7 +41,7 @@ public record ProgramDetailResponse(
                 program.getType(),
                 program.getEstimatedHours(),
                 program.getStatus(),
-                program.getCreatorId(),
+                program.getCreatedBy(),
                 program.getSnapshot() != null ? program.getSnapshot().getId() : null,
                 program.getSnapshot() != null ? program.getSnapshot().getSnapshotName() : null,
                 program.getApprovedBy(),
