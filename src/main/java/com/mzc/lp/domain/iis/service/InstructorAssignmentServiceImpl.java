@@ -11,6 +11,8 @@ import com.mzc.lp.domain.iis.dto.request.UpdateRoleRequest;
 import com.mzc.lp.domain.iis.dto.response.AssignmentHistoryResponse;
 import com.mzc.lp.domain.iis.dto.response.CourseTimeStatResponse;
 import com.mzc.lp.domain.iis.dto.response.InstructorAssignmentResponse;
+import com.mzc.lp.domain.iis.dto.response.ConflictingAssignmentInfo;
+import com.mzc.lp.domain.iis.dto.response.InstructorAvailabilityResponse;
 import com.mzc.lp.domain.iis.dto.response.InstructorDetailStatResponse;
 import com.mzc.lp.domain.iis.dto.response.InstructorStatResponse;
 import com.mzc.lp.domain.iis.dto.response.InstructorStatisticsResponse;
@@ -651,5 +653,117 @@ public class InstructorAssignmentServiceImpl implements InstructorAssignmentServ
 
             throw new InstructorScheduleConflictException(userId, conflicts);
         }
+    }
+
+    // ========== 가용성 확인 API ==========
+
+    @Override
+    public InstructorAvailabilityResponse checkAvailability(Long userId, LocalDate startDate, LocalDate endDate) {
+        log.debug("Checking availability: userId={}, dateRange={} ~ {}", userId, startDate, endDate);
+
+        Long tenantId = TenantContext.getCurrentTenantId();
+
+        // 강사의 기존 ACTIVE 배정 목록 조회
+        List<InstructorAssignment> existingAssignments = assignmentRepository.findActiveByUserKey(tenantId, userId);
+
+        if (existingAssignments.isEmpty()) {
+            return InstructorAvailabilityResponse.available(userId);
+        }
+
+        // 기존 배정의 timeKey 목록
+        List<Long> existingTimeIds = existingAssignments.stream()
+                .map(InstructorAssignment::getTimeKey)
+                .distinct()
+                .toList();
+
+        // 기간이 겹치는 CourseTime 조회
+        List<CourseTime> conflictingCourseTimes = courseTimeRepository.findByIdInAndDateRangeOverlap(
+                existingTimeIds,
+                startDate,
+                endDate
+        );
+
+        if (conflictingCourseTimes.isEmpty()) {
+            return InstructorAvailabilityResponse.available(userId);
+        }
+
+        // CourseTime ID -> Assignment 매핑 (역할 정보 포함)
+        Map<Long, InstructorAssignment> timeIdToAssignment = existingAssignments.stream()
+                .collect(Collectors.toMap(
+                        InstructorAssignment::getTimeKey,
+                        Function.identity(),
+                        (existing, replacement) -> existing
+                ));
+
+        List<ConflictingAssignmentInfo> conflicts = conflictingCourseTimes.stream()
+                .map(ct -> {
+                    InstructorAssignment assignment = timeIdToAssignment.get(ct.getId());
+                    return ConflictingAssignmentInfo.of(ct, assignment != null ? assignment.getRole() : null);
+                })
+                .toList();
+
+        return InstructorAvailabilityResponse.unavailable(userId, conflicts);
+    }
+
+    @Override
+    public List<InstructorAvailabilityResponse> checkAvailabilityBulk(List<Long> userIds, LocalDate startDate, LocalDate endDate) {
+        log.debug("Checking availability bulk: userCount={}, dateRange={} ~ {}", userIds.size(), startDate, endDate);
+
+        Long tenantId = TenantContext.getCurrentTenantId();
+
+        // 모든 강사의 ACTIVE 배정을 한 번에 조회
+        List<InstructorAssignment> allAssignments = assignmentRepository.findActiveByUserKeyIn(tenantId, userIds);
+
+        // 강사별로 그룹핑
+        Map<Long, List<InstructorAssignment>> assignmentsByUser = allAssignments.stream()
+                .collect(Collectors.groupingBy(InstructorAssignment::getUserKey));
+
+        // 모든 timeKey 수집 (중복 제거)
+        List<Long> allTimeIds = allAssignments.stream()
+                .map(InstructorAssignment::getTimeKey)
+                .distinct()
+                .toList();
+
+        // 기간이 겹치는 CourseTime 한 번에 조회
+        Map<Long, CourseTime> conflictingCourseTimeMap = Map.of();
+        if (!allTimeIds.isEmpty()) {
+            List<CourseTime> conflictingCourseTimes = courseTimeRepository.findByIdInAndDateRangeOverlap(
+                    allTimeIds,
+                    startDate,
+                    endDate
+            );
+            conflictingCourseTimeMap = conflictingCourseTimes.stream()
+                    .collect(Collectors.toMap(CourseTime::getId, Function.identity()));
+        }
+
+        // 각 강사별로 가용성 계산
+        List<InstructorAvailabilityResponse> results = new ArrayList<>();
+        Map<Long, CourseTime> finalConflictingMap = conflictingCourseTimeMap;
+
+        for (Long userId : userIds) {
+            List<InstructorAssignment> userAssignments = assignmentsByUser.getOrDefault(userId, List.of());
+
+            if (userAssignments.isEmpty()) {
+                results.add(InstructorAvailabilityResponse.available(userId));
+                continue;
+            }
+
+            // 해당 강사의 충돌하는 배정 찾기
+            List<ConflictingAssignmentInfo> conflicts = userAssignments.stream()
+                    .filter(a -> finalConflictingMap.containsKey(a.getTimeKey()))
+                    .map(a -> {
+                        CourseTime ct = finalConflictingMap.get(a.getTimeKey());
+                        return ConflictingAssignmentInfo.of(ct, a.getRole());
+                    })
+                    .toList();
+
+            if (conflicts.isEmpty()) {
+                results.add(InstructorAvailabilityResponse.available(userId));
+            } else {
+                results.add(InstructorAvailabilityResponse.unavailable(userId, conflicts));
+            }
+        }
+
+        return results;
     }
 }

@@ -5,10 +5,12 @@ import com.mzc.lp.common.security.UserPrincipal;
 import com.mzc.lp.domain.iis.constant.AssignmentAction;
 import com.mzc.lp.domain.iis.constant.AssignmentStatus;
 import com.mzc.lp.domain.iis.dto.request.CancelAssignmentRequest;
+import com.mzc.lp.domain.iis.dto.request.InstructorAvailabilityCheckRequest;
 import com.mzc.lp.domain.iis.dto.request.ReplaceInstructorRequest;
 import com.mzc.lp.domain.iis.dto.request.UpdateRoleRequest;
 import com.mzc.lp.domain.iis.dto.response.AssignmentHistoryResponse;
 import com.mzc.lp.domain.iis.dto.response.InstructorAssignmentResponse;
+import com.mzc.lp.domain.iis.dto.response.InstructorAvailabilityResponse;
 import com.mzc.lp.domain.iis.dto.response.InstructorDetailStatResponse;
 import com.mzc.lp.domain.iis.dto.response.InstructorStatResponse;
 import com.mzc.lp.domain.iis.dto.response.InstructorStatisticsResponse;
@@ -148,6 +150,29 @@ public class InstructorAssignmentController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
     ) {
         InstructorDetailStatResponse response = assignmentService.getInstructorDetailStatistics(userId, startDate, endDate);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    // ========== 가용성 확인 API ==========
+
+    @GetMapping("/api/users/{userId}/availability")
+    @PreAuthorize("hasAnyRole('OPERATOR', 'TENANT_ADMIN')")
+    public ResponseEntity<ApiResponse<InstructorAvailabilityResponse>> checkAvailability(
+            @PathVariable Long userId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
+    ) {
+        InstructorAvailabilityResponse response = assignmentService.checkAvailability(userId, startDate, endDate);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @PostMapping("/api/instructors/availability/check")
+    @PreAuthorize("hasAnyRole('OPERATOR', 'TENANT_ADMIN')")
+    public ResponseEntity<ApiResponse<List<InstructorAvailabilityResponse>>> checkAvailabilityBulk(
+            @Valid @RequestBody InstructorAvailabilityCheckRequest request
+    ) {
+        List<InstructorAvailabilityResponse> response = assignmentService.checkAvailabilityBulk(
+                request.userIds(), request.startDate(), request.endDate());
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 }
