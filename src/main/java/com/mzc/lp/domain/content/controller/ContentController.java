@@ -180,6 +180,7 @@ public class ContentController {
     @GetMapping("/my")
     @PreAuthorize("hasRole('DESIGNER')")
     public ResponseEntity<ApiResponse<Page<ContentListResponse>>> getMyContents(
+            @RequestParam(required = false) ContentType contentType,
             @RequestParam(required = false) ContentStatus status,
             @RequestParam(required = false) String keyword,
             @PageableDefault(size = 20) Pageable pageable,
@@ -188,7 +189,7 @@ public class ContentController {
         Long tenantId = TenantContext.getCurrentTenantId();
         Long userId = principal.id();
         Page<ContentListResponse> response = contentService.getMyContents(
-                tenantId, userId, status, keyword, pageable);
+                tenantId, userId, contentType, status, keyword, pageable);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

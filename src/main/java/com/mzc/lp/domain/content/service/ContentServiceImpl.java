@@ -138,15 +138,20 @@ public class ContentServiceImpl implements ContentService {
                                                   String keyword, Pageable pageable) {
         Page<Content> contents;
 
+        // 기본적으로 ACTIVE 상태만 조회 (ARCHIVED 콘텐츠 제외)
+        ContentStatus activeStatus = ContentStatus.ACTIVE;
+
         if (contentType != null && keyword != null && !keyword.isBlank()) {
-            contents = contentRepository.findByTenantIdAndContentTypeAndKeyword(
-                    tenantId, contentType, keyword, pageable);
+            contents = contentRepository.findByTenantIdAndStatusAndContentTypeAndKeyword(
+                    tenantId, activeStatus, contentType, keyword, pageable);
         } else if (contentType != null) {
-            contents = contentRepository.findByTenantIdAndContentType(tenantId, contentType, pageable);
+            contents = contentRepository.findByTenantIdAndStatusAndContentType(
+                    tenantId, activeStatus, contentType, pageable);
         } else if (keyword != null && !keyword.isBlank()) {
-            contents = contentRepository.findByTenantIdAndKeyword(tenantId, keyword, pageable);
+            contents = contentRepository.findByTenantIdAndStatusAndKeyword(
+                    tenantId, activeStatus, keyword, pageable);
         } else {
-            contents = contentRepository.findByTenantId(tenantId, pageable);
+            contents = contentRepository.findByTenantIdAndStatus(tenantId, activeStatus, pageable);
         }
 
         return contents.map(ContentListResponse::from);
@@ -374,17 +379,34 @@ public class ContentServiceImpl implements ContentService {
 
     @Override
     public Page<ContentListResponse> getMyContents(Long tenantId, Long userId,
-                                                    ContentStatus status, String keyword,
-                                                    Pageable pageable) {
+                                                    ContentType contentType, ContentStatus status,
+                                                    String keyword, Pageable pageable) {
         Page<Content> contents;
 
-        if (status != null && keyword != null && !keyword.isBlank()) {
+        boolean hasType = contentType != null;
+        boolean hasStatus = status != null;
+        boolean hasKeyword = keyword != null && !keyword.isBlank();
+
+        // 조합별 쿼리 호출
+        if (hasType && hasStatus && hasKeyword) {
+            contents = contentRepository.findByTenantIdAndCreatedByAndContentTypeAndStatusAndKeyword(
+                    tenantId, userId, contentType, status, keyword, pageable);
+        } else if (hasType && hasStatus) {
+            contents = contentRepository.findByTenantIdAndCreatedByAndContentTypeAndStatus(
+                    tenantId, userId, contentType, status, pageable);
+        } else if (hasType && hasKeyword) {
+            contents = contentRepository.findByTenantIdAndCreatedByAndContentTypeAndKeyword(
+                    tenantId, userId, contentType, keyword, pageable);
+        } else if (hasStatus && hasKeyword) {
             contents = contentRepository.findByTenantIdAndCreatedByAndStatusAndKeyword(
                     tenantId, userId, status, keyword, pageable);
-        } else if (status != null) {
+        } else if (hasType) {
+            contents = contentRepository.findByTenantIdAndCreatedByAndContentType(
+                    tenantId, userId, contentType, pageable);
+        } else if (hasStatus) {
             contents = contentRepository.findByTenantIdAndCreatedByAndStatus(
                     tenantId, userId, status, pageable);
-        } else if (keyword != null && !keyword.isBlank()) {
+        } else if (hasKeyword) {
             contents = contentRepository.findByTenantIdAndCreatedByAndKeyword(
                     tenantId, userId, keyword, pageable);
         } else {
