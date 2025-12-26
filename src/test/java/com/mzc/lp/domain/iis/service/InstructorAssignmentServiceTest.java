@@ -9,6 +9,7 @@ import com.mzc.lp.domain.iis.dto.request.ReplaceInstructorRequest;
 import com.mzc.lp.domain.iis.dto.request.UpdateRoleRequest;
 import com.mzc.lp.domain.iis.dto.response.AssignmentHistoryResponse;
 import com.mzc.lp.domain.iis.dto.response.InstructorAssignmentResponse;
+import com.mzc.lp.domain.iis.dto.response.InstructorAvailabilityResponse;
 import com.mzc.lp.domain.iis.dto.response.InstructorDetailStatResponse;
 import com.mzc.lp.domain.iis.dto.response.InstructorStatResponse;
 import com.mzc.lp.domain.iis.dto.response.InstructorStatisticsResponse;
@@ -1023,6 +1024,182 @@ class InstructorAssignmentServiceTest extends TenantTestSupport {
             assertThat(result.mainCount()).isEqualTo(0L);
             assertThat(result.subCount()).isEqualTo(0L);
             assertThat(result.courseTimeStats()).isEmpty();
+        }
+    }
+
+    // ==================== 가용성 확인 API 테스트 ====================
+
+    @Nested
+    @DisplayName("checkAvailability - 강사 가용성 확인")
+    class CheckAvailability {
+
+        @Test
+        @DisplayName("성공 - 배정 없는 강사 (가용)")
+        void checkAvailability_success_available_noAssignment() {
+            // given
+            LocalDate startDate = LocalDate.of(2024, 3, 1);
+            LocalDate endDate = LocalDate.of(2024, 3, 15);
+
+            given(assignmentRepository.findActiveByUserKey(TENANT_ID, USER_ID)).willReturn(List.of());
+
+            // when
+            InstructorAvailabilityResponse result = assignmentService.checkAvailability(USER_ID, startDate, endDate);
+
+            // then
+            assertThat(result.userId()).isEqualTo(USER_ID);
+            assertThat(result.available()).isTrue();
+            assertThat(result.conflictingAssignments()).isEmpty();
+        }
+
+        @Test
+        @DisplayName("성공 - 겹치지 않는 기간 (가용)")
+        void checkAvailability_success_available_noOverlap() {
+            // given
+            LocalDate startDate = LocalDate.of(2024, 3, 1);
+            LocalDate endDate = LocalDate.of(2024, 3, 15);
+
+            // 기존 배정 (다른 기간)
+            InstructorAssignment existingAssignment = createTestAssignment(1L, USER_ID, 200L, InstructorRole.MAIN);
+            given(assignmentRepository.findActiveByUserKey(TENANT_ID, USER_ID)).willReturn(List.of(existingAssignment));
+
+            // 기간이 겹치지 않음
+            given(courseTimeRepository.findByIdInAndDateRangeOverlap(
+                    List.of(200L), startDate, endDate
+            )).willReturn(List.of());
+
+            // when
+            InstructorAvailabilityResponse result = assignmentService.checkAvailability(USER_ID, startDate, endDate);
+
+            // then
+            assertThat(result.userId()).isEqualTo(USER_ID);
+            assertThat(result.available()).isTrue();
+            assertThat(result.conflictingAssignments()).isEmpty();
+        }
+
+        @Test
+        @DisplayName("성공 - 기간 충돌 (불가용)")
+        void checkAvailability_success_unavailable_conflict() {
+            // given
+            LocalDate startDate = LocalDate.of(2024, 3, 1);
+            LocalDate endDate = LocalDate.of(2024, 3, 15);
+            Long conflictingTimeId = 200L;
+
+            // 기존 배정
+            InstructorAssignment existingAssignment = createTestAssignment(1L, USER_ID, conflictingTimeId, InstructorRole.MAIN);
+            given(assignmentRepository.findActiveByUserKey(TENANT_ID, USER_ID)).willReturn(List.of(existingAssignment));
+
+            // 기간 충돌하는 CourseTime
+            CourseTime conflictingCourseTime = createTestCourseTimeWithId(conflictingTimeId,
+                    LocalDate.of(2024, 3, 5), LocalDate.of(2024, 3, 20));
+            given(courseTimeRepository.findByIdInAndDateRangeOverlap(
+                    List.of(conflictingTimeId), startDate, endDate
+            )).willReturn(List.of(conflictingCourseTime));
+
+            // when
+            InstructorAvailabilityResponse result = assignmentService.checkAvailability(USER_ID, startDate, endDate);
+
+            // then
+            assertThat(result.userId()).isEqualTo(USER_ID);
+            assertThat(result.available()).isFalse();
+            assertThat(result.conflictingAssignments()).hasSize(1);
+            assertThat(result.conflictingAssignments().get(0).timeId()).isEqualTo(conflictingTimeId);
+            assertThat(result.conflictingAssignments().get(0).role()).isEqualTo(InstructorRole.MAIN);
+        }
+    }
+
+    @Nested
+    @DisplayName("checkAvailabilityBulk - 여러 강사 가용성 일괄 확인")
+    class CheckAvailabilityBulk {
+
+        @Test
+        @DisplayName("성공 - 모든 강사 가용")
+        void checkAvailabilityBulk_success_allAvailable() {
+            // given
+            List<Long> userIds = List.of(10L, 20L);
+            LocalDate startDate = LocalDate.of(2024, 3, 1);
+            LocalDate endDate = LocalDate.of(2024, 3, 15);
+
+            // 배정 없음
+            given(assignmentRepository.findActiveByUserKeyIn(TENANT_ID, userIds)).willReturn(List.of());
+
+            // when
+            List<InstructorAvailabilityResponse> result = assignmentService.checkAvailabilityBulk(userIds, startDate, endDate);
+
+            // then
+            assertThat(result).hasSize(2);
+            assertThat(result).allMatch(InstructorAvailabilityResponse::available);
+        }
+
+        @Test
+        @DisplayName("성공 - 일부 강사만 가용")
+        void checkAvailabilityBulk_success_partiallyAvailable() {
+            // given
+            List<Long> userIds = List.of(10L, 20L);
+            LocalDate startDate = LocalDate.of(2024, 3, 1);
+            LocalDate endDate = LocalDate.of(2024, 3, 15);
+            Long conflictingTimeId = 200L;
+
+            // userId=10L은 배정 있음, userId=20L은 배정 없음
+            InstructorAssignment existingAssignment = createTestAssignment(1L, 10L, conflictingTimeId, InstructorRole.MAIN);
+            given(assignmentRepository.findActiveByUserKeyIn(TENANT_ID, userIds)).willReturn(List.of(existingAssignment));
+
+            // 기간 충돌하는 CourseTime
+            CourseTime conflictingCourseTime = createTestCourseTimeWithId(conflictingTimeId,
+                    LocalDate.of(2024, 3, 5), LocalDate.of(2024, 3, 20));
+            given(courseTimeRepository.findByIdInAndDateRangeOverlap(
+                    List.of(conflictingTimeId), startDate, endDate
+            )).willReturn(List.of(conflictingCourseTime));
+
+            // when
+            List<InstructorAvailabilityResponse> result = assignmentService.checkAvailabilityBulk(userIds, startDate, endDate);
+
+            // then
+            assertThat(result).hasSize(2);
+
+            // userId=10L은 불가용
+            InstructorAvailabilityResponse user10Result = result.stream()
+                    .filter(r -> r.userId().equals(10L))
+                    .findFirst().orElseThrow();
+            assertThat(user10Result.available()).isFalse();
+            assertThat(user10Result.conflictingAssignments()).hasSize(1);
+
+            // userId=20L은 가용
+            InstructorAvailabilityResponse user20Result = result.stream()
+                    .filter(r -> r.userId().equals(20L))
+                    .findFirst().orElseThrow();
+            assertThat(user20Result.available()).isTrue();
+            assertThat(user20Result.conflictingAssignments()).isEmpty();
+        }
+
+        @Test
+        @DisplayName("성공 - 모든 강사 불가용")
+        void checkAvailabilityBulk_success_allUnavailable() {
+            // given
+            List<Long> userIds = List.of(10L, 20L);
+            LocalDate startDate = LocalDate.of(2024, 3, 1);
+            LocalDate endDate = LocalDate.of(2024, 3, 15);
+
+            // 각 강사별 배정
+            InstructorAssignment assignment1 = createTestAssignment(1L, 10L, 200L, InstructorRole.MAIN);
+            InstructorAssignment assignment2 = createTestAssignment(2L, 20L, 300L, InstructorRole.SUB);
+            given(assignmentRepository.findActiveByUserKeyIn(TENANT_ID, userIds))
+                    .willReturn(List.of(assignment1, assignment2));
+
+            // 기간 충돌하는 CourseTime
+            CourseTime conflictingCourseTime1 = createTestCourseTimeWithId(200L,
+                    LocalDate.of(2024, 3, 5), LocalDate.of(2024, 3, 20));
+            CourseTime conflictingCourseTime2 = createTestCourseTimeWithId(300L,
+                    LocalDate.of(2024, 3, 10), LocalDate.of(2024, 3, 25));
+            given(courseTimeRepository.findByIdInAndDateRangeOverlap(
+                    any(), eq(startDate), eq(endDate)
+            )).willReturn(List.of(conflictingCourseTime1, conflictingCourseTime2));
+
+            // when
+            List<InstructorAvailabilityResponse> result = assignmentService.checkAvailabilityBulk(userIds, startDate, endDate);
+
+            // then
+            assertThat(result).hasSize(2);
+            assertThat(result).noneMatch(InstructorAvailabilityResponse::available);
         }
     }
 }

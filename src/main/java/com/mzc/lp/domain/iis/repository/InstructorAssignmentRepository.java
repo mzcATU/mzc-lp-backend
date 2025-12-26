@@ -229,4 +229,15 @@ public interface InstructorAssignmentRepository extends JpaRepository<Instructor
             @Param("userKey") Long userKey,
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate);
+
+    // ========== 가용성 확인 API용 메서드 ==========
+
+    // 여러 강사의 ACTIVE 배정 목록 Bulk 조회
+    @Query("SELECT ia FROM InstructorAssignment ia " +
+            "WHERE ia.tenantId = :tenantId " +
+            "AND ia.userKey IN :userKeys " +
+            "AND ia.status = 'ACTIVE'")
+    List<InstructorAssignment> findActiveByUserKeyIn(
+            @Param("tenantId") Long tenantId,
+            @Param("userKeys") List<Long> userKeys);
 }

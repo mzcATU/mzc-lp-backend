@@ -8,6 +8,7 @@ import com.mzc.lp.domain.iis.dto.request.ReplaceInstructorRequest;
 import com.mzc.lp.domain.iis.dto.request.UpdateRoleRequest;
 import com.mzc.lp.domain.iis.dto.response.AssignmentHistoryResponse;
 import com.mzc.lp.domain.iis.dto.response.InstructorAssignmentResponse;
+import com.mzc.lp.domain.iis.dto.response.InstructorAvailabilityResponse;
 import com.mzc.lp.domain.iis.dto.response.InstructorDetailStatResponse;
 import com.mzc.lp.domain.iis.dto.response.InstructorStatResponse;
 import com.mzc.lp.domain.iis.dto.response.InstructorStatisticsResponse;
@@ -95,4 +96,24 @@ public interface InstructorAssignmentService {
      * @return 강사 개인 상세 통계 (차수별 통계 포함)
      */
     InstructorDetailStatResponse getInstructorDetailStatistics(Long userId, LocalDate startDate, LocalDate endDate);
+
+    // ========== 가용성 확인 API ==========
+
+    /**
+     * 특정 강사의 가용성 확인
+     * @param userId 강사 ID
+     * @param startDate 확인할 기간 시작일
+     * @param endDate 확인할 기간 종료일
+     * @return 가용성 정보 (충돌 배정 목록 포함)
+     */
+    InstructorAvailabilityResponse checkAvailability(Long userId, LocalDate startDate, LocalDate endDate);
+
+    /**
+     * 여러 강사의 가용성 일괄 확인
+     * @param userIds 강사 ID 목록
+     * @param startDate 확인할 기간 시작일
+     * @param endDate 확인할 기간 종료일
+     * @return 강사별 가용성 정보 목록
+     */
+    List<InstructorAvailabilityResponse> checkAvailabilityBulk(List<Long> userIds, LocalDate startDate, LocalDate endDate);
 }
