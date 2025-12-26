@@ -69,4 +69,20 @@ public interface CourseTimeRepository extends JpaRepository<CourseTime, Long> {
      * (상시 모집 차수는 classEndDate가 9999-12-31이므로 자연스럽게 제외)
      */
     List<CourseTime> findByStatusAndClassEndDateLessThan(CourseTimeStatus status, LocalDate today);
+
+    // ===== IIS 충돌 검사용 =====
+
+    /**
+     * 특정 기간과 겹치는 CourseTime 조회
+     * 기간 겹침 조건: NOT (ct.classEndDate < startDate OR ct.classStartDate > endDate)
+     * = ct.classEndDate >= startDate AND ct.classStartDate <= endDate
+     */
+    @Query("SELECT ct FROM CourseTime ct " +
+            "WHERE ct.id IN :timeIds " +
+            "AND ct.classStartDate <= :endDate " +
+            "AND ct.classEndDate >= :startDate")
+    List<CourseTime> findByIdInAndDateRangeOverlap(
+            @Param("timeIds") List<Long> timeIds,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
 }

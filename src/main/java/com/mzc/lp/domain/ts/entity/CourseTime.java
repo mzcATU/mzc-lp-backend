@@ -5,6 +5,7 @@ import com.mzc.lp.domain.program.entity.Program;
 import com.mzc.lp.domain.ts.constant.CourseTimeStatus;
 import com.mzc.lp.domain.ts.constant.DeliveryType;
 import com.mzc.lp.domain.ts.constant.EnrollmentMethod;
+import com.mzc.lp.domain.ts.exception.InvalidStatusTransitionException;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -240,19 +241,47 @@ public class CourseTime extends TenantEntity {
 
     // 상태 전이 메서드
 
+    /**
+     * DRAFT → RECRUITING 상태 전이
+     * @throws InvalidStatusTransitionException DRAFT 상태가 아닌 경우
+     */
     public void open() {
+        if (this.status != CourseTimeStatus.DRAFT) {
+            throw new InvalidStatusTransitionException(this.status, CourseTimeStatus.RECRUITING);
+        }
         this.status = CourseTimeStatus.RECRUITING;
     }
 
+    /**
+     * RECRUITING → ONGOING 상태 전이
+     * @throws InvalidStatusTransitionException RECRUITING 상태가 아닌 경우
+     */
     public void startClass() {
+        if (this.status != CourseTimeStatus.RECRUITING) {
+            throw new InvalidStatusTransitionException(this.status, CourseTimeStatus.ONGOING);
+        }
         this.status = CourseTimeStatus.ONGOING;
     }
 
+    /**
+     * ONGOING → CLOSED 상태 전이
+     * @throws InvalidStatusTransitionException ONGOING 상태가 아닌 경우
+     */
     public void close() {
+        if (this.status != CourseTimeStatus.ONGOING) {
+            throw new InvalidStatusTransitionException(this.status, CourseTimeStatus.CLOSED);
+        }
         this.status = CourseTimeStatus.CLOSED;
     }
 
+    /**
+     * CLOSED → ARCHIVED 상태 전이
+     * @throws InvalidStatusTransitionException CLOSED 상태가 아닌 경우
+     */
     public void archive() {
+        if (this.status != CourseTimeStatus.CLOSED) {
+            throw new InvalidStatusTransitionException(this.status, CourseTimeStatus.ARCHIVED);
+        }
         this.status = CourseTimeStatus.ARCHIVED;
     }
 

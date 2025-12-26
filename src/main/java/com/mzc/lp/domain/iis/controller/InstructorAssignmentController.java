@@ -76,9 +76,11 @@ public class InstructorAssignmentController {
             @AuthenticationPrincipal UserPrincipal principal,
             @Valid @RequestBody(required = false) CancelAssignmentRequest request
     ) {
+        boolean isTenantAdmin = "TENANT_ADMIN".equals(principal.role());
         assignmentService.cancelAssignment(id,
                 request != null ? request : new CancelAssignmentRequest(null),
-                principal.id());
+                principal.id(),
+                isTenantAdmin);
         return ResponseEntity.noContent().build();
     }
 
@@ -124,6 +126,17 @@ public class InstructorAssignmentController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
     ) {
         InstructorStatisticsResponse response = assignmentService.getStatistics(startDate, endDate);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @GetMapping("/api/users/me/instructor-statistics")
+    public ResponseEntity<ApiResponse<InstructorDetailStatResponse>> getMyInstructorStatistics(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
+    ) {
+        InstructorDetailStatResponse response = assignmentService.getInstructorDetailStatistics(
+                principal.id(), startDate, endDate);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

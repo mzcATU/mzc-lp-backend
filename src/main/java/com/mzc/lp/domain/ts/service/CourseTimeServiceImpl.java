@@ -20,6 +20,7 @@ import com.mzc.lp.domain.ts.exception.InvalidDateRangeException;
 import com.mzc.lp.domain.ts.exception.InvalidStatusTransitionException;
 import com.mzc.lp.domain.ts.exception.LocationRequiredException;
 import com.mzc.lp.domain.ts.exception.MainInstructorRequiredException;
+import com.mzc.lp.domain.ts.exception.UnauthorizedCourseTimeAccessException;
 import com.mzc.lp.domain.ts.repository.CourseTimeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -229,8 +230,8 @@ public class CourseTimeServiceImpl implements CourseTimeService {
 
     @Override
     @Transactional
-    public void deleteCourseTime(Long id) {
-        log.info("Deleting course time: id={}", id);
+    public void deleteCourseTime(Long id, Long currentUserId, boolean isTenantAdmin) {
+        log.info("Deleting course time: id={}, currentUserId={}, isTenantAdmin={}", id, currentUserId, isTenantAdmin);
 
         CourseTime courseTime = courseTimeRepository.findByIdAndTenantId(id, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new CourseTimeNotFoundException(id));
@@ -238,6 +239,11 @@ public class CourseTimeServiceImpl implements CourseTimeService {
         // DRAFT 상태에서만 삭제 가능
         if (!courseTime.isDraft()) {
             throw new InvalidStatusTransitionException();
+        }
+
+        // 소유권 검증: 본인이 생성한 차수 또는 TENANT_ADMIN만 삭제 가능
+        if (!isTenantAdmin && !currentUserId.equals(courseTime.getCreatedBy())) {
+            throw new UnauthorizedCourseTimeAccessException("본인이 생성한 차수만 삭제할 수 있습니다");
         }
 
         courseTimeRepository.delete(courseTime);
@@ -254,13 +260,6 @@ public class CourseTimeServiceImpl implements CourseTimeService {
         CourseTime courseTime = courseTimeRepository.findByIdAndTenantId(id, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new CourseTimeNotFoundException(id));
 
-        if (!courseTime.isDraft()) {
-            throw new InvalidStatusTransitionException(
-                    courseTime.getStatus(),
-                    CourseTimeStatus.RECRUITING
-            );
-        }
-
         // 장소 정보 필수 검증 (OFFLINE/BLENDED)
         if (courseTime.requiresLocationInfo() &&
                 (courseTime.getLocationInfo() == null || courseTime.getLocationInfo().isBlank())) {
@@ -272,6 +271,7 @@ public class CourseTimeServiceImpl implements CourseTimeService {
             throw new MainInstructorRequiredException(id);
         }
 
+        // 상태 전이 (Entity에서 DRAFT 상태 검증)
         courseTime.open();
         log.info("Course time opened: id={}", id);
 
@@ -289,13 +289,7 @@ public class CourseTimeServiceImpl implements CourseTimeService {
         CourseTime courseTime = courseTimeRepository.findByIdAndTenantId(id, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new CourseTimeNotFoundException(id));
 
-        if (!courseTime.isRecruiting()) {
-            throw new InvalidStatusTransitionException(
-                    courseTime.getStatus(),
-                    CourseTimeStatus.ONGOING
-            );
-        }
-
+        // 상태 전이 (Entity에서 RECRUITING 상태 검증)
         courseTime.startClass();
         log.info("Course time started: id={}", id);
 
@@ -313,13 +307,7 @@ public class CourseTimeServiceImpl implements CourseTimeService {
         CourseTime courseTime = courseTimeRepository.findByIdAndTenantId(id, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new CourseTimeNotFoundException(id));
 
-        if (!courseTime.isOngoing()) {
-            throw new InvalidStatusTransitionException(
-                    courseTime.getStatus(),
-                    CourseTimeStatus.CLOSED
-            );
-        }
-
+        // 상태 전이 (Entity에서 ONGOING 상태 검증)
         courseTime.close();
         log.info("Course time closed: id={}", id);
 
@@ -337,13 +325,7 @@ public class CourseTimeServiceImpl implements CourseTimeService {
         CourseTime courseTime = courseTimeRepository.findByIdAndTenantId(id, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new CourseTimeNotFoundException(id));
 
-        if (!courseTime.isClosed()) {
-            throw new InvalidStatusTransitionException(
-                    courseTime.getStatus(),
-                    CourseTimeStatus.ARCHIVED
-            );
-        }
-
+        // 상태 전이 (Entity에서 CLOSED 상태 검증)
         courseTime.archive();
         log.info("Course time archived: id={}", id);
 

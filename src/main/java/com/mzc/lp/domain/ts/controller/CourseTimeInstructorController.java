@@ -127,7 +127,8 @@ public class CourseTimeInstructorController {
         validateModifiable(courseTime);
 
         CancelAssignmentRequest cancelRequest = request != null ? request : new CancelAssignmentRequest(null);
-        instructorAssignmentService.cancelAssignment(assignmentId, cancelRequest, principal.id());
+        boolean isTenantAdmin = "TENANT_ADMIN".equals(principal.role());
+        instructorAssignmentService.cancelAssignment(assignmentId, cancelRequest, principal.id(), isTenantAdmin);
 
         log.info("Instructor assignment cancelled: assignmentId={}", assignmentId);
         return ResponseEntity.noContent().build();

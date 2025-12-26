@@ -18,6 +18,7 @@ import com.mzc.lp.domain.iis.entity.InstructorAssignment;
 import com.mzc.lp.domain.iis.exception.CannotModifyInactiveAssignmentException;
 import com.mzc.lp.domain.iis.exception.InstructorAlreadyAssignedException;
 import com.mzc.lp.domain.iis.exception.InstructorAssignmentNotFoundException;
+import com.mzc.lp.domain.iis.exception.InstructorScheduleConflictException;
 import com.mzc.lp.domain.iis.exception.MainInstructorAlreadyExistsException;
 import com.mzc.lp.domain.iis.repository.AssignmentHistoryRepository;
 import com.mzc.lp.domain.iis.repository.InstructorAssignmentRepository;
@@ -143,7 +144,7 @@ class InstructorAssignmentServiceTest extends TenantTestSupport {
         @DisplayName("성공 - MAIN 강사 배정")
         void assignInstructor_success_main() {
             // given
-            AssignInstructorRequest request = new AssignInstructorRequest(USER_ID, InstructorRole.MAIN);
+            AssignInstructorRequest request = new AssignInstructorRequest(USER_ID, InstructorRole.MAIN, false);
             InstructorAssignment saved = createTestAssignment(1L, USER_ID, TIME_ID, InstructorRole.MAIN);
             User user = createTestUser(USER_ID, "강사", "instructor@example.com");
             CourseTime courseTime = createTestCourseTime();
@@ -154,6 +155,8 @@ class InstructorAssignmentServiceTest extends TenantTestSupport {
                     TIME_ID, USER_ID, TENANT_ID, AssignmentStatus.ACTIVE)).willReturn(false);
             given(assignmentRepository.findActiveByTimeKeyAndRole(TIME_ID, TENANT_ID, InstructorRole.MAIN))
                     .willReturn(Optional.empty());
+            // 일정 충돌 없음
+            given(assignmentRepository.findActiveByUserKey(TENANT_ID, USER_ID)).willReturn(List.of());
             given(assignmentRepository.save(any())).willReturn(saved);
             given(userRepository.findById(USER_ID)).willReturn(Optional.of(user));
 
@@ -173,7 +176,7 @@ class InstructorAssignmentServiceTest extends TenantTestSupport {
         @DisplayName("성공 - SUB 강사 배정")
         void assignInstructor_success_sub() {
             // given
-            AssignInstructorRequest request = new AssignInstructorRequest(USER_ID, InstructorRole.SUB);
+            AssignInstructorRequest request = new AssignInstructorRequest(USER_ID, InstructorRole.SUB, false);
             InstructorAssignment saved = createTestAssignment(1L, USER_ID, TIME_ID, InstructorRole.SUB);
             User user = createTestUser(USER_ID, "부강사", "sub@example.com");
             CourseTime courseTime = createTestCourseTime();
@@ -182,6 +185,8 @@ class InstructorAssignmentServiceTest extends TenantTestSupport {
             given(courseTimeRepository.findByIdWithLock(TIME_ID)).willReturn(Optional.of(courseTime));
             given(assignmentRepository.existsByTimeKeyAndUserKeyAndTenantIdAndStatus(
                     TIME_ID, USER_ID, TENANT_ID, AssignmentStatus.ACTIVE)).willReturn(false);
+            // 일정 충돌 없음
+            given(assignmentRepository.findActiveByUserKey(TENANT_ID, USER_ID)).willReturn(List.of());
             given(assignmentRepository.save(any())).willReturn(saved);
             given(userRepository.findById(USER_ID)).willReturn(Optional.of(user));
 
@@ -196,7 +201,7 @@ class InstructorAssignmentServiceTest extends TenantTestSupport {
         @DisplayName("실패 - 중복 배정")
         void assignInstructor_fail_alreadyAssigned() {
             // given
-            AssignInstructorRequest request = new AssignInstructorRequest(USER_ID, InstructorRole.MAIN);
+            AssignInstructorRequest request = new AssignInstructorRequest(USER_ID, InstructorRole.MAIN, false);
             CourseTime courseTime = createTestCourseTime();
 
             // Race Condition 방지를 위한 비관적 락
@@ -213,7 +218,7 @@ class InstructorAssignmentServiceTest extends TenantTestSupport {
         @DisplayName("실패 - 주강사 중복")
         void assignInstructor_fail_mainAlreadyExists() {
             // given
-            AssignInstructorRequest request = new AssignInstructorRequest(USER_ID, InstructorRole.MAIN);
+            AssignInstructorRequest request = new AssignInstructorRequest(USER_ID, InstructorRole.MAIN, false);
             InstructorAssignment existingMain = createTestAssignment(99L, 999L, TIME_ID, InstructorRole.MAIN);
             CourseTime courseTime = createTestCourseTime();
 
@@ -228,6 +233,100 @@ class InstructorAssignmentServiceTest extends TenantTestSupport {
             assertThatThrownBy(() -> assignmentService.assignInstructor(TIME_ID, request, OPERATOR_ID))
                     .isInstanceOf(MainInstructorAlreadyExistsException.class);
         }
+
+        @Test
+        @DisplayName("실패 - 일정 충돌 (forceAssign=false)")
+        void assignInstructor_fail_scheduleConflict() {
+            // given
+            Long conflictingTimeId = 200L;
+            AssignInstructorRequest request = new AssignInstructorRequest(USER_ID, InstructorRole.SUB, false);
+            CourseTime targetCourseTime = createTestCourseTime();
+            CourseTime conflictingCourseTime = createTestCourseTimeWithId(conflictingTimeId,
+                    LocalDate.now().plusDays(10), LocalDate.now().plusDays(20)); // 겹치는 기간
+
+            // 기존 배정 (다른 차수에 이미 배정되어 있음)
+            InstructorAssignment existingAssignment = createTestAssignment(50L, USER_ID, conflictingTimeId, InstructorRole.MAIN);
+
+            given(courseTimeRepository.findByIdWithLock(TIME_ID)).willReturn(Optional.of(targetCourseTime));
+            given(assignmentRepository.existsByTimeKeyAndUserKeyAndTenantIdAndStatus(
+                    TIME_ID, USER_ID, TENANT_ID, AssignmentStatus.ACTIVE)).willReturn(false);
+            // 기존 ACTIVE 배정 존재
+            given(assignmentRepository.findActiveByUserKey(TENANT_ID, USER_ID)).willReturn(List.of(existingAssignment));
+            // 기간 겹치는 CourseTime 조회
+            given(courseTimeRepository.findByIdInAndDateRangeOverlap(
+                    eq(List.of(conflictingTimeId)),
+                    any(LocalDate.class),
+                    any(LocalDate.class)
+            )).willReturn(List.of(conflictingCourseTime));
+
+            // when & then
+            assertThatThrownBy(() -> assignmentService.assignInstructor(TIME_ID, request, OPERATOR_ID))
+                    .isInstanceOf(InstructorScheduleConflictException.class)
+                    .satisfies(ex -> {
+                        InstructorScheduleConflictException conflictException = (InstructorScheduleConflictException) ex;
+                        assertThat(conflictException.getConflicts()).hasSize(1);
+                        assertThat(conflictException.getConflicts().get(0).conflictingTimeId()).isEqualTo(conflictingTimeId);
+                    });
+        }
+
+        @Test
+        @DisplayName("성공 - 일정 충돌 무시 (forceAssign=true)")
+        void assignInstructor_success_forceAssignWithConflict() {
+            // given
+            Long conflictingTimeId = 200L;
+            AssignInstructorRequest request = new AssignInstructorRequest(USER_ID, InstructorRole.SUB, true); // forceAssign=true
+            InstructorAssignment saved = createTestAssignment(1L, USER_ID, TIME_ID, InstructorRole.SUB);
+            User user = createTestUser(USER_ID, "강사", "instructor@example.com");
+            CourseTime targetCourseTime = createTestCourseTime();
+
+            // 기존 배정 (다른 차수에 이미 배정되어 있음)
+            InstructorAssignment existingAssignment = createTestAssignment(50L, USER_ID, conflictingTimeId, InstructorRole.MAIN);
+
+            given(courseTimeRepository.findByIdWithLock(TIME_ID)).willReturn(Optional.of(targetCourseTime));
+            given(assignmentRepository.existsByTimeKeyAndUserKeyAndTenantIdAndStatus(
+                    TIME_ID, USER_ID, TENANT_ID, AssignmentStatus.ACTIVE)).willReturn(false);
+            // forceAssign=true이므로 충돌 검사 스킵 -> findActiveByUserKey 호출 안됨
+            given(assignmentRepository.save(any())).willReturn(saved);
+            given(userRepository.findById(USER_ID)).willReturn(Optional.of(user));
+
+            // when
+            InstructorAssignmentResponse response = assignmentService.assignInstructor(TIME_ID, request, OPERATOR_ID);
+
+            // then
+            assertThat(response.id()).isEqualTo(1L);
+            assertThat(response.userId()).isEqualTo(USER_ID);
+        }
+    }
+
+    private CourseTime createTestCourseTimeWithId(Long id, LocalDate classStartDate, LocalDate classEndDate) {
+        CourseTime courseTime = CourseTime.create(
+                "충돌 테스트 차수",
+                DeliveryType.ONLINE,
+                LocalDate.now().minusDays(1),
+                LocalDate.now().plusDays(7),
+                classStartDate,
+                classEndDate,
+                30,
+                5,
+                EnrollmentMethod.FIRST_COME,
+                80,
+                new BigDecimal("100000"),
+                false,
+                null,
+                true,
+                1L
+        );
+        try {
+            var idField = com.mzc.lp.common.entity.BaseEntity.class.getDeclaredField("id");
+            idField.setAccessible(true);
+            idField.set(courseTime, id);
+            var tenantIdField = com.mzc.lp.common.entity.TenantEntity.class.getDeclaredField("tenantId");
+            tenantIdField.setAccessible(true);
+            tenantIdField.set(courseTime, TENANT_ID);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return courseTime;
     }
 
     // ==================== 조회 테스트 ====================
@@ -483,7 +582,7 @@ class InstructorAssignmentServiceTest extends TenantTestSupport {
             given(assignmentRepository.findByIdAndTenantId(1L, TENANT_ID)).willReturn(Optional.of(assignment));
 
             // when
-            assignmentService.cancelAssignment(1L, request, OPERATOR_ID);
+            assignmentService.cancelAssignment(1L, request, OPERATOR_ID, false);
 
             // then
             assertThat(assignment.getStatus()).isEqualTo(AssignmentStatus.CANCELLED);
@@ -501,7 +600,7 @@ class InstructorAssignmentServiceTest extends TenantTestSupport {
             given(assignmentRepository.findByIdAndTenantId(1L, TENANT_ID)).willReturn(Optional.of(assignment));
 
             // when & then
-            assertThatThrownBy(() -> assignmentService.cancelAssignment(1L, request, OPERATOR_ID))
+            assertThatThrownBy(() -> assignmentService.cancelAssignment(1L, request, OPERATOR_ID, false))
                     .isInstanceOf(CannotModifyInactiveAssignmentException.class);
         }
     }

@@ -14,12 +14,15 @@ import com.mzc.lp.domain.iis.dto.response.InstructorAssignmentResponse;
 import com.mzc.lp.domain.iis.dto.response.InstructorDetailStatResponse;
 import com.mzc.lp.domain.iis.dto.response.InstructorStatResponse;
 import com.mzc.lp.domain.iis.dto.response.InstructorStatisticsResponse;
+import com.mzc.lp.domain.iis.dto.response.ScheduleConflictResponse;
 import com.mzc.lp.domain.iis.entity.AssignmentHistory;
 import com.mzc.lp.domain.iis.entity.InstructorAssignment;
 import com.mzc.lp.domain.iis.exception.CannotModifyInactiveAssignmentException;
 import com.mzc.lp.domain.iis.exception.InstructorAlreadyAssignedException;
 import com.mzc.lp.domain.iis.exception.InstructorAssignmentNotFoundException;
+import com.mzc.lp.domain.iis.exception.InstructorScheduleConflictException;
 import com.mzc.lp.domain.iis.exception.MainInstructorAlreadyExistsException;
+import com.mzc.lp.domain.iis.exception.UnauthorizedAssignmentAccessException;
 import com.mzc.lp.domain.iis.repository.AssignmentHistoryRepository;
 import com.mzc.lp.domain.iis.repository.InstructorAssignmentRepository;
 import com.mzc.lp.domain.student.dto.response.CourseTimeEnrollmentStatsResponse;
@@ -59,12 +62,13 @@ public class InstructorAssignmentServiceImpl implements InstructorAssignmentServ
     @Override
     @Transactional
     public InstructorAssignmentResponse assignInstructor(Long timeId, AssignInstructorRequest request, Long operatorId) {
-        log.info("Assigning instructor: timeId={}, userId={}, role={}", timeId, request.userId(), request.role());
+        log.info("Assigning instructor: timeId={}, userId={}, role={}, forceAssign={}",
+                timeId, request.userId(), request.role(), request.forceAssign());
 
         Long tenantId = TenantContext.getCurrentTenantId();
 
         // [Race Condition 방지] CourseTime을 락 대상으로 사용하여 동시 배정 직렬화
-        courseTimeRepository.findByIdWithLock(timeId)
+        CourseTime targetCourseTime = courseTimeRepository.findByIdWithLock(timeId)
                 .orElseThrow(() -> new IllegalArgumentException("CourseTime not found: " + timeId));
 
         // 중복 배정 체크 (락 상태에서)
@@ -79,6 +83,11 @@ public class InstructorAssignmentServiceImpl implements InstructorAssignmentServ
                     .ifPresent(existing -> {
                         throw new MainInstructorAlreadyExistsException(timeId);
                     });
+        }
+
+        // 일정 충돌 검사 (forceAssign이 false인 경우에만)
+        if (!Boolean.TRUE.equals(request.forceAssign())) {
+            checkScheduleConflict(request.userId(), timeId, targetCourseTime, tenantId);
         }
 
         // 배정 생성
@@ -242,13 +251,18 @@ public class InstructorAssignmentServiceImpl implements InstructorAssignmentServ
 
     @Override
     @Transactional
-    public void cancelAssignment(Long id, CancelAssignmentRequest request, Long operatorId) {
-        log.info("Cancelling assignment: id={}", id);
+    public void cancelAssignment(Long id, CancelAssignmentRequest request, Long operatorId, boolean isTenantAdmin) {
+        log.info("Cancelling assignment: id={}, operatorId={}, isTenantAdmin={}", id, operatorId, isTenantAdmin);
 
         InstructorAssignment assignment = findAssignmentById(id);
 
         // ACTIVE 상태 체크
         validateActiveStatus(assignment);
+
+        // 소유권 검증: 본인이 배정한 건 또는 TENANT_ADMIN만 취소 가능
+        if (!isTenantAdmin && !operatorId.equals(assignment.getAssignedBy())) {
+            throw new UnauthorizedAssignmentAccessException("본인이 배정한 강사만 취소할 수 있습니다");
+        }
 
         // 취소 처리
         assignment.cancel();
@@ -590,5 +604,52 @@ public class InstructorAssignmentServiceImpl implements InstructorAssignmentServ
 
         return userRepository.findAllById(userIds).stream()
                 .collect(Collectors.toMap(User::getId, Function.identity()));
+    }
+
+    /**
+     * 일정 충돌 검사
+     * 강사가 동일 기간에 다른 차수에 이미 배정되어 있는지 확인
+     */
+    private void checkScheduleConflict(Long userId, Long targetTimeId, CourseTime targetCourseTime, Long tenantId) {
+        // 강사의 기존 ACTIVE 배정 목록 조회
+        List<InstructorAssignment> existingAssignments = assignmentRepository.findActiveByUserKey(tenantId, userId);
+
+        if (existingAssignments.isEmpty()) {
+            return;
+        }
+
+        // 현재 배정하려는 차수를 제외한 기존 배정의 timeKey 목록
+        List<Long> existingTimeIds = existingAssignments.stream()
+                .map(InstructorAssignment::getTimeKey)
+                .filter(timeKey -> !timeKey.equals(targetTimeId))
+                .distinct()
+                .toList();
+
+        if (existingTimeIds.isEmpty()) {
+            return;
+        }
+
+        // 기간이 겹치는 CourseTime 조회
+        List<CourseTime> conflictingCourseTimes = courseTimeRepository.findByIdInAndDateRangeOverlap(
+                existingTimeIds,
+                targetCourseTime.getClassStartDate(),
+                targetCourseTime.getClassEndDate()
+        );
+
+        if (!conflictingCourseTimes.isEmpty()) {
+            List<ScheduleConflictResponse> conflicts = conflictingCourseTimes.stream()
+                    .map(ct -> ScheduleConflictResponse.of(
+                            ct.getId(),
+                            ct.getTitle(),
+                            ct.getClassStartDate(),
+                            ct.getClassEndDate()
+                    ))
+                    .toList();
+
+            log.warn("Schedule conflict detected: userId={}, targetTimeId={}, conflicts={}",
+                    userId, targetTimeId, conflicts.size());
+
+            throw new InstructorScheduleConflictException(userId, conflicts);
+        }
     }
 }

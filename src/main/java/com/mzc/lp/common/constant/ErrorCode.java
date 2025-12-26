@@ -63,6 +63,7 @@ public enum ErrorCode {
     COURSE_TIME_NOT_MODIFIABLE(HttpStatus.BAD_REQUEST, "TS006", "CourseTime is not modifiable in current status"),
     CANNOT_DELETE_MAIN_INSTRUCTOR(HttpStatus.BAD_REQUEST, "TS007", "Cannot delete main instructor while course is ongoing"),
     MAIN_INSTRUCTOR_REQUIRED(HttpStatus.BAD_REQUEST, "TS008", "Main instructor required for opening course time"),
+    UNAUTHORIZED_COURSE_TIME_ACCESS(HttpStatus.FORBIDDEN, "TS009", "Not authorized to access this course time"),
 
     // Enrollment (SIS)
     ENROLLMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "SIS001", "Enrollment not found"),
@@ -83,6 +84,8 @@ public enum ErrorCode {
     INSTRUCTOR_ALREADY_ASSIGNED(HttpStatus.CONFLICT, "IIS002", "Instructor already assigned to this course time"),
     MAIN_INSTRUCTOR_ALREADY_EXISTS(HttpStatus.CONFLICT, "IIS003", "Main instructor already exists for this course time"),
     CANNOT_MODIFY_INACTIVE_ASSIGNMENT(HttpStatus.BAD_REQUEST, "IIS004", "Cannot modify inactive assignment"),
+    UNAUTHORIZED_ASSIGNMENT_ACCESS(HttpStatus.FORBIDDEN, "IIS005", "Not authorized to access this assignment"),
+    INSTRUCTOR_SCHEDULE_CONFLICT(HttpStatus.CONFLICT, "IIS006", "Instructor has schedule conflict with another course time"),
 
     // Tenant (TN)
     TENANT_NOT_FOUND(HttpStatus.NOT_FOUND, "TN001", "Tenant not found"),

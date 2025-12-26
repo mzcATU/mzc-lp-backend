@@ -8,6 +8,13 @@ public record AssignInstructorRequest(
         Long userId,
 
         @NotNull(message = "역할은 필수입니다")
-        InstructorRole role
+        InstructorRole role,
+
+        Boolean forceAssign
 ) {
+    public AssignInstructorRequest {
+        if (forceAssign == null) {
+            forceAssign = false;
+        }
+    }
 }

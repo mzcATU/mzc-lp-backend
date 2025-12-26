@@ -114,7 +114,11 @@ class InstructorAssignmentControllerTest extends TenantTestSupport {
     }
 
     private InstructorAssignment createAssignment(Long userId, Long timeId, InstructorRole role) {
-        return assignmentRepository.save(InstructorAssignment.create(userId, timeId, role, 1L));
+        return createAssignment(userId, timeId, role, 1L);
+    }
+
+    private InstructorAssignment createAssignment(Long userId, Long timeId, InstructorRole role, Long assignedBy) {
+        return assignmentRepository.save(InstructorAssignment.create(userId, timeId, role, assignedBy));
     }
 
     private CourseTime createCourseTime() {
@@ -256,11 +260,11 @@ class InstructorAssignmentControllerTest extends TenantTestSupport {
         @DisplayName("성공 - 배정 취소")
         void cancelAssignment_success() throws Exception {
             // given
-            createOperatorUser();
+            User operator = createOperatorUser();
             User instructor = createInstructorUser();
             String token = loginAndGetAccessToken("operator@example.com", "Password123!");
 
-            InstructorAssignment assignment = createAssignment(instructor.getId(), TIME_ID, InstructorRole.MAIN);
+            InstructorAssignment assignment = createAssignment(instructor.getId(), TIME_ID, InstructorRole.MAIN, operator.getId());
 
             CancelAssignmentRequest request = new CancelAssignmentRequest("취소 사유");
 
@@ -497,6 +501,77 @@ class InstructorAssignmentControllerTest extends TenantTestSupport {
                     .andDo(print())
                     .andExpect(status().isForbidden());
         }
+    }
+
+    @Nested
+    @DisplayName("GET /api/users/me/instructor-statistics - 내 통계 조회")
+    class GetMyInstructorStatistics {
+
+        @Test
+        @DisplayName("성공 - 내 통계 조회")
+        void getMyInstructorStatistics_success() throws Exception {
+            // given
+            User instructor = createInstructorUser();
+            String token = loginAndGetAccessToken("instructor@example.com", "Password123!");
+
+            // 배정 데이터 생성
+            createAssignment(instructor.getId(), TIME_ID, InstructorRole.MAIN);
+            createAssignment(instructor.getId(), 200L, InstructorRole.SUB);
+            createAssignment(instructor.getId(), 300L, InstructorRole.SUB);
+
+            // when & then
+            mockMvc.perform(get("/api/users/me/instructor-statistics")
+                            .header("Authorization", "Bearer " + token))
+                    .andDo(print())
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.userId").value(instructor.getId()))
+                    .andExpect(jsonPath("$.data.userName").value("강사"))
+                    .andExpect(jsonPath("$.data.totalCount").value(3))
+                    .andExpect(jsonPath("$.data.mainCount").value(1))
+                    .andExpect(jsonPath("$.data.subCount").value(2));
+        }
+
+        @Test
+        @DisplayName("성공 - 기간 필터링으로 내 통계 조회")
+        void getMyInstructorStatistics_withDateRange_success() throws Exception {
+            // given
+            User instructor = createInstructorUser();
+            String token = loginAndGetAccessToken("instructor@example.com", "Password123!");
+
+            // 배정 데이터 생성
+            createAssignment(instructor.getId(), TIME_ID, InstructorRole.MAIN);
+            createAssignment(instructor.getId(), 200L, InstructorRole.SUB);
+
+            LocalDate today = LocalDate.now();
+
+            // when & then
+            mockMvc.perform(get("/api/users/me/instructor-statistics")
+                            .param("startDate", today.minusDays(1).toString())
+                            .param("endDate", today.plusDays(1).toString())
+                            .header("Authorization", "Bearer " + token))
+                    .andDo(print())
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.userId").value(instructor.getId()));
+        }
+
+        @Test
+        @DisplayName("성공 - 배정 없는 경우")
+        void getMyInstructorStatistics_success_noAssignment() throws Exception {
+            // given
+            User instructor = createInstructorUser();
+            String token = loginAndGetAccessToken("instructor@example.com", "Password123!");
+
+            // when & then
+            mockMvc.perform(get("/api/users/me/instructor-statistics")
+                            .header("Authorization", "Bearer " + token))
+                    .andDo(print())
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.userId").value(instructor.getId()))
+                    .andExpect(jsonPath("$.data.totalCount").value(0))
+                    .andExpect(jsonPath("$.data.mainCount").value(0))
+                    .andExpect(jsonPath("$.data.subCount").value(0));
+        }
+
     }
 
     @Nested
