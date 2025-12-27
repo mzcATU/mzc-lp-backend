@@ -487,6 +487,74 @@ class EnrollmentControllerTest extends TenantTestSupport {
         }
     }
 
+    // ==================== 내 학습 통계 조회 테스트 ====================
+
+    @Nested
+    @DisplayName("GET /api/users/me/learning-stats - 내 학습 통계 조회")
+    class GetMyLearningStats {
+
+        @Test
+        @DisplayName("성공 - 내 학습 통계 조회")
+        void getMyLearningStats_success() throws Exception {
+            // given
+            User user = createNormalUser();
+            CourseTime courseTime1 = createRecruitingCourseTime();
+            CourseTime courseTime2 = createRecruitingCourseTime();
+            CourseTime courseTime3 = createRecruitingCourseTime();
+
+            createEnrollment(user.getId(), courseTime1.getId());
+            Enrollment completedEnrollment = createEnrollment(user.getId(), courseTime2.getId());
+            completedEnrollment.complete(90);
+            enrollmentRepository.save(completedEnrollment);
+            createEnrollment(user.getId(), courseTime3.getId());
+
+            String accessToken = loginAndGetAccessToken("user@example.com", "Password123!");
+
+            // when & then
+            mockMvc.perform(get("/api/users/me/learning-stats")
+                            .header("Authorization", "Bearer " + accessToken))
+                    .andDo(print())
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.overview.totalCourses").value(3))
+                    .andExpect(jsonPath("$.data.overview.completed").value(1))
+                    .andExpect(jsonPath("$.data.overview.inProgress").value(2))
+                    .andExpect(jsonPath("$.data.overview.byType.voluntary").value(3))
+                    .andExpect(jsonPath("$.data.overview.byType.mandatory").value(0))
+                    .andExpect(jsonPath("$.data.progress").exists());
+        }
+
+        @Test
+        @DisplayName("성공 - 수강 이력 없음")
+        void getMyLearningStats_success_empty() throws Exception {
+            // given
+            createNormalUser();
+            String accessToken = loginAndGetAccessToken("user@example.com", "Password123!");
+
+            // when & then
+            mockMvc.perform(get("/api/users/me/learning-stats")
+                            .header("Authorization", "Bearer " + accessToken))
+                    .andDo(print())
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.overview.totalCourses").value(0))
+                    .andExpect(jsonPath("$.data.overview.completed").value(0))
+                    .andExpect(jsonPath("$.data.overview.inProgress").value(0))
+                    .andExpect(jsonPath("$.data.overview.completionRate").value(0))
+                    .andExpect(jsonPath("$.data.overview.byType.voluntary").value(0))
+                    .andExpect(jsonPath("$.data.overview.byType.mandatory").value(0));
+        }
+
+        @Test
+        @DisplayName("실패 - 인증 없이 접근")
+        void getMyLearningStats_fail_unauthorized() throws Exception {
+            // when & then
+            mockMvc.perform(get("/api/users/me/learning-stats"))
+                    .andDo(print())
+                    .andExpect(status().isForbidden());
+        }
+    }
+
     // ==================== 수강 취소 테스트 ====================
 
     @Nested

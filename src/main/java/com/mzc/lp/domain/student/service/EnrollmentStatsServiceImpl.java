@@ -2,13 +2,18 @@ package com.mzc.lp.domain.student.service;
 
 import com.mzc.lp.common.context.TenantContext;
 import com.mzc.lp.domain.student.constant.EnrollmentStatus;
+import com.mzc.lp.common.dto.stats.TypeCountProjection;
 import com.mzc.lp.domain.student.dto.response.CourseTimeEnrollmentStatsResponse;
+import com.mzc.lp.domain.student.dto.response.MyLearningStatsResponse;
 import com.mzc.lp.domain.student.dto.response.UserEnrollmentStatsResponse;
 import com.mzc.lp.domain.student.repository.EnrollmentRepository;
 import com.mzc.lp.domain.ts.exception.CourseTimeNotFoundException;
 import com.mzc.lp.domain.ts.repository.CourseTimeRepository;
 import com.mzc.lp.domain.user.exception.UserNotFoundException;
 import com.mzc.lp.domain.user.repository.UserRepository;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -102,6 +107,54 @@ public class EnrollmentStatsServiceImpl implements EnrollmentStatsService {
                 failedCount,
                 averageScore,
                 averageProgress
+        );
+    }
+
+    @Override
+    public MyLearningStatsResponse getMyLearningStats(Long userId) {
+        Long tenantId = TenantContext.getCurrentTenantId();
+
+        // 전체 수강 횟수
+        long totalCourses = enrollmentRepository.countByUserIdAndTenantId(userId, tenantId);
+
+        // 상태별 카운트
+        long completedCount = enrollmentRepository.countByUserIdAndStatusAndTenantId(
+                userId, EnrollmentStatus.COMPLETED, tenantId);
+        long inProgressCount = enrollmentRepository.countByUserIdAndStatusAndTenantId(
+                userId, EnrollmentStatus.ENROLLED, tenantId);
+        long droppedCount = enrollmentRepository.countByUserIdAndStatusAndTenantId(
+                userId, EnrollmentStatus.DROPPED, tenantId);
+        long failedCount = enrollmentRepository.countByUserIdAndStatusAndTenantId(
+                userId, EnrollmentStatus.FAILED, tenantId);
+
+        // 수강 유형별 카운트 (voluntary/mandatory)
+        List<TypeCountProjection> typeCounts = enrollmentRepository.countByUserIdGroupByType(userId, tenantId);
+        Map<String, Long> typeCountMap = typeCounts.stream()
+                .collect(Collectors.toMap(TypeCountProjection::getType, TypeCountProjection::getCount));
+
+        long voluntaryCount = typeCountMap.getOrDefault("VOLUNTARY", 0L);
+        long mandatoryCount = typeCountMap.getOrDefault("MANDATORY", 0L);
+
+        // 평균 진도율
+        Double averageProgress = enrollmentRepository.findAverageProgressByUserId(userId, tenantId);
+
+        // 평균 점수 (수료한 과정만)
+        Double averageScore = enrollmentRepository.findAverageScoreByUserId(userId, tenantId);
+
+        log.debug("내 학습 통계 조회 - 사용자 ID: {}, 전체: {}, 수료: {}, 수료율: {}%",
+                userId, totalCourses, completedCount,
+                totalCourses > 0 ? (completedCount * 100.0 / totalCourses) : 0);
+
+        return MyLearningStatsResponse.of(
+                totalCourses,
+                inProgressCount,
+                completedCount,
+                droppedCount,
+                failedCount,
+                voluntaryCount,
+                mandatoryCount,
+                averageProgress,
+                averageScore
         );
     }
 }

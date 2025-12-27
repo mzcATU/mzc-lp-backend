@@ -192,4 +192,16 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
     List<StatusCountProjection> countByCourseTimeIdGroupByStatus(
             @Param("courseTimeId") Long courseTimeId,
             @Param("tenantId") Long tenantId);
+
+    /**
+     * 사용자별 수강 유형별 카운트 (VOLUNTARY/MANDATORY)
+     */
+    @Query("SELECT e.type AS type, COUNT(e) AS count " +
+            "FROM Enrollment e " +
+            "WHERE e.userId = :userId " +
+            "AND e.tenantId = :tenantId " +
+            "GROUP BY e.type")
+    List<TypeCountProjection> countByUserIdGroupByType(
+            @Param("userId") Long userId,
+            @Param("tenantId") Long tenantId);
 }
