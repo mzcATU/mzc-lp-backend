@@ -1,6 +1,7 @@
 package com.mzc.lp.domain.student.service;
 
 import com.mzc.lp.domain.student.dto.response.CourseTimeEnrollmentStatsResponse;
+import com.mzc.lp.domain.student.dto.response.MyLearningStatsResponse;
 import com.mzc.lp.domain.student.dto.response.UserEnrollmentStatsResponse;
 
 /**
@@ -23,4 +24,12 @@ public interface EnrollmentStatsService {
      * @return 사용자별 수강 통계
      */
     UserEnrollmentStatsResponse getUserStats(Long userId);
+
+    /**
+     * 내 학습 통계 조회 (마이페이지용)
+     *
+     * @param userId 사용자 ID
+     * @return 내 학습 통계
+     */
+    MyLearningStatsResponse getMyLearningStats(Long userId);
 }

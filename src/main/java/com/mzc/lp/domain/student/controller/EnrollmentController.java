@@ -11,6 +11,7 @@ import com.mzc.lp.domain.student.dto.response.CourseTimeEnrollmentStatsResponse;
 import com.mzc.lp.domain.student.dto.response.EnrollmentDetailResponse;
 import com.mzc.lp.domain.student.dto.response.EnrollmentResponse;
 import com.mzc.lp.domain.student.dto.response.ForceEnrollResultResponse;
+import com.mzc.lp.domain.student.dto.response.MyLearningStatsResponse;
 import com.mzc.lp.domain.student.dto.response.UserEnrollmentStatsResponse;
 import com.mzc.lp.domain.student.service.EnrollmentService;
 import com.mzc.lp.domain.student.service.EnrollmentStatsService;
@@ -199,6 +200,18 @@ public class EnrollmentController {
             @PathVariable Long userId
     ) {
         UserEnrollmentStatsResponse response = enrollmentStatsService.getUserStats(userId);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    /**
+     * 내 학습 통계 조회 (마이페이지용)
+     */
+    @GetMapping("/api/users/me/learning-stats")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<MyLearningStatsResponse>> getMyLearningStats(
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        MyLearningStatsResponse response = enrollmentStatsService.getMyLearningStats(principal.id());
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
