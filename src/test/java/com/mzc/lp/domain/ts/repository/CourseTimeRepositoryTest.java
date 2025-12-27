@@ -1,6 +1,10 @@
 package com.mzc.lp.domain.ts.repository;
-import com.mzc.lp.common.support.TenantTestSupport;
 
+import com.mzc.lp.common.config.JpaConfig;
+import com.mzc.lp.common.dto.stats.BooleanCountProjection;
+import com.mzc.lp.common.dto.stats.StatusCountProjection;
+import com.mzc.lp.common.dto.stats.TypeCountProjection;
+import com.mzc.lp.common.support.TenantTestSupport;
 import com.mzc.lp.domain.ts.constant.CourseTimeStatus;
 import com.mzc.lp.domain.ts.constant.DeliveryType;
 import com.mzc.lp.domain.ts.constant.EnrollmentMethod;
@@ -10,7 +14,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import com.mzc.lp.common.config.JpaConfig;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
@@ -617,6 +620,250 @@ class CourseTimeRepositoryTest extends TenantTestSupport {
             // then
             assertThat(courseTime.getDeliveryType()).isEqualTo(DeliveryType.BLENDED);
             assertThat(courseTime.requiresLocationInfo()).isTrue();
+        }
+    }
+
+    @Nested
+    @DisplayName("CourseTime 통계 집계 쿼리 테스트")
+    class StatsQueryTest {
+
+        @Test
+        @DisplayName("성공 - 상태별 차수 카운트")
+        void countByTenantIdGroupByStatus_success() {
+            // given
+            createCourseTimeWithStatus(CourseTimeStatus.DRAFT);
+            createCourseTimeWithStatus(CourseTimeStatus.DRAFT);
+            createCourseTimeWithStatus(CourseTimeStatus.RECRUITING);
+            createCourseTimeWithStatus(CourseTimeStatus.ONGOING);
+
+            // when
+            List<StatusCountProjection> result = courseTimeRepository.countByTenantIdGroupByStatus(1L);
+
+            // then
+            assertThat(result).hasSize(3);
+
+            long draftCount = result.stream()
+                    .filter(p -> "DRAFT".equals(p.getStatus()))
+                    .mapToLong(StatusCountProjection::getCount)
+                    .sum();
+            long recruitingCount = result.stream()
+                    .filter(p -> "RECRUITING".equals(p.getStatus()))
+                    .mapToLong(StatusCountProjection::getCount)
+                    .sum();
+            long ongoingCount = result.stream()
+                    .filter(p -> "ONGOING".equals(p.getStatus()))
+                    .mapToLong(StatusCountProjection::getCount)
+                    .sum();
+
+            assertThat(draftCount).isEqualTo(2);
+            assertThat(recruitingCount).isEqualTo(1);
+            assertThat(ongoingCount).isEqualTo(1);
+        }
+
+        @Test
+        @DisplayName("성공 - 운영 방식별 차수 카운트")
+        void countByTenantIdGroupByDeliveryType_success() {
+            // given
+            courseTimeRepository.save(createTestCourseTime()); // ONLINE
+            courseTimeRepository.save(createTestCourseTime()); // ONLINE
+
+            CourseTime offlineCourseTime = CourseTime.create(
+                    "오프라인 차수",
+                    DeliveryType.OFFLINE,
+                    LocalDate.now(),
+                    LocalDate.now().plusDays(7),
+                    LocalDate.now().plusDays(7),
+                    LocalDate.now().plusDays(30),
+                    30,
+                    0,
+                    EnrollmentMethod.FIRST_COME,
+                    80,
+                    new BigDecimal("100000"),
+                    false,
+                    "{\"location\": \"서울\"}",
+                    true,
+                    1L
+            );
+            courseTimeRepository.save(offlineCourseTime);
+
+            // when
+            List<TypeCountProjection> result = courseTimeRepository.countByTenantIdGroupByDeliveryType(1L);
+
+            // then
+            assertThat(result).hasSize(2);
+
+            long onlineCount = result.stream()
+                    .filter(p -> "ONLINE".equals(p.getType()))
+                    .mapToLong(TypeCountProjection::getCount)
+                    .sum();
+            long offlineCount = result.stream()
+                    .filter(p -> "OFFLINE".equals(p.getType()))
+                    .mapToLong(TypeCountProjection::getCount)
+                    .sum();
+
+            assertThat(onlineCount).isEqualTo(2);
+            assertThat(offlineCount).isEqualTo(1);
+        }
+
+        @Test
+        @DisplayName("성공 - 무료/유료 차수 카운트")
+        void countByTenantIdGroupByFree_success() {
+            // given
+            courseTimeRepository.save(createTestCourseTime()); // 유료
+
+            courseTimeRepository.save(createFreeCourseTime());
+            courseTimeRepository.save(createFreeCourseTime());
+
+            // when
+            List<BooleanCountProjection> result = courseTimeRepository.countByTenantIdGroupByFree(1L);
+
+            // then
+            assertThat(result).hasSize(2);
+
+            long freeCount = result.stream()
+                    .filter(p -> Boolean.TRUE.equals(p.getValue()))
+                    .mapToLong(BooleanCountProjection::getCount)
+                    .sum();
+            long paidCount = result.stream()
+                    .filter(p -> Boolean.FALSE.equals(p.getValue()))
+                    .mapToLong(BooleanCountProjection::getCount)
+                    .sum();
+
+            assertThat(freeCount).isEqualTo(2);
+            assertThat(paidCount).isEqualTo(1);
+        }
+
+        private CourseTime createFreeCourseTime() {
+            return CourseTime.create(
+                    "무료 차수",
+                    DeliveryType.ONLINE,
+                    LocalDate.now(),
+                    LocalDate.now().plusDays(7),
+                    LocalDate.now().plusDays(7),
+                    LocalDate.now().plusDays(30),
+                    null,
+                    null,
+                    EnrollmentMethod.FIRST_COME,
+                    80,
+                    BigDecimal.ZERO,
+                    true,
+                    null,
+                    true,
+                    1L
+            );
+        }
+
+        @Test
+        @DisplayName("성공 - 전체 차수 카운트")
+        void countByTenantId_success() {
+            // given
+            courseTimeRepository.save(createTestCourseTime());
+            courseTimeRepository.save(createTestCourseTime());
+            courseTimeRepository.save(createTestCourseTime());
+
+            // when
+            long count = courseTimeRepository.countByTenantId(1L);
+
+            // then
+            assertThat(count).isEqualTo(3);
+        }
+
+        @Test
+        @DisplayName("성공 - 평균 정원 활용률")
+        void getAverageCapacityUtilization_success() {
+            // given
+            CourseTime courseTime1 = createTestCourseTime(); // capacity=30
+            courseTime1.incrementEnrollment(); // 10명 등록
+            for (int i = 0; i < 9; i++) {
+                courseTime1.incrementEnrollment();
+            }
+            courseTimeRepository.save(courseTime1); // 10/30 = 33.33%
+
+            CourseTime courseTime2 = createTestCourseTime(); // capacity=30
+            for (int i = 0; i < 20; i++) {
+                courseTime2.incrementEnrollment();
+            }
+            courseTimeRepository.save(courseTime2); // 20/30 = 66.67%
+
+            // when
+            Double avgUtilization = courseTimeRepository.getAverageCapacityUtilization(1L);
+
+            // then - (33.33 + 66.67) / 2 = 50%
+            assertThat(avgUtilization).isNotNull();
+            assertThat(avgUtilization).isBetween(49.0, 51.0);
+        }
+
+        @Test
+        @DisplayName("성공 - 과정별 상태별 차수 카운트")
+        void countByCmCourseIdGroupByStatus_success() {
+            // given
+            CourseTime ct1 = createTestCourseTime();
+            ct1.linkCourse(100L, 1L);
+            courseTimeRepository.save(ct1);
+
+            CourseTime ct2 = createTestCourseTime();
+            ct2.linkCourse(100L, 2L);
+            ct2 = courseTimeRepository.save(ct2);
+            ct2.open();
+            courseTimeRepository.save(ct2);
+
+            CourseTime ct3 = createTestCourseTime();
+            ct3.linkCourse(200L, 1L); // 다른 과정
+            courseTimeRepository.save(ct3);
+
+            // when
+            List<StatusCountProjection> result = courseTimeRepository.countByCmCourseIdGroupByStatus(100L, 1L);
+
+            // then
+            assertThat(result).hasSize(2);
+
+            long totalCount = result.stream()
+                    .mapToLong(StatusCountProjection::getCount)
+                    .sum();
+            assertThat(totalCount).isEqualTo(2);
+        }
+
+        @Test
+        @DisplayName("성공 - 과정별 전체 차수 카운트")
+        void countByCmCourseIdAndTenantId_success() {
+            // given
+            CourseTime ct1 = createTestCourseTime();
+            ct1.linkCourse(100L, 1L);
+            courseTimeRepository.save(ct1);
+
+            CourseTime ct2 = createTestCourseTime();
+            ct2.linkCourse(100L, 2L);
+            courseTimeRepository.save(ct2);
+
+            CourseTime ct3 = createTestCourseTime();
+            ct3.linkCourse(200L, 1L); // 다른 과정
+            courseTimeRepository.save(ct3);
+
+            // when
+            long count = courseTimeRepository.countByCmCourseIdAndTenantId(100L, 1L);
+
+            // then
+            assertThat(count).isEqualTo(2);
+        }
+
+        @Test
+        @DisplayName("성공 - 데이터 없을 때 빈 리스트 반환")
+        void countByTenantIdGroupByStatus_emptyList() {
+            // when
+            List<StatusCountProjection> result = courseTimeRepository.countByTenantIdGroupByStatus(1L);
+
+            // then
+            assertThat(result).isEmpty();
+        }
+
+        @Test
+        @DisplayName("성공 - 데이터 없을 때 null 반환 (평균 활용률)")
+        void getAverageCapacityUtilization_null() {
+            // when
+            Double avgUtilization = courseTimeRepository.getAverageCapacityUtilization(1L);
+
+            // then
+            assertThat(avgUtilization).isNull();
         }
     }
 }

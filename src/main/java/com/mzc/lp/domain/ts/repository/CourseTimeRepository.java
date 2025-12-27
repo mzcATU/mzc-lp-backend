@@ -1,5 +1,8 @@
 package com.mzc.lp.domain.ts.repository;
 
+import com.mzc.lp.common.dto.stats.BooleanCountProjection;
+import com.mzc.lp.common.dto.stats.StatusCountProjection;
+import com.mzc.lp.common.dto.stats.TypeCountProjection;
 import com.mzc.lp.domain.ts.constant.CourseTimeStatus;
 import com.mzc.lp.domain.ts.entity.CourseTime;
 import jakarta.persistence.LockModeType;
@@ -85,4 +88,65 @@ public interface CourseTimeRepository extends JpaRepository<CourseTime, Long> {
             @Param("timeIds") List<Long> timeIds,
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate);
+
+    // ===== 통계 집계 쿼리 =====
+
+    /**
+     * 테넌트별 상태별 차수 카운트
+     */
+    @Query("SELECT ct.status AS status, COUNT(ct) AS count " +
+            "FROM CourseTime ct " +
+            "WHERE ct.tenantId = :tenantId " +
+            "GROUP BY ct.status")
+    List<StatusCountProjection> countByTenantIdGroupByStatus(@Param("tenantId") Long tenantId);
+
+    /**
+     * 테넌트별 운영 방식별 차수 카운트
+     */
+    @Query("SELECT ct.deliveryType AS type, COUNT(ct) AS count " +
+            "FROM CourseTime ct " +
+            "WHERE ct.tenantId = :tenantId " +
+            "GROUP BY ct.deliveryType")
+    List<TypeCountProjection> countByTenantIdGroupByDeliveryType(@Param("tenantId") Long tenantId);
+
+    /**
+     * 테넌트별 무료/유료 차수 카운트
+     */
+    @Query("SELECT ct.free AS value, COUNT(ct) AS count " +
+            "FROM CourseTime ct " +
+            "WHERE ct.tenantId = :tenantId " +
+            "GROUP BY ct.free")
+    List<BooleanCountProjection> countByTenantIdGroupByFree(@Param("tenantId") Long tenantId);
+
+    /**
+     * 테넌트별 전체 차수 카운트
+     */
+    long countByTenantId(Long tenantId);
+
+    /**
+     * 테넌트별 평균 정원 활용률 (currentEnrollment / capacity * 100)
+     * capacity가 0인 경우 제외
+     */
+    @Query("SELECT AVG(ct.currentEnrollment * 100.0 / ct.capacity) " +
+            "FROM CourseTime ct " +
+            "WHERE ct.tenantId = :tenantId " +
+            "AND ct.capacity > 0")
+    Double getAverageCapacityUtilization(@Param("tenantId") Long tenantId);
+
+    /**
+     * 과정(cmCourseId)별 상태별 차수 카운트
+     */
+    @Query("SELECT ct.status AS status, COUNT(ct) AS count " +
+            "FROM CourseTime ct " +
+            "WHERE ct.cmCourseId = :cmCourseId " +
+            "AND ct.tenantId = :tenantId " +
+            "GROUP BY ct.status")
+    List<StatusCountProjection> countByCmCourseIdGroupByStatus(
+            @Param("cmCourseId") Long cmCourseId,
+            @Param("tenantId") Long tenantId);
+
+    /**
+     * 과정(cmCourseId)별 전체 차수 카운트
+     */
+    long countByCmCourseIdAndTenantId(Long cmCourseId, Long tenantId);
 }

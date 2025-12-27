@@ -1,8 +1,14 @@
 package com.mzc.lp.domain.user.repository;
 
+import com.mzc.lp.common.dto.stats.StatusCountProjection;
+import com.mzc.lp.common.dto.stats.TypeCountProjection;
 import com.mzc.lp.domain.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long>, UserRepositoryCustom {
@@ -10,4 +16,47 @@ public interface UserRepository extends JpaRepository<User, Long>, UserRepositor
     Optional<User> findByEmail(String email);
 
     boolean existsByEmail(String email);
+
+    // ===== 통계 집계 쿼리 =====
+
+    /**
+     * 테넌트별 상태별 사용자 카운트
+     */
+    @Query("SELECT u.status AS status, COUNT(u) AS count " +
+            "FROM User u " +
+            "WHERE u.tenantId = :tenantId " +
+            "GROUP BY u.status")
+    List<StatusCountProjection> countByTenantIdGroupByStatus(@Param("tenantId") Long tenantId);
+
+    /**
+     * 테넌트별 역할별 사용자 카운트
+     */
+    @Query("SELECT u.role AS type, COUNT(u) AS count " +
+            "FROM User u " +
+            "WHERE u.tenantId = :tenantId " +
+            "GROUP BY u.role")
+    List<TypeCountProjection> countByTenantIdGroupByRole(@Param("tenantId") Long tenantId);
+
+    /**
+     * 테넌트별 전체 사용자 카운트
+     */
+    long countByTenantId(Long tenantId);
+
+    /**
+     * 테넌트별 신규 사용자 카운트 (특정 시점 이후 가입)
+     */
+    @Query("SELECT COUNT(u) FROM User u " +
+            "WHERE u.tenantId = :tenantId " +
+            "AND u.createdAt >= :since")
+    long countNewUsersSince(
+            @Param("tenantId") Long tenantId,
+            @Param("since") Instant since);
+
+    /**
+     * 테넌트별 활성 사용자 카운트 (ACTIVE 상태)
+     */
+    @Query("SELECT COUNT(u) FROM User u " +
+            "WHERE u.tenantId = :tenantId " +
+            "AND u.status = 'ACTIVE'")
+    long countActiveByTenantId(@Param("tenantId") Long tenantId);
 }
