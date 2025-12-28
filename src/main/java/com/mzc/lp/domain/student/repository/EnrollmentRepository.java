@@ -2,6 +2,7 @@ package com.mzc.lp.domain.student.repository;
 
 import com.mzc.lp.common.dto.stats.DailyCountProjection;
 import com.mzc.lp.common.dto.stats.MonthlyCountProjection;
+import com.mzc.lp.common.dto.stats.MonthlyEnrollmentStatsProjection;
 import com.mzc.lp.common.dto.stats.StatusCountProjection;
 import com.mzc.lp.common.dto.stats.TypeCountProjection;
 import com.mzc.lp.domain.student.constant.EnrollmentStatus;
@@ -204,4 +205,21 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
     List<TypeCountProjection> countByUserIdGroupByType(
             @Param("userId") Long userId,
             @Param("tenantId") Long tenantId);
+
+    /**
+     * 테넌트별 월별 수강신청/수료 통계 (기간 내)
+     */
+    @Query("SELECT YEAR(e.enrolledAt) AS year, MONTH(e.enrolledAt) AS month, " +
+            "COUNT(e) AS enrollments, " +
+            "SUM(CASE WHEN e.status = 'COMPLETED' THEN 1 ELSE 0 END) AS completions " +
+            "FROM Enrollment e " +
+            "WHERE e.tenantId = :tenantId " +
+            "AND e.enrolledAt >= :startDate " +
+            "AND e.enrolledAt < :endDate " +
+            "GROUP BY YEAR(e.enrolledAt), MONTH(e.enrolledAt) " +
+            "ORDER BY YEAR(e.enrolledAt) DESC, MONTH(e.enrolledAt) DESC")
+    List<MonthlyEnrollmentStatsProjection> countMonthlyEnrollmentStats(
+            @Param("tenantId") Long tenantId,
+            @Param("startDate") Instant startDate,
+            @Param("endDate") Instant endDate);
 }
