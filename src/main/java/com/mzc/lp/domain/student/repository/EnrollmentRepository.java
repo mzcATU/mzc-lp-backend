@@ -222,4 +222,39 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
             @Param("tenantId") Long tenantId,
             @Param("startDate") Instant startDate,
             @Param("endDate") Instant endDate);
+
+    // ===== OWNER 통계 쿼리 =====
+
+    /**
+     * 차수 ID 목록에 속한 수강 카운트
+     */
+    @Query("SELECT COUNT(e) FROM Enrollment e " +
+            "WHERE e.courseTimeId IN :courseTimeIds " +
+            "AND e.tenantId = :tenantId")
+    long countByCourseTimeIdInAndTenantId(
+            @Param("courseTimeIds") List<Long> courseTimeIds,
+            @Param("tenantId") Long tenantId);
+
+    /**
+     * 차수 ID 목록에 속한 상태별 수강 카운트
+     */
+    @Query("SELECT e.status AS status, COUNT(e) AS count " +
+            "FROM Enrollment e " +
+            "WHERE e.courseTimeId IN :courseTimeIds " +
+            "AND e.tenantId = :tenantId " +
+            "GROUP BY e.status")
+    List<StatusCountProjection> countByCourseTimeIdInGroupByStatus(
+            @Param("courseTimeIds") List<Long> courseTimeIds,
+            @Param("tenantId") Long tenantId);
+
+    /**
+     * 차수 ID 목록에 속한 수료율
+     */
+    @Query("SELECT COUNT(CASE WHEN e.status = 'COMPLETED' THEN 1 END) * 100.0 / NULLIF(COUNT(e), 0) " +
+            "FROM Enrollment e " +
+            "WHERE e.courseTimeId IN :courseTimeIds " +
+            "AND e.tenantId = :tenantId")
+    Double getCompletionRateByCourseTimeIds(
+            @Param("courseTimeIds") List<Long> courseTimeIds,
+            @Param("tenantId") Long tenantId);
 }

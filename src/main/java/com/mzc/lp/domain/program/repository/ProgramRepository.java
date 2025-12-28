@@ -1,5 +1,6 @@
 package com.mzc.lp.domain.program.repository;
 
+import com.mzc.lp.common.dto.stats.ProgramStatsProjection;
 import com.mzc.lp.common.dto.stats.StatusCountProjection;
 import com.mzc.lp.domain.program.constant.ProgramStatus;
 import com.mzc.lp.domain.program.entity.Program;
@@ -52,4 +53,39 @@ public interface ProgramRepository extends JpaRepository<Program, Long> {
      * 테넌트별 전체 프로그램 카운트
      */
     long countByTenantId(Long tenantId);
+
+    // ===== OWNER 통계 쿼리 =====
+
+    /**
+     * 소유자별 프로그램 카운트
+     */
+    long countByCreatedByAndTenantId(Long createdBy, Long tenantId);
+
+    /**
+     * 소유자별 프로그램 ID 목록 조회
+     */
+    @Query("SELECT p.id FROM Program p " +
+            "WHERE p.createdBy = :createdBy " +
+            "AND p.tenantId = :tenantId")
+    List<Long> findIdsByCreatedByAndTenantId(
+            @Param("createdBy") Long createdBy,
+            @Param("tenantId") Long tenantId);
+
+    /**
+     * 소유자별 프로그램 통계 (프로그램별 차수 수, 수강생 수, 수료율)
+     */
+    @Query("SELECT p.id AS programId, p.title AS title, " +
+            "COUNT(DISTINCT ct.id) AS courseTimeCount, " +
+            "COUNT(e.id) AS totalStudents, " +
+            "COUNT(CASE WHEN e.status = 'COMPLETED' THEN 1 END) * 100.0 / NULLIF(COUNT(e.id), 0) AS completionRate " +
+            "FROM Program p " +
+            "LEFT JOIN CourseTime ct ON ct.program.id = p.id AND ct.tenantId = p.tenantId " +
+            "LEFT JOIN Enrollment e ON e.courseTimeId = ct.id AND e.tenantId = p.tenantId " +
+            "WHERE p.createdBy = :createdBy " +
+            "AND p.tenantId = :tenantId " +
+            "GROUP BY p.id, p.title " +
+            "ORDER BY p.id")
+    List<ProgramStatsProjection> findProgramStatsByOwner(
+            @Param("createdBy") Long createdBy,
+            @Param("tenantId") Long tenantId);
 }

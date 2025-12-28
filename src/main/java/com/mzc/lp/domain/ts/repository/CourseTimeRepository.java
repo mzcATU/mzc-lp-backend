@@ -171,4 +171,16 @@ public interface CourseTimeRepository extends JpaRepository<CourseTime, Long> {
             @Param("statuses") List<CourseTimeStatus> statuses,
             @Param("role") InstructorRole role,
             @Param("assignmentStatus") AssignmentStatus assignmentStatus);
+
+    // ===== OWNER 통계 쿼리 =====
+
+    /**
+     * 프로그램 ID 목록에 속한 차수 ID 목록 조회
+     */
+    @Query("SELECT ct.id FROM CourseTime ct " +
+            "WHERE ct.program.id IN :programIds " +
+            "AND ct.tenantId = :tenantId")
+    List<Long> findIdsByProgramIdInAndTenantId(
+            @Param("programIds") List<Long> programIds,
+            @Param("tenantId") Long tenantId);
 }
