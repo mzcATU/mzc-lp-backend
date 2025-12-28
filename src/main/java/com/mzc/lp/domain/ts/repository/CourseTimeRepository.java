@@ -3,6 +3,8 @@ package com.mzc.lp.domain.ts.repository;
 import com.mzc.lp.common.dto.stats.BooleanCountProjection;
 import com.mzc.lp.common.dto.stats.StatusCountProjection;
 import com.mzc.lp.common.dto.stats.TypeCountProjection;
+import com.mzc.lp.domain.iis.constant.AssignmentStatus;
+import com.mzc.lp.domain.iis.constant.InstructorRole;
 import com.mzc.lp.domain.ts.constant.CourseTimeStatus;
 import com.mzc.lp.domain.ts.entity.CourseTime;
 import jakarta.persistence.LockModeType;
@@ -149,4 +151,24 @@ public interface CourseTimeRepository extends JpaRepository<CourseTime, Long> {
      * 과정(cmCourseId)별 전체 차수 카운트
      */
     long countByCmCourseIdAndTenantId(Long cmCourseId, Long tenantId);
+
+    /**
+     * 강사 미배정 차수 카운트 (RECRUITING 또는 ONGOING 상태)
+     * 주강사(MAIN)가 ACTIVE 상태로 배정되지 않은 차수
+     */
+    @Query("SELECT COUNT(ct) FROM CourseTime ct " +
+            "WHERE ct.tenantId = :tenantId " +
+            "AND ct.status IN :statuses " +
+            "AND NOT EXISTS (" +
+            "    SELECT 1 FROM InstructorAssignment ia " +
+            "    WHERE ia.timeKey = ct.id " +
+            "    AND ia.tenantId = :tenantId " +
+            "    AND ia.role = :role " +
+            "    AND ia.status = :assignmentStatus" +
+            ")")
+    long countCourseTimesNeedingInstructor(
+            @Param("tenantId") Long tenantId,
+            @Param("statuses") List<CourseTimeStatus> statuses,
+            @Param("role") InstructorRole role,
+            @Param("assignmentStatus") AssignmentStatus assignmentStatus);
 }

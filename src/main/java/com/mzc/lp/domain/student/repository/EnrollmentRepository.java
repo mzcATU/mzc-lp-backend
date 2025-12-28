@@ -117,13 +117,13 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
     /**
      * 테넌트별 일별 수강신청 카운트 (기간 내)
      */
-    @Query("SELECT FUNCTION('DATE', e.enrolledAt) AS date, COUNT(e) AS count " +
+    @Query("SELECT CAST(e.enrolledAt AS DATE) AS date, COUNT(e) AS count " +
             "FROM Enrollment e " +
             "WHERE e.tenantId = :tenantId " +
             "AND e.enrolledAt >= :startDate " +
             "AND e.enrolledAt < :endDate " +
-            "GROUP BY FUNCTION('DATE', e.enrolledAt) " +
-            "ORDER BY FUNCTION('DATE', e.enrolledAt)")
+            "GROUP BY CAST(e.enrolledAt AS DATE) " +
+            "ORDER BY CAST(e.enrolledAt AS DATE)")
     List<DailyCountProjection> countDailyEnrollments(
             @Param("tenantId") Long tenantId,
             @Param("startDate") Instant startDate,
@@ -164,7 +164,7 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
     /**
      * 테넌트별 수료율 (COMPLETED / 전체 * 100)
      */
-    @Query("SELECT COUNT(CASE WHEN e.status = 'COMPLETED' THEN 1 END) * 100.0 / COUNT(e) " +
+    @Query("SELECT COUNT(CASE WHEN e.status = 'COMPLETED' THEN 1 END) * 100.0 / NULLIF(COUNT(e), 0) " +
             "FROM Enrollment e " +
             "WHERE e.tenantId = :tenantId")
     Double getCompletionRateByTenantId(@Param("tenantId") Long tenantId);
