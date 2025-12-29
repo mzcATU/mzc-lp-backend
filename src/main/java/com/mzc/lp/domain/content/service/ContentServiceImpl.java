@@ -380,37 +380,44 @@ public class ContentServiceImpl implements ContentService {
     @Override
     public Page<ContentListResponse> getMyContents(Long tenantId, Long userId,
                                                     ContentType contentType, ContentStatus status,
-                                                    String keyword, Pageable pageable) {
+                                                    String keyword, Long folderId, Pageable pageable) {
         Page<Content> contents;
 
         boolean hasType = contentType != null;
         boolean hasStatus = status != null;
         boolean hasKeyword = keyword != null && !keyword.isBlank();
+        boolean hasFolder = folderId != null;
 
-        // 조합별 쿼리 호출
-        if (hasType && hasStatus && hasKeyword) {
-            contents = contentRepository.findByTenantIdAndCreatedByAndContentTypeAndStatusAndKeyword(
-                    tenantId, userId, contentType, status, keyword, pageable);
-        } else if (hasType && hasStatus) {
-            contents = contentRepository.findByTenantIdAndCreatedByAndContentTypeAndStatus(
-                    tenantId, userId, contentType, status, pageable);
-        } else if (hasType && hasKeyword) {
-            contents = contentRepository.findByTenantIdAndCreatedByAndContentTypeAndKeyword(
-                    tenantId, userId, contentType, keyword, pageable);
-        } else if (hasStatus && hasKeyword) {
-            contents = contentRepository.findByTenantIdAndCreatedByAndStatusAndKeyword(
-                    tenantId, userId, status, keyword, pageable);
-        } else if (hasType) {
-            contents = contentRepository.findByTenantIdAndCreatedByAndContentType(
-                    tenantId, userId, contentType, pageable);
-        } else if (hasStatus) {
-            contents = contentRepository.findByTenantIdAndCreatedByAndStatus(
-                    tenantId, userId, status, pageable);
-        } else if (hasKeyword) {
-            contents = contentRepository.findByTenantIdAndCreatedByAndKeyword(
-                    tenantId, userId, keyword, pageable);
+        // folderId가 있는 경우 LearningObject를 통한 JOIN 쿼리 사용
+        if (hasFolder) {
+            contents = contentRepository.findMyContentsByFolderId(
+                    tenantId, userId, contentType, status, keyword, folderId, pageable);
         } else {
-            contents = contentRepository.findByTenantIdAndCreatedBy(tenantId, userId, pageable);
+            // 기존 조합별 쿼리 호출
+            if (hasType && hasStatus && hasKeyword) {
+                contents = contentRepository.findByTenantIdAndCreatedByAndContentTypeAndStatusAndKeyword(
+                        tenantId, userId, contentType, status, keyword, pageable);
+            } else if (hasType && hasStatus) {
+                contents = contentRepository.findByTenantIdAndCreatedByAndContentTypeAndStatus(
+                        tenantId, userId, contentType, status, pageable);
+            } else if (hasType && hasKeyword) {
+                contents = contentRepository.findByTenantIdAndCreatedByAndContentTypeAndKeyword(
+                        tenantId, userId, contentType, keyword, pageable);
+            } else if (hasStatus && hasKeyword) {
+                contents = contentRepository.findByTenantIdAndCreatedByAndStatusAndKeyword(
+                        tenantId, userId, status, keyword, pageable);
+            } else if (hasType) {
+                contents = contentRepository.findByTenantIdAndCreatedByAndContentType(
+                        tenantId, userId, contentType, pageable);
+            } else if (hasStatus) {
+                contents = contentRepository.findByTenantIdAndCreatedByAndStatus(
+                        tenantId, userId, status, pageable);
+            } else if (hasKeyword) {
+                contents = contentRepository.findByTenantIdAndCreatedByAndKeyword(
+                        tenantId, userId, keyword, pageable);
+            } else {
+                contents = contentRepository.findByTenantIdAndCreatedBy(tenantId, userId, pageable);
+            }
         }
 
         return contents.map(ContentListResponse::from);

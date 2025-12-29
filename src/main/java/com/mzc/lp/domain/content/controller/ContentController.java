@@ -183,13 +183,14 @@ public class ContentController {
             @RequestParam(required = false) ContentType contentType,
             @RequestParam(required = false) ContentStatus status,
             @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Long folderId,
             @PageableDefault(size = 20) Pageable pageable,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
         Long tenantId = TenantContext.getCurrentTenantId();
         Long userId = principal.id();
         Page<ContentListResponse> response = contentService.getMyContents(
-                tenantId, userId, contentType, status, keyword, pageable);
+                tenantId, userId, contentType, status, keyword, folderId, pageable);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
