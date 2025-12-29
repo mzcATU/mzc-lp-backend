@@ -128,13 +128,26 @@ public class ContentFolderServiceImpl implements ContentFolderService {
     public void delete(Long id, Long tenantId) {
         ContentFolder folder = findFolderOrThrow(id, tenantId);
 
-        if (!folder.isEmpty()) {
-            throw new BusinessException(ErrorCode.FOLDER_NOT_EMPTY,
-                    "Folder contains items. Please delete or move items first.");
-        }
+        // 폴더 내 LO들을 미분류(root)로 이동
+        moveAllLearningObjectsToRoot(folder);
 
         contentFolderRepository.delete(folder);
-        log.info("ContentFolder deleted: id={}", id);
+        log.info("ContentFolder deleted: id={}, LOs moved to root", id);
+    }
+
+    /**
+     * 폴더와 모든 하위 폴더의 LO를 미분류(root)로 이동
+     */
+    private void moveAllLearningObjectsToRoot(ContentFolder folder) {
+        // 현재 폴더의 LO들을 미분류로 이동
+        for (var lo : folder.getLearningObjects()) {
+            lo.moveToRoot();
+        }
+
+        // 하위 폴더의 LO들도 재귀적으로 이동
+        for (ContentFolder child : folder.getChildren()) {
+            moveAllLearningObjectsToRoot(child);
+        }
     }
 
     private ContentFolder findFolderOrThrow(Long id, Long tenantId) {
