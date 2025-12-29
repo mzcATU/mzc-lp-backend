@@ -18,6 +18,9 @@ import com.mzc.lp.domain.content.exception.UnsupportedContentTypeException;
 import com.mzc.lp.domain.content.repository.ContentRepository;
 import com.mzc.lp.domain.content.repository.ContentVersionRepository;
 import com.mzc.lp.domain.course.repository.CourseItemRepository;
+import com.mzc.lp.domain.learning.entity.ContentFolder;
+import com.mzc.lp.domain.learning.exception.ContentFolderNotFoundException;
+import com.mzc.lp.domain.learning.repository.ContentFolderRepository;
 import com.mzc.lp.domain.learning.repository.LearningObjectRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +36,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 @Slf4j
@@ -47,6 +52,7 @@ public class ContentServiceImpl implements ContentService {
     private final ThumbnailService thumbnailService;
     private final ContentVersionService contentVersionService;
     private final LearningObjectRepository learningObjectRepository;
+    private final ContentFolderRepository contentFolderRepository;
     private final CourseItemRepository courseItemRepository;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -388,10 +394,13 @@ public class ContentServiceImpl implements ContentService {
         boolean hasKeyword = keyword != null && !keyword.isBlank();
         boolean hasFolder = folderId != null;
 
-        // folderId가 있는 경우 LearningObject를 통한 JOIN 쿼리 사용
+        // folderId가 있는 경우 해당 폴더와 모든 하위 폴더의 콘텐츠 조회
         if (hasFolder) {
-            contents = contentRepository.findMyContentsByFolderId(
-                    tenantId, userId, contentType, status, keyword, folderId, pageable);
+            ContentFolder folder = contentFolderRepository.findByIdAndTenantId(folderId, tenantId)
+                    .orElseThrow(() -> new ContentFolderNotFoundException(folderId));
+            List<Long> folderIds = collectFolderIds(folder);
+            contents = contentRepository.findMyContentsByFolderIds(
+                    tenantId, userId, contentType, status, keyword, folderIds, pageable);
         } else {
             // 기존 조합별 쿼리 호출
             if (hasType && hasStatus && hasKeyword) {
@@ -470,5 +479,15 @@ public class ContentServiceImpl implements ContentService {
         }
         // LearningObject가 CourseItem에 포함되어 있는지 확인
         return courseItemRepository.existsByContentIdThroughLearningObject(contentId);
+    }
+
+    // 폴더와 모든 하위 폴더의 ID를 재귀적으로 수집
+    private List<Long> collectFolderIds(ContentFolder folder) {
+        List<Long> ids = new ArrayList<>();
+        ids.add(folder.getId());
+        for (ContentFolder child : folder.getChildren()) {
+            ids.addAll(collectFolderIds(child));
+        }
+        return ids;
     }
 }

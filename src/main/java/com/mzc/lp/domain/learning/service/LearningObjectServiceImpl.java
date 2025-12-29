@@ -20,6 +20,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -54,11 +57,18 @@ public class LearningObjectServiceImpl implements LearningObjectService {
                                                             String keyword, Pageable pageable) {
         Page<LearningObject> learningObjects;
 
-        if (folderId != null && keyword != null && !keyword.isBlank()) {
-            learningObjects = learningObjectRepository.findByTenantIdAndFolderIdAndKeyword(
-                    tenantId, folderId, keyword, pageable);
-        } else if (folderId != null) {
-            learningObjects = learningObjectRepository.findByTenantIdAndFolderId(tenantId, folderId, pageable);
+        if (folderId != null) {
+            // 해당 폴더와 모든 하위 폴더의 ID 수집
+            ContentFolder folder = contentFolderRepository.findByIdAndTenantId(folderId, tenantId)
+                    .orElseThrow(() -> new ContentFolderNotFoundException(folderId));
+            List<Long> folderIds = collectFolderIds(folder);
+
+            if (keyword != null && !keyword.isBlank()) {
+                learningObjects = learningObjectRepository.findByTenantIdAndFolderIdInAndKeyword(
+                        tenantId, folderIds, keyword, pageable);
+            } else {
+                learningObjects = learningObjectRepository.findByTenantIdAndFolderIdIn(tenantId, folderIds, pageable);
+            }
         } else if (keyword != null && !keyword.isBlank()) {
             learningObjects = learningObjectRepository.findByTenantIdAndKeyword(tenantId, keyword, pageable);
         } else {
@@ -66,6 +76,16 @@ public class LearningObjectServiceImpl implements LearningObjectService {
         }
 
         return learningObjects.map(LearningObjectResponse::from);
+    }
+
+    // 폴더와 모든 하위 폴더의 ID를 재귀적으로 수집
+    private List<Long> collectFolderIds(ContentFolder folder) {
+        List<Long> ids = new ArrayList<>();
+        ids.add(folder.getId());
+        for (ContentFolder child : folder.getChildren()) {
+            ids.addAll(collectFolderIds(child));
+        }
+        return ids;
     }
 
     @Override

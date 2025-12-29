@@ -37,6 +37,19 @@ public interface LearningObjectRepository extends JpaRepository<LearningObject, 
                                                              @Param("keyword") String keyword,
                                                              Pageable pageable);
 
+    // 하위 폴더 포함 조회 (폴더 ID 목록으로)
+    @Query("SELECT lo FROM LearningObject lo WHERE lo.tenantId = :tenantId AND lo.folder.id IN :folderIds")
+    Page<LearningObject> findByTenantIdAndFolderIdIn(@Param("tenantId") Long tenantId,
+                                                      @Param("folderIds") java.util.List<Long> folderIds,
+                                                      Pageable pageable);
+
+    @Query("SELECT lo FROM LearningObject lo WHERE lo.tenantId = :tenantId AND lo.folder.id IN :folderIds AND " +
+           "(LOWER(lo.name) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    Page<LearningObject> findByTenantIdAndFolderIdInAndKeyword(@Param("tenantId") Long tenantId,
+                                                               @Param("folderIds") java.util.List<Long> folderIds,
+                                                               @Param("keyword") String keyword,
+                                                               Pageable pageable);
+
     /**
      * 콘텐츠가 강의(LearningObject)에서 참조되고 있는지 확인
      */
