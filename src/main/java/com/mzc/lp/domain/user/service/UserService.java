@@ -34,7 +34,7 @@ public interface UserService {
     ProfileImageResponse uploadProfileImage(Long userId, MultipartFile file);
 
     // 관리 API (OPERATOR 권한)
-    Page<UserListResponse> getUsers(String keyword, TenantRole role, UserStatus status, Pageable pageable);
+    Page<UserListResponse> getUsers(String keyword, TenantRole role, UserStatus status, Boolean hasCourseRole, Pageable pageable);
 
     UserDetailResponse getUser(Long userId);
 

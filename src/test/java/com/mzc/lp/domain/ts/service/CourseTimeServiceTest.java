@@ -6,6 +6,7 @@ import com.mzc.lp.domain.program.entity.Program;
 import com.mzc.lp.domain.program.repository.ProgramRepository;
 import com.mzc.lp.domain.ts.constant.DeliveryType;
 import com.mzc.lp.domain.ts.constant.EnrollmentMethod;
+import com.mzc.lp.domain.user.repository.UserCourseRoleRepository;
 import com.mzc.lp.domain.ts.dto.response.CapacityResponse;
 import com.mzc.lp.domain.ts.dto.response.PriceResponse;
 import com.mzc.lp.domain.ts.entity.CourseTime;
@@ -47,6 +48,9 @@ class CourseTimeServiceTest extends TenantTestSupport {
 
     @Mock
     private InstructorAssignmentService instructorAssignmentService;
+
+    @Mock
+    private UserCourseRoleRepository userCourseRoleRepository;
 
     private CourseTime createTestCourseTime(Integer capacity, int currentEnrollment) {
         CourseTime courseTime = CourseTime.create(

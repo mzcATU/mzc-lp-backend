@@ -15,6 +15,12 @@ import com.mzc.lp.domain.program.repository.ProgramRepository;
 import com.mzc.lp.domain.snapshot.entity.CourseSnapshot;
 import com.mzc.lp.domain.snapshot.exception.SnapshotNotFoundException;
 import com.mzc.lp.domain.snapshot.repository.CourseSnapshotRepository;
+import com.mzc.lp.domain.user.constant.CourseRole;
+import com.mzc.lp.domain.user.entity.User;
+import com.mzc.lp.domain.user.entity.UserCourseRole;
+import com.mzc.lp.domain.user.exception.UserNotFoundException;
+import com.mzc.lp.domain.user.repository.UserCourseRoleRepository;
+import com.mzc.lp.domain.user.repository.UserRepository;
 import com.mzc.lp.common.context.TenantContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +37,8 @@ public class ProgramServiceImpl implements ProgramService {
 
     private final ProgramRepository programRepository;
     private final CourseSnapshotRepository snapshotRepository;
+    private final UserRepository userRepository;
+    private final UserCourseRoleRepository userCourseRoleRepository;
 
     @Override
     @Transactional
@@ -165,8 +173,30 @@ public class ProgramServiceImpl implements ProgramService {
 
         program.approve(operatorId, request != null ? request.comment() : null);
 
+        // B2C: Program 생성자에게 OWNER 역할 자동 부여
+        assignOwnerRole(program);
+
         log.info("Program approved: id={}, approvedBy={}", programId, operatorId);
         return ProgramDetailResponse.from(program);
+    }
+
+    private void assignOwnerRole(Program program) {
+        Long creatorId = program.getCreatedBy();
+        Long programId = program.getId();
+
+        // 이미 OWNER 역할이 있는지 확인
+        if (userCourseRoleRepository.existsByUserIdAndCourseIdAndRole(creatorId, programId, CourseRole.OWNER)) {
+            log.debug("OWNER role already exists: userId={}, programId={}", creatorId, programId);
+            return;
+        }
+
+        User creator = userRepository.findById(creatorId)
+                .orElseThrow(() -> new UserNotFoundException(creatorId));
+
+        UserCourseRole ownerRole = UserCourseRole.createOwner(creator, programId);
+        userCourseRoleRepository.save(ownerRole);
+
+        log.info("OWNER role assigned: userId={}, programId={}", creatorId, programId);
     }
 
     @Override

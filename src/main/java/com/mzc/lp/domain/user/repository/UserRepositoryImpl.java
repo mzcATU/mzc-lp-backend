@@ -3,6 +3,7 @@ package com.mzc.lp.domain.user.repository;
 import com.mzc.lp.domain.user.constant.TenantRole;
 import com.mzc.lp.domain.user.constant.UserStatus;
 import com.mzc.lp.domain.user.entity.User;
+import com.mzc.lp.domain.user.entity.UserCourseRole;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
@@ -22,14 +23,14 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
     private EntityManager entityManager;
 
     @Override
-    public Page<User> searchUsers(String keyword, TenantRole role, UserStatus status, Pageable pageable) {
+    public Page<User> searchUsers(String keyword, TenantRole role, UserStatus status, Boolean hasCourseRole, Pageable pageable) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
 
         // Main query
         CriteriaQuery<User> query = cb.createQuery(User.class);
         Root<User> user = query.from(User.class);
 
-        List<Predicate> predicates = buildPredicates(cb, user, keyword, role, status);
+        List<Predicate> predicates = buildPredicates(cb, query, user, keyword, role, status, hasCourseRole);
         query.where(predicates.toArray(new Predicate[0]));
         query.orderBy(cb.desc(user.get("createdAt")));
 
@@ -43,7 +44,7 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
         CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
         Root<User> countRoot = countQuery.from(User.class);
 
-        List<Predicate> countPredicates = buildPredicates(cb, countRoot, keyword, role, status);
+        List<Predicate> countPredicates = buildPredicates(cb, countQuery, countRoot, keyword, role, status, hasCourseRole);
         countQuery.select(cb.count(countRoot));
         countQuery.where(countPredicates.toArray(new Predicate[0]));
 
@@ -52,8 +53,8 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
         return new PageImpl<>(users, pageable, total);
     }
 
-    private List<Predicate> buildPredicates(CriteriaBuilder cb, Root<User> user,
-                                            String keyword, TenantRole role, UserStatus status) {
+    private <T> List<Predicate> buildPredicates(CriteriaBuilder cb, CriteriaQuery<T> query, Root<User> user,
+                                            String keyword, TenantRole role, UserStatus status, Boolean hasCourseRole) {
         List<Predicate> predicates = new ArrayList<>();
 
         if (keyword != null && !keyword.isBlank()) {
@@ -69,6 +70,14 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
 
         if (status != null) {
             predicates.add(cb.equal(user.get("status"), status));
+        }
+
+        // CourseRole 보유자 필터링 (서브쿼리)
+        if (Boolean.TRUE.equals(hasCourseRole)) {
+            Subquery<Long> subquery = query.subquery(Long.class);
+            Root<UserCourseRole> ucr = subquery.from(UserCourseRole.class);
+            subquery.select(ucr.get("user").get("id"));
+            predicates.add(user.get("id").in(subquery));
         }
 
         return predicates;
