@@ -9,6 +9,7 @@ import com.mzc.lp.domain.user.dto.request.ChangePasswordRequest;
 import com.mzc.lp.domain.user.dto.request.ChangeRoleRequest;
 import com.mzc.lp.domain.user.dto.request.ChangeStatusRequest;
 import com.mzc.lp.domain.user.dto.request.UpdateProfileRequest;
+import com.mzc.lp.domain.user.dto.request.UpdateUserRequest;
 import com.mzc.lp.domain.user.dto.request.WithdrawRequest;
 import com.mzc.lp.domain.user.dto.response.CourseRoleResponse;
 import com.mzc.lp.domain.user.dto.response.UserDetailResponse;
@@ -143,6 +144,25 @@ public class UserController {
     ) {
         UserStatusResponse response = userService.changeUserStatus(userId, request);
         return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @PutMapping("/{userId}")
+    @PreAuthorize("hasRole('TENANT_ADMIN')")
+    public ResponseEntity<ApiResponse<UserDetailResponse>> updateUser(
+            @PathVariable Long userId,
+            @Valid @RequestBody UpdateUserRequest request
+    ) {
+        UserDetailResponse response = userService.updateUser(userId, request);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @DeleteMapping("/{userId}")
+    @PreAuthorize("hasRole('TENANT_ADMIN')")
+    public ResponseEntity<Void> deleteUser(
+            @PathVariable Long userId
+    ) {
+        userService.deleteUser(userId);
+        return ResponseEntity.noContent().build();
     }
 
     // ========== CourseRole 관리 API (OPERATOR 이상 권한) ==========
