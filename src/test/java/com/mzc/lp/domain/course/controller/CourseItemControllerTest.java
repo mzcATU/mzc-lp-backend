@@ -140,7 +140,9 @@ class CourseItemControllerTest extends TenantTestSupport {
             CreateItemRequest request = new CreateItemRequest(
                     "1-1. 환경설정",
                     null,
-                    100L
+                    100L,
+                    null,
+                    null
             );
 
             // when & then
@@ -169,7 +171,9 @@ class CourseItemControllerTest extends TenantTestSupport {
             CreateItemRequest request = new CreateItemRequest(
                     "1-1. 환경설정",
                     folder.getId(),
-                    100L
+                    100L,
+                    null,
+                    null
             );
 
             // when & then
@@ -195,7 +199,9 @@ class CourseItemControllerTest extends TenantTestSupport {
             CreateItemRequest request = new CreateItemRequest(
                     "차시",
                     null,
-                    100L
+                    100L,
+                    null,
+                    null
             );
 
             // when & then
@@ -219,7 +225,9 @@ class CourseItemControllerTest extends TenantTestSupport {
             CreateItemRequest request = new CreateItemRequest(
                     null,
                     null,
-                    100L
+                    100L,
+                    null,
+                    null
             );
 
             // when & then
@@ -241,6 +249,8 @@ class CourseItemControllerTest extends TenantTestSupport {
             Course course = createTestCourse("테스트 강의");
             CreateItemRequest request = new CreateItemRequest(
                     "차시 이름",
+                    null,
+                    null,
                     null,
                     null
             );
@@ -265,7 +275,9 @@ class CourseItemControllerTest extends TenantTestSupport {
             CreateItemRequest request = new CreateItemRequest(
                     "차시",
                     null,
-                    100L
+                    100L,
+                    null,
+                    null
             );
 
             // when & then
