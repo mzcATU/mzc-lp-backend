@@ -77,7 +77,7 @@ public class LearningObjectController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    @PatchMapping("/{learningObjectId}")
+    @PutMapping("/{learningObjectId}")
     @PreAuthorize("hasAnyRole('DESIGNER', 'OPERATOR', 'TENANT_ADMIN')")
     public ResponseEntity<ApiResponse<LearningObjectResponse>> update(
             @PathVariable Long learningObjectId,
@@ -90,7 +90,7 @@ public class LearningObjectController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    @PatchMapping("/{learningObjectId}/folder")
+    @PutMapping("/{learningObjectId}/folder")
     @PreAuthorize("hasAnyRole('DESIGNER', 'OPERATOR', 'TENANT_ADMIN')")
     public ResponseEntity<ApiResponse<LearningObjectResponse>> moveToFolder(
             @PathVariable Long learningObjectId,

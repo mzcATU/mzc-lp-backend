@@ -18,6 +18,9 @@ import com.mzc.lp.domain.content.exception.UnsupportedContentTypeException;
 import com.mzc.lp.domain.content.repository.ContentRepository;
 import com.mzc.lp.domain.content.repository.ContentVersionRepository;
 import com.mzc.lp.domain.course.repository.CourseItemRepository;
+import com.mzc.lp.domain.learning.entity.ContentFolder;
+import com.mzc.lp.domain.learning.exception.ContentFolderNotFoundException;
+import com.mzc.lp.domain.learning.repository.ContentFolderRepository;
 import com.mzc.lp.domain.learning.repository.LearningObjectRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +36,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 @Slf4j
@@ -47,6 +52,7 @@ public class ContentServiceImpl implements ContentService {
     private final ThumbnailService thumbnailService;
     private final ContentVersionService contentVersionService;
     private final LearningObjectRepository learningObjectRepository;
+    private final ContentFolderRepository contentFolderRepository;
     private final CourseItemRepository courseItemRepository;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -380,37 +386,47 @@ public class ContentServiceImpl implements ContentService {
     @Override
     public Page<ContentListResponse> getMyContents(Long tenantId, Long userId,
                                                     ContentType contentType, ContentStatus status,
-                                                    String keyword, Pageable pageable) {
+                                                    String keyword, Long folderId, Pageable pageable) {
         Page<Content> contents;
 
         boolean hasType = contentType != null;
         boolean hasStatus = status != null;
         boolean hasKeyword = keyword != null && !keyword.isBlank();
+        boolean hasFolder = folderId != null;
 
-        // 조합별 쿼리 호출
-        if (hasType && hasStatus && hasKeyword) {
-            contents = contentRepository.findByTenantIdAndCreatedByAndContentTypeAndStatusAndKeyword(
-                    tenantId, userId, contentType, status, keyword, pageable);
-        } else if (hasType && hasStatus) {
-            contents = contentRepository.findByTenantIdAndCreatedByAndContentTypeAndStatus(
-                    tenantId, userId, contentType, status, pageable);
-        } else if (hasType && hasKeyword) {
-            contents = contentRepository.findByTenantIdAndCreatedByAndContentTypeAndKeyword(
-                    tenantId, userId, contentType, keyword, pageable);
-        } else if (hasStatus && hasKeyword) {
-            contents = contentRepository.findByTenantIdAndCreatedByAndStatusAndKeyword(
-                    tenantId, userId, status, keyword, pageable);
-        } else if (hasType) {
-            contents = contentRepository.findByTenantIdAndCreatedByAndContentType(
-                    tenantId, userId, contentType, pageable);
-        } else if (hasStatus) {
-            contents = contentRepository.findByTenantIdAndCreatedByAndStatus(
-                    tenantId, userId, status, pageable);
-        } else if (hasKeyword) {
-            contents = contentRepository.findByTenantIdAndCreatedByAndKeyword(
-                    tenantId, userId, keyword, pageable);
+        // folderId가 있는 경우 해당 폴더와 모든 하위 폴더의 콘텐츠 조회
+        if (hasFolder) {
+            ContentFolder folder = contentFolderRepository.findByIdAndTenantId(folderId, tenantId)
+                    .orElseThrow(() -> new ContentFolderNotFoundException(folderId));
+            List<Long> folderIds = collectFolderIds(folder);
+            contents = contentRepository.findMyContentsByFolderIds(
+                    tenantId, userId, contentType, status, keyword, folderIds, pageable);
         } else {
-            contents = contentRepository.findByTenantIdAndCreatedBy(tenantId, userId, pageable);
+            // 기존 조합별 쿼리 호출
+            if (hasType && hasStatus && hasKeyword) {
+                contents = contentRepository.findByTenantIdAndCreatedByAndContentTypeAndStatusAndKeyword(
+                        tenantId, userId, contentType, status, keyword, pageable);
+            } else if (hasType && hasStatus) {
+                contents = contentRepository.findByTenantIdAndCreatedByAndContentTypeAndStatus(
+                        tenantId, userId, contentType, status, pageable);
+            } else if (hasType && hasKeyword) {
+                contents = contentRepository.findByTenantIdAndCreatedByAndContentTypeAndKeyword(
+                        tenantId, userId, contentType, keyword, pageable);
+            } else if (hasStatus && hasKeyword) {
+                contents = contentRepository.findByTenantIdAndCreatedByAndStatusAndKeyword(
+                        tenantId, userId, status, keyword, pageable);
+            } else if (hasType) {
+                contents = contentRepository.findByTenantIdAndCreatedByAndContentType(
+                        tenantId, userId, contentType, pageable);
+            } else if (hasStatus) {
+                contents = contentRepository.findByTenantIdAndCreatedByAndStatus(
+                        tenantId, userId, status, pageable);
+            } else if (hasKeyword) {
+                contents = contentRepository.findByTenantIdAndCreatedByAndKeyword(
+                        tenantId, userId, keyword, pageable);
+            } else {
+                contents = contentRepository.findByTenantIdAndCreatedBy(tenantId, userId, pageable);
+            }
         }
 
         return contents.map(ContentListResponse::from);
@@ -463,5 +479,15 @@ public class ContentServiceImpl implements ContentService {
         }
         // LearningObject가 CourseItem에 포함되어 있는지 확인
         return courseItemRepository.existsByContentIdThroughLearningObject(contentId);
+    }
+
+    // 폴더와 모든 하위 폴더의 ID를 재귀적으로 수집
+    private List<Long> collectFolderIds(ContentFolder folder) {
+        List<Long> ids = new ArrayList<>();
+        ids.add(folder.getId());
+        for (ContentFolder child : folder.getChildren()) {
+            ids.addAll(collectFolderIds(child));
+        }
+        return ids;
     }
 }

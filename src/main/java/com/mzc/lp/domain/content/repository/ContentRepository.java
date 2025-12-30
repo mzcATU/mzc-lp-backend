@@ -99,4 +99,19 @@ public interface ContentRepository extends JpaRepository<Content, Long> {
                                                                                @Param("status") ContentStatus status,
                                                                                @Param("keyword") String keyword,
                                                                                Pageable pageable);
+
+    // folderIds 기반 조회 (LearningObject JOIN) - 하위 폴더 포함
+    @Query("SELECT c FROM Content c JOIN LearningObject lo ON lo.content = c " +
+           "WHERE c.tenantId = :tenantId AND c.createdBy = :createdBy " +
+           "AND lo.folder.id IN :folderIds " +
+           "AND (:contentType IS NULL OR c.contentType = :contentType) " +
+           "AND (:status IS NULL OR c.status = :status) " +
+           "AND (:keyword IS NULL OR LOWER(c.originalFileName) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    Page<Content> findMyContentsByFolderIds(@Param("tenantId") Long tenantId,
+                                             @Param("createdBy") Long createdBy,
+                                             @Param("contentType") ContentType contentType,
+                                             @Param("status") ContentStatus status,
+                                             @Param("keyword") String keyword,
+                                             @Param("folderIds") java.util.List<Long> folderIds,
+                                             Pageable pageable);
 }

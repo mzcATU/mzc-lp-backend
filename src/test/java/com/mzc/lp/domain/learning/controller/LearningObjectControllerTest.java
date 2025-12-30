@@ -260,7 +260,7 @@ class LearningObjectControllerTest extends TenantTestSupport {
         UpdateLearningObjectRequest request = new UpdateLearningObjectRequest("수정된 이름");
 
         // When & Then
-        mockMvc.perform(patch("/api/learning-objects/{id}", lo.getId())
+        mockMvc.perform(put("/api/learning-objects/{id}", lo.getId())
                         .header("Authorization", "Bearer " + accessToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -281,7 +281,7 @@ class LearningObjectControllerTest extends TenantTestSupport {
         MoveFolderRequest request = new MoveFolderRequest(folder.getId());
 
         // When & Then
-        mockMvc.perform(patch("/api/learning-objects/{id}/folder", lo.getId())
+        mockMvc.perform(put("/api/learning-objects/{id}/folder", lo.getId())
                         .header("Authorization", "Bearer " + accessToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))

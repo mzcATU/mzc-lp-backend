@@ -98,8 +98,12 @@ public class ContentFolder extends TenantEntity {
         return children.size();
     }
 
-    // 비즈니스 메서드 - 학습객체 개수
+    // 비즈니스 메서드 - 학습객체 개수 (하위 폴더 포함)
     public int getItemCount() {
-        return learningObjects.size();
+        int count = learningObjects.size();
+        for (ContentFolder child : children) {
+            count += child.getItemCount();
+        }
+        return count;
     }
 }
