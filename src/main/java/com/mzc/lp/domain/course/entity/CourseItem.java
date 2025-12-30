@@ -38,6 +38,12 @@ public class CourseItem extends TenantEntity {
     @Column(name = "item_name", nullable = false, length = 255)
     private String itemName;
 
+    @Column(name = "display_name", length = 255)
+    private String displayName;
+
+    @Column(name = "description", length = 1000)
+    private String description;
+
     @Column(nullable = false)
     private Integer depth;
 
@@ -55,12 +61,20 @@ public class CourseItem extends TenantEntity {
 
     public static CourseItem createItem(Course course, String itemName,
                                         CourseItem parent, Long learningObjectId) {
+        return createItem(course, itemName, parent, learningObjectId, null, null);
+    }
+
+    public static CourseItem createItem(Course course, String itemName,
+                                        CourseItem parent, Long learningObjectId,
+                                        String displayName, String description) {
         CourseItem item = new CourseItem();
         item.course = course;
         item.itemName = itemName;
         item.parent = parent;
         item.depth = parent != null ? parent.getDepth() + 1 : 0;
         item.learningObjectId = learningObjectId;
+        item.displayName = displayName;
+        item.description = description;
         item.validateDepth();
         return item;
     }
@@ -80,6 +94,14 @@ public class CourseItem extends TenantEntity {
             throw new IllegalStateException("폴더에는 학습 객체를 연결할 수 없습니다");
         }
         this.learningObjectId = learningObjectId;
+    }
+
+    public void updateDisplayInfo(String displayName, String description) {
+        if (isFolder()) {
+            throw new IllegalStateException("폴더에는 표시 정보를 설정할 수 없습니다");
+        }
+        this.displayName = displayName;
+        this.description = description;
     }
 
     public void moveTo(CourseItem newParent) {

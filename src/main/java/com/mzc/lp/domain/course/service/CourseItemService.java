@@ -3,6 +3,7 @@ package com.mzc.lp.domain.course.service;
 import com.mzc.lp.domain.course.dto.request.CreateFolderRequest;
 import com.mzc.lp.domain.course.dto.request.CreateItemRequest;
 import com.mzc.lp.domain.course.dto.request.MoveItemRequest;
+import com.mzc.lp.domain.course.dto.request.UpdateDisplayInfoRequest;
 import com.mzc.lp.domain.course.dto.request.UpdateItemNameRequest;
 import com.mzc.lp.domain.course.dto.request.UpdateLearningObjectRequest;
 import com.mzc.lp.domain.course.dto.response.CourseItemHierarchyResponse;
@@ -74,4 +75,13 @@ public interface CourseItemService {
      * @param itemId 항목 ID
      */
     void deleteItem(Long courseId, Long itemId);
+
+    /**
+     * 표시 정보 변경 (displayName, description)
+     * @param courseId 강의 ID
+     * @param itemId 항목 ID
+     * @param request 표시 정보 변경 요청 DTO
+     * @return 수정된 항목 정보
+     */
+    CourseItemResponse updateDisplayInfo(Long courseId, Long itemId, UpdateDisplayInfoRequest request);
 }

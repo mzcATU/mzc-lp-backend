@@ -11,6 +11,8 @@ public record CourseItemResponse(
         Long parentId,
         Long learningObjectId,
         boolean isFolder,
+        String displayName,
+        String description,
         Instant createdAt,
         Instant updatedAt
 ) {
@@ -22,6 +24,8 @@ public record CourseItemResponse(
                 item.getParent() != null ? item.getParent().getId() : null,
                 item.getLearningObjectId(),
                 item.isFolder(),
+                item.getDisplayName(),
+                item.getDescription(),
                 item.getCreatedAt(),
                 item.getUpdatedAt()
         );

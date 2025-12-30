@@ -3,6 +3,7 @@ package com.mzc.lp.domain.course.service;
 import com.mzc.lp.domain.course.dto.request.CreateFolderRequest;
 import com.mzc.lp.domain.course.dto.request.CreateItemRequest;
 import com.mzc.lp.domain.course.dto.request.MoveItemRequest;
+import com.mzc.lp.domain.course.dto.request.UpdateDisplayInfoRequest;
 import com.mzc.lp.domain.course.dto.request.UpdateItemNameRequest;
 import com.mzc.lp.domain.course.dto.request.UpdateLearningObjectRequest;
 import com.mzc.lp.domain.course.dto.response.CourseItemHierarchyResponse;
@@ -47,7 +48,9 @@ public class CourseItemServiceImpl implements CourseItemService {
                     course,
                     request.itemName(),
                     parent,
-                    request.learningObjectId()
+                    request.learningObjectId(),
+                    request.displayName(),
+                    request.description()
             );
 
             CourseItem savedItem = courseItemRepository.save(item);
@@ -196,6 +199,26 @@ public class CourseItemServiceImpl implements CourseItemService {
 
         courseItemRepository.delete(item);
         log.info("Item deleted: id={}", itemId);
+    }
+
+    @Override
+    @Transactional
+    public CourseItemResponse updateDisplayInfo(Long courseId, Long itemId, UpdateDisplayInfoRequest request) {
+        log.info("Updating display info: courseId={}, itemId={}", courseId, itemId);
+
+        validateCourseExists(courseId);
+
+        CourseItem item = findItemById(itemId);
+        validateItemBelongsToCourse(item, courseId);
+
+        if (item.isFolder()) {
+            throw new InvalidParentException("폴더에는 표시 정보를 설정할 수 없습니다");
+        }
+
+        item.updateDisplayInfo(request.displayName(), request.description());
+        log.info("Display info updated: itemId={}", itemId);
+
+        return CourseItemResponse.from(item);
     }
 
     // ===== Private Helper Methods =====
