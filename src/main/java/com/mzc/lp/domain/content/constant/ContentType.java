@@ -11,7 +11,7 @@ import java.util.Set;
 public enum ContentType {
 
     VIDEO("동영상", Set.of("mp4", "avi", "mov", "mkv", "webm")),
-    DOCUMENT("문서", Set.of("pdf", "doc", "docx", "ppt", "pptx", "xls", "xlsx")),
+    DOCUMENT("문서", Set.of("pdf", "doc", "docx", "ppt", "pptx", "xls", "xlsx", "txt", "csv", "html")),
     IMAGE("이미지", Set.of("jpg", "jpeg", "png", "gif", "svg", "webp")),
     AUDIO("오디오", Set.of("mp3", "wav", "m4a", "flac")),
     EXTERNAL_LINK("외부 링크", Set.of());
