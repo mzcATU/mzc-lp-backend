@@ -109,9 +109,10 @@ public class UserController {
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) TenantRole role,
             @RequestParam(required = false) UserStatus status,
+            @RequestParam(required = false) Boolean hasCourseRole,
             @PageableDefault(size = 20) Pageable pageable
     ) {
-        Page<UserListResponse> response = userService.getUsers(keyword, role, status, pageable);
+        Page<UserListResponse> response = userService.getUsers(keyword, role, status, hasCourseRole, pageable);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

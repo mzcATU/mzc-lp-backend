@@ -114,9 +114,9 @@ public class UserServiceImpl implements UserService {
     // ========== 관리 API (OPERATOR 권한) ==========
 
     @Override
-    public Page<UserListResponse> getUsers(String keyword, TenantRole role, UserStatus status, Pageable pageable) {
-        log.debug("Searching users: keyword={}, role={}, status={}", keyword, role, status);
-        return userRepository.searchUsers(keyword, role, status, pageable)
+    public Page<UserListResponse> getUsers(String keyword, TenantRole role, UserStatus status, Boolean hasCourseRole, Pageable pageable) {
+        log.debug("Searching users: keyword={}, role={}, status={}, hasCourseRole={}", keyword, role, status, hasCourseRole);
+        return userRepository.searchUsers(keyword, role, status, hasCourseRole, pageable)
                 .map(UserListResponse::from);
     }
 

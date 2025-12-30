@@ -2,8 +2,13 @@ package com.mzc.lp.domain.ts.service;
 
 import com.mzc.lp.common.context.TenantContext;
 import com.mzc.lp.domain.iis.constant.AssignmentStatus;
+import com.mzc.lp.domain.iis.constant.InstructorRole;
+import com.mzc.lp.domain.iis.dto.request.AssignInstructorRequest;
 import com.mzc.lp.domain.iis.dto.response.InstructorAssignmentResponse;
 import com.mzc.lp.domain.iis.service.InstructorAssignmentService;
+import com.mzc.lp.domain.user.constant.CourseRole;
+import com.mzc.lp.domain.user.entity.UserCourseRole;
+import com.mzc.lp.domain.user.repository.UserCourseRoleRepository;
 import com.mzc.lp.domain.ts.constant.CourseTimeStatus;
 import com.mzc.lp.domain.ts.constant.EnrollmentMethod;
 import com.mzc.lp.domain.ts.dto.request.CloneCourseTimeRequest;
@@ -46,6 +51,7 @@ public class CourseTimeServiceImpl implements CourseTimeService {
     private final CourseTimeRepository courseTimeRepository;
     private final InstructorAssignmentService instructorAssignmentService;
     private final ProgramRepository programRepository;
+    private final UserCourseRoleRepository userCourseRoleRepository;
 
     @Override
     public CourseTime getCourseTimeEntity(Long id) {
@@ -101,7 +107,10 @@ public class CourseTimeServiceImpl implements CourseTimeService {
         CourseTime savedCourseTime = courseTimeRepository.save(courseTime);
         log.info("Course time created: id={}, programId={}", savedCourseTime.getId(), request.programId());
 
-        return CourseTimeDetailResponse.from(savedCourseTime);
+        // B2C: Program OWNER를 MAIN 강사로 자동 배정
+        List<InstructorAssignmentResponse> instructors = assignOwnerAsMainInstructor(savedCourseTime, program, createdBy);
+
+        return CourseTimeDetailResponse.from(savedCourseTime, instructors);
     }
 
     @Override
@@ -427,6 +436,31 @@ public class CourseTimeServiceImpl implements CourseTimeService {
                 && request.maxWaitingCount() > 0) {
             throw new IllegalArgumentException("승인제 모집에서는 대기자 기능을 사용할 수 없습니다");
         }
+    }
+
+    /**
+     * B2C: Program OWNER를 차수의 MAIN 강사로 자동 배정
+     */
+    private List<InstructorAssignmentResponse> assignOwnerAsMainInstructor(CourseTime courseTime, Program program, Long operatorId) {
+        // Program의 OWNER 조회
+        List<UserCourseRole> owners = userCourseRoleRepository.findByCourseIdAndRole(program.getId(), CourseRole.OWNER);
+
+        if (owners.isEmpty()) {
+            log.warn("No OWNER found for program: programId={}", program.getId());
+            return List.of();
+        }
+
+        // 첫 번째 OWNER를 MAIN 강사로 배정 (B2C에서는 OWNER가 1명)
+        UserCourseRole ownerRole = owners.get(0);
+        Long ownerId = ownerRole.getUser().getId();
+
+        AssignInstructorRequest assignRequest = new AssignInstructorRequest(ownerId, InstructorRole.MAIN, false);
+        InstructorAssignmentResponse assignment = instructorAssignmentService.assignInstructor(
+                courseTime.getId(), assignRequest, operatorId);
+
+        log.info("OWNER assigned as MAIN instructor: courseTimeId={}, userId={}", courseTime.getId(), ownerId);
+
+        return List.of(assignment);
     }
 
     // ========== 정원 관리 (SIS에서 호출) ==========
