@@ -8,6 +8,7 @@ import com.mzc.lp.domain.user.dto.request.ChangePasswordRequest;
 import com.mzc.lp.domain.user.dto.request.ChangeRoleRequest;
 import com.mzc.lp.domain.user.dto.request.ChangeStatusRequest;
 import com.mzc.lp.domain.user.dto.request.UpdateProfileRequest;
+import com.mzc.lp.domain.user.dto.request.UpdateUserRequest;
 import com.mzc.lp.domain.user.dto.request.WithdrawRequest;
 import com.mzc.lp.domain.user.dto.response.CourseRoleResponse;
 import com.mzc.lp.domain.user.dto.response.UserDetailResponse;
@@ -126,6 +127,49 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
         return UserDetailResponse.from(user);
+    }
+    @Override
+    @Transactional
+    public UserDetailResponse updateUser(Long userId, UpdateUserRequest request) {
+        log.info("Updating user by admin: userId={}", userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
+
+        if (request.name() != null || request.phone() != null) {
+            user.updateProfile(
+                    request.name() != null ? request.name() : user.getName(),
+                    request.phone() != null ? request.phone() : user.getPhone(),
+                    user.getProfileImageUrl()
+            );
+        }
+
+        if (request.role() != null) {
+            user.updateRole(request.role());
+        }
+
+        if (request.status() != null) {
+            switch (request.status()) {
+                case ACTIVE -> user.activate();
+                case SUSPENDED -> user.suspend();
+                case WITHDRAWN -> user.withdraw();
+            }
+        }
+
+        log.info("User updated by admin: userId={}", userId);
+        return UserDetailResponse.from(user);
+    }
+
+    @Override
+    @Transactional
+    public void deleteUser(Long userId) {
+        log.info("Deleting user by admin: userId={}", userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
+
+        refreshTokenRepository.deleteByUserId(userId);
+        userRepository.delete(user);
+
+        log.info("User deleted by admin: userId={}", userId);
     }
 
     @Override

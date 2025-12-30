@@ -7,6 +7,7 @@ import com.mzc.lp.domain.user.dto.request.ChangePasswordRequest;
 import com.mzc.lp.domain.user.dto.request.ChangeRoleRequest;
 import com.mzc.lp.domain.user.dto.request.ChangeStatusRequest;
 import com.mzc.lp.domain.user.dto.request.UpdateProfileRequest;
+import com.mzc.lp.domain.user.dto.request.UpdateUserRequest;
 import com.mzc.lp.domain.user.dto.request.WithdrawRequest;
 import com.mzc.lp.domain.user.dto.response.CourseRoleResponse;
 import com.mzc.lp.domain.user.dto.response.UserDetailResponse;
@@ -37,6 +38,10 @@ public interface UserService {
     Page<UserListResponse> getUsers(String keyword, TenantRole role, UserStatus status, Pageable pageable);
 
     UserDetailResponse getUser(Long userId);
+
+    UserDetailResponse updateUser(Long userId, UpdateUserRequest request);
+
+    void deleteUser(Long userId);
 
     UserRoleResponse changeUserRole(Long userId, ChangeRoleRequest request);
 
