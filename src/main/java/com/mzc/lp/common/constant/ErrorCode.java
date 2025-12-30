@@ -105,7 +105,14 @@ public enum ErrorCode {
 
     // Category (CAT)
     CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "CAT001", "Category not found"),
-    DUPLICATE_CATEGORY_CODE(HttpStatus.CONFLICT, "CAT002", "Category code already exists");
+    DUPLICATE_CATEGORY_CODE(HttpStatus.CONFLICT, "CAT002", "Category code already exists"),
+
+    // User Group (UG)
+    USER_GROUP_NOT_FOUND(HttpStatus.NOT_FOUND, "UG001", "User group not found"),
+    DUPLICATE_USER_GROUP_NAME(HttpStatus.CONFLICT, "UG002", "User group name already exists"),
+
+    // Notice (NT)
+    NOTICE_NOT_FOUND(HttpStatus.NOT_FOUND, "NT001", "Notice not found");
 
     private final HttpStatus status;
     private final String code;
