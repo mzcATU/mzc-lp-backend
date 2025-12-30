@@ -1,6 +1,9 @@
 package com.mzc.lp.domain.student.service;
 import com.mzc.lp.common.support.TenantTestSupport;
 
+import com.mzc.lp.domain.iis.constant.AssignmentStatus;
+import com.mzc.lp.domain.iis.repository.InstructorAssignmentRepository;
+import com.mzc.lp.domain.program.entity.Program;
 import com.mzc.lp.domain.student.constant.EnrollmentStatus;
 import com.mzc.lp.domain.student.constant.EnrollmentType;
 import com.mzc.lp.domain.student.dto.request.CompleteEnrollmentRequest;
@@ -15,6 +18,7 @@ import com.mzc.lp.domain.student.exception.AlreadyEnrolledException;
 import com.mzc.lp.domain.student.exception.CannotCancelCompletedException;
 import com.mzc.lp.domain.student.exception.EnrollmentNotFoundException;
 import com.mzc.lp.domain.student.exception.EnrollmentPeriodClosedException;
+import com.mzc.lp.domain.student.exception.UnauthorizedEnrollmentAccessException;
 import com.mzc.lp.domain.student.repository.EnrollmentRepository;
 import com.mzc.lp.domain.ts.constant.DeliveryType;
 import com.mzc.lp.domain.ts.constant.EnrollmentMethod;
@@ -44,6 +48,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.withSettings;
 
 @ExtendWith(MockitoExtension.class)
 class EnrollmentServiceTest extends TenantTestSupport {
@@ -59,6 +64,9 @@ class EnrollmentServiceTest extends TenantTestSupport {
 
     @Mock
     private CourseTimeService courseTimeService;
+
+    @Mock
+    private InstructorAssignmentRepository instructorAssignmentRepository;
 
     private static final Long TENANT_ID = 1L;
 
@@ -449,6 +457,171 @@ class EnrollmentServiceTest extends TenantTestSupport {
             // then
             assertThat(response.getContent()).hasSize(1);
             assertThat(response.getContent().get(0).status()).isEqualTo(EnrollmentStatus.ENROLLED);
+        }
+    }
+
+    // ==================== 차수별 수강생 목록 조회 (소유권 검증) 테스트 ====================
+
+    @Nested
+    @DisplayName("getEnrollmentsByCourseTime - 차수별 수강생 목록 조회 (소유권 검증)")
+    class GetEnrollmentsByCourseTime {
+
+        private CourseTime createCourseTimeWithProgram(Long createdBy, Long programOwner) {
+            CourseTime courseTime = createTestCourseTime(true);
+
+            try {
+                // CourseTime.createdBy 설정
+                var createdByField = CourseTime.class.getDeclaredField("createdBy");
+                createdByField.setAccessible(true);
+                createdByField.set(courseTime, createdBy);
+
+                // Program 설정 (programOwner가 null이 아닌 경우)
+                if (programOwner != null) {
+                    Program program = mock(Program.class, withSettings().lenient());
+                    given(program.getCreatedBy()).willReturn(programOwner);
+                    given(program.getId()).willReturn(1L);
+
+                    var programField = CourseTime.class.getDeclaredField("program");
+                    programField.setAccessible(true);
+                    programField.set(courseTime, program);
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+
+            return courseTime;
+        }
+
+        @Test
+        @DisplayName("성공 - 관리자(OPERATOR/TENANT_ADMIN)는 검증 없이 조회 가능")
+        void getEnrollmentsByCourseTime_success_admin() {
+            // given
+            Long courseTimeId = 1L;
+            Long adminUserId = 99L;
+            Pageable pageable = PageRequest.of(0, 20);
+            List<Enrollment> enrollments = List.of(
+                    createTestEnrollment(1L, courseTimeId, EnrollmentStatus.ENROLLED)
+            );
+            Page<Enrollment> page = new PageImpl<>(enrollments, pageable, enrollments.size());
+
+            given(enrollmentRepository.findByCourseTimeIdAndTenantId(courseTimeId, TENANT_ID, pageable))
+                    .willReturn(page);
+
+            // when - isAdmin = true
+            Page<EnrollmentResponse> response = enrollmentService.getEnrollmentsByCourseTime(
+                    courseTimeId, null, pageable, adminUserId, true);
+
+            // then
+            assertThat(response.getContent()).hasSize(1);
+            // 관리자는 validateCourseTimeAccess가 호출되지 않음
+            verify(courseTimeRepository, never()).findByIdAndTenantId(any(), any());
+        }
+
+        @Test
+        @DisplayName("성공 - 프로그램 소유자(createdBy)가 조회")
+        void getEnrollmentsByCourseTime_success_programOwner() {
+            // given
+            Long courseTimeId = 1L;
+            Long programOwnerId = 10L;
+            CourseTime courseTime = createCourseTimeWithProgram(99L, programOwnerId);
+            Pageable pageable = PageRequest.of(0, 20);
+            List<Enrollment> enrollments = List.of(
+                    createTestEnrollment(1L, courseTimeId, EnrollmentStatus.ENROLLED)
+            );
+            Page<Enrollment> page = new PageImpl<>(enrollments, pageable, enrollments.size());
+
+            given(courseTimeRepository.findByIdAndTenantId(courseTimeId, TENANT_ID))
+                    .willReturn(Optional.of(courseTime));
+            given(enrollmentRepository.findByCourseTimeIdAndTenantId(courseTimeId, TENANT_ID, pageable))
+                    .willReturn(page);
+
+            // when - 프로그램 소유자가 조회 (isAdmin = false)
+            Page<EnrollmentResponse> response = enrollmentService.getEnrollmentsByCourseTime(
+                    courseTimeId, null, pageable, programOwnerId, false);
+
+            // then
+            assertThat(response.getContent()).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("성공 - 차수 생성자(createdBy)가 조회")
+        void getEnrollmentsByCourseTime_success_courseTimeCreator() {
+            // given
+            Long courseTimeId = 1L;
+            Long courseTimeCreatorId = 20L;
+            CourseTime courseTime = createCourseTimeWithProgram(courseTimeCreatorId, null);
+            Pageable pageable = PageRequest.of(0, 20);
+            List<Enrollment> enrollments = List.of(
+                    createTestEnrollment(1L, courseTimeId, EnrollmentStatus.ENROLLED)
+            );
+            Page<Enrollment> page = new PageImpl<>(enrollments, pageable, enrollments.size());
+
+            given(courseTimeRepository.findByIdAndTenantId(courseTimeId, TENANT_ID))
+                    .willReturn(Optional.of(courseTime));
+            given(enrollmentRepository.findByCourseTimeIdAndTenantId(courseTimeId, TENANT_ID, pageable))
+                    .willReturn(page);
+
+            // when - 차수 생성자가 조회 (isAdmin = false)
+            Page<EnrollmentResponse> response = enrollmentService.getEnrollmentsByCourseTime(
+                    courseTimeId, null, pageable, courseTimeCreatorId, false);
+
+            // then
+            assertThat(response.getContent()).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("성공 - 배정된 강사가 조회")
+        void getEnrollmentsByCourseTime_success_assignedInstructor() {
+            // given
+            Long courseTimeId = 1L;
+            Long instructorId = 30L;
+            Long otherCreatorId = 99L;
+            Long otherProgramOwnerId = 88L;
+            CourseTime courseTime = createCourseTimeWithProgram(otherCreatorId, otherProgramOwnerId); // 다른 사람이 소유자
+            Pageable pageable = PageRequest.of(0, 20);
+            List<Enrollment> enrollments = List.of(
+                    createTestEnrollment(1L, courseTimeId, EnrollmentStatus.ENROLLED)
+            );
+            Page<Enrollment> page = new PageImpl<>(enrollments, pageable, enrollments.size());
+
+            given(courseTimeRepository.findByIdAndTenantId(courseTimeId, TENANT_ID))
+                    .willReturn(Optional.of(courseTime));
+            // 강사 배정 확인 - 프로그램/차수 소유자가 아니므로 이 체크가 호출됨
+            given(instructorAssignmentRepository.existsByTimeKeyAndUserKeyAndTenantIdAndStatus(
+                    courseTimeId, instructorId, TENANT_ID, AssignmentStatus.ACTIVE))
+                    .willReturn(true);
+            given(enrollmentRepository.findByCourseTimeIdAndTenantId(courseTimeId, TENANT_ID, pageable))
+                    .willReturn(page);
+
+            // when - 배정된 강사가 조회 (isAdmin = false)
+            Page<EnrollmentResponse> response = enrollmentService.getEnrollmentsByCourseTime(
+                    courseTimeId, null, pageable, instructorId, false);
+
+            // then
+            assertThat(response.getContent()).hasSize(1);
+            verify(instructorAssignmentRepository).existsByTimeKeyAndUserKeyAndTenantIdAndStatus(
+                    courseTimeId, instructorId, TENANT_ID, AssignmentStatus.ACTIVE);
+        }
+
+        @Test
+        @DisplayName("실패 - 권한 없는 사용자가 조회 시도")
+        void getEnrollmentsByCourseTime_fail_unauthorized() {
+            // given
+            Long courseTimeId = 1L;
+            Long unauthorizedUserId = 999L;
+            CourseTime courseTime = createCourseTimeWithProgram(10L, 20L); // 다른 사람이 소유자
+            Pageable pageable = PageRequest.of(0, 20);
+
+            given(courseTimeRepository.findByIdAndTenantId(courseTimeId, TENANT_ID))
+                    .willReturn(Optional.of(courseTime));
+            given(instructorAssignmentRepository.existsByTimeKeyAndUserKeyAndTenantIdAndStatus(
+                    courseTimeId, unauthorizedUserId, TENANT_ID, AssignmentStatus.ACTIVE))
+                    .willReturn(false);
+
+            // when & then - 권한 없는 사용자 (isAdmin = false)
+            assertThatThrownBy(() -> enrollmentService.getEnrollmentsByCourseTime(
+                    courseTimeId, null, pageable, unauthorizedUserId, false))
+                    .isInstanceOf(UnauthorizedEnrollmentAccessException.class);
         }
     }
 }

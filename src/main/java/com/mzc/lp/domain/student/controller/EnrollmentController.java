@@ -66,15 +66,20 @@ public class EnrollmentController {
 
     /**
      * 차수별 수강생 목록 조회
+     * - OPERATOR/TENANT_ADMIN: 모든 차수 조회 가능
+     * - OWNER: 본인이 생성한 프로그램의 차수만 조회 가능
+     * - 배정된 강사: 본인이 배정된 차수만 조회 가능
      */
     @GetMapping("/api/times/{courseTimeId}/enrollments")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<Page<EnrollmentResponse>>> getEnrollmentsByCourseTime(
             @PathVariable Long courseTimeId,
             @RequestParam(required = false) EnrollmentStatus status,
-            @PageableDefault(size = 20) Pageable pageable
+            @PageableDefault(size = 20) Pageable pageable,
+            @AuthenticationPrincipal UserPrincipal principal
     ) {
-        Page<EnrollmentResponse> response = enrollmentService.getEnrollmentsByCourseTime(courseTimeId, status, pageable);
+        Page<EnrollmentResponse> response = enrollmentService.getEnrollmentsByCourseTime(
+                courseTimeId, status, pageable, principal.id(), hasAdminRole(principal));
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
