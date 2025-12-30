@@ -68,7 +68,7 @@ public class EnrollmentController {
      * 차수별 수강생 목록 조회
      */
     @GetMapping("/api/times/{courseTimeId}/enrollments")
-    @PreAuthorize("hasAnyRole('OPERATOR', 'TENANT_ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<Page<EnrollmentResponse>>> getEnrollmentsByCourseTime(
             @PathVariable Long courseTimeId,
             @RequestParam(required = false) EnrollmentStatus status,
