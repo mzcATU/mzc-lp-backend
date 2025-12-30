@@ -5,6 +5,7 @@ import com.mzc.lp.common.security.UserPrincipal;
 import com.mzc.lp.domain.course.dto.request.CreateFolderRequest;
 import com.mzc.lp.domain.course.dto.request.CreateItemRequest;
 import com.mzc.lp.domain.course.dto.request.MoveItemRequest;
+import com.mzc.lp.domain.course.dto.request.UpdateDisplayInfoRequest;
 import com.mzc.lp.domain.course.dto.request.UpdateItemNameRequest;
 import com.mzc.lp.domain.course.dto.request.UpdateLearningObjectRequest;
 import com.mzc.lp.domain.course.dto.response.CourseItemHierarchyResponse;
@@ -146,5 +147,21 @@ public class CourseItemController {
     ) {
         courseItemService.deleteItem(courseId, itemId);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * 표시 정보 변경 (displayName, description)
+     * PATCH /api/courses/{courseId}/items/{itemId}/display-info
+     */
+    @PatchMapping("/items/{itemId}/display-info")
+    @PreAuthorize("hasAnyRole('DESIGNER', 'OPERATOR', 'TENANT_ADMIN')")
+    public ResponseEntity<ApiResponse<CourseItemResponse>> updateDisplayInfo(
+            @PathVariable @Positive Long courseId,
+            @PathVariable @Positive Long itemId,
+            @Valid @RequestBody UpdateDisplayInfoRequest request,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        CourseItemResponse response = courseItemService.updateDisplayInfo(courseId, itemId, request);
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 }
