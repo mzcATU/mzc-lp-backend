@@ -29,6 +29,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -75,7 +82,30 @@ public class ProgramServiceImpl implements ProgramService {
         Program program = programRepository.findByIdWithSnapshot(programId, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new ProgramNotFoundException(programId));
 
-        return ProgramDetailResponse.from(program);
+        // User 정보 조회
+        Set<Long> userIds = new HashSet<>();
+        userIds.add(program.getCreatedBy());
+        if (program.getApprovedBy() != null) {
+            userIds.add(program.getApprovedBy());
+        }
+
+        Map<Long, User> userMap = userRepository.findAllById(userIds).stream()
+                .collect(Collectors.toMap(User::getId, Function.identity()));
+
+        User creator = userMap.get(program.getCreatedBy());
+        User approver = program.getApprovedBy() != null ? userMap.get(program.getApprovedBy()) : null;
+
+        // OWNER 정보 조회
+        User owner = findOwnerByProgramId(programId);
+
+        return ProgramDetailResponse.from(
+                program,
+                creator != null ? creator.getName() : null,
+                approver != null ? approver.getName() : null,
+                owner != null ? owner.getId() : null,
+                owner != null ? owner.getName() : null,
+                owner != null ? owner.getEmail() : null
+        );
     }
 
     @Override
@@ -94,7 +124,60 @@ public class ProgramServiceImpl implements ProgramService {
             programs = programRepository.findByTenantId(TenantContext.getCurrentTenantId(), pageable);
         }
 
-        return programs.map(ProgramResponse::from);
+        // N+1 방지: 일괄 조회
+        List<Program> programList = programs.getContent();
+
+        // 1. createdBy userIds 수집
+        Set<Long> creatorIds = programList.stream()
+                .map(Program::getCreatedBy)
+                .collect(Collectors.toSet());
+
+        // 2. User 일괄 조회
+        Map<Long, User> userMap = userRepository.findAllById(creatorIds).stream()
+                .collect(Collectors.toMap(User::getId, Function.identity()));
+
+        // 3. OWNER 일괄 조회 (programIds)
+        List<Long> programIds = programList.stream()
+                .map(Program::getId)
+                .toList();
+        Map<Long, User> ownerMap = findOwnersByProgramIds(programIds);
+
+        return programs.map(program -> {
+            User creator = userMap.get(program.getCreatedBy());
+            User owner = ownerMap.get(program.getId());
+
+            return ProgramResponse.from(
+                    program,
+                    creator != null ? creator.getName() : null,
+                    owner != null ? owner.getId() : null,
+                    owner != null ? owner.getName() : null,
+                    owner != null ? owner.getEmail() : null
+            );
+        });
+    }
+
+    private User findOwnerByProgramId(Long programId) {
+        List<UserCourseRole> ownerRoles = userCourseRoleRepository.findByCourseIdAndRole(programId, CourseRole.OWNER);
+        if (ownerRoles.isEmpty()) {
+            return null;
+        }
+        return ownerRoles.get(0).getUser();
+    }
+
+    private Map<Long, User> findOwnersByProgramIds(List<Long> programIds) {
+        if (programIds.isEmpty()) {
+            return Map.of();
+        }
+
+        // 각 프로그램의 OWNER 역할 조회 (null 안전하게 처리)
+        Map<Long, User> result = new java.util.HashMap<>();
+        for (Long programId : programIds) {
+            List<UserCourseRole> ownerRoles = userCourseRoleRepository.findByCourseIdAndRole(programId, CourseRole.OWNER);
+            if (!ownerRoles.isEmpty()) {
+                result.put(programId, ownerRoles.get(0).getUser());
+            }
+        }
+        return result;
     }
 
     @Override
