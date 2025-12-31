@@ -3,7 +3,6 @@ package com.mzc.lp.domain.course.dto.response;
 import com.mzc.lp.domain.course.entity.CourseItem;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 public record CourseItemHierarchyResponse(
         Long itemId,
@@ -26,13 +25,13 @@ public record CourseItemHierarchyResponse(
                 item.getDescription(),
                 item.getChildren().stream()
                         .map(CourseItemHierarchyResponse::from)
-                        .collect(Collectors.toList())
+                        .toList()
         );
     }
 
     public static List<CourseItemHierarchyResponse> fromList(List<CourseItem> rootItems) {
         return rootItems.stream()
                 .map(CourseItemHierarchyResponse::from)
-                .collect(Collectors.toList());
+                .toList();
     }
 }

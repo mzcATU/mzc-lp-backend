@@ -1,5 +1,6 @@
 package com.mzc.lp.domain.course.entity;
 
+import com.mzc.lp.common.constant.ValidationMessages;
 import com.mzc.lp.common.entity.TenantEntity;
 import com.mzc.lp.domain.course.constant.CourseLevel;
 import com.mzc.lp.domain.course.constant.CourseType;
@@ -159,10 +160,10 @@ public class Course extends TenantEntity {
     // ===== Private 검증 메서드 =====
     private void validateTitle(String title) {
         if (title == null || title.isBlank()) {
-            throw new IllegalArgumentException("강의 제목은 필수입니다");
+            throw new IllegalArgumentException(ValidationMessages.COURSE_TITLE_REQUIRED);
         }
         if (title.length() > 255) {
-            throw new IllegalArgumentException("강의 제목은 255자 이하여야 합니다");
+            throw new IllegalArgumentException(ValidationMessages.COURSE_TITLE_TOO_LONG);
         }
     }
 }
