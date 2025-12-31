@@ -11,12 +11,12 @@ import org.junit.jupiter.api.io.TempDir;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 
 class ThumbnailServiceTest extends TenantTestSupport {
 
@@ -158,15 +158,15 @@ class ThumbnailServiceTest extends TenantTestSupport {
         @Test
         @DisplayName("null 경로 - 에러 없이 무시")
         void deleteThumbnail_nullPath() {
-            // when & then - 에러 없이 완료
-            thumbnailService.deleteThumbnail(null);
+            // when & then
+            assertThatNoException().isThrownBy(() -> thumbnailService.deleteThumbnail(null));
         }
 
         @Test
         @DisplayName("빈 경로 - 에러 없이 무시")
         void deleteThumbnail_emptyPath() {
-            // when & then - 에러 없이 완료
-            thumbnailService.deleteThumbnail("");
+            // when & then
+            assertThatNoException().isThrownBy(() -> thumbnailService.deleteThumbnail(""));
         }
     }
 
