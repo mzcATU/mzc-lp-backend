@@ -465,7 +465,8 @@ class ContentControllerTest extends TenantTestSupport {
             UpdateContentRequest request = new UpdateContentRequest(
                     "updated-name.mp4",
                     120,
-                    "1920x1080"
+                    "1920x1080",
+                    null
             );
 
             // when & then

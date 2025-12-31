@@ -46,11 +46,12 @@ public class ContentController {
             @RequestParam(value = "description", required = false) String description,
             @RequestParam(value = "tags", required = false) String tags,
             @RequestParam(value = "thumbnail", required = false) MultipartFile thumbnail,
+            @RequestParam(value = "downloadable", required = false) Boolean downloadable,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
         Long tenantId = TenantContext.getCurrentTenantId();
         Long userId = principal.id();
-        ContentResponse response = contentService.uploadFile(file, folderId, originalFileName, description, tags, thumbnail, tenantId, userId);
+        ContentResponse response = contentService.uploadFile(file, folderId, originalFileName, description, tags, thumbnail, downloadable, tenantId, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
     }
 

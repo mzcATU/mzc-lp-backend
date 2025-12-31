@@ -19,10 +19,11 @@ public interface ContentService {
      * @param description 콘텐츠 설명
      * @param tags 태그 (쉼표로 구분)
      * @param thumbnail 커스텀 썸네일 이미지
+     * @param downloadable 다운로드 허용 여부 (null인 경우 기본값 true)
      */
     ContentResponse uploadFile(MultipartFile file, Long folderId, String originalFileName,
                                String description, String tags, MultipartFile thumbnail,
-                               Long tenantId, Long userId);
+                               Boolean downloadable, Long tenantId, Long userId);
 
     /**
      * 외부 링크 등록

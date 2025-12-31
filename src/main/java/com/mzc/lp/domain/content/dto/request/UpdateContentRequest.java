@@ -9,5 +9,7 @@ public record UpdateContentRequest(
         Integer duration,
 
         @Size(max = 20, message = "Resolution must not exceed 20 characters")
-        String resolution
+        String resolution,
+
+        Boolean downloadable
 ) {}

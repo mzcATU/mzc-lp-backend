@@ -10,6 +10,7 @@ import com.mzc.lp.domain.content.dto.response.ContentListResponse;
 import com.mzc.lp.domain.content.dto.response.ContentResponse;
 import com.mzc.lp.domain.content.entity.Content;
 import com.mzc.lp.domain.content.event.ContentCreatedEvent;
+import com.mzc.lp.domain.content.exception.ContentDownloadNotAllowedException;
 import com.mzc.lp.domain.content.exception.ContentInUseException;
 import com.mzc.lp.domain.content.exception.ContentNotFoundException;
 import com.mzc.lp.domain.content.exception.FileStorageException;
@@ -73,7 +74,7 @@ public class ContentServiceImpl implements ContentService {
     @Transactional
     public ContentResponse uploadFile(MultipartFile file, Long folderId, String displayName,
                                        String description, String tags, MultipartFile thumbnail,
-                                       Long tenantId, Long userId) {
+                                       Boolean downloadable, Long tenantId, Long userId) {
         String uploadedFileName = StringUtils.cleanPath(file.getOriginalFilename());
         String extension = fileStorageService.getFileExtension(uploadedFileName);
 
@@ -98,6 +99,11 @@ public class ContentServiceImpl implements ContentService {
 
         // 설명, 태그 설정
         content.updateDescriptionAndTags(description, tags);
+
+        // 다운로드 허용 설정
+        if (downloadable != null) {
+            content.updateDownloadable(downloadable);
+        }
 
         // 커스텀 썸네일이 있으면 저장
         if (thumbnail != null && !thumbnail.isEmpty()) {
@@ -180,6 +186,9 @@ public class ContentServiceImpl implements ContentService {
 
         // 메타데이터 변경
         content.updateMetadata(request.originalFileName(), request.duration(), request.resolution());
+        if (request.downloadable() != null) {
+            content.updateDownloadable(request.downloadable());
+        }
         content.incrementVersion();
 
         // 버전 기록 (변경 후 상태 저장)
@@ -272,6 +281,11 @@ public class ContentServiceImpl implements ContentService {
     @Override
     public ContentDownloadInfo getFileForDownload(Long contentId, Long tenantId) {
         Content content = findContentOrThrow(contentId, tenantId);
+
+        // 다운로드 허용 여부 체크
+        if (content.getDownloadable() != null && !content.getDownloadable()) {
+            throw new ContentDownloadNotAllowedException(contentId);
+        }
 
         if (content.getFilePath() == null) {
             throw new FileStorageException(ErrorCode.FILE_NOT_FOUND,
