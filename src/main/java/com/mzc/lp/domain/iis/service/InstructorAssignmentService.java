@@ -2,11 +2,13 @@ package com.mzc.lp.domain.iis.service;
 
 import com.mzc.lp.domain.iis.constant.AssignmentAction;
 import com.mzc.lp.domain.iis.constant.AssignmentStatus;
+import com.mzc.lp.domain.iis.constant.InstructorRole;
 import com.mzc.lp.domain.iis.dto.request.AssignInstructorRequest;
 import com.mzc.lp.domain.iis.dto.request.CancelAssignmentRequest;
 import com.mzc.lp.domain.iis.dto.request.ReplaceInstructorRequest;
 import com.mzc.lp.domain.iis.dto.request.UpdateRoleRequest;
 import com.mzc.lp.domain.iis.dto.response.AssignmentHistoryResponse;
+import com.mzc.lp.domain.iis.dto.response.InstructorAssignmentListResponse;
 import com.mzc.lp.domain.iis.dto.response.InstructorAssignmentResponse;
 import com.mzc.lp.domain.iis.dto.response.InstructorAvailabilityResponse;
 import com.mzc.lp.domain.iis.dto.response.InstructorDetailStatResponse;
@@ -28,6 +30,14 @@ public interface InstructorAssignmentService {
     List<InstructorAssignmentResponse> getInstructorsByTimeId(Long timeId, AssignmentStatus status);
 
     InstructorAssignmentResponse getAssignment(Long id);
+
+    Page<InstructorAssignmentListResponse> getAssignments(
+            Long instructorId,
+            Long courseTimeId,
+            InstructorRole role,
+            AssignmentStatus status,
+            Pageable pageable
+    );
 
     Page<InstructorAssignmentResponse> getAssignmentsByUserId(Long userId, AssignmentStatus status, Pageable pageable);
 
