@@ -13,6 +13,7 @@ public record PendingProgramResponse(
         ProgramLevel level,
         ProgramType type,
         Long createdBy,
+        String creatorName,
         Instant submittedAt,
         Long snapshotId
 ) {
@@ -24,6 +25,21 @@ public record PendingProgramResponse(
                 program.getLevel(),
                 program.getType(),
                 program.getCreatedBy(),
+                null,
+                program.getSubmittedAt(),
+                program.getSnapshot() != null ? program.getSnapshot().getId() : null
+        );
+    }
+
+    public static PendingProgramResponse from(Program program, String creatorName) {
+        return new PendingProgramResponse(
+                program.getId(),
+                program.getTitle(),
+                program.getThumbnailUrl(),
+                program.getLevel(),
+                program.getType(),
+                program.getCreatedBy(),
+                creatorName,
                 program.getSubmittedAt(),
                 program.getSnapshot() != null ? program.getSnapshot().getId() : null
         );
