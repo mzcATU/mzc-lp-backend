@@ -1,5 +1,6 @@
 package com.mzc.lp.domain.course.entity;
 
+import com.mzc.lp.common.constant.ValidationMessages;
 import com.mzc.lp.common.entity.TenantEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -37,10 +38,10 @@ public class CourseRelation extends TenantEntity {
 
     public static CourseRelation createStartPoint(CourseItem toItem) {
         if (toItem == null) {
-            throw new IllegalArgumentException("시작점 항목은 필수입니다");
+            throw new IllegalArgumentException(ValidationMessages.START_POINT_REQUIRED);
         }
         if (toItem.isFolder()) {
-            throw new IllegalArgumentException("폴더는 학습 순서에 포함할 수 없습니다");
+            throw new IllegalArgumentException(ValidationMessages.FOLDER_CANNOT_BE_IN_LEARNING_ORDER);
         }
 
         CourseRelation relation = new CourseRelation();
@@ -67,17 +68,17 @@ public class CourseRelation extends TenantEntity {
     // ===== Private 검증 메서드 =====
     private static void validateRelation(CourseItem fromItem, CourseItem toItem) {
         if (toItem == null) {
-            throw new IllegalArgumentException("대상 항목은 필수입니다");
+            throw new IllegalArgumentException(ValidationMessages.TARGET_ITEM_REQUIRED);
         }
         if (toItem.isFolder()) {
-            throw new IllegalArgumentException("폴더는 학습 순서에 포함할 수 없습니다");
+            throw new IllegalArgumentException(ValidationMessages.FOLDER_CANNOT_BE_IN_LEARNING_ORDER);
         }
         if (fromItem != null) {
             if (fromItem.isFolder()) {
-                throw new IllegalArgumentException("폴더는 학습 순서에 포함할 수 없습니다");
+                throw new IllegalArgumentException(ValidationMessages.FOLDER_CANNOT_BE_IN_LEARNING_ORDER);
             }
             if (fromItem.getId() != null && fromItem.getId().equals(toItem.getId())) {
-                throw new IllegalArgumentException("자기 자신을 참조할 수 없습니다");
+                throw new IllegalArgumentException(ValidationMessages.CANNOT_REFERENCE_SELF);
             }
         }
     }

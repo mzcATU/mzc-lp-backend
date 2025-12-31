@@ -1,5 +1,6 @@
 package com.mzc.lp.domain.snapshot.entity;
 
+import com.mzc.lp.common.constant.ValidationMessages;
 import com.mzc.lp.common.entity.TenantEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -119,11 +120,11 @@ public class SnapshotItem extends TenantEntity {
         int depthDiff = newDepth - this.depth;
 
         if (maxChildDepth + depthDiff > MAX_DEPTH) {
-            throw new IllegalArgumentException("최대 깊이(10단계)를 초과할 수 없습니다");
+            throw new IllegalArgumentException(ValidationMessages.MAX_DEPTH_EXCEEDED);
         }
 
         if (newParent != null && isAncestorOf(newParent)) {
-            throw new IllegalArgumentException("하위 항목으로 이동할 수 없습니다");
+            throw new IllegalArgumentException(ValidationMessages.CANNOT_MOVE_TO_CHILD);
         }
 
         if (this.parent != null) {
@@ -151,16 +152,16 @@ public class SnapshotItem extends TenantEntity {
     // ===== Private 검증/헬퍼 메서드 =====
     private void validateDepth() {
         if (this.depth > MAX_DEPTH) {
-            throw new IllegalArgumentException("최대 깊이(10단계)를 초과할 수 없습니다");
+            throw new IllegalArgumentException(ValidationMessages.MAX_DEPTH_EXCEEDED);
         }
     }
 
     private void validateItemName(String itemName) {
         if (itemName == null || itemName.isBlank()) {
-            throw new IllegalArgumentException("항목 이름은 필수입니다");
+            throw new IllegalArgumentException(ValidationMessages.ITEM_NAME_REQUIRED);
         }
         if (itemName.length() > 255) {
-            throw new IllegalArgumentException("항목 이름은 255자 이하여야 합니다");
+            throw new IllegalArgumentException(ValidationMessages.ITEM_NAME_TOO_LONG);
         }
     }
 
