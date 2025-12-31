@@ -1,5 +1,6 @@
 package com.mzc.lp.domain.program.entity;
 
+import com.mzc.lp.common.constant.ValidationMessages;
 import com.mzc.lp.common.entity.TenantEntity;
 import com.mzc.lp.domain.program.constant.ProgramLevel;
 import com.mzc.lp.domain.program.constant.ProgramStatus;
@@ -210,19 +211,19 @@ public class Program extends TenantEntity {
 
     private void validateTitle(String title) {
         if (title == null || title.isBlank()) {
-            throw new IllegalArgumentException("제목은 필수입니다");
+            throw new IllegalArgumentException(ValidationMessages.TITLE_REQUIRED);
         }
         if (title.length() > 255) {
-            throw new IllegalArgumentException("제목은 255자 이하여야 합니다");
+            throw new IllegalArgumentException(ValidationMessages.TITLE_TOO_LONG);
         }
     }
 
     private void validateRejectionReason(String reason) {
         if (reason == null || reason.isBlank()) {
-            throw new IllegalArgumentException("반려 사유는 필수입니다");
+            throw new IllegalArgumentException(ValidationMessages.REJECTION_REASON_REQUIRED);
         }
         if (reason.length() > 500) {
-            throw new IllegalArgumentException("반려 사유는 500자 이하여야 합니다");
+            throw new IllegalArgumentException(ValidationMessages.REJECTION_REASON_TOO_LONG);
         }
     }
 }

@@ -112,7 +112,11 @@ public enum ErrorCode {
     DUPLICATE_USER_GROUP_NAME(HttpStatus.CONFLICT, "UG002", "User group name already exists"),
 
     // Notice (NT)
-    NOTICE_NOT_FOUND(HttpStatus.NOT_FOUND, "NT001", "Notice not found");
+    NOTICE_NOT_FOUND(HttpStatus.NOT_FOUND, "NT001", "Notice not found"),
+
+    // Wishlist (WL)
+    WISHLIST_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "WL001", "Wishlist item not found"),
+    ALREADY_IN_WISHLIST(HttpStatus.CONFLICT, "WL002", "Course is already in wishlist");
 
     private final HttpStatus status;
     private final String code;

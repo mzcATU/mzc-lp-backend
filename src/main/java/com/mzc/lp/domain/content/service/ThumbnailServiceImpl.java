@@ -1,6 +1,7 @@
 package com.mzc.lp.domain.content.service;
 
 import com.mzc.lp.domain.content.constant.ContentType;
+import com.mzc.lp.domain.content.exception.FileStorageException;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.pdfbox.Loader;
@@ -188,7 +189,7 @@ public class ThumbnailServiceImpl implements ThumbnailService {
             return relativePath;
         } catch (IOException e) {
             log.error("Failed to store custom thumbnail", e);
-            throw new RuntimeException("Failed to store custom thumbnail", e);
+            throw new FileStorageException("Failed to store custom thumbnail: " + e.getMessage());
         }
     }
 
