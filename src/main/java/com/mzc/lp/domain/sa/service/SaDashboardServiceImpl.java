@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -89,6 +90,6 @@ public class SaDashboardServiceImpl implements SaDashboardService {
                         .createdAt(tenant.getCreatedAt().atZone(java.time.ZoneId.systemDefault())
                                 .format(DATE_FORMATTER))
                         .build())
-                .collect(Collectors.toList());
+                .toList();
     }
 }

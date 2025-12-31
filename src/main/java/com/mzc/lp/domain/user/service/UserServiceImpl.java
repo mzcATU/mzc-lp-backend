@@ -63,7 +63,11 @@ public class UserServiceImpl implements UserService {
         log.info("Updating user profile: userId={}", userId);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
-        user.updateProfile(request.name(), request.phone(), request.profileImageUrl());
+        // null이 전달되면 기존 값 유지
+        String name = request.name() != null ? request.name() : user.getName();
+        String phone = request.phone() != null ? request.phone() : user.getPhone();
+        String profileImageUrl = request.profileImageUrl() != null ? request.profileImageUrl() : user.getProfileImageUrl();
+        user.updateProfile(name, phone, profileImageUrl);
         return UserDetailResponse.from(user);
     }
 
@@ -152,6 +156,7 @@ public class UserServiceImpl implements UserService {
                 case ACTIVE -> user.activate();
                 case SUSPENDED -> user.suspend();
                 case WITHDRAWN -> user.withdraw();
+                default -> throw new IllegalArgumentException("Unknown status: " + request.status());
             }
         }
 
