@@ -10,6 +10,7 @@ import com.mzc.lp.domain.iis.dto.request.ReplaceInstructorRequest;
 import com.mzc.lp.domain.iis.dto.request.UpdateRoleRequest;
 import com.mzc.lp.domain.iis.dto.response.AssignmentHistoryResponse;
 import com.mzc.lp.domain.iis.dto.response.CourseTimeStatResponse;
+import com.mzc.lp.domain.iis.dto.response.InstructorAssignmentListResponse;
 import com.mzc.lp.domain.iis.dto.response.InstructorAssignmentResponse;
 import com.mzc.lp.domain.iis.dto.response.ConflictingAssignmentInfo;
 import com.mzc.lp.domain.iis.dto.response.InstructorAvailabilityResponse;
@@ -29,6 +30,7 @@ import com.mzc.lp.domain.iis.repository.AssignmentHistoryRepository;
 import com.mzc.lp.domain.iis.repository.InstructorAssignmentRepository;
 import com.mzc.lp.domain.student.dto.response.CourseTimeEnrollmentStatsResponse;
 import com.mzc.lp.domain.student.service.EnrollmentStatsService;
+import com.mzc.lp.domain.program.entity.Program;
 import com.mzc.lp.domain.ts.entity.CourseTime;
 import com.mzc.lp.domain.ts.repository.CourseTimeRepository;
 import com.mzc.lp.domain.user.entity.User;
@@ -140,6 +142,49 @@ public class InstructorAssignmentServiceImpl implements InstructorAssignmentServ
         InstructorAssignment assignment = findAssignmentById(id);
         User user = userRepository.findById(assignment.getUserKey()).orElse(null);
         return InstructorAssignmentResponse.from(assignment, user);
+    }
+
+    @Override
+    public Page<InstructorAssignmentListResponse> getAssignments(
+            Long instructorId,
+            Long courseTimeId,
+            InstructorRole role,
+            AssignmentStatus status,
+            Pageable pageable
+    ) {
+        log.debug("Getting assignments: instructorId={}, courseTimeId={}, role={}, status={}",
+                instructorId, courseTimeId, role, status);
+
+        Long tenantId = TenantContext.getCurrentTenantId();
+
+        // 동적 쿼리로 배정 목록 조회
+        Page<InstructorAssignment> assignmentPage = assignmentRepository.searchAssignments(
+                tenantId, instructorId, courseTimeId, role, status, pageable);
+
+        List<InstructorAssignment> assignments = assignmentPage.getContent();
+
+        if (assignments.isEmpty()) {
+            return assignmentPage.map(a -> null);
+        }
+
+        // N+1 방지: User 벌크 조회
+        Map<Long, User> userMap = getUserMapByAssignments(assignments);
+
+        // N+1 방지: CourseTime 벌크 조회
+        List<Long> timeKeys = assignments.stream()
+                .map(InstructorAssignment::getTimeKey)
+                .distinct()
+                .toList();
+        Map<Long, CourseTime> courseTimeMap = courseTimeRepository.findAllById(timeKeys).stream()
+                .collect(Collectors.toMap(CourseTime::getId, Function.identity()));
+
+        return assignmentPage.map(assignment -> {
+            User user = userMap.get(assignment.getUserKey());
+            CourseTime courseTime = courseTimeMap.get(assignment.getTimeKey());
+            Program program = courseTime != null ? courseTime.getProgram() : null;
+
+            return InstructorAssignmentListResponse.from(assignment, user, courseTime, program);
+        });
     }
 
     @Override
