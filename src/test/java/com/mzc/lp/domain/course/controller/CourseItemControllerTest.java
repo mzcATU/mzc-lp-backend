@@ -2,6 +2,9 @@ package com.mzc.lp.domain.course.controller;
 import com.mzc.lp.common.support.TenantTestSupport;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mzc.lp.domain.content.constant.ContentType;
+import com.mzc.lp.domain.content.entity.Content;
+import com.mzc.lp.domain.content.repository.ContentRepository;
 import com.mzc.lp.domain.course.constant.CourseLevel;
 import com.mzc.lp.domain.course.constant.CourseType;
 import com.mzc.lp.domain.course.dto.request.CreateFolderRequest;
@@ -13,6 +16,7 @@ import com.mzc.lp.domain.course.entity.Course;
 import com.mzc.lp.domain.course.entity.CourseItem;
 import com.mzc.lp.domain.course.repository.CourseItemRepository;
 import com.mzc.lp.domain.course.repository.CourseRepository;
+import com.mzc.lp.domain.learning.repository.LearningObjectRepository;
 import com.mzc.lp.domain.user.constant.TenantRole;
 import com.mzc.lp.domain.user.dto.request.LoginRequest;
 import com.mzc.lp.domain.user.entity.User;
@@ -63,10 +67,18 @@ class CourseItemControllerTest extends TenantTestSupport {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private ContentRepository contentRepository;
+
+    @Autowired
+    private LearningObjectRepository learningObjectRepository;
+
     @BeforeEach
     void setUp() {
         courseItemRepository.deleteAll();
         courseRepository.deleteAll();
+        learningObjectRepository.deleteAll();
+        contentRepository.deleteAll();
         userCourseRoleRepository.deleteAll();
         refreshTokenRepository.deleteAll();
         userRepository.deleteAll();
@@ -124,6 +136,19 @@ class CourseItemControllerTest extends TenantTestSupport {
         return courseItemRepository.save(item);
     }
 
+    private Content createTestContent(String fileName) {
+        Content content = Content.createFile(
+                fileName,
+                fileName,
+                "stored_" + fileName,
+                ContentType.DOCUMENT,
+                1024L,
+                "/uploads/" + fileName,
+                1L
+        );
+        return contentRepository.save(content);
+    }
+
     // ==================== 차시 추가 테스트 ====================
 
     @Nested
@@ -137,10 +162,11 @@ class CourseItemControllerTest extends TenantTestSupport {
             createOperatorUser();
             String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
             Course course = createTestCourse("테스트 강의");
+            Content content = createTestContent("test.pdf");
             CreateItemRequest request = new CreateItemRequest(
                     "1-1. 환경설정",
                     null,
-                    100L,
+                    content.getId(),
                     null,
                     null
             );
@@ -156,7 +182,7 @@ class CourseItemControllerTest extends TenantTestSupport {
                     .andExpect(jsonPath("$.data.itemName").value("1-1. 환경설정"))
                     .andExpect(jsonPath("$.data.depth").value(0))
                     .andExpect(jsonPath("$.data.parentId").isEmpty())
-                    .andExpect(jsonPath("$.data.learningObjectId").value(100))
+                    .andExpect(jsonPath("$.data.learningObjectId").isNumber())
                     .andExpect(jsonPath("$.data.isFolder").value(false));
         }
 
@@ -168,10 +194,11 @@ class CourseItemControllerTest extends TenantTestSupport {
             String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
             Course course = createTestCourse("테스트 강의");
             CourseItem folder = createTestFolder(course, "1주차", null);
+            Content content = createTestContent("test.pdf");
             CreateItemRequest request = new CreateItemRequest(
                     "1-1. 환경설정",
                     folder.getId(),
-                    100L,
+                    content.getId(),
                     null,
                     null
             );
@@ -187,6 +214,7 @@ class CourseItemControllerTest extends TenantTestSupport {
                     .andExpect(jsonPath("$.data.itemName").value("1-1. 환경설정"))
                     .andExpect(jsonPath("$.data.depth").value(1))
                     .andExpect(jsonPath("$.data.parentId").value(folder.getId()))
+                    .andExpect(jsonPath("$.data.learningObjectId").isNumber())
                     .andExpect(jsonPath("$.data.isFolder").value(false));
         }
 

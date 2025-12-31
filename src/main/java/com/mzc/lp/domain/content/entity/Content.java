@@ -77,6 +77,9 @@ public class Content extends TenantEntity {
     @Column(name = "tags", length = 500)
     private String tags;
 
+    @Column(name = "downloadable")
+    private Boolean downloadable = true;
+
     // 정적 팩토리 메서드 - 파일 업로드용 (하위 호환성 유지)
     public static Content createFile(String originalFileName, String storedFileName,
                                      ContentType contentType, Long fileSize, String filePath) {
@@ -168,6 +171,11 @@ public class Content extends TenantEntity {
     public void updateDescriptionAndTags(String description, String tags) {
         this.description = description;
         this.tags = tags;
+    }
+
+    // 비즈니스 메서드 - 다운로드 허용 설정
+    public void updateDownloadable(Boolean downloadable) {
+        this.downloadable = downloadable;
     }
 
     // 비즈니스 메서드 - 커스텀 썸네일 설정
