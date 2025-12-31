@@ -39,7 +39,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 @Slf4j
 @Service
@@ -59,16 +58,6 @@ public class ContentServiceImpl implements ContentService {
 
     @Value("${file.upload-dir:./uploads}")
     private String uploadDir;
-
-    private static final Set<String> SUPPORTED_YOUTUBE_PATTERNS = Set.of(
-            "youtube.com/watch", "youtu.be/", "youtube.com/embed"
-    );
-    private static final Set<String> SUPPORTED_VIMEO_PATTERNS = Set.of(
-            "vimeo.com/"
-    );
-    private static final Set<String> SUPPORTED_GOOGLE_FORM_PATTERNS = Set.of(
-            "docs.google.com/forms"
-    );
 
     @Override
     @Transactional
@@ -322,13 +311,10 @@ public class ContentServiceImpl implements ContentService {
             throw new FileStorageException(ErrorCode.INVALID_EXTERNAL_URL, "URL is required");
         }
 
-        boolean isSupported = SUPPORTED_YOUTUBE_PATTERNS.stream().anyMatch(url::contains)
-                || SUPPORTED_VIMEO_PATTERNS.stream().anyMatch(url::contains)
-                || SUPPORTED_GOOGLE_FORM_PATTERNS.stream().anyMatch(url::contains);
-
-        if (!isSupported) {
+        // URL 형식 검증 (http:// 또는 https://로 시작해야 함)
+        if (!url.startsWith("http://") && !url.startsWith("https://")) {
             throw new FileStorageException(ErrorCode.INVALID_EXTERNAL_URL,
-                    "Only YouTube, Vimeo, and Google Form URLs are supported");
+                    "URL must start with http:// or https://");
         }
     }
 
