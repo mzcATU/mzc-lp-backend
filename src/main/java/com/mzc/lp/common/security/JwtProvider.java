@@ -91,6 +91,25 @@ public class JwtProvider {
         return false;
     }
 
+    /**
+     * 토큰 검증 결과를 상세하게 반환 (만료 여부 구분)
+     */
+    public JwtValidationResult validateTokenWithResult(String token) {
+        try {
+            Jwts.parser()
+                    .verifyWith(secretKey)
+                    .build()
+                    .parseSignedClaims(token);
+            return JwtValidationResult.validToken();
+        } catch (ExpiredJwtException e) {
+            log.warn("Expired JWT token");
+            return JwtValidationResult.expiredToken();
+        } catch (Exception e) {
+            log.warn("Invalid JWT token: {}", e.getMessage());
+            return JwtValidationResult.invalidToken();
+        }
+    }
+
     public Claims getClaims(String token) {
         return Jwts.parser()
                 .verifyWith(secretKey)
