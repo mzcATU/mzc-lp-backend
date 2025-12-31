@@ -243,7 +243,23 @@ public class ProgramServiceImpl implements ProgramService {
         log.debug("Getting pending programs");
 
         Page<Program> pendingPrograms = programRepository.findPendingPrograms(TenantContext.getCurrentTenantId(), pageable);
-        return pendingPrograms.map(PendingProgramResponse::from);
+
+        // N+1 방지: User 일괄 조회
+        List<Program> programList = pendingPrograms.getContent();
+        Set<Long> creatorIds = programList.stream()
+                .map(Program::getCreatedBy)
+                .collect(Collectors.toSet());
+
+        Map<Long, User> userMap = userRepository.findAllById(creatorIds).stream()
+                .collect(Collectors.toMap(User::getId, Function.identity()));
+
+        return pendingPrograms.map(program -> {
+            User creator = userMap.get(program.getCreatedBy());
+            return PendingProgramResponse.from(
+                    program,
+                    creator != null ? creator.getName() : null
+            );
+        });
     }
 
     @Override
