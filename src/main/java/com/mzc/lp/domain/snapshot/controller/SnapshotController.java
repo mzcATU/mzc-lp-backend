@@ -38,10 +38,9 @@ public class SnapshotController {
     @PreAuthorize("hasAnyRole('DESIGNER', 'OPERATOR', 'TENANT_ADMIN')")
     public ResponseEntity<ApiResponse<SnapshotDetailResponse>> createSnapshotFromCourse(
             @PathVariable @Positive Long courseId,
-            @RequestParam @Positive Long createdBy,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        SnapshotDetailResponse response = snapshotService.createSnapshotFromCourse(courseId, createdBy);
+        SnapshotDetailResponse response = snapshotService.createSnapshotFromCourse(courseId, principal.id());
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
     }
 
@@ -66,10 +65,9 @@ public class SnapshotController {
     @PreAuthorize("hasAnyRole('DESIGNER', 'OPERATOR', 'TENANT_ADMIN')")
     public ResponseEntity<ApiResponse<SnapshotResponse>> createSnapshot(
             @Valid @RequestBody CreateSnapshotRequest request,
-            @RequestParam @Positive Long createdBy,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        SnapshotResponse response = snapshotService.createSnapshot(request, createdBy);
+        SnapshotResponse response = snapshotService.createSnapshot(request, principal.id());
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
     }
 

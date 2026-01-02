@@ -121,7 +121,14 @@ public enum ErrorCode {
 
     // Cart (CART)
     CART_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "CART001", "Cart item not found"),
-    ALREADY_IN_CART(HttpStatus.CONFLICT, "CART002", "Course is already in cart");
+    ALREADY_IN_CART(HttpStatus.CONFLICT, "CART002", "Course is already in cart"),
+
+    // Community (CM - Community)
+    COMMUNITY_POST_NOT_FOUND(HttpStatus.NOT_FOUND, "CMT001", "Community post not found"),
+    COMMUNITY_COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "CMT002", "Community comment not found"),
+    COMMUNITY_ALREADY_LIKED(HttpStatus.CONFLICT, "CMT003", "Already liked"),
+    COMMUNITY_NOT_POST_AUTHOR(HttpStatus.FORBIDDEN, "CMT004", "Not authorized to modify this post"),
+    COMMUNITY_NOT_COMMENT_AUTHOR(HttpStatus.FORBIDDEN, "CMT005", "Not authorized to modify this comment");
 
     private final HttpStatus status;
     private final String code;

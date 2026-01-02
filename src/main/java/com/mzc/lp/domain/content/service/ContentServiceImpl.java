@@ -19,6 +19,7 @@ import com.mzc.lp.domain.content.exception.UnsupportedContentTypeException;
 import com.mzc.lp.domain.content.repository.ContentRepository;
 import com.mzc.lp.domain.content.repository.ContentVersionRepository;
 import com.mzc.lp.domain.course.repository.CourseItemRepository;
+import com.mzc.lp.domain.learning.constant.CompletionCriteria;
 import com.mzc.lp.domain.learning.entity.ContentFolder;
 import com.mzc.lp.domain.learning.exception.ContentFolderNotFoundException;
 import com.mzc.lp.domain.learning.repository.ContentFolderRepository;
@@ -62,7 +63,8 @@ public class ContentServiceImpl implements ContentService {
     @Override
     @Transactional
     public ContentResponse uploadFile(MultipartFile file, Long folderId, String displayName,
-                                       String description, String tags, MultipartFile thumbnail,
+                                       String description, String tags, String category,
+                                       CompletionCriteria completionCriteria, MultipartFile thumbnail,
                                        Boolean downloadable, Long tenantId, Long userId) {
         String uploadedFileName = StringUtils.cleanPath(file.getOriginalFilename());
         String extension = fileStorageService.getFileExtension(uploadedFileName);
@@ -89,6 +91,11 @@ public class ContentServiceImpl implements ContentService {
         // 설명, 태그 설정
         content.updateDescriptionAndTags(description, tags);
 
+        // 카테고리 설정
+        if (category != null && !category.isBlank()) {
+            content.updateCategory(category);
+        }
+
         // 다운로드 허용 설정
         if (downloadable != null) {
             content.updateDownloadable(downloadable);
@@ -109,7 +116,7 @@ public class ContentServiceImpl implements ContentService {
         // 초기 버전 기록
         contentVersionService.createVersion(savedContent, VersionChangeType.FILE_UPLOAD, userId, "Initial upload");
 
-        eventPublisher.publishEvent(new ContentCreatedEvent(this, savedContent, folderId));
+        eventPublisher.publishEvent(new ContentCreatedEvent(this, savedContent, folderId, completionCriteria));
 
         return ContentResponse.from(savedContent);
     }
@@ -299,6 +306,31 @@ public class ContentServiceImpl implements ContentService {
         }
 
         return new ContentDownloadInfo(resource, downloadFileName, mimeType);
+    }
+
+    @Override
+    public ContentDownloadInfo getFileForPreview(Long contentId, Long tenantId) {
+        Content content = findContentOrThrow(contentId, tenantId);
+
+        // 미리보기는 downloadable 체크 안 함 (다운로드 허용 여부와 무관하게 미리보기 가능)
+
+        if (content.getFilePath() == null) {
+            throw new FileStorageException(ErrorCode.FILE_NOT_FOUND,
+                    "No file associated with content: " + contentId);
+        }
+
+        Resource resource = fileStorageService.loadFileAsResource(content.getFilePath());
+
+        // originalFileName에 확장자가 없으면 storedFileName에서 확장자 추출
+        String originalFileName = content.getOriginalFileName();
+        String extension = fileStorageService.getFileExtension(originalFileName);
+        if (extension.isEmpty()) {
+            extension = fileStorageService.getFileExtension(content.getStoredFileName());
+        }
+
+        String mimeType = determineMimeType(content.getContentType(), extension);
+
+        return new ContentDownloadInfo(resource, originalFileName, mimeType);
     }
 
     private Content findContentOrThrow(Long contentId, Long tenantId) {
