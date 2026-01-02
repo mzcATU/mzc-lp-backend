@@ -66,6 +66,7 @@ public enum ErrorCode {
     CANNOT_DELETE_MAIN_INSTRUCTOR(HttpStatus.BAD_REQUEST, "TS007", "Cannot delete main instructor while course is ongoing"),
     MAIN_INSTRUCTOR_REQUIRED(HttpStatus.BAD_REQUEST, "TS008", "Main instructor required for opening course time"),
     UNAUTHORIZED_COURSE_TIME_ACCESS(HttpStatus.FORBIDDEN, "TS009", "Not authorized to access this course time"),
+    COURSE_TIME_NOT_AVAILABLE(HttpStatus.NOT_FOUND, "TS010", "CourseTime is not available for public access"),
 
     // Enrollment (SIS)
     ENROLLMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "SIS001", "Enrollment not found"),
