@@ -142,12 +142,17 @@ public class ProgramServiceImpl implements ProgramService {
                 .toList();
         Map<Long, User> ownerMap = findOwnersByProgramIds(programIds);
 
+        // 4. Snapshot + Course 일괄 조회 (courseStartDate/courseEndDate용)
+        Map<Long, Program> programWithCourseMap = programRepository.findAllWithSnapshotAndCourse(programIds).stream()
+                .collect(Collectors.toMap(Program::getId, Function.identity()));
+
         return programs.map(program -> {
             User creator = userMap.get(program.getCreatedBy());
             User owner = ownerMap.get(program.getId());
+            Program programWithCourse = programWithCourseMap.get(program.getId());
 
             return ProgramResponse.from(
-                    program,
+                    programWithCourse != null ? programWithCourse : program,
                     creator != null ? creator.getName() : null,
                     owner != null ? owner.getId() : null,
                     owner != null ? owner.getName() : null,

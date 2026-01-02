@@ -33,8 +33,11 @@ public interface ProgramRepository extends JpaRepository<Program, Long> {
     @Query("SELECT COUNT(p) FROM Program p WHERE p.tenantId = :tenantId AND p.status = 'PENDING'")
     long countPendingPrograms(@Param("tenantId") Long tenantId);
 
-    @Query("SELECT p FROM Program p LEFT JOIN FETCH p.snapshot WHERE p.id = :id AND p.tenantId = :tenantId")
+    @Query("SELECT p FROM Program p LEFT JOIN FETCH p.snapshot s LEFT JOIN FETCH s.sourceCourse WHERE p.id = :id AND p.tenantId = :tenantId")
     Optional<Program> findByIdWithSnapshot(@Param("id") Long id, @Param("tenantId") Long tenantId);
+
+    @Query("SELECT p FROM Program p LEFT JOIN FETCH p.snapshot s LEFT JOIN FETCH s.sourceCourse WHERE p.id IN :ids")
+    List<Program> findAllWithSnapshotAndCourse(@Param("ids") List<Long> ids);
 
     boolean existsByIdAndTenantId(Long id, Long tenantId);
 
