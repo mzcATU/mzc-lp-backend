@@ -32,7 +32,7 @@ public class Enrollment extends TenantEntity {
 
     // 낙관적 락 (동시 수정 감지)
     @Version
-    private Long version;
+    private Long version = 0L;
 
     @Column(name = "user_id", nullable = false)
     private Long userId;

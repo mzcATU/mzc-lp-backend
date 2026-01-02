@@ -19,7 +19,7 @@ import lombok.NoArgsConstructor;
 public class LearningObject extends TenantEntity {
 
     @Version
-    private Long version;
+    private Long version = 0L;
 
     @Column(name = "name", nullable = false, length = 500)
     private String name;

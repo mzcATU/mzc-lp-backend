@@ -33,7 +33,7 @@ public class InstructorAssignment extends TenantEntity {
 
     // 낙관적 락 (동시 수정 감지)
     @Version
-    private Long version;
+    private Long version = 0L;
 
     // 필수 필드
     @Column(name = "user_key", nullable = false)

@@ -22,7 +22,7 @@ public class Content extends TenantEntity {
 
     // 낙관적 락 (동시 수정 감지)
     @Version
-    private Long version;
+    private Long version = 0L;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)

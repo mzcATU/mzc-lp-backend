@@ -23,7 +23,7 @@ public class SnapshotItem extends TenantEntity {
 
     // 낙관적 락 (동시 수정 감지)
     @Version
-    private Long version;
+    private Long version = 0L;
 
     private static final int MAX_DEPTH = 9;
 
