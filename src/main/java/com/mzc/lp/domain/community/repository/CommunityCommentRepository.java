@@ -30,4 +30,12 @@ public interface CommunityCommentRepository extends JpaRepository<CommunityComme
     List<CommunityComment> findByPostId(Long postId);
 
     void deleteByPostId(Long postId);
+
+    @Query("SELECT DISTINCT c.postId FROM CommunityComment c WHERE c.authorId = :authorId ORDER BY c.createdAt DESC")
+    List<Long> findDistinctPostIdsByAuthorId(@Param("authorId") Long authorId);
+
+    @Query("SELECT DISTINCT c.postId FROM CommunityComment c WHERE c.authorId = :authorId ORDER BY c.createdAt DESC")
+    Page<Long> findDistinctPostIdsByAuthorIdPaged(@Param("authorId") Long authorId, Pageable pageable);
+
+    List<CommunityComment> findByAuthorId(Long authorId);
 }

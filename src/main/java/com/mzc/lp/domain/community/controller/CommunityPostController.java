@@ -51,6 +51,28 @@ public class CommunityPostController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
+    @GetMapping("/posts/my")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<PostListResponse>> getMyPosts(
+            @RequestParam(required = false, defaultValue = "0") int page,
+            @RequestParam(required = false, defaultValue = "20") int pageSize,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        PostListResponse response = postService.getMyPosts(principal.id(), page, pageSize);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @GetMapping("/posts/commented")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<PostListResponse>> getCommentedPosts(
+            @RequestParam(required = false, defaultValue = "0") int page,
+            @RequestParam(required = false, defaultValue = "20") int pageSize,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        PostListResponse response = postService.getCommentedPosts(principal.id(), page, pageSize);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
     @GetMapping("/posts/{postId}")
     public ResponseEntity<ApiResponse<PostDetailResponse>> getPost(
             @PathVariable Long postId,

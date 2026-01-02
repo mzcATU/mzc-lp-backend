@@ -231,4 +231,104 @@ public class CommunityPostService {
 
         return CategoryResponse.of(categories);
     }
+
+    /**
+     * 내 게시글 목록 조회
+     */
+    public PostListResponse getMyPosts(Long userId, int page, int pageSize) {
+        Pageable pageable = PageRequest.of(page, pageSize);
+        Page<CommunityPost> postPage = postRepository.findByAuthorIdOrderByCreatedAtDesc(userId, pageable);
+
+        List<CommunityPost> posts = postPage.getContent();
+
+        if (posts.isEmpty()) {
+            return PostListResponse.of(List.of(), 0, page, pageSize, 0);
+        }
+
+        User author = userRepository.findById(userId).orElse(null);
+
+        List<PostResponse> postResponses = posts.stream()
+                .map(post -> {
+                    long likeCount = postLikeRepository.countByPostId(post.getId());
+                    long commentCount = commentRepository.countByPostId(post.getId());
+                    boolean isLiked = postLikeRepository.existsByPostIdAndUserId(post.getId(), userId);
+                    return PostResponse.from(post, author, likeCount, commentCount, isLiked);
+                })
+                .toList();
+
+        return PostListResponse.of(
+                postResponses,
+                postPage.getTotalElements(),
+                page,
+                pageSize,
+                postPage.getTotalPages()
+        );
+    }
+
+    /**
+     * 내가 댓글 단 게시글 목록 조회
+     */
+    public PostListResponse getCommentedPosts(Long userId, int page, int pageSize) {
+        // 내가 댓글 단 게시글 ID 목록 조회
+        List<Long> commentedPostIds = commentRepository.findDistinctPostIdsByAuthorId(userId);
+
+        if (commentedPostIds.isEmpty()) {
+            return PostListResponse.of(List.of(), 0, page, pageSize, 0);
+        }
+
+        // 페이징 처리
+        int start = page * pageSize;
+        int end = Math.min(start + pageSize, commentedPostIds.size());
+
+        if (start >= commentedPostIds.size()) {
+            return PostListResponse.of(List.of(), commentedPostIds.size(), page, pageSize, (int) Math.ceil((double) commentedPostIds.size() / pageSize));
+        }
+
+        List<Long> pagedPostIds = commentedPostIds.subList(start, end);
+
+        // 게시글 조회
+        List<CommunityPost> posts = postRepository.findAllById(pagedPostIds);
+
+        // 순서 유지를 위해 재정렬
+        Map<Long, CommunityPost> postMap = posts.stream()
+                .collect(Collectors.toMap(CommunityPost::getId, Function.identity()));
+        posts = pagedPostIds.stream()
+                .map(postMap::get)
+                .filter(Objects::nonNull)
+                .toList();
+
+        if (posts.isEmpty()) {
+            return PostListResponse.of(List.of(), 0, page, pageSize, 0);
+        }
+
+        // 작성자 벌크 조회
+        Set<Long> authorIds = posts.stream().map(CommunityPost::getAuthorId).collect(Collectors.toSet());
+        Map<Long, User> authorMap = userRepository.findAllById(authorIds).stream()
+                .collect(Collectors.toMap(User::getId, Function.identity()));
+
+        // 좋아요 여부 벌크 조회
+        List<Long> postIds = posts.stream().map(CommunityPost::getId).toList();
+        Set<Long> likedPostIds = new HashSet<>(postLikeRepository.findLikedPostIdsByUserIdAndPostIdIn(userId, postIds));
+
+        // 응답 변환
+        List<PostResponse> postResponses = posts.stream()
+                .map(post -> {
+                    User author = authorMap.get(post.getAuthorId());
+                    long likeCount = postLikeRepository.countByPostId(post.getId());
+                    long commentCount = commentRepository.countByPostId(post.getId());
+                    boolean isLiked = likedPostIds.contains(post.getId());
+                    return PostResponse.from(post, author, likeCount, commentCount, isLiked);
+                })
+                .toList();
+
+        int totalPages = (int) Math.ceil((double) commentedPostIds.size() / pageSize);
+
+        return PostListResponse.of(
+                postResponses,
+                commentedPostIds.size(),
+                page,
+                pageSize,
+                totalPages
+        );
+    }
 }
