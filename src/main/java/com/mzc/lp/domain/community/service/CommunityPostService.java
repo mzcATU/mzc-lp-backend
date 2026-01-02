@@ -12,6 +12,8 @@ import com.mzc.lp.domain.community.exception.PostNotFoundException;
 import com.mzc.lp.domain.community.repository.CommunityCommentRepository;
 import com.mzc.lp.domain.community.repository.CommunityPostLikeRepository;
 import com.mzc.lp.domain.community.repository.CommunityPostRepository;
+import com.mzc.lp.domain.notification.constant.NotificationType;
+import com.mzc.lp.domain.notification.service.NotificationService;
 import com.mzc.lp.domain.user.entity.User;
 import com.mzc.lp.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +39,7 @@ public class CommunityPostService {
     private final CommunityPostLikeRepository postLikeRepository;
     private final CommunityCommentRepository commentRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     public PostListResponse getPosts(String keyword, String category, String type, String sortBy, int page, int pageSize, Long userId) {
         PostType postType = null;
@@ -169,9 +172,8 @@ public class CommunityPostService {
 
     @Transactional
     public void likePost(Long userId, Long postId) {
-        if (!postRepository.existsById(postId)) {
-            throw new PostNotFoundException(postId);
-        }
+        CommunityPost post = postRepository.findById(postId)
+                .orElseThrow(() -> new PostNotFoundException(postId));
 
         if (postLikeRepository.existsByPostIdAndUserId(postId, userId)) {
             throw new AlreadyLikedException("Already liked post: " + postId);
@@ -181,11 +183,34 @@ public class CommunityPostService {
             CommunityPostLike like = CommunityPostLike.create(postId, userId);
             postLikeRepository.save(like);
             postLikeRepository.flush(); // 즉시 DB에 반영하여 제약조건 위반 확인
+
+            // 알림 생성: 게시글 작성자에게 (본인 제외)
+            if (!post.getAuthorId().equals(userId)) {
+                User actor = userRepository.findById(userId).orElse(null);
+                String actorName = actor != null ? actor.getName() : "알 수 없음";
+
+                notificationService.createNotification(
+                        post.getAuthorId(),
+                        NotificationType.LIKE,
+                        "게시글에 좋아요를 받았습니다",
+                        actorName + "님이 \"" + truncate(post.getTitle(), 20) + "\" 게시글을 좋아합니다.",
+                        "/tu/b2c/community/" + postId,
+                        postId,
+                        "POST_LIKE",
+                        userId,
+                        actorName
+                );
+            }
         } catch (DataIntegrityViolationException e) {
             // 동시성 이슈로 인한 중복 좋아요 시도
             log.debug("Concurrent like attempt detected for post {} by user {}", postId, userId);
             throw new AlreadyLikedException("Already liked post: " + postId);
         }
+    }
+
+    private String truncate(String text, int maxLength) {
+        if (text == null) return "";
+        return text.length() > maxLength ? text.substring(0, maxLength) + "..." : text;
     }
 
     @Transactional
