@@ -66,6 +66,19 @@ public class CourseTimeSpecification {
         };
     }
 
+    public static Specification<CourseTime> withCategoryId(Long categoryId) {
+        return (root, query, cb) -> {
+            if (categoryId == null) {
+                return cb.conjunction();
+            }
+            // CourseTime → Program → Snapshot → SourceCourse.categoryId
+            return cb.equal(
+                    root.get("program").get("snapshot").get("sourceCourse").get("categoryId"),
+                    categoryId
+            );
+        };
+    }
+
     /**
      * Public API용 복합 Specification
      */
@@ -75,13 +88,15 @@ public class CourseTimeSpecification {
             DeliveryType deliveryType,
             Long programId,
             Boolean isFree,
-            String keyword
+            String keyword,
+            Long categoryId
     ) {
         return Specification.where(withTenantId(tenantId))
                 .and(withStatusIn(statuses))
                 .and(withDeliveryType(deliveryType))
                 .and(withProgramId(programId))
                 .and(withIsFree(isFree))
-                .and(withKeyword(keyword));
+                .and(withKeyword(keyword))
+                .and(withCategoryId(categoryId));
     }
 }

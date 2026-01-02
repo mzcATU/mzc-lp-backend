@@ -22,6 +22,7 @@ public interface PublicCourseTimeService {
      * @param programId    프로그램 ID 필터
      * @param isFree       무료/유료 필터
      * @param keyword      제목 검색 키워드
+     * @param categoryId   카테고리 ID 필터
      * @param pageable     페이징 정보
      * @return 페이징된 차수 목록
      */
@@ -31,6 +32,7 @@ public interface PublicCourseTimeService {
             Long programId,
             Boolean isFree,
             String keyword,
+            Long categoryId,
             Pageable pageable
     );
 

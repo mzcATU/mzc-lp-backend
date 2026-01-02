@@ -35,6 +35,7 @@ public class PublicCourseTimeController {
      * @param programId    프로그램 ID 필터
      * @param isFree       무료/유료 필터
      * @param keyword      제목 검색 키워드
+     * @param categoryId   카테고리 ID 필터
      * @param pageable     페이징 정보
      * @return 페이징된 차수 목록
      */
@@ -45,10 +46,11 @@ public class PublicCourseTimeController {
             @RequestParam(required = false) Long programId,
             @RequestParam(required = false) Boolean isFree,
             @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Long categoryId,
             @PageableDefault(size = 20) Pageable pageable
     ) {
         Page<CourseTimeCatalogResponse> response = publicCourseTimeService.getPublicCourseTimes(
-                status, deliveryType, programId, isFree, keyword, pageable
+                status, deliveryType, programId, isFree, keyword, categoryId, pageable
         );
         return ResponseEntity.ok(ApiResponse.success(response));
     }

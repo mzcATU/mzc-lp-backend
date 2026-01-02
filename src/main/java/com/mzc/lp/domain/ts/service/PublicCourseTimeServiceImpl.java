@@ -1,6 +1,9 @@
 package com.mzc.lp.domain.ts.service;
 
 import com.mzc.lp.common.context.TenantContext;
+import com.mzc.lp.domain.category.entity.Category;
+import com.mzc.lp.domain.category.repository.CategoryRepository;
+import com.mzc.lp.domain.course.entity.Course;
 import com.mzc.lp.domain.iis.constant.AssignmentStatus;
 import com.mzc.lp.domain.iis.entity.InstructorAssignment;
 import com.mzc.lp.domain.iis.repository.InstructorAssignmentRepository;
@@ -30,6 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -44,6 +48,7 @@ public class PublicCourseTimeServiceImpl implements PublicCourseTimeService {
     private final InstructorAssignmentRepository instructorAssignmentRepository;
     private final SnapshotItemRepository snapshotItemRepository;
     private final UserRepository userRepository;
+    private final CategoryRepository categoryRepository;
 
     /**
      * 공개 가능한 상태 목록
@@ -60,10 +65,11 @@ public class PublicCourseTimeServiceImpl implements PublicCourseTimeService {
             Long programId,
             Boolean isFree,
             String keyword,
+            Long categoryId,
             Pageable pageable
     ) {
-        log.debug("Getting public course times: statuses={}, deliveryType={}, programId={}, isFree={}, keyword={}",
-                statuses, deliveryType, programId, isFree, keyword);
+        log.debug("Getting public course times: statuses={}, deliveryType={}, programId={}, isFree={}, keyword={}, categoryId={}",
+                statuses, deliveryType, programId, isFree, keyword, categoryId);
 
         Long tenantId = TenantContext.getCurrentTenantId();
 
@@ -79,7 +85,8 @@ public class PublicCourseTimeServiceImpl implements PublicCourseTimeService {
                 deliveryType,
                 programId,
                 isFree,
-                keyword
+                keyword,
+                categoryId
         );
 
         Page<CourseTime> courseTimePage = courseTimeRepository.findAll(spec, pageable);
@@ -91,9 +98,18 @@ public class PublicCourseTimeServiceImpl implements PublicCourseTimeService {
 
         Map<Long, List<InstructorSummaryResponse>> instructorMap = getInstructorsByTimeIds(timeIds);
 
-        return courseTimePage.map(ct ->
-                CourseTimeCatalogResponse.from(ct, instructorMap.getOrDefault(ct.getId(), List.of()))
-        );
+        // N+1 방지: 카테고리 정보 Bulk 조회
+        Map<Long, Category> categoryMap = getCategoryMap(courseTimePage.getContent());
+
+        return courseTimePage.map(ct -> {
+            Long ctCategoryId = extractCategoryId(ct);
+            Category category = ctCategoryId != null ? categoryMap.get(ctCategoryId) : null;
+            return CourseTimeCatalogResponse.from(
+                    ct,
+                    instructorMap.getOrDefault(ct.getId(), List.of()),
+                    category
+            );
+        });
     }
 
     @Override
@@ -195,5 +211,35 @@ public class PublicCourseTimeServiceImpl implements PublicCourseTimeService {
         return rootItems.stream()
                 .map(CurriculumItemResponse::fromWithChildren)
                 .toList();
+    }
+
+    /**
+     * CourseTime 목록에서 카테고리 ID를 추출하여 Category Map 조회
+     */
+    private Map<Long, Category> getCategoryMap(List<CourseTime> courseTimes) {
+        Set<Long> categoryIds = courseTimes.stream()
+                .map(this::extractCategoryId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        if (categoryIds.isEmpty()) {
+            return Map.of();
+        }
+
+        return categoryRepository.findAllById(categoryIds).stream()
+                .collect(Collectors.toMap(Category::getId, Function.identity()));
+    }
+
+    /**
+     * CourseTime에서 카테고리 ID 추출 (Program → Snapshot → Course)
+     */
+    private Long extractCategoryId(CourseTime courseTime) {
+        if (courseTime.getProgram() == null
+                || courseTime.getProgram().getSnapshot() == null
+                || courseTime.getProgram().getSnapshot().getSourceCourse() == null) {
+            return null;
+        }
+        Course course = courseTime.getProgram().getSnapshot().getSourceCourse();
+        return course.getCategoryId();
     }
 }

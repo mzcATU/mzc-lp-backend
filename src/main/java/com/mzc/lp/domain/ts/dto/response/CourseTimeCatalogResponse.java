@@ -1,5 +1,6 @@
 package com.mzc.lp.domain.ts.dto.response;
 
+import com.mzc.lp.domain.category.entity.Category;
 import com.mzc.lp.domain.ts.constant.CourseTimeStatus;
 import com.mzc.lp.domain.ts.constant.DeliveryType;
 import com.mzc.lp.domain.ts.entity.CourseTime;
@@ -35,6 +36,14 @@ public record CourseTimeCatalogResponse(
             CourseTime courseTime,
             List<InstructorSummaryResponse> instructors
     ) {
+        return from(courseTime, instructors, null);
+    }
+
+    public static CourseTimeCatalogResponse from(
+            CourseTime courseTime,
+            List<InstructorSummaryResponse> instructors,
+            Category category
+    ) {
         boolean isOnDemand = ON_DEMAND_DATE.equals(courseTime.getClassEndDate());
         int availableSeats = Math.max(0,
                 courseTime.getCapacity() != null
@@ -56,7 +65,7 @@ public record CourseTimeCatalogResponse(
                 availableSeats,
                 courseTime.getPrice(),
                 courseTime.isFree(),
-                ProgramSummaryResponse.forList(courseTime.getProgram()),
+                ProgramSummaryResponse.forListWithCategory(courseTime.getProgram(), category),
                 instructors != null ? instructors : List.of()
         );
     }
