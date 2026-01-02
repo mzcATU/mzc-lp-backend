@@ -25,4 +25,6 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
     Optional<Course> findByIdWithItems(@Param("id") Long id, @Param("tenantId") Long tenantId);
 
     boolean existsByIdAndTenantId(Long id, Long tenantId);
+
+    Page<Course> findByTenantIdAndCreatedBy(Long tenantId, Long createdBy, Pageable pageable);
 }
