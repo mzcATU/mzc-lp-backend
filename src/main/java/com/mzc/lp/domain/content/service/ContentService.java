@@ -6,6 +6,7 @@ import com.mzc.lp.domain.content.dto.request.CreateExternalLinkRequest;
 import com.mzc.lp.domain.content.dto.request.UpdateContentRequest;
 import com.mzc.lp.domain.content.dto.response.ContentListResponse;
 import com.mzc.lp.domain.content.dto.response.ContentResponse;
+import com.mzc.lp.domain.learning.constant.CompletionCriteria;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,11 +19,14 @@ public interface ContentService {
      * @param originalFileName 사용자가 지정한 원본 파일명 (null인 경우 업로드 파일명 사용)
      * @param description 콘텐츠 설명
      * @param tags 태그 (쉼표로 구분)
+     * @param category 카테고리
+     * @param completionCriteria 학습 완료 기준
      * @param thumbnail 커스텀 썸네일 이미지
      * @param downloadable 다운로드 허용 여부 (null인 경우 기본값 true)
      */
     ContentResponse uploadFile(MultipartFile file, Long folderId, String originalFileName,
-                               String description, String tags, MultipartFile thumbnail,
+                               String description, String tags, String category,
+                               CompletionCriteria completionCriteria, MultipartFile thumbnail,
                                Boolean downloadable, Long tenantId, Long userId);
 
     /**
@@ -62,8 +66,15 @@ public interface ContentService {
 
     /**
      * 파일 다운로드용 리소스 및 원본 파일명 조회
+     * (downloadable 체크 포함)
      */
     ContentDownloadInfo getFileForDownload(Long contentId, Long tenantId);
+
+    /**
+     * 파일 미리보기용 리소스 조회
+     * (downloadable 체크 없음 - 미리보기는 다운로드 허용 여부와 무관)
+     */
+    ContentDownloadInfo getFileForPreview(Long contentId, Long tenantId);
 
     record ContentDownloadInfo(Resource resource, String originalFileName, String contentType) {}
 

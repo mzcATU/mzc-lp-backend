@@ -2,6 +2,7 @@ package com.mzc.lp.domain.learning.entity;
 
 import com.mzc.lp.common.entity.TenantEntity;
 import com.mzc.lp.domain.content.entity.Content;
+import com.mzc.lp.domain.learning.constant.CompletionCriteria;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -32,6 +33,10 @@ public class LearningObject extends TenantEntity {
     @JoinColumn(name = "folder_id")
     private ContentFolder folder;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "completion_criteria", length = 20)
+    private CompletionCriteria completionCriteria = CompletionCriteria.PERCENT_100;
+
     // 정적 팩토리 메서드
     public static LearningObject create(String name, Content content, ContentFolder folder) {
         LearningObject lo = new LearningObject();
@@ -61,5 +66,12 @@ public class LearningObject extends TenantEntity {
     // 비즈니스 메서드 - 최상위로 이동
     public void moveToRoot() {
         this.folder = null;
+    }
+
+    // 비즈니스 메서드 - 완료 기준 변경
+    public void updateCompletionCriteria(CompletionCriteria completionCriteria) {
+        if (completionCriteria != null) {
+            this.completionCriteria = completionCriteria;
+        }
     }
 }

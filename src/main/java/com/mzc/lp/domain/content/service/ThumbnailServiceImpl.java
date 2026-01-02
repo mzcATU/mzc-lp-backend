@@ -87,7 +87,12 @@ public class ThumbnailServiceImpl implements ThumbnailService {
             );
             pb.redirectErrorStream(true);
 
+            log.info("Executing FFmpeg command: {} -i {} ...", ffmpegPath, videoPath);
             process = pb.start();
+
+            // FFmpeg 출력 읽기
+            String output = new String(process.getInputStream().readAllBytes());
+
             boolean finished = process.waitFor(30, TimeUnit.SECONDS);
 
             if (finished && process.exitValue() == 0 && Files.exists(outputPath)) {
@@ -95,7 +100,8 @@ public class ThumbnailServiceImpl implements ThumbnailService {
                 log.info("Video thumbnail generated: {}", relativePath);
                 return Optional.of(relativePath);
             } else {
-                log.warn("Failed to generate video thumbnail for: {}", videoPath);
+                log.warn("Failed to generate video thumbnail for: {}. Exit code: {}, Output: {}",
+                        videoPath, process.exitValue(), output);
                 return Optional.empty();
             }
         } catch (IOException e) {
