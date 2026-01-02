@@ -37,8 +37,13 @@ public class LearningObjectEventListener {
                 folder
         );
 
+        // completionCriteria 설정
+        if (event.getCompletionCriteria() != null) {
+            learningObject.updateCompletionCriteria(event.getCompletionCriteria());
+        }
+
         LearningObject saved = learningObjectRepository.save(learningObject);
-        log.info("LearningObject auto-created: id={}, contentId={}, folderId={}",
-                saved.getId(), content.getId(), targetFolderId);
+        log.info("LearningObject auto-created: id={}, contentId={}, folderId={}, completionCriteria={}",
+                saved.getId(), content.getId(), targetFolderId, saved.getCompletionCriteria());
     }
 }

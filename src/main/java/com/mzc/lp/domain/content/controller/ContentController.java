@@ -10,6 +10,7 @@ import com.mzc.lp.domain.content.dto.request.UpdateContentRequest;
 import com.mzc.lp.domain.content.dto.response.ContentListResponse;
 import com.mzc.lp.domain.content.dto.response.ContentResponse;
 import com.mzc.lp.domain.content.service.ContentService;
+import com.mzc.lp.domain.learning.constant.CompletionCriteria;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
@@ -45,13 +46,15 @@ public class ContentController {
             @RequestParam(value = "originalFileName", required = false) String originalFileName,
             @RequestParam(value = "description", required = false) String description,
             @RequestParam(value = "tags", required = false) String tags,
+            @RequestParam(value = "category", required = false) String category,
+            @RequestParam(value = "completionCriteria", required = false) CompletionCriteria completionCriteria,
             @RequestParam(value = "thumbnail", required = false) MultipartFile thumbnail,
             @RequestParam(value = "downloadable", required = false) Boolean downloadable,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
         Long tenantId = TenantContext.getCurrentTenantId();
         Long userId = principal.id();
-        ContentResponse response = contentService.uploadFile(file, folderId, originalFileName, description, tags, thumbnail, downloadable, tenantId, userId);
+        ContentResponse response = contentService.uploadFile(file, folderId, originalFileName, description, tags, category, completionCriteria, thumbnail, downloadable, tenantId, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
     }
 
