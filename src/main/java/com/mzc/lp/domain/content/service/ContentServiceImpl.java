@@ -308,6 +308,31 @@ public class ContentServiceImpl implements ContentService {
         return new ContentDownloadInfo(resource, downloadFileName, mimeType);
     }
 
+    @Override
+    public ContentDownloadInfo getFileForPreview(Long contentId, Long tenantId) {
+        Content content = findContentOrThrow(contentId, tenantId);
+
+        // 미리보기는 downloadable 체크 안 함 (다운로드 허용 여부와 무관하게 미리보기 가능)
+
+        if (content.getFilePath() == null) {
+            throw new FileStorageException(ErrorCode.FILE_NOT_FOUND,
+                    "No file associated with content: " + contentId);
+        }
+
+        Resource resource = fileStorageService.loadFileAsResource(content.getFilePath());
+
+        // originalFileName에 확장자가 없으면 storedFileName에서 확장자 추출
+        String originalFileName = content.getOriginalFileName();
+        String extension = fileStorageService.getFileExtension(originalFileName);
+        if (extension.isEmpty()) {
+            extension = fileStorageService.getFileExtension(content.getStoredFileName());
+        }
+
+        String mimeType = determineMimeType(content.getContentType(), extension);
+
+        return new ContentDownloadInfo(resource, originalFileName, mimeType);
+    }
+
     private Content findContentOrThrow(Long contentId, Long tenantId) {
         return contentRepository.findByIdAndTenantId(contentId, tenantId)
                 .orElseThrow(() -> new ContentNotFoundException(contentId));

@@ -135,8 +135,9 @@ public class ContentController {
             @AuthenticationPrincipal UserPrincipal principal
     ) {
         Long tenantId = TenantContext.getCurrentTenantId();
+        // 미리보기는 downloadable 체크 없이 파일 반환
         ContentService.ContentDownloadInfo downloadInfo =
-                contentService.getFileForDownload(contentId, tenantId);
+                contentService.getFileForPreview(contentId, tenantId);
 
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(downloadInfo.contentType()))

@@ -66,8 +66,15 @@ public interface ContentService {
 
     /**
      * 파일 다운로드용 리소스 및 원본 파일명 조회
+     * (downloadable 체크 포함)
      */
     ContentDownloadInfo getFileForDownload(Long contentId, Long tenantId);
+
+    /**
+     * 파일 미리보기용 리소스 조회
+     * (downloadable 체크 없음 - 미리보기는 다운로드 허용 여부와 무관)
+     */
+    ContentDownloadInfo getFileForPreview(Long contentId, Long tenantId);
 
     record ContentDownloadInfo(Resource resource, String originalFileName, String contentType) {}
 
