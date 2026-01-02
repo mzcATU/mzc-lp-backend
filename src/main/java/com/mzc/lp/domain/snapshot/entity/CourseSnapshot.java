@@ -25,7 +25,7 @@ public class CourseSnapshot extends TenantEntity {
 
     // JPA 낙관적 락 (동시 수정 감지)
     @Version
-    private Long jpaVersion = 0L;
+    private Long jpaVersion;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "source_course_id")

@@ -22,7 +22,7 @@ public class ContentFolder extends TenantEntity {
     public static final int MAX_DEPTH = 2; // 0, 1, 2 -> 3단계
 
     @Version
-    private Long version = 0L;
+    private Long version;
 
     @Column(name = "folder_name", nullable = false, length = 255)
     private String folderName;

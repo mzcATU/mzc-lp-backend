@@ -21,7 +21,7 @@ public class Course extends TenantEntity {
 
     // 낙관적 락 (동시 수정 감지)
     @Version
-    private Long version = 0L;
+    private Long version;
 
     @Column(nullable = false, length = 255)
     private String title;

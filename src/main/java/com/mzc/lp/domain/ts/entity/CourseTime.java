@@ -26,7 +26,7 @@ public class CourseTime extends TenantEntity {
 
     // 낙관적 락 (동시 수정 감지)
     @Version
-    private Long version = 0L;
+    private Long version;
 
     // Program 연결 (승인된 프로그램과 연결)
     @ManyToOne(fetch = FetchType.LAZY)
