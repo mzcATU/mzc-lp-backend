@@ -129,4 +129,14 @@ public class CourseServiceImpl implements CourseService {
         courseRepository.delete(course);
         log.info("Course deleted: id={}", courseId);
     }
+
+    @Override
+    public Page<CourseResponse> getMyCourses(Long creatorId, Pageable pageable) {
+        log.debug("Getting my courses: creatorId={}", creatorId);
+
+        Page<Course> courses = courseRepository.findByTenantIdAndCreatedBy(
+                TenantContext.getCurrentTenantId(), creatorId, pageable);
+
+        return courses.map(CourseResponse::from);
+    }
 }

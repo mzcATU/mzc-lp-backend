@@ -48,4 +48,12 @@ public interface CourseService {
      * @param isTenantAdmin 테넌트 관리자 여부
      */
     void deleteCourse(Long courseId, Long currentUserId, boolean isTenantAdmin);
+
+    /**
+     * 내가 생성한 강의 목록 조회
+     * @param creatorId 생성자 ID
+     * @param pageable 페이징 정보
+     * @return 강의 목록 페이지
+     */
+    Page<CourseResponse> getMyCourses(Long creatorId, Pageable pageable);
 }
