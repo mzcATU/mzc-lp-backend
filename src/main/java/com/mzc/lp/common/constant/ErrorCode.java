@@ -117,7 +117,11 @@ public enum ErrorCode {
 
     // Wishlist (WL)
     WISHLIST_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "WL001", "Wishlist item not found"),
-    ALREADY_IN_WISHLIST(HttpStatus.CONFLICT, "WL002", "Course is already in wishlist");
+    ALREADY_IN_WISHLIST(HttpStatus.CONFLICT, "WL002", "Course is already in wishlist"),
+
+    // Cart (CART)
+    CART_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "CART001", "Cart item not found"),
+    ALREADY_IN_CART(HttpStatus.CONFLICT, "CART002", "Course is already in cart");
 
     private final HttpStatus status;
     private final String code;
