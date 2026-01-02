@@ -58,10 +58,24 @@ public class CourseController {
     }
 
     /**
+     * 내가 생성한 강의 목록 조회
+     * GET /api/courses/my
+     */
+    @GetMapping("/my")
+    @PreAuthorize("hasAnyRole('DESIGNER', 'OPERATOR', 'TENANT_ADMIN')")
+    public ResponseEntity<ApiResponse<Page<CourseResponse>>> getMyCourses(
+            @PageableDefault(size = 20) Pageable pageable,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        Page<CourseResponse> response = courseService.getMyCourses(principal.id(), pageable);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    /**
      * 강의 상세 조회
      * GET /api/courses/{courseId}
      */
-    @GetMapping("/{courseId}")
+    @GetMapping("/{courseId:\\d+}")
     public ResponseEntity<ApiResponse<CourseDetailResponse>> getCourseDetail(
             @PathVariable @Positive Long courseId,
             @AuthenticationPrincipal UserPrincipal principal
@@ -74,7 +88,7 @@ public class CourseController {
      * 강의 수정
      * PUT /api/courses/{courseId}
      */
-    @PutMapping("/{courseId}")
+    @PutMapping("/{courseId:\\d+}")
     @PreAuthorize("hasAnyRole('DESIGNER', 'OPERATOR', 'TENANT_ADMIN')")
     public ResponseEntity<ApiResponse<CourseResponse>> updateCourse(
             @PathVariable @Positive Long courseId,
@@ -89,7 +103,7 @@ public class CourseController {
      * 강의 삭제
      * DELETE /api/courses/{courseId}
      */
-    @DeleteMapping("/{courseId}")
+    @DeleteMapping("/{courseId:\\d+}")
     @PreAuthorize("hasAnyRole('DESIGNER', 'OPERATOR', 'TENANT_ADMIN')")
     public ResponseEntity<Void> deleteCourse(
             @PathVariable @Positive Long courseId,

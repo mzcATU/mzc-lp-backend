@@ -1,0 +1,54 @@
+package com.mzc.lp.domain.cart.repository;
+
+import com.mzc.lp.domain.cart.entity.CartItem;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import java.util.List;
+import java.util.Optional;
+
+public interface CartRepository extends JpaRepository<CartItem, Long> {
+
+    /**
+     * 사용자의 장바구니 목록 조회 (최신순)
+     */
+    @Query("SELECT c FROM CartItem c WHERE c.userId = :userId ORDER BY c.addedAt DESC")
+    List<CartItem> findByUserIdOrderByAddedAtDesc(@Param("userId") Long userId);
+
+    /**
+     * 특정 사용자의 특정 강의 장바구니 항목 조회
+     */
+    Optional<CartItem> findByUserIdAndCourseId(Long userId, Long courseId);
+
+    /**
+     * 특정 사용자의 특정 강의 장바구니 존재 여부
+     */
+    boolean existsByUserIdAndCourseId(Long userId, Long courseId);
+
+    /**
+     * 장바구니 항목 삭제
+     */
+    @Modifying
+    @Query("DELETE FROM CartItem c WHERE c.userId = :userId AND c.courseId = :courseId")
+    void deleteByUserIdAndCourseId(@Param("userId") Long userId, @Param("courseId") Long courseId);
+
+    /**
+     * 여러 강의 장바구니 항목 일괄 삭제
+     */
+    @Modifying
+    @Query("DELETE FROM CartItem c WHERE c.userId = :userId AND c.courseId IN :courseIds")
+    void deleteByUserIdAndCourseIdIn(@Param("userId") Long userId, @Param("courseIds") List<Long> courseIds);
+
+    /**
+     * 사용자의 장바구니 개수 조회
+     */
+    long countByUserId(Long userId);
+
+    /**
+     * 특정 강의들의 장바구니 존재 여부 조회
+     */
+    @Query("SELECT c.courseId FROM CartItem c WHERE c.userId = :userId AND c.courseId IN :courseIds")
+    List<Long> findCourseIdsByUserIdAndCourseIdIn(@Param("userId") Long userId, @Param("courseIds") List<Long> courseIds);
+}
