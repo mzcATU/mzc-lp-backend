@@ -10,6 +10,7 @@ import com.mzc.lp.domain.content.dto.response.ContentListResponse;
 import com.mzc.lp.domain.content.dto.response.ContentResponse;
 import com.mzc.lp.domain.content.entity.Content;
 import com.mzc.lp.domain.content.event.ContentCreatedEvent;
+import com.mzc.lp.domain.content.exception.ContentDownloadNotAllowedException;
 import com.mzc.lp.domain.content.exception.ContentInUseException;
 import com.mzc.lp.domain.content.exception.ContentNotFoundException;
 import com.mzc.lp.domain.content.exception.FileStorageException;
@@ -38,7 +39,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 @Slf4j
 @Service
@@ -59,21 +59,11 @@ public class ContentServiceImpl implements ContentService {
     @Value("${file.upload-dir:./uploads}")
     private String uploadDir;
 
-    private static final Set<String> SUPPORTED_YOUTUBE_PATTERNS = Set.of(
-            "youtube.com/watch", "youtu.be/", "youtube.com/embed"
-    );
-    private static final Set<String> SUPPORTED_VIMEO_PATTERNS = Set.of(
-            "vimeo.com/"
-    );
-    private static final Set<String> SUPPORTED_GOOGLE_FORM_PATTERNS = Set.of(
-            "docs.google.com/forms"
-    );
-
     @Override
     @Transactional
     public ContentResponse uploadFile(MultipartFile file, Long folderId, String displayName,
                                        String description, String tags, MultipartFile thumbnail,
-                                       Long tenantId, Long userId) {
+                                       Boolean downloadable, Long tenantId, Long userId) {
         String uploadedFileName = StringUtils.cleanPath(file.getOriginalFilename());
         String extension = fileStorageService.getFileExtension(uploadedFileName);
 
@@ -98,6 +88,11 @@ public class ContentServiceImpl implements ContentService {
 
         // 설명, 태그 설정
         content.updateDescriptionAndTags(description, tags);
+
+        // 다운로드 허용 설정
+        if (downloadable != null) {
+            content.updateDownloadable(downloadable);
+        }
 
         // 커스텀 썸네일이 있으면 저장
         if (thumbnail != null && !thumbnail.isEmpty()) {
@@ -180,6 +175,9 @@ public class ContentServiceImpl implements ContentService {
 
         // 메타데이터 변경
         content.updateMetadata(request.originalFileName(), request.duration(), request.resolution());
+        if (request.downloadable() != null) {
+            content.updateDownloadable(request.downloadable());
+        }
         content.incrementVersion();
 
         // 버전 기록 (변경 후 상태 저장)
@@ -273,6 +271,11 @@ public class ContentServiceImpl implements ContentService {
     public ContentDownloadInfo getFileForDownload(Long contentId, Long tenantId) {
         Content content = findContentOrThrow(contentId, tenantId);
 
+        // 다운로드 허용 여부 체크
+        if (content.getDownloadable() != null && !content.getDownloadable()) {
+            throw new ContentDownloadNotAllowedException(contentId);
+        }
+
         if (content.getFilePath() == null) {
             throw new FileStorageException(ErrorCode.FILE_NOT_FOUND,
                     "No file associated with content: " + contentId);
@@ -308,13 +311,10 @@ public class ContentServiceImpl implements ContentService {
             throw new FileStorageException(ErrorCode.INVALID_EXTERNAL_URL, "URL is required");
         }
 
-        boolean isSupported = SUPPORTED_YOUTUBE_PATTERNS.stream().anyMatch(url::contains)
-                || SUPPORTED_VIMEO_PATTERNS.stream().anyMatch(url::contains)
-                || SUPPORTED_GOOGLE_FORM_PATTERNS.stream().anyMatch(url::contains);
-
-        if (!isSupported) {
+        // URL 형식 검증 (http:// 또는 https://로 시작해야 함)
+        if (!url.startsWith("http://") && !url.startsWith("https://")) {
             throw new FileStorageException(ErrorCode.INVALID_EXTERNAL_URL,
-                    "Only YouTube, Vimeo, and Google Form URLs are supported");
+                    "URL must start with http:// or https://");
         }
     }
 

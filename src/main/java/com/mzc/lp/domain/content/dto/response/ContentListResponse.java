@@ -19,6 +19,7 @@ public record ContentListResponse(
         String customThumbnailPath,
         String description,
         String tags,
+        Boolean downloadable,
         Integer currentVersion,
         Boolean inCourse,
         LocalDateTime createdAt
@@ -40,6 +41,7 @@ public record ContentListResponse(
                 content.getCustomThumbnailPath(),
                 content.getDescription(),
                 content.getTags(),
+                content.getDownloadable(),
                 content.getCurrentVersion(),
                 inCourse,
                 content.getCreatedAt() != null

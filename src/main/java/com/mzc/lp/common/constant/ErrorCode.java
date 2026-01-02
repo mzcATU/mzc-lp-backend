@@ -48,6 +48,7 @@ public enum ErrorCode {
     UNAUTHORIZED_CONTENT_ACCESS(HttpStatus.FORBIDDEN, "CT008", "Not authorized to access this content"),
     CONTENT_VERSION_NOT_FOUND(HttpStatus.NOT_FOUND, "CT009", "Content version not found"),
     CONTENT_IN_USE(HttpStatus.CONFLICT, "CT010", "Content is in use by learning objects and cannot be modified"),
+    CONTENT_DOWNLOAD_NOT_ALLOWED(HttpStatus.FORBIDDEN, "CT011", "Download is not allowed for this content"),
 
     // Learning Object (LO)
     LEARNING_OBJECT_NOT_FOUND(HttpStatus.NOT_FOUND, "LO001", "Learning object not found"),

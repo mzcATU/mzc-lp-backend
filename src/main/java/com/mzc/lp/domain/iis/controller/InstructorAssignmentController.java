@@ -4,11 +4,13 @@ import com.mzc.lp.common.dto.ApiResponse;
 import com.mzc.lp.common.security.UserPrincipal;
 import com.mzc.lp.domain.iis.constant.AssignmentAction;
 import com.mzc.lp.domain.iis.constant.AssignmentStatus;
+import com.mzc.lp.domain.iis.constant.InstructorRole;
 import com.mzc.lp.domain.iis.dto.request.CancelAssignmentRequest;
 import com.mzc.lp.domain.iis.dto.request.InstructorAvailabilityCheckRequest;
 import com.mzc.lp.domain.iis.dto.request.ReplaceInstructorRequest;
 import com.mzc.lp.domain.iis.dto.request.UpdateRoleRequest;
 import com.mzc.lp.domain.iis.dto.response.AssignmentHistoryResponse;
+import com.mzc.lp.domain.iis.dto.response.InstructorAssignmentListResponse;
 import com.mzc.lp.domain.iis.dto.response.InstructorAssignmentResponse;
 import com.mzc.lp.domain.iis.dto.response.InstructorAvailabilityResponse;
 import com.mzc.lp.domain.iis.dto.response.InstructorDetailStatResponse;
@@ -37,6 +39,22 @@ import java.util.List;
 public class InstructorAssignmentController {
 
     private final InstructorAssignmentService assignmentService;
+
+    // ========== 배정 목록 API ==========
+
+    @GetMapping("/api/instructor-assignments")
+    @PreAuthorize("hasAnyRole('OPERATOR', 'TENANT_ADMIN')")
+    public ResponseEntity<ApiResponse<Page<InstructorAssignmentListResponse>>> getAssignments(
+            @RequestParam(required = false) Long instructorId,
+            @RequestParam(required = false) Long courseTimeId,
+            @RequestParam(required = false) InstructorRole role,
+            @RequestParam(required = false) AssignmentStatus status,
+            @PageableDefault(size = 20) Pageable pageable
+    ) {
+        Page<InstructorAssignmentListResponse> response = assignmentService.getAssignments(
+                instructorId, courseTimeId, role, status, pageable);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
 
     // ========== 배정 단건 API ==========
     // 차수 기준 API는 CourseTimeInstructorController에서 처리 (차수 상태 검증 포함)

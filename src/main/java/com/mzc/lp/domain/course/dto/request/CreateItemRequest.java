@@ -11,8 +11,8 @@ public record CreateItemRequest(
 
         Long parentId,
 
-        @NotNull(message = "학습 객체 ID는 필수입니다")
-        Long learningObjectId,
+        @NotNull(message = "콘텐츠 ID는 필수입니다")
+        Long contentId,
 
         @Size(max = 255, message = "표시 이름은 255자 이하여야 합니다")
         String displayName,

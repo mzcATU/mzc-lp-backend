@@ -15,7 +15,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
-public interface InstructorAssignmentRepository extends JpaRepository<InstructorAssignment, Long> {
+public interface InstructorAssignmentRepository extends JpaRepository<InstructorAssignment, Long>, InstructorAssignmentRepositoryCustom {
 
     Optional<InstructorAssignment> findByIdAndTenantId(Long id, Long tenantId);
 

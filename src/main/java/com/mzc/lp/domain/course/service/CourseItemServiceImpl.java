@@ -16,6 +16,11 @@ import com.mzc.lp.domain.course.exception.InvalidParentException;
 import com.mzc.lp.domain.course.exception.MaxDepthExceededException;
 import com.mzc.lp.domain.course.repository.CourseItemRepository;
 import com.mzc.lp.domain.course.repository.CourseRepository;
+import com.mzc.lp.domain.content.entity.Content;
+import com.mzc.lp.domain.content.repository.ContentRepository;
+import com.mzc.lp.domain.content.exception.ContentNotFoundException;
+import com.mzc.lp.domain.learning.entity.LearningObject;
+import com.mzc.lp.domain.learning.repository.LearningObjectRepository;
 import com.mzc.lp.common.context.TenantContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,29 +37,34 @@ public class CourseItemServiceImpl implements CourseItemService {
 
     private final CourseRepository courseRepository;
     private final CourseItemRepository courseItemRepository;
+    private final ContentRepository contentRepository;
+    private final LearningObjectRepository learningObjectRepository;
 
     @Override
     @Transactional
     public CourseItemResponse createItem(Long courseId, CreateItemRequest request) {
-        log.info("Creating item: courseId={}, itemName={}", courseId, request.itemName());
+        log.info("Creating item: courseId={}, itemName={}, contentId={}", courseId, request.itemName(), request.contentId());
 
         Course course = findCourseById(courseId);
         CourseItem parent = findParentIfExists(request.parentId());
 
         validateParentBelongsToCourse(parent, courseId);
 
+        // contentId로 LearningObject 조회 또는 생성
+        Long learningObjectId = getOrCreateLearningObject(request.contentId(), request.itemName());
+
         try {
             CourseItem item = CourseItem.createItem(
                     course,
                     request.itemName(),
                     parent,
-                    request.learningObjectId(),
+                    learningObjectId,
                     request.displayName(),
                     request.description()
             );
 
             CourseItem savedItem = courseItemRepository.save(item);
-            log.info("Item created: id={}, name={}", savedItem.getId(), savedItem.getItemName());
+            log.info("Item created: id={}, name={}, loId={}", savedItem.getId(), savedItem.getItemName(), learningObjectId);
 
             return CourseItemResponse.from(savedItem);
         } catch (IllegalArgumentException e) {
@@ -63,6 +73,28 @@ public class CourseItemServiceImpl implements CourseItemService {
             }
             throw e;
         }
+    }
+
+    /**
+     * contentId로 기존 LearningObject 조회, 없으면 새로 생성
+     */
+    private Long getOrCreateLearningObject(Long contentId, String name) {
+        Long tenantId = TenantContext.getCurrentTenantId();
+
+        // 해당 Content에 대한 LearningObject가 이미 있는지 확인
+        return learningObjectRepository.findByContentIdAndTenantId(contentId, tenantId)
+                .map(LearningObject::getId)
+                .orElseGet(() -> {
+                    // Content 조회
+                    Content content = contentRepository.findByIdAndTenantId(contentId, tenantId)
+                            .orElseThrow(() -> new ContentNotFoundException(contentId));
+
+                    // LearningObject 생성
+                    LearningObject lo = LearningObject.create(name, content);
+                    LearningObject savedLo = learningObjectRepository.save(lo);
+                    log.info("LearningObject auto-created: id={}, contentId={}", savedLo.getId(), contentId);
+                    return savedLo.getId();
+                });
     }
 
     @Override
