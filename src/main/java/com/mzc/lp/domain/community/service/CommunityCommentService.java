@@ -17,6 +17,7 @@ import com.mzc.lp.domain.user.entity.User;
 import com.mzc.lp.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -179,8 +180,15 @@ public class CommunityCommentService {
             throw new AlreadyLikedException("Already liked comment: " + commentId);
         }
 
-        CommunityCommentLike like = CommunityCommentLike.create(commentId, userId);
-        commentLikeRepository.save(like);
+        try {
+            CommunityCommentLike like = CommunityCommentLike.create(commentId, userId);
+            commentLikeRepository.save(like);
+            commentLikeRepository.flush(); // 즉시 DB에 반영하여 제약조건 위반 확인
+        } catch (DataIntegrityViolationException e) {
+            // 동시성 이슈로 인한 중복 좋아요 시도
+            log.debug("Concurrent comment like attempt detected for comment {} by user {}", commentId, userId);
+            throw new AlreadyLikedException("Already liked comment: " + commentId);
+        }
     }
 
     @Transactional
