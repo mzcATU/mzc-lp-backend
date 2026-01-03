@@ -5,7 +5,9 @@ import com.mzc.lp.domain.tenant.dto.request.UpdateDesignSettingsRequest;
 import com.mzc.lp.domain.tenant.dto.request.UpdateLayoutSettingsRequest;
 import com.mzc.lp.domain.tenant.dto.request.UpdateTenantSettingsRequest;
 import com.mzc.lp.domain.tenant.dto.response.NavigationItemResponse;
+import com.mzc.lp.domain.tenant.dto.response.PublicBrandingResponse;
 import com.mzc.lp.domain.tenant.dto.response.TenantSettingsResponse;
+import com.mzc.lp.domain.tenant.constant.TenantStatus;
 import com.mzc.lp.domain.tenant.entity.NavigationItem;
 import com.mzc.lp.domain.tenant.entity.Tenant;
 import com.mzc.lp.domain.tenant.entity.TenantSettings;
@@ -254,6 +256,33 @@ public class TenantSettingsServiceImpl implements TenantSettingsService {
         return saved.stream()
                 .map(NavigationItemResponse::from)
                 .toList();
+    }
+
+    @Override
+    public PublicBrandingResponse getPublicBranding(String identifier, String type) {
+        final Tenant tenant;
+
+        if ("subdomain".equals(type)) {
+            tenant = tenantRepository.findBySubdomain(identifier)
+                    .filter(t -> t.getStatus() == TenantStatus.ACTIVE)
+                    .orElse(null);
+        } else if ("customDomain".equals(type)) {
+            tenant = tenantRepository.findByCustomDomain(identifier)
+                    .filter(t -> t.getStatus() == TenantStatus.ACTIVE)
+                    .orElse(null);
+        } else {
+            tenant = null;
+        }
+
+        if (tenant == null) {
+            return PublicBrandingResponse.defaultBranding();
+        }
+
+        TenantSettings settings = tenantSettingsRepository.findByTenantId(tenant.getId())
+                .orElseGet(() -> TenantSettings.createDefault(tenant));
+
+        TenantSettingsResponse settingsResponse = TenantSettingsResponse.from(settings);
+        return PublicBrandingResponse.from(settingsResponse, tenant.getName());
     }
 
     private TenantSettings initializeAndGet(Long tenantId) {
