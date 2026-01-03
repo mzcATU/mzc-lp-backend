@@ -129,7 +129,10 @@ public enum ErrorCode {
     COMMUNITY_COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "CMT002", "Community comment not found"),
     COMMUNITY_ALREADY_LIKED(HttpStatus.CONFLICT, "CMT003", "Already liked"),
     COMMUNITY_NOT_POST_AUTHOR(HttpStatus.FORBIDDEN, "CMT004", "Not authorized to modify this post"),
-    COMMUNITY_NOT_COMMENT_AUTHOR(HttpStatus.FORBIDDEN, "CMT005", "Not authorized to modify this comment");
+    COMMUNITY_NOT_COMMENT_AUTHOR(HttpStatus.FORBIDDEN, "CMT005", "Not authorized to modify this comment"),
+
+    // Notification (NF)
+    NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "NF001", "Notification not found");
 
     private final HttpStatus status;
     private final String code;
