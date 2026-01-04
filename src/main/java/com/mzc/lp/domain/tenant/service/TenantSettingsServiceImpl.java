@@ -32,6 +32,7 @@ public class TenantSettingsServiceImpl implements TenantSettingsService {
     private final NavigationItemRepository navigationItemRepository;
 
     @Override
+    @Transactional
     public TenantSettingsResponse getSettings(Long tenantId) {
         TenantSettings settings = tenantSettingsRepository.findByTenantId(tenantId)
                 .orElseGet(() -> initializeAndGet(tenantId));
@@ -142,6 +143,7 @@ public class TenantSettingsServiceImpl implements TenantSettingsService {
     // ============================================
 
     @Override
+    @Transactional
     public List<NavigationItemResponse> getNavigationItems(Long tenantId) {
         // 네비게이션 항목이 없으면 기본 항목 초기화
         if (!navigationItemRepository.existsByTenantId(tenantId)) {

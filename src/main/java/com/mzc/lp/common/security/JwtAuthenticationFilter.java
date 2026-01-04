@@ -1,7 +1,9 @@
 package com.mzc.lp.common.security;
 
+import com.mzc.lp.domain.user.entity.User;
 import com.mzc.lp.domain.user.entity.UserCourseRole;
 import com.mzc.lp.domain.user.repository.UserCourseRoleRepository;
+import com.mzc.lp.domain.user.repository.UserRepository;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -33,6 +35,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtProvider jwtProvider;
     private final UserCourseRoleRepository userCourseRoleRepository;
+    private final UserRepository userRepository;
 
     @Override
     protected void doFilterInternal(
@@ -61,13 +64,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 String email = jwtProvider.getEmail(token);
                 String role = jwtProvider.getRole(token);
 
+                // tenantId는 토큰에서 가져오거나, 없으면 DB에서 조회
+                Long tenantId = jwtProvider.getTenantId(token);
+                if (tenantId == null) {
+                    // DB에서 조회
+                    tenantId = userRepository.findById(userId)
+                            .map(User::getTenantId)
+                            .orElse(null);
+                }
+
                 // DB에서 CourseRole 조회 (DESIGNER, OWNER, INSTRUCTOR)
                 Set<String> courseRoles = userCourseRoleRepository.findByUserId(userId)
                         .stream()
                         .map(ucr -> ucr.getRole().name())
                         .collect(Collectors.toSet());
 
-                UserPrincipal principal = new UserPrincipal(userId, email, role, courseRoles);
+                UserPrincipal principal = new UserPrincipal(userId, tenantId, email, role, courseRoles);
 
                 // 시스템 역할 + CourseRole 모두 authorities에 추가
                 List<SimpleGrantedAuthority> authorities = new ArrayList<>();
@@ -80,7 +92,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         new UsernamePasswordAuthenticationToken(principal, null, authorities);
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-                log.debug("Authenticated user: {}, courseRoles: {}", email, courseRoles);
+                log.debug("Authenticated user: {}, tenantId: {}, courseRoles: {}", email, tenantId, courseRoles);
             } else {
                 // 유효하지 않은 토큰 (만료 제외) - 401 반환
                 log.debug("Invalid token, returning 401");
