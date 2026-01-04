@@ -5,6 +5,7 @@ import com.mzc.lp.domain.tenant.dto.request.UpdateDesignSettingsRequest;
 import com.mzc.lp.domain.tenant.dto.request.UpdateLayoutSettingsRequest;
 import com.mzc.lp.domain.tenant.dto.request.UpdateTenantSettingsRequest;
 import com.mzc.lp.domain.tenant.dto.response.NavigationItemResponse;
+import com.mzc.lp.domain.tenant.dto.response.PublicBrandingResponse;
 import com.mzc.lp.domain.tenant.dto.response.TenantSettingsResponse;
 
 import java.util.List;
@@ -101,4 +102,16 @@ public interface TenantSettingsService {
      * @return 초기화된 항목 목록
      */
     List<NavigationItemResponse> initializeDefaultNavigationItems(Long tenantId);
+
+    // ============================================
+    // 공개 브랜딩 정보 (인증 불필요)
+    // ============================================
+
+    /**
+     * 공개 브랜딩 정보 조회 (인증 불필요)
+     * @param identifier subdomain 또는 customDomain
+     * @param type "subdomain" 또는 "customDomain"
+     * @return 공개 브랜딩 정보
+     */
+    PublicBrandingResponse getPublicBranding(String identifier, String type);
 }
