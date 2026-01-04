@@ -23,8 +23,10 @@ import com.mzc.lp.domain.ts.entity.CourseTime;
 import com.mzc.lp.domain.ts.exception.CourseTimeNotFoundException;
 import com.mzc.lp.domain.ts.repository.CourseTimeRepository;
 import com.mzc.lp.domain.ts.service.CourseTimeService;
+import com.mzc.lp.domain.certificate.event.EnrollmentCompletedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -43,6 +45,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     private final CourseTimeRepository courseTimeRepository;
     private final CourseTimeService courseTimeService;
     private final InstructorAssignmentRepository instructorAssignmentRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -255,6 +258,14 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
         enrollment.complete(request.score());
 
+        // 수료 이벤트 발행 (수료증 자동 발급)
+        eventPublisher.publishEvent(new EnrollmentCompletedEvent(
+                this,
+                enrollment.getId(),
+                enrollment.getUserId(),
+                enrollment.getCourseTimeId()
+        ));
+
         log.info("Enrollment completed: enrollmentId={}", enrollmentId);
 
         return EnrollmentDetailResponse.from(enrollment);
@@ -269,6 +280,16 @@ public class EnrollmentServiceImpl implements EnrollmentService {
                 .orElseThrow(() -> new EnrollmentNotFoundException(enrollmentId));
 
         enrollment.updateStatus(request.status());
+
+        // COMPLETED 상태로 변경 시 수료 이벤트 발행
+        if (request.status() == EnrollmentStatus.COMPLETED) {
+            eventPublisher.publishEvent(new EnrollmentCompletedEvent(
+                    this,
+                    enrollment.getId(),
+                    enrollment.getUserId(),
+                    enrollment.getCourseTimeId()
+            ));
+        }
 
         log.info("Enrollment status updated: enrollmentId={}, status={}", enrollmentId, request.status());
 
