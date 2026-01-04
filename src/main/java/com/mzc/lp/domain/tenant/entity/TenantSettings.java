@@ -5,6 +5,11 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * 테넌트 설정 엔티티
@@ -28,6 +33,9 @@ public class TenantSettings extends BaseTimeEntity {
     private String logoUrl;
 
     @Column(length = 500)
+    private String darkLogoUrl;
+
+    @Column(length = 500)
     private String faviconUrl;
 
     @Column(length = 7)
@@ -36,8 +44,37 @@ public class TenantSettings extends BaseTimeEntity {
     @Column(length = 7)
     private String secondaryColor;
 
+    @Column(length = 7)
+    private String accentColor;
+
     @Column(length = 100)
     private String fontFamily;
+
+    @Column(length = 100)
+    private String headingFont;
+
+    @Column(length = 100)
+    private String bodyFont;
+
+    // ============================================
+    // 레이아웃 설정 (JSON)
+    // ============================================
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "json")
+    private Map<String, Object> headerSettings = new HashMap<>();
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "json")
+    private Map<String, Object> sidebarSettings = new HashMap<>();
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "json")
+    private Map<String, Object> footerSettings = new HashMap<>();
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "json")
+    private Map<String, Object> contentSettings = new HashMap<>();
 
     // ============================================
     // 일반 설정
@@ -100,17 +137,61 @@ public class TenantSettings extends BaseTimeEntity {
         settings.tenant = tenant;
         settings.primaryColor = "#3B82F6";
         settings.secondaryColor = "#1E40AF";
+        settings.accentColor = "#10B981";
+        settings.headingFont = "Pretendard";
+        settings.bodyFont = "Pretendard";
+
+        // 기본 헤더 설정
+        settings.headerSettings = new HashMap<>();
+        settings.headerSettings.put("style", "fixed");
+        settings.headerSettings.put("showLogo", true);
+        settings.headerSettings.put("showSearch", true);
+        settings.headerSettings.put("showNotifications", true);
+
+        // 기본 사이드바 설정
+        settings.sidebarSettings = new HashMap<>();
+        settings.sidebarSettings.put("style", "collapsible");
+        settings.sidebarSettings.put("defaultCollapsed", false);
+        settings.sidebarSettings.put("showIcons", true);
+
+        // 기본 푸터 설정
+        settings.footerSettings = new HashMap<>();
+        settings.footerSettings.put("enabled", true);
+        settings.footerSettings.put("showLinks", true);
+        settings.footerSettings.put("showCopyright", true);
+
+        // 기본 콘텐츠 설정
+        settings.contentSettings = new HashMap<>();
+        settings.contentSettings.put("maxWidth", "full");
+        settings.contentSettings.put("padding", "normal");
+
         return settings;
     }
 
-    // 브랜딩 업데이트
-    public void updateBranding(String logoUrl, String faviconUrl,
-                               String primaryColor, String secondaryColor, String fontFamily) {
+    // 브랜딩 업데이트 (확장)
+    public void updateBranding(String logoUrl, String darkLogoUrl, String faviconUrl,
+                               String primaryColor, String secondaryColor, String accentColor,
+                               String fontFamily, String headingFont, String bodyFont) {
         this.logoUrl = logoUrl;
+        this.darkLogoUrl = darkLogoUrl;
         this.faviconUrl = faviconUrl;
         if (primaryColor != null) this.primaryColor = primaryColor;
         if (secondaryColor != null) this.secondaryColor = secondaryColor;
+        if (accentColor != null) this.accentColor = accentColor;
         this.fontFamily = fontFamily;
+        this.headingFont = headingFont;
+        this.bodyFont = bodyFont;
+    }
+
+    // 레이아웃 설정 업데이트
+    public void updateLayoutSettings(Map<String, Object> headerSettings,
+                                     Map<String, Object> sidebarSettings,
+                                     Map<String, Object> footerSettings,
+                                     Map<String, Object> contentSettings) {
+        if (headerSettings != null) this.headerSettings = headerSettings;
+        if (sidebarSettings != null) this.sidebarSettings = sidebarSettings;
+        if (footerSettings != null) this.footerSettings = footerSettings;
+        if (contentSettings != null) this.contentSettings = contentSettings;
     }
 
     // 일반 설정 업데이트
