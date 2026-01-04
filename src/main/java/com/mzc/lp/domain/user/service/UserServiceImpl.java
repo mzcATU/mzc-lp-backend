@@ -54,7 +54,8 @@ public class UserServiceImpl implements UserService {
         log.debug("Getting user info: userId={}", userId);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
-        return UserDetailResponse.from(user);
+        List<CourseRoleResponse> courseRoles = getCourseRolesWithProgramTitle(userId);
+        return UserDetailResponse.from(user, courseRoles);
     }
 
     @Override
@@ -68,7 +69,8 @@ public class UserServiceImpl implements UserService {
         String phone = request.phone() != null ? request.phone() : user.getPhone();
         String profileImageUrl = request.profileImageUrl() != null ? request.profileImageUrl() : user.getProfileImageUrl();
         user.updateProfile(name, phone, profileImageUrl);
-        return UserDetailResponse.from(user);
+        List<CourseRoleResponse> courseRoles = getCourseRolesWithProgramTitle(userId);
+        return UserDetailResponse.from(user, courseRoles);
     }
 
     @Override
@@ -130,7 +132,8 @@ public class UserServiceImpl implements UserService {
         log.debug("Getting user detail: userId={}", userId);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
-        return UserDetailResponse.from(user);
+        List<CourseRoleResponse> courseRoles = getCourseRolesWithProgramTitle(userId);
+        return UserDetailResponse.from(user, courseRoles);
     }
     @Override
     @Transactional
@@ -161,7 +164,8 @@ public class UserServiceImpl implements UserService {
         }
 
         log.info("User updated by admin: userId={}", userId);
-        return UserDetailResponse.from(user);
+        List<CourseRoleResponse> courseRoles = getCourseRolesWithProgramTitle(userId);
+        return UserDetailResponse.from(user, courseRoles);
     }
 
     @Override
@@ -284,5 +288,20 @@ public class UserServiceImpl implements UserService {
 
         userCourseRoleRepository.delete(courseRole);
         log.info("Course role revoked: userId={}, courseRoleId={}", userId, courseRoleId);
+    }
+
+    // ========== Private Helper Methods ==========
+
+    /**
+     * 사용자의 CourseRole 목록을 Program title과 함께 조회
+     */
+    private List<CourseRoleResponse> getCourseRolesWithProgramTitle(Long userId) {
+        return userCourseRoleRepository.findByUserIdWithProgramTitle(userId).stream()
+                .map(row -> {
+                    UserCourseRole ucr = (UserCourseRole) row[0];
+                    String programTitle = (String) row[1];
+                    return CourseRoleResponse.from(ucr, programTitle);
+                })
+                .toList();
     }
 }
