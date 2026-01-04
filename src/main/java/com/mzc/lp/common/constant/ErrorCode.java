@@ -132,7 +132,12 @@ public enum ErrorCode {
     COMMUNITY_NOT_COMMENT_AUTHOR(HttpStatus.FORBIDDEN, "CMT005", "Not authorized to modify this comment"),
 
     // Notification (NF)
-    NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "NF001", "Notification not found");
+    NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "NF001", "Notification not found"),
+
+    // Certificate (CERT)
+    CERTIFICATE_NOT_FOUND(HttpStatus.NOT_FOUND, "CERT001", "Certificate not found"),
+    CERTIFICATE_ALREADY_ISSUED(HttpStatus.CONFLICT, "CERT002", "Certificate already issued for this enrollment"),
+    CERTIFICATE_REVOKED(HttpStatus.BAD_REQUEST, "CERT003", "Certificate has been revoked");
 
     private final HttpStatus status;
     private final String code;

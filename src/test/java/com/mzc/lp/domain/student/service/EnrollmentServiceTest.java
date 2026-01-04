@@ -25,6 +25,7 @@ import com.mzc.lp.domain.ts.constant.EnrollmentMethod;
 import com.mzc.lp.domain.ts.entity.CourseTime;
 import com.mzc.lp.domain.ts.repository.CourseTimeRepository;
 import com.mzc.lp.domain.ts.service.CourseTimeService;
+import org.springframework.context.ApplicationEventPublisher;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -67,6 +68,9 @@ class EnrollmentServiceTest extends TenantTestSupport {
 
     @Mock
     private InstructorAssignmentRepository instructorAssignmentRepository;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     private static final Long TENANT_ID = 1L;
 
