@@ -3,12 +3,14 @@ package com.mzc.lp.domain.user.service;
 import com.mzc.lp.domain.user.constant.TenantRole;
 import com.mzc.lp.domain.user.constant.UserStatus;
 import com.mzc.lp.domain.user.dto.request.AssignCourseRoleRequest;
+import com.mzc.lp.domain.user.dto.request.BulkCreateUsersRequest;
 import com.mzc.lp.domain.user.dto.request.ChangePasswordRequest;
 import com.mzc.lp.domain.user.dto.request.ChangeRoleRequest;
 import com.mzc.lp.domain.user.dto.request.ChangeStatusRequest;
 import com.mzc.lp.domain.user.dto.request.UpdateProfileRequest;
 import com.mzc.lp.domain.user.dto.request.UpdateUserRequest;
 import com.mzc.lp.domain.user.dto.request.WithdrawRequest;
+import com.mzc.lp.domain.user.dto.response.BulkCreateUsersResponse;
 import com.mzc.lp.domain.user.dto.response.CourseRoleResponse;
 import com.mzc.lp.domain.user.dto.response.UserDetailResponse;
 import com.mzc.lp.domain.user.dto.response.UserListResponse;
@@ -56,4 +58,7 @@ public interface UserService {
     CourseRoleResponse assignCourseRole(Long userId, AssignCourseRoleRequest request);
 
     void revokeCourseRole(Long userId, Long courseRoleId);
+
+    // 단체 계정 생성 API (TENANT_ADMIN 권한)
+    BulkCreateUsersResponse bulkCreateUsers(Long tenantId, BulkCreateUsersRequest request);
 }

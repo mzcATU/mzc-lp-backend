@@ -5,12 +5,14 @@ import com.mzc.lp.common.security.UserPrincipal;
 import com.mzc.lp.domain.user.constant.TenantRole;
 import com.mzc.lp.domain.user.constant.UserStatus;
 import com.mzc.lp.domain.user.dto.request.AssignCourseRoleRequest;
+import com.mzc.lp.domain.user.dto.request.BulkCreateUsersRequest;
 import com.mzc.lp.domain.user.dto.request.ChangePasswordRequest;
 import com.mzc.lp.domain.user.dto.request.ChangeRoleRequest;
 import com.mzc.lp.domain.user.dto.request.ChangeStatusRequest;
 import com.mzc.lp.domain.user.dto.request.UpdateProfileRequest;
 import com.mzc.lp.domain.user.dto.request.UpdateUserRequest;
 import com.mzc.lp.domain.user.dto.request.WithdrawRequest;
+import com.mzc.lp.domain.user.dto.response.BulkCreateUsersResponse;
 import com.mzc.lp.domain.user.dto.response.CourseRoleResponse;
 import com.mzc.lp.domain.user.dto.response.UserDetailResponse;
 import com.mzc.lp.domain.user.dto.response.UserListResponse;
@@ -188,5 +190,17 @@ public class UserController {
     ) {
         userService.revokeCourseRole(userId, courseRoleId);
         return ResponseEntity.noContent().build();
+    }
+
+    // ========== 단체 계정 생성 API (TENANT_ADMIN 권한) ==========
+
+    @PostMapping("/bulk")
+    @PreAuthorize("hasRole('TENANT_ADMIN')")
+    public ResponseEntity<ApiResponse<BulkCreateUsersResponse>> bulkCreateUsers(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @Valid @RequestBody BulkCreateUsersRequest request
+    ) {
+        BulkCreateUsersResponse response = userService.bulkCreateUsers(principal.tenantId(), request);
+        return ResponseEntity.status(201).body(ApiResponse.success(response));
     }
 }

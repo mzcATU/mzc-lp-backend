@@ -16,6 +16,7 @@ public interface UserRepository extends JpaRepository<User, Long>, UserRepositor
     Optional<User> findByEmail(String email);
 
     boolean existsByEmail(String email);
+    boolean existsByTenantIdAndEmail(Long tenantId, String email);
 
     // ===== 통계 집계 쿼리 =====
 
