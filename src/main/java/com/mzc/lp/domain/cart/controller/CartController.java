@@ -39,7 +39,7 @@ public class CartController {
     }
 
     /**
-     * 장바구니에 강의 추가
+     * 장바구니에 차수 추가
      */
     @PostMapping("/items")
     @PreAuthorize("isAuthenticated()")
@@ -52,20 +52,20 @@ public class CartController {
     }
 
     /**
-     * 장바구니에서 강의 삭제
+     * 장바구니에서 차수 삭제
      */
-    @DeleteMapping("/items/{courseId}")
+    @DeleteMapping("/items/{courseTimeId}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> removeFromCart(
-            @PathVariable Long courseId,
+            @PathVariable Long courseTimeId,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        cartService.removeFromCart(principal.id(), courseId);
+        cartService.removeFromCart(principal.id(), courseTimeId);
         return ResponseEntity.noContent().build();
     }
 
     /**
-     * 장바구니에서 여러 강의 삭제 (선택 삭제)
+     * 장바구니에서 여러 차수 삭제 (선택 삭제)
      */
     @DeleteMapping("/items")
     @PreAuthorize("isAuthenticated()")
@@ -90,15 +90,15 @@ public class CartController {
     }
 
     /**
-     * 특정 강의 장바구니 여부 확인
+     * 특정 차수 장바구니 여부 확인
      */
-    @GetMapping("/items/{courseId}/check")
+    @GetMapping("/items/{courseTimeId}/check")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<Boolean>> checkCartStatus(
-            @PathVariable Long courseId,
+            @PathVariable Long courseTimeId,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        boolean isInCart = cartService.isInCart(principal.id(), courseId);
+        boolean isInCart = cartService.isInCart(principal.id(), courseTimeId);
         return ResponseEntity.ok(ApiResponse.success(isInCart));
     }
 }

@@ -44,13 +44,13 @@ public class WishlistController {
     /**
      * 찜 삭제
      */
-    @DeleteMapping("/courses/{courseId}")
+    @DeleteMapping("/course-times/{courseTimeId}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> removeFromWishlist(
-            @PathVariable Long courseId,
+            @PathVariable Long courseTimeId,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        wishlistService.removeFromWishlist(principal.id(), courseId);
+        wishlistService.removeFromWishlist(principal.id(), courseTimeId);
         return ResponseEntity.noContent().build();
     }
 
@@ -68,20 +68,20 @@ public class WishlistController {
     }
 
     /**
-     * 특정 강의 찜 여부 확인
+     * 특정 차수 찜 여부 확인
      */
-    @GetMapping("/courses/{courseId}/check")
+    @GetMapping("/course-times/{courseTimeId}/check")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<Boolean>> checkWishlistStatus(
-            @PathVariable Long courseId,
+            @PathVariable Long courseTimeId,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        boolean isInWishlist = wishlistService.isInWishlist(principal.id(), courseId);
+        boolean isInWishlist = wishlistService.isInWishlist(principal.id(), courseTimeId);
         return ResponseEntity.ok(ApiResponse.success(isInWishlist));
     }
 
     /**
-     * 여러 강의 찜 여부 일괄 확인
+     * 여러 차수 찜 여부 일괄 확인
      */
     @PostMapping("/check")
     @PreAuthorize("isAuthenticated()")
@@ -106,13 +106,13 @@ public class WishlistController {
     }
 
     /**
-     * 특정 강의의 찜 개수 조회 (공개)
+     * 특정 차수의 찜 개수 조회 (공개)
      */
-    @GetMapping("/courses/{courseId}/count")
-    public ResponseEntity<ApiResponse<WishlistCountResponse>> getCourseWishlistCount(
-            @PathVariable Long courseId
+    @GetMapping("/course-times/{courseTimeId}/count")
+    public ResponseEntity<ApiResponse<WishlistCountResponse>> getCourseTimeWishlistCount(
+            @PathVariable Long courseTimeId
     ) {
-        WishlistCountResponse response = wishlistService.getCourseWishlistCount(courseId);
+        WishlistCountResponse response = wishlistService.getCourseTimeWishlistCount(courseTimeId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 }

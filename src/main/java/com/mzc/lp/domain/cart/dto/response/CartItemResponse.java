@@ -1,31 +1,32 @@
 package com.mzc.lp.domain.cart.dto.response;
 
 import com.mzc.lp.domain.cart.entity.CartItem;
-import com.mzc.lp.domain.course.entity.Course;
+import com.mzc.lp.domain.program.entity.Program;
+import com.mzc.lp.domain.ts.entity.CourseTime;
 
 import java.time.Instant;
 
 public record CartItemResponse(
         Long cartItemId,
-        Long courseId,
-        String courseTitle,
-        String courseDescription,
+        Long courseTimeId,
+        String courseTimeTitle,
         String thumbnailUrl,
         String level,
-        String type,
         Integer estimatedHours,
+        Boolean isFree,
+        String price,
         Instant addedAt
 ) {
-    public static CartItemResponse from(CartItem cartItem, Course course) {
+    public static CartItemResponse from(CartItem cartItem, CourseTime courseTime, Program program) {
         return new CartItemResponse(
                 cartItem.getId(),
-                course.getId(),
-                course.getTitle(),
-                course.getDescription(),
-                course.getThumbnailUrl(),
-                course.getLevel() != null ? course.getLevel().name() : null,
-                course.getType() != null ? course.getType().name() : null,
-                course.getEstimatedHours(),
+                courseTime.getId(),
+                courseTime.getTitle(),
+                program != null ? program.getThumbnailUrl() : null,
+                program != null && program.getLevel() != null ? program.getLevel().name() : null,
+                program != null ? program.getEstimatedHours() : null,
+                courseTime.isFree(),
+                courseTime.getPrice() != null ? courseTime.getPrice().toString() : null,
                 cartItem.getAddedAt()
         );
     }

@@ -9,8 +9,8 @@ public class WishlistItemNotFoundException extends BusinessException {
         super(ErrorCode.WISHLIST_ITEM_NOT_FOUND);
     }
 
-    public WishlistItemNotFoundException(Long userId, Long courseId) {
+    public WishlistItemNotFoundException(Long userId, Long courseTimeId) {
         super(ErrorCode.WISHLIST_ITEM_NOT_FOUND,
-              "Wishlist item not found for user " + userId + " and course " + courseId);
+              "Wishlist item not found for user " + userId + " and courseTime " + courseTimeId);
     }
 }

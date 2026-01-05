@@ -25,19 +25,19 @@ public interface WishlistRepository extends JpaRepository<WishlistItem, Long> {
     List<WishlistItem> findByUserId(Long userId);
 
     /**
-     * 특정 사용자의 특정 강의 찜 여부 확인
+     * 특정 사용자의 특정 차수 찜 여부 확인
      */
-    Optional<WishlistItem> findByUserIdAndCourseId(Long userId, Long courseId);
+    Optional<WishlistItem> findByUserIdAndCourseTimeId(Long userId, Long courseTimeId);
 
     /**
-     * 특정 사용자의 특정 강의 찜 존재 여부
+     * 특정 사용자의 특정 차수 찜 존재 여부
      */
-    boolean existsByUserIdAndCourseId(Long userId, Long courseId);
+    boolean existsByUserIdAndCourseTimeId(Long userId, Long courseTimeId);
 
     /**
-     * 특정 사용자의 특정 강의 찜 삭제
+     * 특정 사용자의 특정 차수 찜 삭제
      */
-    void deleteByUserIdAndCourseId(Long userId, Long courseId);
+    void deleteByUserIdAndCourseTimeId(Long userId, Long courseTimeId);
 
     /**
      * 사용자의 찜 개수 조회
@@ -45,13 +45,13 @@ public interface WishlistRepository extends JpaRepository<WishlistItem, Long> {
     long countByUserId(Long userId);
 
     /**
-     * 특정 강의의 찜 개수 조회
+     * 특정 차수의 찜 개수 조회
      */
-    long countByCourseId(Long courseId);
+    long countByCourseTimeId(Long courseTimeId);
 
     /**
-     * 사용자의 여러 강의 찜 여부 일괄 확인
+     * 사용자의 여러 차수 찜 여부 일괄 확인
      */
-    @Query("SELECT w.courseId FROM WishlistItem w WHERE w.userId = :userId AND w.courseId IN :courseIds")
-    List<Long> findWishlistedCourseIds(@Param("userId") Long userId, @Param("courseIds") List<Long> courseIds);
+    @Query("SELECT w.courseTimeId FROM WishlistItem w WHERE w.userId = :userId AND w.courseTimeId IN :courseTimeIds")
+    List<Long> findWishlistedCourseTimeIds(@Param("userId") Long userId, @Param("courseTimeIds") List<Long> courseTimeIds);
 }

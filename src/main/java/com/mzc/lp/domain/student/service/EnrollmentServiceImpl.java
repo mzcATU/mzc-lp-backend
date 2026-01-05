@@ -2,10 +2,12 @@ package com.mzc.lp.domain.student.service;
 
 import com.mzc.lp.common.context.TenantContext;
 import com.mzc.lp.domain.student.constant.EnrollmentStatus;
+import com.mzc.lp.domain.student.dto.request.BulkEnrollmentRequest;
 import com.mzc.lp.domain.student.dto.request.CompleteEnrollmentRequest;
 import com.mzc.lp.domain.student.dto.request.ForceEnrollRequest;
 import com.mzc.lp.domain.student.dto.request.UpdateEnrollmentStatusRequest;
 import com.mzc.lp.domain.student.dto.request.UpdateProgressRequest;
+import com.mzc.lp.domain.student.dto.response.BulkEnrollmentResponse;
 import com.mzc.lp.domain.student.dto.response.EnrollmentDetailResponse;
 import com.mzc.lp.domain.student.dto.response.EnrollmentResponse;
 import com.mzc.lp.domain.student.dto.response.ForceEnrollResultResponse;
@@ -344,6 +346,70 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         enrollment.drop();
 
         log.info("Enrollment cancelled: enrollmentId={}", enrollmentId);
+    }
+
+    @Override
+    @Transactional
+    public BulkEnrollmentResponse bulkEnroll(BulkEnrollmentRequest request, Long userId) {
+        log.info("Bulk enrolling user: userId={}, courseTimeCount={}", userId, request.courseTimeIds().size());
+
+        Long tenantId = TenantContext.getCurrentTenantId();
+        List<BulkEnrollmentResponse.EnrollmentResult> results = new ArrayList<>();
+
+        for (Long courseTimeId : request.courseTimeIds()) {
+            try {
+                // 각 차수에 대해 개별적으로 수강신청 처리
+                CourseTime courseTime = courseTimeRepository.findByIdWithLock(courseTimeId)
+                        .orElseThrow(() -> new CourseTimeNotFoundException(courseTimeId));
+
+                // 테넌트 검증
+                if (!courseTime.getTenantId().equals(tenantId)) {
+                    results.add(BulkEnrollmentResponse.EnrollmentResult.failure(courseTimeId, "차수를 찾을 수 없습니다"));
+                    continue;
+                }
+
+                // 수강 신청 가능 여부 체크
+                if (!courseTime.canEnroll()) {
+                    results.add(BulkEnrollmentResponse.EnrollmentResult.failure(courseTimeId, "수강신청 기간이 아닙니다"));
+                    continue;
+                }
+
+                // 중복 수강 체크
+                if (enrollmentRepository.existsByUserIdAndCourseTimeIdAndTenantId(userId, courseTimeId, tenantId)) {
+                    results.add(BulkEnrollmentResponse.EnrollmentResult.failure(courseTimeId, "이미 수강 중입니다"));
+                    continue;
+                }
+
+                // 정원 체크
+                if (!courseTime.hasUnlimitedCapacity() && !courseTime.hasAvailableSeats()) {
+                    results.add(BulkEnrollmentResponse.EnrollmentResult.failure(courseTimeId, "정원이 마감되었습니다"));
+                    continue;
+                }
+
+                // 정원 증가
+                courseTime.incrementEnrollment();
+
+                // 수강 생성
+                Enrollment enrollment = Enrollment.createVoluntary(userId, courseTimeId);
+                Enrollment savedEnrollment = enrollmentRepository.save(enrollment);
+
+                results.add(BulkEnrollmentResponse.EnrollmentResult.success(courseTimeId, savedEnrollment.getId()));
+
+                log.debug("Bulk enrollment success: userId={}, courseTimeId={}, enrollmentId={}",
+                        userId, courseTimeId, savedEnrollment.getId());
+            } catch (CourseTimeNotFoundException e) {
+                results.add(BulkEnrollmentResponse.EnrollmentResult.failure(courseTimeId, "차수를 찾을 수 없습니다"));
+            } catch (Exception e) {
+                log.warn("Bulk enrollment failed: userId={}, courseTimeId={}, error={}", userId, courseTimeId, e.getMessage());
+                results.add(BulkEnrollmentResponse.EnrollmentResult.failure(courseTimeId, e.getMessage()));
+            }
+        }
+
+        BulkEnrollmentResponse response = BulkEnrollmentResponse.of(results);
+        log.info("Bulk enrollment completed: userId={}, successCount={}, failureCount={}",
+                userId, response.getSuccessCount(), response.getFailureCount());
+
+        return response;
     }
 
     // ========== Private Helper Methods ==========
