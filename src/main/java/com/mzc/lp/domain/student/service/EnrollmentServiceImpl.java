@@ -24,6 +24,8 @@ import com.mzc.lp.domain.ts.exception.CourseTimeNotFoundException;
 import com.mzc.lp.domain.ts.repository.CourseTimeRepository;
 import com.mzc.lp.domain.ts.service.CourseTimeService;
 import com.mzc.lp.domain.certificate.event.EnrollmentCompletedEvent;
+import com.mzc.lp.domain.user.entity.User;
+import com.mzc.lp.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -34,6 +36,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -46,6 +51,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     private final CourseTimeService courseTimeService;
     private final InstructorAssignmentRepository instructorAssignmentRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final UserRepository userRepository;
 
     @Override
     @Transactional
@@ -159,13 +165,14 @@ public class EnrollmentServiceImpl implements EnrollmentService {
             validateCourseTimeAccess(courseTimeId, userId, tenantId);
         }
 
+        Page<Enrollment> enrollments;
         if (status != null) {
-            return enrollmentRepository.findByCourseTimeIdAndStatusAndTenantId(courseTimeId, status, tenantId, pageable)
-                    .map(EnrollmentResponse::from);
+            enrollments = enrollmentRepository.findByCourseTimeIdAndStatusAndTenantId(courseTimeId, status, tenantId, pageable);
+        } else {
+            enrollments = enrollmentRepository.findByCourseTimeIdAndTenantId(courseTimeId, tenantId, pageable);
         }
 
-        return enrollmentRepository.findByCourseTimeIdAndTenantId(courseTimeId, tenantId, pageable)
-                .map(EnrollmentResponse::from);
+        return mapEnrollmentsWithUserInfo(enrollments);
     }
 
     /**
@@ -209,13 +216,14 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
         Long tenantId = TenantContext.getCurrentTenantId();
 
+        Page<Enrollment> enrollments;
         if (status != null) {
-            return enrollmentRepository.findByUserIdAndStatusAndTenantId(userId, status, tenantId, pageable)
-                    .map(EnrollmentResponse::from);
+            enrollments = enrollmentRepository.findByUserIdAndStatusAndTenantId(userId, status, tenantId, pageable);
+        } else {
+            enrollments = enrollmentRepository.findByUserIdAndTenantId(userId, tenantId, pageable);
         }
 
-        return enrollmentRepository.findByUserIdAndTenantId(userId, tenantId, pageable)
-                .map(EnrollmentResponse::from);
+        return mapEnrollmentsWithUserInfo(enrollments);
     }
 
     @Override
@@ -321,5 +329,36 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         enrollment.drop();
 
         log.info("Enrollment cancelled: enrollmentId={}", enrollmentId);
+    }
+
+    // ========== Private Helper Methods ==========
+
+    /**
+     * Enrollment 목록에 사용자 정보(이름, 이메일)를 포함하여 EnrollmentResponse로 변환
+     * N+1 문제 방지를 위해 배치 조회 사용
+     */
+    private Page<EnrollmentResponse> mapEnrollmentsWithUserInfo(Page<Enrollment> enrollments) {
+        if (enrollments.isEmpty()) {
+            return enrollments.map(EnrollmentResponse::from);
+        }
+
+        // 사용자 ID 목록 추출
+        List<Long> userIds = enrollments.getContent().stream()
+                .map(Enrollment::getUserId)
+                .distinct()
+                .toList();
+
+        // 배치 조회로 사용자 정보 가져오기
+        Map<Long, User> userMap = userRepository.findAllById(userIds).stream()
+                .collect(Collectors.toMap(User::getId, Function.identity()));
+
+        // Enrollment에 사용자 정보 매핑
+        return enrollments.map(enrollment -> {
+            User user = userMap.get(enrollment.getUserId());
+            if (user != null) {
+                return EnrollmentResponse.from(enrollment, user.getName(), user.getEmail());
+            }
+            return EnrollmentResponse.from(enrollment);
+        });
     }
 }

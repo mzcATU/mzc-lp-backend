@@ -58,7 +58,8 @@ public class UserServiceImpl implements UserService {
         log.debug("Getting user info: userId={}", userId);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
-        return UserDetailResponse.from(user);
+        List<CourseRoleResponse> courseRoles = getCourseRolesWithProgramTitle(userId);
+        return UserDetailResponse.from(user, courseRoles);
     }
 
     @Override
@@ -72,7 +73,8 @@ public class UserServiceImpl implements UserService {
         String phone = request.phone() != null ? request.phone() : user.getPhone();
         String profileImageUrl = request.profileImageUrl() != null ? request.profileImageUrl() : user.getProfileImageUrl();
         user.updateProfile(name, phone, profileImageUrl);
-        return UserDetailResponse.from(user);
+        List<CourseRoleResponse> courseRoles = getCourseRolesWithProgramTitle(userId);
+        return UserDetailResponse.from(user, courseRoles);
     }
 
     @Override
@@ -134,7 +136,8 @@ public class UserServiceImpl implements UserService {
         log.debug("Getting user detail: userId={}", userId);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
-        return UserDetailResponse.from(user);
+        List<CourseRoleResponse> courseRoles = getCourseRolesWithProgramTitle(userId);
+        return UserDetailResponse.from(user, courseRoles);
     }
     @Override
     @Transactional
@@ -165,7 +168,8 @@ public class UserServiceImpl implements UserService {
         }
 
         log.info("User updated by admin: userId={}", userId);
-        return UserDetailResponse.from(user);
+        List<CourseRoleResponse> courseRoles = getCourseRolesWithProgramTitle(userId);
+        return UserDetailResponse.from(user, courseRoles);
     }
 
     @Override

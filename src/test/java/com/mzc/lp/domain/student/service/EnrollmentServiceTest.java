@@ -25,6 +25,8 @@ import com.mzc.lp.domain.ts.constant.EnrollmentMethod;
 import com.mzc.lp.domain.ts.entity.CourseTime;
 import com.mzc.lp.domain.ts.repository.CourseTimeRepository;
 import com.mzc.lp.domain.ts.service.CourseTimeService;
+import com.mzc.lp.domain.user.entity.User;
+import com.mzc.lp.domain.user.repository.UserRepository;
 import org.springframework.context.ApplicationEventPublisher;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -72,7 +74,16 @@ class EnrollmentServiceTest extends TenantTestSupport {
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
+    @Mock
+    private UserRepository userRepository;
+
     private static final Long TENANT_ID = 1L;
+
+    @org.junit.jupiter.api.BeforeEach
+    void setUp() {
+        // userRepository.findAllById() 기본 mock 설정 (빈 리스트 반환)
+        org.mockito.Mockito.lenient().when(userRepository.findAllById(any())).thenReturn(java.util.Collections.emptyList());
+    }
 
     private CourseTime createTestCourseTime(boolean canEnroll) {
         LocalDate enrollStart = LocalDate.now().minusDays(1);
