@@ -150,6 +150,12 @@ public enum ErrorCode {
     EMPLOYEE_NUMBER_DUPLICATE(HttpStatus.CONFLICT, "EMP002", "Employee number already exists"),
     EMPLOYEE_USER_ALREADY_EXISTS(HttpStatus.CONFLICT, "EMP003", "User is already registered as employee"),
 
+    // Banner (BNR)
+    BANNER_NOT_FOUND(HttpStatus.NOT_FOUND, "BNR001", "Banner not found"),
+
+    // Auto Enrollment Rule (AER)
+    AUTO_ENROLLMENT_RULE_NOT_FOUND(HttpStatus.NOT_FOUND, "AER001", "Auto enrollment rule not found"),
+
     // Member Pool (MP)
     MEMBER_POOL_NOT_FOUND(HttpStatus.NOT_FOUND, "MP001", "Member pool not found");
 
