@@ -8,5 +8,5 @@ import org.springframework.data.domain.Pageable;
 
 public interface UserRepositoryCustom {
 
-    Page<User> searchUsers(String keyword, TenantRole role, UserStatus status, Boolean hasCourseRole, Pageable pageable);
+    Page<User> searchUsers(Long tenantId, String keyword, TenantRole role, UserStatus status, Boolean hasCourseRole, Pageable pageable);
 }

@@ -3,13 +3,16 @@ package com.mzc.lp.domain.user.service;
 import com.mzc.lp.domain.user.constant.TenantRole;
 import com.mzc.lp.domain.user.constant.UserStatus;
 import com.mzc.lp.domain.user.constant.CourseRole;
+import com.mzc.lp.common.context.TenantContext;
 import com.mzc.lp.domain.user.dto.request.AssignCourseRoleRequest;
+import com.mzc.lp.domain.user.dto.request.BulkCreateUsersRequest;
 import com.mzc.lp.domain.user.dto.request.ChangePasswordRequest;
 import com.mzc.lp.domain.user.dto.request.ChangeRoleRequest;
 import com.mzc.lp.domain.user.dto.request.ChangeStatusRequest;
 import com.mzc.lp.domain.user.dto.request.UpdateProfileRequest;
 import com.mzc.lp.domain.user.dto.request.UpdateUserRequest;
 import com.mzc.lp.domain.user.dto.request.WithdrawRequest;
+import com.mzc.lp.domain.user.dto.response.BulkCreateUsersResponse;
 import com.mzc.lp.domain.user.dto.response.CourseRoleResponse;
 import com.mzc.lp.domain.user.dto.response.UserDetailResponse;
 import com.mzc.lp.domain.user.dto.response.UserListResponse;
@@ -27,6 +30,7 @@ import com.mzc.lp.domain.user.repository.UserCourseRoleRepository;
 import com.mzc.lp.domain.user.repository.UserRepository;
 import com.mzc.lp.common.service.FileStorageService;
 
+import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -121,9 +125,9 @@ public class UserServiceImpl implements UserService {
     // ========== 관리 API (OPERATOR 권한) ==========
 
     @Override
-    public Page<UserListResponse> getUsers(String keyword, TenantRole role, UserStatus status, Boolean hasCourseRole, Pageable pageable) {
-        log.debug("Searching users: keyword={}, role={}, status={}, hasCourseRole={}", keyword, role, status, hasCourseRole);
-        return userRepository.searchUsers(keyword, role, status, hasCourseRole, pageable)
+    public Page<UserListResponse> getUsers(Long tenantId, String keyword, TenantRole role, UserStatus status, Boolean hasCourseRole, Pageable pageable) {
+        log.debug("Searching users: tenantId={}, keyword={}, role={}, status={}, hasCourseRole={}", tenantId, keyword, role, status, hasCourseRole);
+        return userRepository.searchUsers(tenantId, keyword, role, status, hasCourseRole, pageable)
                 .map(UserListResponse::from);
     }
 
@@ -290,18 +294,52 @@ public class UserServiceImpl implements UserService {
         log.info("Course role revoked: userId={}, courseRoleId={}", userId, courseRoleId);
     }
 
-    // ========== Private Helper Methods ==========
+    // ========== 단체 계정 생성 API (TENANT_ADMIN 권한) ==========
 
-    /**
-     * 사용자의 CourseRole 목록을 Program title과 함께 조회
-     */
-    private List<CourseRoleResponse> getCourseRolesWithProgramTitle(Long userId) {
-        return userCourseRoleRepository.findByUserIdWithProgramTitle(userId).stream()
-                .map(row -> {
-                    UserCourseRole ucr = (UserCourseRole) row[0];
-                    String programTitle = (String) row[1];
-                    return CourseRoleResponse.from(ucr, programTitle);
-                })
-                .toList();
+    @Override
+    @Transactional
+    public BulkCreateUsersResponse bulkCreateUsers(Long tenantId, BulkCreateUsersRequest request) {
+        log.info("Bulk creating users: tenantId={}, prefix={}, count={}", tenantId, request.emailPrefix(), request.count());
+
+        List<BulkCreateUsersResponse.CreatedUserInfo> createdUsers = new ArrayList<>();
+        List<BulkCreateUsersResponse.FailedUserInfo> failedUsers = new ArrayList<>();
+
+        String encodedPassword = passwordEncoder.encode(request.password());
+
+        // TenantContext 설정 (User 엔티티 저장 시 tenantId 자동 설정)
+        TenantContext.setTenantId(tenantId);
+
+        try {
+            for (int i = 0; i < request.count(); i++) {
+                int number = request.startNumber() + i;
+                String email = request.emailPrefix() + number + request.emailDomain();
+                String name = request.emailPrefix() + number;
+
+                try {
+                    // 이메일 중복 체크
+                    if (userRepository.existsByTenantIdAndEmail(tenantId, email)) {
+                        failedUsers.add(new BulkCreateUsersResponse.FailedUserInfo(email, "이미 존재하는 이메일입니다"));
+                        continue;
+                    }
+
+                    User user = User.create(email, name, encodedPassword);
+                    User savedUser = userRepository.save(user);
+
+                    createdUsers.add(new BulkCreateUsersResponse.CreatedUserInfo(
+                            savedUser.getId(),
+                            savedUser.getEmail(),
+                            savedUser.getName()
+                    ));
+                } catch (Exception e) {
+                    log.warn("Failed to create user: email={}, error={}", email, e.getMessage());
+                    failedUsers.add(new BulkCreateUsersResponse.FailedUserInfo(email, e.getMessage()));
+                }
+            }
+        } finally {
+            TenantContext.clear();
+        }
+
+        log.info("Bulk user creation completed: created={}, failed={}", createdUsers.size(), failedUsers.size());
+        return BulkCreateUsersResponse.of(request.count(), createdUsers, failedUsers);
     }
 }
