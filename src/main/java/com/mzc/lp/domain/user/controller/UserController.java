@@ -6,6 +6,7 @@ import com.mzc.lp.domain.user.constant.TenantRole;
 import com.mzc.lp.domain.user.constant.UserStatus;
 import com.mzc.lp.domain.user.dto.request.AssignCourseRoleRequest;
 import com.mzc.lp.domain.user.dto.request.BulkCreateUsersRequest;
+import com.mzc.lp.domain.user.dto.request.FileBulkCreateUsersRequest;
 import com.mzc.lp.domain.user.dto.request.ChangePasswordRequest;
 import com.mzc.lp.domain.user.dto.request.ChangeRoleRequest;
 import com.mzc.lp.domain.user.dto.request.ChangeStatusRequest;
@@ -201,6 +202,19 @@ public class UserController {
             @Valid @RequestBody BulkCreateUsersRequest request
     ) {
         BulkCreateUsersResponse response = userService.bulkCreateUsers(principal.tenantId(), request);
+        return ResponseEntity.status(201).body(ApiResponse.success(response));
+    }
+
+    @PostMapping("/bulk/file")
+    @PreAuthorize("hasRole('TENANT_ADMIN')")
+    public ResponseEntity<ApiResponse<BulkCreateUsersResponse>> fileBulkCreateUsers(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "defaultPassword", required = false) String defaultPassword,
+            @RequestParam(value = "role", required = false) TenantRole role
+    ) {
+        FileBulkCreateUsersRequest request = new FileBulkCreateUsersRequest(defaultPassword, role);
+        BulkCreateUsersResponse response = userService.fileBulkCreateUsers(principal.tenantId(), file, request);
         return ResponseEntity.status(201).body(ApiResponse.success(response));
     }
 }
