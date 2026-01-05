@@ -151,7 +151,10 @@ public enum ErrorCode {
     EMPLOYEE_USER_ALREADY_EXISTS(HttpStatus.CONFLICT, "EMP003", "User is already registered as employee"),
 
     // Banner (BNR)
-    BANNER_NOT_FOUND(HttpStatus.NOT_FOUND, "BNR001", "Banner not found");
+    BANNER_NOT_FOUND(HttpStatus.NOT_FOUND, "BNR001", "Banner not found"),
+
+    // Auto Enrollment Rule (AER)
+    AUTO_ENROLLMENT_RULE_NOT_FOUND(HttpStatus.NOT_FOUND, "AER001", "Auto enrollment rule not found");
 
     private final HttpStatus status;
     private final String code;
