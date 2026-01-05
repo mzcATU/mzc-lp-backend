@@ -148,7 +148,10 @@ public enum ErrorCode {
     // Employee (EMP)
     EMPLOYEE_NOT_FOUND(HttpStatus.NOT_FOUND, "EMP001", "Employee not found"),
     EMPLOYEE_NUMBER_DUPLICATE(HttpStatus.CONFLICT, "EMP002", "Employee number already exists"),
-    EMPLOYEE_USER_ALREADY_EXISTS(HttpStatus.CONFLICT, "EMP003", "User is already registered as employee");
+    EMPLOYEE_USER_ALREADY_EXISTS(HttpStatus.CONFLICT, "EMP003", "User is already registered as employee"),
+
+    // Banner (BNR)
+    BANNER_NOT_FOUND(HttpStatus.NOT_FOUND, "BNR001", "Banner not found");
 
     private final HttpStatus status;
     private final String code;
