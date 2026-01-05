@@ -6,6 +6,9 @@ import com.mzc.lp.domain.user.constant.CourseRole;
 import com.mzc.lp.common.context.TenantContext;
 import com.mzc.lp.domain.user.dto.request.AssignCourseRoleRequest;
 import com.mzc.lp.domain.user.dto.request.BulkCreateUsersRequest;
+import com.mzc.lp.domain.user.dto.request.FileBulkCreateUsersRequest;
+import com.mzc.lp.domain.user.dto.request.FileUserRow;
+import com.mzc.lp.domain.user.util.UserExcelParser;
 import com.mzc.lp.domain.user.dto.request.ChangePasswordRequest;
 import com.mzc.lp.domain.user.dto.request.ChangeRoleRequest;
 import com.mzc.lp.domain.user.dto.request.ChangeStatusRequest;
@@ -52,6 +55,7 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenRepository refreshTokenRepository;
     private final FileStorageService fileStorageService;
+    private final UserExcelParser userExcelParser;
 
     @Override
     public UserDetailResponse getMe(Long userId) {
@@ -341,6 +345,85 @@ public class UserServiceImpl implements UserService {
 
         log.info("Bulk user creation completed: created={}, failed={}", createdUsers.size(), failedUsers.size());
         return BulkCreateUsersResponse.of(request.count(), createdUsers, failedUsers);
+    }
+
+    @Override
+    @Transactional
+    public BulkCreateUsersResponse fileBulkCreateUsers(Long tenantId, MultipartFile file, FileBulkCreateUsersRequest request) {
+        log.info("File bulk creating users: tenantId={}, fileName={}", tenantId, file.getOriginalFilename());
+
+        List<FileUserRow> userRows;
+        try {
+            String filename = file.getOriginalFilename();
+            if (filename != null && filename.toLowerCase().endsWith(".csv")) {
+                userRows = userExcelParser.parseCsv(file);
+            } else {
+                userRows = userExcelParser.parseExcel(file);
+            }
+        } catch (Exception e) {
+            log.error("Failed to parse file: {}", e.getMessage(), e);
+            throw new IllegalArgumentException("파일 파싱에 실패했습니다: " + e.getMessage());
+        }
+
+        if (userRows.isEmpty()) {
+            throw new IllegalArgumentException("파일에서 유효한 사용자 데이터를 찾을 수 없습니다");
+        }
+
+        List<BulkCreateUsersResponse.CreatedUserInfo> createdUsers = new ArrayList<>();
+        List<BulkCreateUsersResponse.FailedUserInfo> failedUsers = new ArrayList<>();
+
+        TenantContext.setTenantId(tenantId);
+
+        try {
+            for (FileUserRow row : userRows) {
+                try {
+                    // 이메일 중복 체크
+                    if (userRepository.existsByTenantIdAndEmail(tenantId, row.email())) {
+                        failedUsers.add(new BulkCreateUsersResponse.FailedUserInfo(row.email(), "이미 존재하는 이메일입니다"));
+                        continue;
+                    }
+
+                    // 비밀번호 결정 (파일에 있으면 사용, 없으면 기본값)
+                    String password = row.password() != null && !row.password().isBlank()
+                            ? row.password()
+                            : request.defaultPassword();
+
+                    if (password == null || password.isBlank()) {
+                        failedUsers.add(new BulkCreateUsersResponse.FailedUserInfo(row.email(), "비밀번호가 지정되지 않았습니다"));
+                        continue;
+                    }
+
+                    // 이름 결정 (파일에 있으면 사용, 없으면 이메일 앞부분)
+                    String name = row.name() != null && !row.name().isBlank()
+                            ? row.name()
+                            : row.email().split("@")[0];
+
+                    String encodedPassword = passwordEncoder.encode(password);
+                    User user = User.create(row.email(), name, encodedPassword, row.phone());
+
+                    // 역할 설정
+                    if (request.role() != null) {
+                        user.updateRole(request.role());
+                    }
+
+                    User savedUser = userRepository.save(user);
+
+                    createdUsers.add(new BulkCreateUsersResponse.CreatedUserInfo(
+                            savedUser.getId(),
+                            savedUser.getEmail(),
+                            savedUser.getName()
+                    ));
+                } catch (Exception e) {
+                    log.warn("Failed to create user: email={}, error={}", row.email(), e.getMessage());
+                    failedUsers.add(new BulkCreateUsersResponse.FailedUserInfo(row.email(), e.getMessage()));
+                }
+            }
+        } finally {
+            TenantContext.clear();
+        }
+
+        log.info("File bulk user creation completed: created={}, failed={}", createdUsers.size(), failedUsers.size());
+        return BulkCreateUsersResponse.of(userRows.size(), createdUsers, failedUsers);
     }
 
     // ========== Private Helper Methods ==========
