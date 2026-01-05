@@ -9,7 +9,7 @@ public class AlreadyInCartException extends BusinessException {
         super(ErrorCode.ALREADY_IN_CART);
     }
 
-    public AlreadyInCartException(Long courseId) {
-        super(ErrorCode.ALREADY_IN_CART, "Course already in cart: " + courseId);
+    public AlreadyInCartException(Long courseTimeId) {
+        super(ErrorCode.ALREADY_IN_CART, "CourseTime already in cart: " + courseTimeId);
     }
 }

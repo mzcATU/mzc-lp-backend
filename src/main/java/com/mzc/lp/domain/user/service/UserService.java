@@ -4,6 +4,7 @@ import com.mzc.lp.domain.user.constant.TenantRole;
 import com.mzc.lp.domain.user.constant.UserStatus;
 import com.mzc.lp.domain.user.dto.request.AssignCourseRoleRequest;
 import com.mzc.lp.domain.user.dto.request.BulkCreateUsersRequest;
+import com.mzc.lp.domain.user.dto.request.FileBulkCreateUsersRequest;
 import com.mzc.lp.domain.user.dto.request.ChangePasswordRequest;
 import com.mzc.lp.domain.user.dto.request.ChangeRoleRequest;
 import com.mzc.lp.domain.user.dto.request.ChangeStatusRequest;
@@ -61,4 +62,7 @@ public interface UserService {
 
     // 단체 계정 생성 API (TENANT_ADMIN 권한)
     BulkCreateUsersResponse bulkCreateUsers(Long tenantId, BulkCreateUsersRequest request);
+
+    // 파일 기반 단체 계정 생성 API (TENANT_ADMIN 권한)
+    BulkCreateUsersResponse fileBulkCreateUsers(Long tenantId, MultipartFile file, FileBulkCreateUsersRequest request);
 }

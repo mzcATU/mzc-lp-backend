@@ -1,8 +1,9 @@
 package com.mzc.lp.domain.wishlist.service;
 
-import com.mzc.lp.domain.course.entity.Course;
-import com.mzc.lp.domain.course.exception.CourseNotFoundException;
-import com.mzc.lp.domain.course.repository.CourseRepository;
+import com.mzc.lp.domain.program.entity.Program;
+import com.mzc.lp.domain.ts.entity.CourseTime;
+import com.mzc.lp.domain.ts.exception.CourseTimeNotFoundException;
+import com.mzc.lp.domain.ts.repository.CourseTimeRepository;
 import com.mzc.lp.domain.wishlist.dto.request.WishlistAddRequest;
 import com.mzc.lp.domain.wishlist.dto.request.WishlistCheckRequest;
 import com.mzc.lp.domain.wishlist.dto.response.WishlistCheckResponse;
@@ -31,42 +32,36 @@ import java.util.stream.Collectors;
 public class WishlistService {
 
     private final WishlistRepository wishlistRepository;
-    private final CourseRepository courseRepository;
+    private final CourseTimeRepository courseTimeRepository;
 
     /**
      * 찜 추가
      */
     @Transactional
     public WishlistItemResponse addToWishlist(Long userId, WishlistAddRequest request) {
-        Long courseId = request.getCourseId();
+        Long courseTimeId = request.getCourseTimeId();
 
-        // 강의 존재 확인
-        Course course = courseRepository.findById(courseId)
-                .orElseThrow(CourseNotFoundException::new);
+        // 차수 존재 확인
+        CourseTime courseTime = courseTimeRepository.findById(courseTimeId)
+                .orElseThrow(() -> new CourseTimeNotFoundException(courseTimeId));
 
-        // 이미 찜한 강의인지 확인
-        if (wishlistRepository.existsByUserIdAndCourseId(userId, courseId)) {
-            throw new AlreadyInWishlistException(userId, courseId);
+        // 이미 찜한 차수인지 확인
+        if (wishlistRepository.existsByUserIdAndCourseTimeId(userId, courseTimeId)) {
+            throw new AlreadyInWishlistException(userId, courseTimeId);
         }
 
         try {
             // 찜 아이템 생성 및 저장
-            WishlistItem item = WishlistItem.create(userId, courseId);
+            WishlistItem item = WishlistItem.create(userId, courseTimeId);
             WishlistItem savedItem = wishlistRepository.save(item);
             wishlistRepository.flush(); // 즉시 DB에 반영하여 제약조건 위반 확인
 
-            return WishlistItemResponse.of(
-                    savedItem,
-                    course.getTitle(),
-                    course.getThumbnailUrl(),
-                    course.getLevel() != null ? course.getLevel().name() : null,
-                    course.getType() != null ? course.getType().name() : null,
-                    course.getEstimatedHours()
-            );
+            Program program = courseTime.getProgram();
+            return WishlistItemResponse.of(savedItem, courseTime, program);
         } catch (DataIntegrityViolationException e) {
             // 동시성 이슈로 인한 중복 찜 시도
-            log.debug("Concurrent wishlist add attempt detected for course {} by user {}", courseId, userId);
-            throw new AlreadyInWishlistException(userId, courseId);
+            log.debug("Concurrent wishlist add attempt detected for courseTime {} by user {}", courseTimeId, userId);
+            throw new AlreadyInWishlistException(userId, courseTimeId);
         }
     }
 
@@ -74,11 +69,11 @@ public class WishlistService {
      * 찜 삭제
      */
     @Transactional
-    public void removeFromWishlist(Long userId, Long courseId) {
-        if (!wishlistRepository.existsByUserIdAndCourseId(userId, courseId)) {
-            throw new WishlistItemNotFoundException(userId, courseId);
+    public void removeFromWishlist(Long userId, Long courseTimeId) {
+        if (!wishlistRepository.existsByUserIdAndCourseTimeId(userId, courseTimeId)) {
+            throw new WishlistItemNotFoundException(userId, courseTimeId);
         }
-        wishlistRepository.deleteByUserIdAndCourseId(userId, courseId);
+        wishlistRepository.deleteByUserIdAndCourseTimeId(userId, courseTimeId);
     }
 
     /**
@@ -87,43 +82,37 @@ public class WishlistService {
     public Page<WishlistItemResponse> getWishlist(Long userId, Pageable pageable) {
         Page<WishlistItem> wishlistItems = wishlistRepository.findByUserId(userId, pageable);
 
-        // 강의 정보를 한 번에 조회
-        List<Long> courseIds = wishlistItems.getContent().stream()
-                .map(WishlistItem::getCourseId)
+        // 차수 정보를 한 번에 조회
+        List<Long> courseTimeIds = wishlistItems.getContent().stream()
+                .map(WishlistItem::getCourseTimeId)
                 .collect(Collectors.toList());
 
-        Map<Long, Course> courseMap = courseRepository.findAllById(courseIds).stream()
-                .collect(Collectors.toMap(Course::getId, c -> c));
+        Map<Long, CourseTime> courseTimeMap = courseTimeRepository.findAllById(courseTimeIds).stream()
+                .collect(Collectors.toMap(CourseTime::getId, ct -> ct));
 
         return wishlistItems.map(item -> {
-            Course course = courseMap.get(item.getCourseId());
-            if (course != null) {
-                return WishlistItemResponse.of(
-                        item,
-                        course.getTitle(),
-                        course.getThumbnailUrl(),
-                        course.getLevel() != null ? course.getLevel().name() : null,
-                        course.getType() != null ? course.getType().name() : null,
-                        course.getEstimatedHours()
-                );
+            CourseTime courseTime = courseTimeMap.get(item.getCourseTimeId());
+            if (courseTime != null) {
+                Program program = courseTime.getProgram();
+                return WishlistItemResponse.of(item, courseTime, program);
             }
             return WishlistItemResponse.from(item);
         });
     }
 
     /**
-     * 특정 강의 찜 여부 확인
+     * 특정 차수 찜 여부 확인
      */
-    public boolean isInWishlist(Long userId, Long courseId) {
-        return wishlistRepository.existsByUserIdAndCourseId(userId, courseId);
+    public boolean isInWishlist(Long userId, Long courseTimeId) {
+        return wishlistRepository.existsByUserIdAndCourseTimeId(userId, courseTimeId);
     }
 
     /**
-     * 여러 강의 찜 여부 일괄 확인
+     * 여러 차수 찜 여부 일괄 확인
      */
     public WishlistCheckResponse checkWishlistStatus(Long userId, WishlistCheckRequest request) {
-        List<Long> wishlistedCourseIds = wishlistRepository.findWishlistedCourseIds(userId, request.getCourseIds());
-        return WishlistCheckResponse.of(request.getCourseIds(), wishlistedCourseIds);
+        List<Long> wishlistedCourseTimeIds = wishlistRepository.findWishlistedCourseTimeIds(userId, request.getCourseTimeIds());
+        return WishlistCheckResponse.of(request.getCourseTimeIds(), wishlistedCourseTimeIds);
     }
 
     /**
@@ -135,10 +124,10 @@ public class WishlistService {
     }
 
     /**
-     * 특정 강의의 찜 개수 조회
+     * 특정 차수의 찜 개수 조회
      */
-    public WishlistCountResponse getCourseWishlistCount(Long courseId) {
-        long count = wishlistRepository.countByCourseId(courseId);
+    public WishlistCountResponse getCourseTimeWishlistCount(Long courseTimeId) {
+        long count = wishlistRepository.countByCourseTimeId(courseTimeId);
         return WishlistCountResponse.of(count);
     }
 }

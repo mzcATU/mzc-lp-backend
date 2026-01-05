@@ -8,10 +8,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class WishlistAddRequest {
 
-    @NotNull(message = "강의 ID는 필수입니다")
-    private Long courseId;
+    @NotNull(message = "차수 ID는 필수입니다")
+    private Long courseTimeId;
 
-    public WishlistAddRequest(Long courseId) {
-        this.courseId = courseId;
+    public WishlistAddRequest(Long courseTimeId) {
+        this.courseTimeId = courseTimeId;
     }
 }

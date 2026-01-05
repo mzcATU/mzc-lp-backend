@@ -18,28 +18,28 @@ public interface CartRepository extends JpaRepository<CartItem, Long> {
     List<CartItem> findByUserIdOrderByAddedAtDesc(@Param("userId") Long userId);
 
     /**
-     * 특정 사용자의 특정 강의 장바구니 항목 조회
+     * 특정 사용자의 특정 차수 장바구니 항목 조회
      */
-    Optional<CartItem> findByUserIdAndCourseId(Long userId, Long courseId);
+    Optional<CartItem> findByUserIdAndCourseTimeId(Long userId, Long courseTimeId);
 
     /**
-     * 특정 사용자의 특정 강의 장바구니 존재 여부
+     * 특정 사용자의 특정 차수 장바구니 존재 여부
      */
-    boolean existsByUserIdAndCourseId(Long userId, Long courseId);
+    boolean existsByUserIdAndCourseTimeId(Long userId, Long courseTimeId);
 
     /**
      * 장바구니 항목 삭제
      */
     @Modifying
-    @Query("DELETE FROM CartItem c WHERE c.userId = :userId AND c.courseId = :courseId")
-    void deleteByUserIdAndCourseId(@Param("userId") Long userId, @Param("courseId") Long courseId);
+    @Query("DELETE FROM CartItem c WHERE c.userId = :userId AND c.courseTimeId = :courseTimeId")
+    void deleteByUserIdAndCourseTimeId(@Param("userId") Long userId, @Param("courseTimeId") Long courseTimeId);
 
     /**
-     * 여러 강의 장바구니 항목 일괄 삭제
+     * 여러 차수 장바구니 항목 일괄 삭제
      */
     @Modifying
-    @Query("DELETE FROM CartItem c WHERE c.userId = :userId AND c.courseId IN :courseIds")
-    void deleteByUserIdAndCourseIdIn(@Param("userId") Long userId, @Param("courseIds") List<Long> courseIds);
+    @Query("DELETE FROM CartItem c WHERE c.userId = :userId AND c.courseTimeId IN :courseTimeIds")
+    void deleteByUserIdAndCourseTimeIdIn(@Param("userId") Long userId, @Param("courseTimeIds") List<Long> courseTimeIds);
 
     /**
      * 사용자의 장바구니 개수 조회
@@ -47,8 +47,8 @@ public interface CartRepository extends JpaRepository<CartItem, Long> {
     long countByUserId(Long userId);
 
     /**
-     * 특정 강의들의 장바구니 존재 여부 조회
+     * 특정 차수들의 장바구니 존재 여부 조회
      */
-    @Query("SELECT c.courseId FROM CartItem c WHERE c.userId = :userId AND c.courseId IN :courseIds")
-    List<Long> findCourseIdsByUserIdAndCourseIdIn(@Param("userId") Long userId, @Param("courseIds") List<Long> courseIds);
+    @Query("SELECT c.courseTimeId FROM CartItem c WHERE c.userId = :userId AND c.courseTimeId IN :courseTimeIds")
+    List<Long> findCourseTimeIdsByUserIdAndCourseTimeIdIn(@Param("userId") Long userId, @Param("courseTimeIds") List<Long> courseTimeIds);
 }

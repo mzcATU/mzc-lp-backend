@@ -9,7 +9,7 @@ public class CartItemNotFoundException extends BusinessException {
         super(ErrorCode.CART_ITEM_NOT_FOUND);
     }
 
-    public CartItemNotFoundException(Long courseId) {
-        super(ErrorCode.CART_ITEM_NOT_FOUND, "Cart item not found for courseId: " + courseId);
+    public CartItemNotFoundException(Long courseTimeId) {
+        super(ErrorCode.CART_ITEM_NOT_FOUND, "Cart item not found for courseTimeId: " + courseTimeId);
     }
 }
