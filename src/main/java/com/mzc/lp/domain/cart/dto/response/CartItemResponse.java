@@ -13,6 +13,8 @@ public record CartItemResponse(
         String thumbnailUrl,
         String level,
         Integer estimatedHours,
+        Boolean isFree,
+        String price,
         Instant addedAt
 ) {
     public static CartItemResponse from(CartItem cartItem, CourseTime courseTime, Program program) {
@@ -23,6 +25,8 @@ public record CartItemResponse(
                 program != null ? program.getThumbnailUrl() : null,
                 program != null && program.getLevel() != null ? program.getLevel().name() : null,
                 program != null ? program.getEstimatedHours() : null,
+                courseTime.isFree(),
+                courseTime.getPrice() != null ? courseTime.getPrice().toString() : null,
                 cartItem.getAddedAt()
         );
     }

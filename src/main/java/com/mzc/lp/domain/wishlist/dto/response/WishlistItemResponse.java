@@ -15,9 +15,11 @@ public class WishlistItemResponse {
     private Long id;
     private Long courseTimeId;
     private String courseTimeTitle;
-    private String courseThumbnailUrl;
-    private String courseLevel;
-    private Integer courseEstimatedHours;
+    private String thumbnailUrl;
+    private String level;
+    private Integer estimatedHours;
+    private Boolean isFree;
+    private String price;
     private Instant addedAt;
 
     public static WishlistItemResponse from(WishlistItem item) {
@@ -33,9 +35,11 @@ public class WishlistItemResponse {
                 .id(item.getId())
                 .courseTimeId(item.getCourseTimeId())
                 .courseTimeTitle(courseTime.getTitle())
-                .courseThumbnailUrl(program != null ? program.getThumbnailUrl() : null)
-                .courseLevel(program != null && program.getLevel() != null ? program.getLevel().name() : null)
-                .courseEstimatedHours(program != null ? program.getEstimatedHours() : null)
+                .thumbnailUrl(program != null ? program.getThumbnailUrl() : null)
+                .level(program != null && program.getLevel() != null ? program.getLevel().name() : null)
+                .estimatedHours(program != null ? program.getEstimatedHours() : null)
+                .isFree(courseTime.isFree())
+                .price(courseTime.getPrice() != null ? courseTime.getPrice().toString() : null)
                 .addedAt(item.getCreatedAt())
                 .build();
     }
