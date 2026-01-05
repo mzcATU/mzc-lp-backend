@@ -1,5 +1,7 @@
 package com.mzc.lp.domain.wishlist.dto.response;
 
+import com.mzc.lp.domain.program.entity.Program;
+import com.mzc.lp.domain.ts.entity.CourseTime;
 import com.mzc.lp.domain.wishlist.entity.WishlistItem;
 import lombok.Builder;
 import lombok.Getter;
@@ -11,38 +13,29 @@ import java.time.Instant;
 public class WishlistItemResponse {
 
     private Long id;
-    private Long courseId;
-    private String courseTitle;
+    private Long courseTimeId;
+    private String courseTimeTitle;
     private String courseThumbnailUrl;
     private String courseLevel;
-    private String courseType;
     private Integer courseEstimatedHours;
     private Instant addedAt;
 
     public static WishlistItemResponse from(WishlistItem item) {
         return WishlistItemResponse.builder()
                 .id(item.getId())
-                .courseId(item.getCourseId())
+                .courseTimeId(item.getCourseTimeId())
                 .addedAt(item.getCreatedAt())
                 .build();
     }
 
-    public static WishlistItemResponse of(
-            WishlistItem item,
-            String courseTitle,
-            String courseThumbnailUrl,
-            String courseLevel,
-            String courseType,
-            Integer courseEstimatedHours
-    ) {
+    public static WishlistItemResponse of(WishlistItem item, CourseTime courseTime, Program program) {
         return WishlistItemResponse.builder()
                 .id(item.getId())
-                .courseId(item.getCourseId())
-                .courseTitle(courseTitle)
-                .courseThumbnailUrl(courseThumbnailUrl)
-                .courseLevel(courseLevel)
-                .courseType(courseType)
-                .courseEstimatedHours(courseEstimatedHours)
+                .courseTimeId(item.getCourseTimeId())
+                .courseTimeTitle(courseTime.getTitle())
+                .courseThumbnailUrl(program != null ? program.getThumbnailUrl() : null)
+                .courseLevel(program != null && program.getLevel() != null ? program.getLevel().name() : null)
+                .courseEstimatedHours(program != null ? program.getEstimatedHours() : null)
                 .addedAt(item.getCreatedAt())
                 .build();
     }

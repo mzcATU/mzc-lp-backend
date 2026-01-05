@@ -9,8 +9,8 @@ public class AlreadyInWishlistException extends BusinessException {
         super(ErrorCode.ALREADY_IN_WISHLIST);
     }
 
-    public AlreadyInWishlistException(Long userId, Long courseId) {
+    public AlreadyInWishlistException(Long userId, Long courseTimeId) {
         super(ErrorCode.ALREADY_IN_WISHLIST,
-              "Course " + courseId + " is already in wishlist for user " + userId);
+              "CourseTime " + courseTimeId + " is already in wishlist for user " + userId);
     }
 }

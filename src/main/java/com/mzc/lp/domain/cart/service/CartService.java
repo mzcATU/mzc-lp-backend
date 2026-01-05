@@ -8,9 +8,10 @@ import com.mzc.lp.domain.cart.entity.CartItem;
 import com.mzc.lp.domain.cart.exception.AlreadyInCartException;
 import com.mzc.lp.domain.cart.exception.CartItemNotFoundException;
 import com.mzc.lp.domain.cart.repository.CartRepository;
-import com.mzc.lp.domain.course.entity.Course;
-import com.mzc.lp.domain.course.exception.CourseNotFoundException;
-import com.mzc.lp.domain.course.repository.CourseRepository;
+import com.mzc.lp.domain.program.entity.Program;
+import com.mzc.lp.domain.ts.entity.CourseTime;
+import com.mzc.lp.domain.ts.exception.CourseTimeNotFoundException;
+import com.mzc.lp.domain.ts.repository.CourseTimeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -28,57 +29,58 @@ import java.util.stream.Collectors;
 public class CartService {
 
     private final CartRepository cartRepository;
-    private final CourseRepository courseRepository;
+    private final CourseTimeRepository courseTimeRepository;
 
     /**
-     * 장바구니에 강의 추가
+     * 장바구니에 차수 추가
      */
     @Transactional
     public CartItemResponse addToCart(Long userId, CartAddRequest request) {
-        Long courseId = request.courseId();
-        log.debug("Adding course to cart: userId={}, courseId={}", userId, courseId);
+        Long courseTimeId = request.courseTimeId();
+        log.debug("Adding courseTime to cart: userId={}, courseTimeId={}", userId, courseTimeId);
 
-        // 강의 존재 여부 확인
-        Course course = courseRepository.findById(courseId)
-                .orElseThrow(() -> new CourseNotFoundException(courseId));
+        // 차수 존재 여부 확인
+        CourseTime courseTime = courseTimeRepository.findById(courseTimeId)
+                .orElseThrow(() -> new CourseTimeNotFoundException(courseTimeId));
 
         // 이미 장바구니에 있는지 확인
-        if (cartRepository.existsByUserIdAndCourseId(userId, courseId)) {
-            throw new AlreadyInCartException(courseId);
+        if (cartRepository.existsByUserIdAndCourseTimeId(userId, courseTimeId)) {
+            throw new AlreadyInCartException(courseTimeId);
         }
 
         // 장바구니에 추가
-        CartItem cartItem = CartItem.create(userId, courseId);
+        CartItem cartItem = CartItem.create(userId, courseTimeId);
         CartItem savedItem = cartRepository.save(cartItem);
 
-        log.info("Course added to cart: userId={}, courseId={}, cartItemId={}", userId, courseId, savedItem.getId());
-        return CartItemResponse.from(savedItem, course);
+        Program program = courseTime.getProgram();
+        log.info("CourseTime added to cart: userId={}, courseTimeId={}, cartItemId={}", userId, courseTimeId, savedItem.getId());
+        return CartItemResponse.from(savedItem, courseTime, program);
     }
 
     /**
-     * 장바구니에서 강의 삭제
+     * 장바구니에서 차수 삭제
      */
     @Transactional
-    public void removeFromCart(Long userId, Long courseId) {
-        log.debug("Removing course from cart: userId={}, courseId={}", userId, courseId);
+    public void removeFromCart(Long userId, Long courseTimeId) {
+        log.debug("Removing courseTime from cart: userId={}, courseTimeId={}", userId, courseTimeId);
 
-        if (!cartRepository.existsByUserIdAndCourseId(userId, courseId)) {
-            throw new CartItemNotFoundException(courseId);
+        if (!cartRepository.existsByUserIdAndCourseTimeId(userId, courseTimeId)) {
+            throw new CartItemNotFoundException(courseTimeId);
         }
 
-        cartRepository.deleteByUserIdAndCourseId(userId, courseId);
-        log.info("Course removed from cart: userId={}, courseId={}", userId, courseId);
+        cartRepository.deleteByUserIdAndCourseTimeId(userId, courseTimeId);
+        log.info("CourseTime removed from cart: userId={}, courseTimeId={}", userId, courseTimeId);
     }
 
     /**
-     * 장바구니에서 여러 강의 삭제
+     * 장바구니에서 여러 차수 삭제
      */
     @Transactional
     public void removeFromCartBulk(Long userId, CartRemoveRequest request) {
-        log.debug("Removing courses from cart: userId={}, courseIds={}", userId, request.courseIds());
+        log.debug("Removing courseTimes from cart: userId={}, courseTimeIds={}", userId, request.courseTimeIds());
 
-        cartRepository.deleteByUserIdAndCourseIdIn(userId, request.courseIds());
-        log.info("Courses removed from cart: userId={}, count={}", userId, request.courseIds().size());
+        cartRepository.deleteByUserIdAndCourseTimeIdIn(userId, request.courseTimeIds());
+        log.info("CourseTimes removed from cart: userId={}, count={}", userId, request.courseTimeIds().size());
     }
 
     /**
@@ -93,17 +95,24 @@ public class CartService {
             return List.of();
         }
 
-        // 강의 정보 벌크 조회
-        List<Long> courseIds = cartItems.stream()
-                .map(CartItem::getCourseId)
+        // 차수 정보 벌크 조회
+        List<Long> courseTimeIds = cartItems.stream()
+                .map(CartItem::getCourseTimeId)
                 .toList();
 
-        Map<Long, Course> courseMap = courseRepository.findAllById(courseIds).stream()
-                .collect(Collectors.toMap(Course::getId, Function.identity()));
+        Map<Long, CourseTime> courseTimeMap = courseTimeRepository.findAllById(courseTimeIds).stream()
+                .collect(Collectors.toMap(CourseTime::getId, Function.identity()));
 
         return cartItems.stream()
-                .map(item -> CartItemResponse.from(item, courseMap.get(item.getCourseId())))
-                .filter(response -> response.courseTitle() != null) // 삭제된 강의 제외
+                .map(item -> {
+                    CourseTime courseTime = courseTimeMap.get(item.getCourseTimeId());
+                    if (courseTime == null) {
+                        return null;
+                    }
+                    Program program = courseTime.getProgram();
+                    return CartItemResponse.from(item, courseTime, program);
+                })
+                .filter(response -> response != null)
                 .toList();
     }
 
@@ -116,22 +125,22 @@ public class CartService {
     }
 
     /**
-     * 특정 강의가 장바구니에 있는지 확인
+     * 특정 차수가 장바구니에 있는지 확인
      */
-    public boolean isInCart(Long userId, Long courseId) {
-        return cartRepository.existsByUserIdAndCourseId(userId, courseId);
+    public boolean isInCart(Long userId, Long courseTimeId) {
+        return cartRepository.existsByUserIdAndCourseTimeId(userId, courseTimeId);
     }
 
     /**
-     * 여러 강의의 장바구니 여부 일괄 확인
+     * 여러 차수의 장바구니 여부 일괄 확인
      */
-    public Map<Long, Boolean> checkCartStatus(Long userId, List<Long> courseIds) {
-        List<Long> inCartCourseIds = cartRepository.findCourseIdsByUserIdAndCourseIdIn(userId, courseIds);
+    public Map<Long, Boolean> checkCartStatus(Long userId, List<Long> courseTimeIds) {
+        List<Long> inCartCourseTimeIds = cartRepository.findCourseTimeIdsByUserIdAndCourseTimeIdIn(userId, courseTimeIds);
 
-        return courseIds.stream()
+        return courseTimeIds.stream()
                 .collect(Collectors.toMap(
                         Function.identity(),
-                        inCartCourseIds::contains
+                        inCartCourseTimeIds::contains
                 ));
     }
 }
