@@ -519,7 +519,84 @@ class CourseControllerTest extends TenantTestSupport {
                     .andExpect(jsonPath("$.data.courseId").value(course.getId()))
                     .andExpect(jsonPath("$.data.title").value("Spring Boot 기초"))
                     .andExpect(jsonPath("$.data.items").isArray())
-                    .andExpect(jsonPath("$.data.itemCount").value(0));
+                    .andExpect(jsonPath("$.data.itemCount").value(0))
+                    .andExpect(jsonPath("$.data.isComplete").value(false)); // items가 없으므로 미완성
+        }
+
+        @Test
+        @DisplayName("성공 - 완성된 강의의 isComplete 확인")
+        void getCourseDetail_success_isCompleteTrue() throws Exception {
+            // given
+            createOperatorUser();
+            String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
+
+            // 완성 조건을 충족하는 강의 생성 (title, description, categoryId 필수)
+            Course course = Course.create(
+                    "완성된 강의",
+                    "상세한 설명입니다",
+                    CourseLevel.BEGINNER,
+                    CourseType.ONLINE,
+                    10,
+                    1L, // categoryId
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
+            );
+            courseRepository.save(course);
+
+            // CourseItem 추가 (커리큘럼 1개 이상 필요)
+            com.mzc.lp.domain.course.entity.CourseItem item =
+                    com.mzc.lp.domain.course.entity.CourseItem.createFolder(course, "폴더1", null);
+            course.addItem(item);
+            courseRepository.save(course);
+
+            // when & then
+            mockMvc.perform(get("/api/courses/{courseId}", course.getId())
+                            .header("Authorization", "Bearer " + accessToken))
+                    .andDo(print())
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.isComplete").value(true))
+                    .andExpect(jsonPath("$.data.itemCount").value(1));
+        }
+
+        @Test
+        @DisplayName("성공 - description 없으면 isComplete false")
+        void getCourseDetail_success_isCompleteFalse_noDescription() throws Exception {
+            // given
+            createOperatorUser();
+            String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
+
+            // description 없는 강의
+            Course course = Course.create(
+                    "제목만 있는 강의",
+                    null, // description 없음
+                    CourseLevel.BEGINNER,
+                    CourseType.ONLINE,
+                    10,
+                    1L,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
+            );
+            courseRepository.save(course);
+
+            // CourseItem 추가
+            com.mzc.lp.domain.course.entity.CourseItem item =
+                    com.mzc.lp.domain.course.entity.CourseItem.createFolder(course, "폴더1", null);
+            course.addItem(item);
+            courseRepository.save(course);
+
+            // when & then
+            mockMvc.perform(get("/api/courses/{courseId}", course.getId())
+                            .header("Authorization", "Bearer " + accessToken))
+                    .andDo(print())
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.isComplete").value(false));
         }
 
         @Test
@@ -668,6 +745,70 @@ class CourseControllerTest extends TenantTestSupport {
                             .content(objectMapper.writeValueAsString(request)))
                     .andDo(print())
                     .andExpect(status().isForbidden());
+        }
+    }
+
+    // ==================== 내 강의 목록 조회 테스트 ====================
+
+    @Nested
+    @DisplayName("GET /api/courses/my - 내 강의 목록 조회")
+    class GetMyCourses {
+
+        @Test
+        @DisplayName("성공 - 내 강의 목록 조회 및 isComplete 확인")
+        void getMyCourses_success_withIsComplete() throws Exception {
+            // given
+            User operator = createOperatorUser();
+            String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
+
+            // 미완성 강의 (description 없음)
+            Course incompleteCourse = Course.create(
+                    "미완성 강의",
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    operator.getId()
+            );
+            courseRepository.save(incompleteCourse);
+
+            // 완성 강의 (title, description, categoryId, items 있음)
+            Course completeCourse = Course.create(
+                    "완성 강의",
+                    "설명 있음",
+                    CourseLevel.BEGINNER,
+                    CourseType.ONLINE,
+                    10,
+                    1L,
+                    null,
+                    null,
+                    null,
+                    null,
+                    operator.getId()
+            );
+            courseRepository.save(completeCourse);
+
+            com.mzc.lp.domain.course.entity.CourseItem item =
+                    com.mzc.lp.domain.course.entity.CourseItem.createFolder(completeCourse, "폴더1", null);
+            completeCourse.addItem(item);
+            courseRepository.save(completeCourse);
+
+            // when & then
+            mockMvc.perform(get("/api/courses/my")
+                            .header("Authorization", "Bearer " + accessToken))
+                    .andDo(print())
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.totalElements").value(2))
+                    .andExpect(jsonPath("$.data.content[?(@.title == '완성 강의')].isComplete").value(true))
+                    .andExpect(jsonPath("$.data.content[?(@.title == '완성 강의')].itemCount").value(1))
+                    .andExpect(jsonPath("$.data.content[?(@.title == '미완성 강의')].isComplete").value(false))
+                    .andExpect(jsonPath("$.data.content[?(@.title == '미완성 강의')].itemCount").value(0));
         }
     }
 
