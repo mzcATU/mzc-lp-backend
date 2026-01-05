@@ -23,14 +23,14 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
     private EntityManager entityManager;
 
     @Override
-    public Page<User> searchUsers(String keyword, TenantRole role, UserStatus status, Boolean hasCourseRole, Pageable pageable) {
+    public Page<User> searchUsers(Long tenantId, String keyword, TenantRole role, UserStatus status, Boolean hasCourseRole, Pageable pageable) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
 
         // Main query
         CriteriaQuery<User> query = cb.createQuery(User.class);
         Root<User> user = query.from(User.class);
 
-        List<Predicate> predicates = buildPredicates(cb, query, user, keyword, role, status, hasCourseRole);
+        List<Predicate> predicates = buildPredicates(cb, query, user, tenantId, keyword, role, status, hasCourseRole);
         query.where(predicates.toArray(new Predicate[0]));
         query.orderBy(cb.desc(user.get("createdAt")));
 
@@ -44,7 +44,7 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
         CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
         Root<User> countRoot = countQuery.from(User.class);
 
-        List<Predicate> countPredicates = buildPredicates(cb, countQuery, countRoot, keyword, role, status, hasCourseRole);
+        List<Predicate> countPredicates = buildPredicates(cb, countQuery, countRoot, tenantId, keyword, role, status, hasCourseRole);
         countQuery.select(cb.count(countRoot));
         countQuery.where(countPredicates.toArray(new Predicate[0]));
 
@@ -54,8 +54,13 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
     }
 
     private <T> List<Predicate> buildPredicates(CriteriaBuilder cb, CriteriaQuery<T> query, Root<User> user,
-                                            String keyword, TenantRole role, UserStatus status, Boolean hasCourseRole) {
+                                            Long tenantId, String keyword, TenantRole role, UserStatus status, Boolean hasCourseRole) {
         List<Predicate> predicates = new ArrayList<>();
+
+        // 테넌트 필터링 (필수)
+        if (tenantId != null) {
+            predicates.add(cb.equal(user.get("tenantId"), tenantId));
+        }
 
         if (keyword != null && !keyword.isBlank()) {
             String pattern = "%" + keyword.toLowerCase() + "%";
