@@ -33,12 +33,17 @@ public class CourseTime extends TenantEntity {
     @JoinColumn(name = "program_id")
     private Program program;
 
-    // CM 연결 (deprecated - Program을 통해 Snapshot으로 연결됨)
-    @Deprecated
+    /**
+     * @deprecated CM 연결은 더 이상 사용되지 않습니다. Program을 통해 Snapshot으로 연결하세요.
+     */
+    @Deprecated(since = "1.0", forRemoval = true)
     @Column(name = "cm_course_id")
     private Long cmCourseId;
 
-    @Deprecated
+    /**
+     * @deprecated CM 연결은 더 이상 사용되지 않습니다. Program을 통해 Snapshot으로 연결하세요.
+     */
+    @Deprecated(since = "1.0", forRemoval = true)
     @Column(name = "cm_course_version_id")
     private Long cmCourseVersionId;
 
@@ -106,6 +111,7 @@ public class CourseTime extends TenantEntity {
     private Long createdBy;
 
     // 정적 팩토리 메서드
+    @SuppressWarnings("removal")
     public static CourseTime cloneFrom(
             CourseTime source,
             String newTitle,
@@ -195,7 +201,7 @@ public class CourseTime extends TenantEntity {
     /**
      * @deprecated Program을 통해 Snapshot으로 연결하세요
      */
-    @Deprecated
+    @Deprecated(since = "1.0", forRemoval = true)
     public void linkCourse(Long cmCourseId, Long cmCourseVersionId) {
         this.cmCourseId = cmCourseId;
         this.cmCourseVersionId = cmCourseVersionId;

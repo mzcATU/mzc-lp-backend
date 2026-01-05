@@ -11,9 +11,12 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 
+@SuppressWarnings("removal")
 public record CourseTimeDetailResponse(
         Long id,
+        @Deprecated(since = "1.0", forRemoval = true)
         Long cmCourseId,
+        @Deprecated(since = "1.0", forRemoval = true)
         Long cmCourseVersionId,
         Long programId,
         String programName,

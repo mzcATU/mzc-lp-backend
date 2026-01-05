@@ -342,4 +342,19 @@ public class UserServiceImpl implements UserService {
         log.info("Bulk user creation completed: created={}, failed={}", createdUsers.size(), failedUsers.size());
         return BulkCreateUsersResponse.of(request.count(), createdUsers, failedUsers);
     }
+
+    // ========== Private Helper Methods ==========
+
+    /**
+     * 사용자의 CourseRole 목록을 Program title과 함께 조회
+     */
+    private List<CourseRoleResponse> getCourseRolesWithProgramTitle(Long userId) {
+        return userCourseRoleRepository.findByUserIdWithProgramTitle(userId).stream()
+                .map(row -> {
+                    UserCourseRole ucr = (UserCourseRole) row[0];
+                    String programTitle = (String) row[1];
+                    return CourseRoleResponse.from(ucr, programTitle);
+                })
+                .toList();
+    }
 }

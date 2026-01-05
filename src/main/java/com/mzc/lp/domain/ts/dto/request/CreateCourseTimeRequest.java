@@ -11,10 +11,10 @@ public record CreateCourseTimeRequest(
         @NotNull(message = "프로그램 ID는 필수입니다")
         Long programId,
 
-        @Deprecated
+        @Deprecated(since = "1.0", forRemoval = true)
         Long cmCourseId,
 
-        @Deprecated
+        @Deprecated(since = "1.0", forRemoval = true)
         Long cmCourseVersionId,
 
         @NotBlank(message = "제목은 필수입니다")

@@ -61,6 +61,7 @@ public class CourseTimeServiceImpl implements CourseTimeService {
 
     @Override
     @Transactional
+    @SuppressWarnings("removal")
     public CourseTimeDetailResponse createCourseTime(CreateCourseTimeRequest request, Long createdBy) {
         log.info("Creating course time: title={}, programId={}", request.title(), request.programId());
 
