@@ -18,6 +18,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -85,7 +87,7 @@ public class CourseServiceImpl implements CourseService {
                 .map(CourseItemResponse::from)
                 .toList();
 
-        return CourseDetailResponse.from(course, items);
+        return CourseDetailResponse.from(course, items, items.size());
     }
 
     @Override
@@ -137,6 +139,27 @@ public class CourseServiceImpl implements CourseService {
         Page<Course> courses = courseRepository.findByTenantIdAndCreatedBy(
                 TenantContext.getCurrentTenantId(), creatorId, pageable);
 
-        return courses.map(CourseResponse::from);
+        // itemCount 일괄 조회 (N+1 방지)
+        List<Long> courseIds = courses.getContent().stream()
+                .map(Course::getId)
+                .toList();
+
+        Map<Long, Integer> itemCountMap = getItemCountMap(courseIds);
+
+        return courses.map(course -> CourseResponse.from(
+                course,
+                itemCountMap.getOrDefault(course.getId(), 0)
+        ));
+    }
+
+    private Map<Long, Integer> getItemCountMap(List<Long> courseIds) {
+        if (courseIds.isEmpty()) {
+            return Map.of();
+        }
+        return courseRepository.countItemsByCourseIds(courseIds).stream()
+                .collect(Collectors.toMap(
+                        row -> (Long) row[0],
+                        row -> ((Number) row[1]).intValue()
+                ));
     }
 }

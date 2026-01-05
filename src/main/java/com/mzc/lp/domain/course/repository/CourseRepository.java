@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface CourseRepository extends JpaRepository<Course, Long> {
@@ -27,4 +28,7 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
     boolean existsByIdAndTenantId(Long id, Long tenantId);
 
     Page<Course> findByTenantIdAndCreatedBy(Long tenantId, Long createdBy, Pageable pageable);
+
+    @Query("SELECT c.id, COUNT(i) FROM Course c LEFT JOIN c.items i WHERE c.id IN :courseIds GROUP BY c.id")
+    List<Object[]> countItemsByCourseIds(@Param("courseIds") List<Long> courseIds);
 }

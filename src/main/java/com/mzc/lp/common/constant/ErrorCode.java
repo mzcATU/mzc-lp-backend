@@ -137,7 +137,18 @@ public enum ErrorCode {
     // Certificate (CERT)
     CERTIFICATE_NOT_FOUND(HttpStatus.NOT_FOUND, "CERT001", "Certificate not found"),
     CERTIFICATE_ALREADY_ISSUED(HttpStatus.CONFLICT, "CERT002", "Certificate already issued for this enrollment"),
-    CERTIFICATE_REVOKED(HttpStatus.BAD_REQUEST, "CERT003", "Certificate has been revoked");
+    CERTIFICATE_REVOKED(HttpStatus.BAD_REQUEST, "CERT003", "Certificate has been revoked"),
+
+    // Department (DEPT)
+    DEPARTMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "DEPT001", "Department not found"),
+    DEPARTMENT_CODE_DUPLICATE(HttpStatus.CONFLICT, "DEPT002", "Department code already exists"),
+    DEPARTMENT_HAS_CHILDREN(HttpStatus.BAD_REQUEST, "DEPT003", "Cannot delete department with sub-departments"),
+    DEPARTMENT_HAS_MEMBERS(HttpStatus.BAD_REQUEST, "DEPT004", "Cannot delete department with members"),
+
+    // Employee (EMP)
+    EMPLOYEE_NOT_FOUND(HttpStatus.NOT_FOUND, "EMP001", "Employee not found"),
+    EMPLOYEE_NUMBER_DUPLICATE(HttpStatus.CONFLICT, "EMP002", "Employee number already exists"),
+    EMPLOYEE_USER_ALREADY_EXISTS(HttpStatus.CONFLICT, "EMP003", "User is already registered as employee");
 
     private final HttpStatus status;
     private final String code;

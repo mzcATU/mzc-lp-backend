@@ -21,9 +21,29 @@ public record CourseResponse(
         LocalDate endDate,
         List<String> tags,
         Instant createdAt,
-        Instant updatedAt
+        Instant updatedAt,
+        boolean isComplete,
+        int itemCount
 ) {
+    /**
+     * 완성도 판단 기준:
+     * - title (필수, DB에서 NOT NULL)
+     * - description (필수)
+     * - categoryId (필수)
+     * - 커리큘럼(items) 1개 이상
+     */
+    private static boolean checkCompleteness(Course course, int itemCount) {
+        return course.getTitle() != null && !course.getTitle().isBlank()
+                && course.getDescription() != null && !course.getDescription().isBlank()
+                && course.getCategoryId() != null
+                && itemCount > 0;
+    }
+
     public static CourseResponse from(Course course) {
+        return from(course, 0);
+    }
+
+    public static CourseResponse from(Course course, int itemCount) {
         return new CourseResponse(
                 course.getId(),
                 course.getTitle(),
@@ -37,7 +57,9 @@ public record CourseResponse(
                 course.getEndDate(),
                 course.getTags(),
                 course.getCreatedAt(),
-                course.getUpdatedAt()
+                course.getUpdatedAt(),
+                checkCompleteness(course, itemCount),
+                itemCount
         );
     }
 }
