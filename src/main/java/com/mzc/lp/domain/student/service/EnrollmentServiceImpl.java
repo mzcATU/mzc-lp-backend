@@ -250,6 +250,21 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
         enrollment.updateProgress(request.progressPercent());
 
+        // 진도율 100% 달성 시 자동 수료 처리
+        if (request.progressPercent() >= 100 && enrollment.isEnrolled()) {
+            enrollment.updateStatus(EnrollmentStatus.COMPLETED);
+
+            // 수료 이벤트 발행 (수료증 자동 발급)
+            eventPublisher.publishEvent(new EnrollmentCompletedEvent(
+                    this,
+                    enrollment.getId(),
+                    enrollment.getUserId(),
+                    enrollment.getCourseTimeId()
+            ));
+
+            log.info("Enrollment auto-completed: enrollmentId={}, progressPercent=100%", enrollmentId);
+        }
+
         log.info("Progress updated: enrollmentId={}, progressPercent={}",
                 enrollmentId, request.progressPercent());
 
