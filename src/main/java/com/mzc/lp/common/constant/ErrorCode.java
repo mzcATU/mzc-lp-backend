@@ -66,6 +66,7 @@ public enum ErrorCode {
     CANNOT_DELETE_MAIN_INSTRUCTOR(HttpStatus.BAD_REQUEST, "TS007", "Cannot delete main instructor while course is ongoing"),
     MAIN_INSTRUCTOR_REQUIRED(HttpStatus.BAD_REQUEST, "TS008", "Main instructor required for opening course time"),
     UNAUTHORIZED_COURSE_TIME_ACCESS(HttpStatus.FORBIDDEN, "TS009", "Not authorized to access this course time"),
+    COURSE_TIME_NOT_AVAILABLE(HttpStatus.NOT_FOUND, "TS010", "CourseTime is not available for public access"),
 
     // Enrollment (SIS)
     ENROLLMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "SIS001", "Enrollment not found"),
@@ -128,7 +129,15 @@ public enum ErrorCode {
     COMMUNITY_COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "CMT002", "Community comment not found"),
     COMMUNITY_ALREADY_LIKED(HttpStatus.CONFLICT, "CMT003", "Already liked"),
     COMMUNITY_NOT_POST_AUTHOR(HttpStatus.FORBIDDEN, "CMT004", "Not authorized to modify this post"),
-    COMMUNITY_NOT_COMMENT_AUTHOR(HttpStatus.FORBIDDEN, "CMT005", "Not authorized to modify this comment");
+    COMMUNITY_NOT_COMMENT_AUTHOR(HttpStatus.FORBIDDEN, "CMT005", "Not authorized to modify this comment"),
+
+    // Notification (NF)
+    NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "NF001", "Notification not found"),
+
+    // Certificate (CERT)
+    CERTIFICATE_NOT_FOUND(HttpStatus.NOT_FOUND, "CERT001", "Certificate not found"),
+    CERTIFICATE_ALREADY_ISSUED(HttpStatus.CONFLICT, "CERT002", "Certificate already issued for this enrollment"),
+    CERTIFICATE_REVOKED(HttpStatus.BAD_REQUEST, "CERT003", "Certificate has been revoked");
 
     private final HttpStatus status;
     private final String code;

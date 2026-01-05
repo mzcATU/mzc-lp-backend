@@ -3,6 +3,7 @@ package com.mzc.lp.domain.tenant.dto.response;
 import com.mzc.lp.domain.tenant.entity.TenantSettings;
 
 import java.time.Instant;
+import java.util.Map;
 
 /**
  * 테넌트 설정 응답 DTO
@@ -13,10 +14,20 @@ public record TenantSettingsResponse(
 
         // 브랜딩 설정
         String logoUrl,
+        String darkLogoUrl,
         String faviconUrl,
         String primaryColor,
         String secondaryColor,
+        String accentColor,
         String fontFamily,
+        String headingFont,
+        String bodyFont,
+
+        // 레이아웃 설정
+        Map<String, Object> headerSettings,
+        Map<String, Object> sidebarSettings,
+        Map<String, Object> footerSettings,
+        Map<String, Object> contentSettings,
 
         // 일반 설정
         String defaultLanguage,
@@ -47,10 +58,18 @@ public record TenantSettingsResponse(
                 settings.getId(),
                 settings.getTenant().getId(),
                 settings.getLogoUrl(),
+                settings.getDarkLogoUrl(),
                 settings.getFaviconUrl(),
                 settings.getPrimaryColor(),
                 settings.getSecondaryColor(),
+                settings.getAccentColor(),
                 settings.getFontFamily(),
+                settings.getHeadingFont(),
+                settings.getBodyFont(),
+                settings.getHeaderSettings(),
+                settings.getSidebarSettings(),
+                settings.getFooterSettings(),
+                settings.getContentSettings(),
                 settings.getDefaultLanguage(),
                 settings.getTimezone(),
                 settings.getAllowSelfRegistration(),

@@ -12,10 +12,13 @@ import com.mzc.lp.domain.community.exception.PostNotFoundException;
 import com.mzc.lp.domain.community.repository.CommunityCommentRepository;
 import com.mzc.lp.domain.community.repository.CommunityPostLikeRepository;
 import com.mzc.lp.domain.community.repository.CommunityPostRepository;
+import com.mzc.lp.domain.notification.constant.NotificationType;
+import com.mzc.lp.domain.notification.service.NotificationService;
 import com.mzc.lp.domain.user.entity.User;
 import com.mzc.lp.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -36,6 +39,7 @@ public class CommunityPostService {
     private final CommunityPostLikeRepository postLikeRepository;
     private final CommunityCommentRepository commentRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     public PostListResponse getPosts(String keyword, String category, String type, String sortBy, int page, int pageSize, Long userId) {
         PostType postType = null;
@@ -168,16 +172,45 @@ public class CommunityPostService {
 
     @Transactional
     public void likePost(Long userId, Long postId) {
-        if (!postRepository.existsById(postId)) {
-            throw new PostNotFoundException(postId);
-        }
+        CommunityPost post = postRepository.findById(postId)
+                .orElseThrow(() -> new PostNotFoundException(postId));
 
         if (postLikeRepository.existsByPostIdAndUserId(postId, userId)) {
             throw new AlreadyLikedException("Already liked post: " + postId);
         }
 
-        CommunityPostLike like = CommunityPostLike.create(postId, userId);
-        postLikeRepository.save(like);
+        try {
+            CommunityPostLike like = CommunityPostLike.create(postId, userId);
+            postLikeRepository.save(like);
+            postLikeRepository.flush(); // 즉시 DB에 반영하여 제약조건 위반 확인
+
+            // 알림 생성: 게시글 작성자에게 (본인 제외)
+            if (!post.getAuthorId().equals(userId)) {
+                User actor = userRepository.findById(userId).orElse(null);
+                String actorName = actor != null ? actor.getName() : "알 수 없음";
+
+                notificationService.createNotification(
+                        post.getAuthorId(),
+                        NotificationType.LIKE,
+                        "게시글에 좋아요를 받았습니다",
+                        actorName + "님이 \"" + truncate(post.getTitle(), 20) + "\" 게시글을 좋아합니다.",
+                        "/tu/b2c/community/" + postId,
+                        postId,
+                        "POST_LIKE",
+                        userId,
+                        actorName
+                );
+            }
+        } catch (DataIntegrityViolationException e) {
+            // 동시성 이슈로 인한 중복 좋아요 시도
+            log.debug("Concurrent like attempt detected for post {} by user {}", postId, userId);
+            throw new AlreadyLikedException("Already liked post: " + postId);
+        }
+    }
+
+    private String truncate(String text, int maxLength) {
+        if (text == null) return "";
+        return text.length() > maxLength ? text.substring(0, maxLength) + "..." : text;
     }
 
     @Transactional
@@ -230,5 +263,105 @@ public class CommunityPostService {
         );
 
         return CategoryResponse.of(categories);
+    }
+
+    /**
+     * 내 게시글 목록 조회
+     */
+    public PostListResponse getMyPosts(Long userId, int page, int pageSize) {
+        Pageable pageable = PageRequest.of(page, pageSize);
+        Page<CommunityPost> postPage = postRepository.findByAuthorIdOrderByCreatedAtDesc(userId, pageable);
+
+        List<CommunityPost> posts = postPage.getContent();
+
+        if (posts.isEmpty()) {
+            return PostListResponse.of(List.of(), 0, page, pageSize, 0);
+        }
+
+        User author = userRepository.findById(userId).orElse(null);
+
+        List<PostResponse> postResponses = posts.stream()
+                .map(post -> {
+                    long likeCount = postLikeRepository.countByPostId(post.getId());
+                    long commentCount = commentRepository.countByPostId(post.getId());
+                    boolean isLiked = postLikeRepository.existsByPostIdAndUserId(post.getId(), userId);
+                    return PostResponse.from(post, author, likeCount, commentCount, isLiked);
+                })
+                .toList();
+
+        return PostListResponse.of(
+                postResponses,
+                postPage.getTotalElements(),
+                page,
+                pageSize,
+                postPage.getTotalPages()
+        );
+    }
+
+    /**
+     * 내가 댓글 단 게시글 목록 조회
+     */
+    public PostListResponse getCommentedPosts(Long userId, int page, int pageSize) {
+        // 내가 댓글 단 게시글 ID 목록 조회
+        List<Long> commentedPostIds = commentRepository.findDistinctPostIdsByAuthorId(userId);
+
+        if (commentedPostIds.isEmpty()) {
+            return PostListResponse.of(List.of(), 0, page, pageSize, 0);
+        }
+
+        // 페이징 처리
+        int start = page * pageSize;
+        int end = Math.min(start + pageSize, commentedPostIds.size());
+
+        if (start >= commentedPostIds.size()) {
+            return PostListResponse.of(List.of(), commentedPostIds.size(), page, pageSize, (int) Math.ceil((double) commentedPostIds.size() / pageSize));
+        }
+
+        List<Long> pagedPostIds = commentedPostIds.subList(start, end);
+
+        // 게시글 조회
+        List<CommunityPost> posts = postRepository.findAllById(pagedPostIds);
+
+        // 순서 유지를 위해 재정렬
+        Map<Long, CommunityPost> postMap = posts.stream()
+                .collect(Collectors.toMap(CommunityPost::getId, Function.identity()));
+        posts = pagedPostIds.stream()
+                .map(postMap::get)
+                .filter(Objects::nonNull)
+                .toList();
+
+        if (posts.isEmpty()) {
+            return PostListResponse.of(List.of(), 0, page, pageSize, 0);
+        }
+
+        // 작성자 벌크 조회
+        Set<Long> authorIds = posts.stream().map(CommunityPost::getAuthorId).collect(Collectors.toSet());
+        Map<Long, User> authorMap = userRepository.findAllById(authorIds).stream()
+                .collect(Collectors.toMap(User::getId, Function.identity()));
+
+        // 좋아요 여부 벌크 조회
+        List<Long> postIds = posts.stream().map(CommunityPost::getId).toList();
+        Set<Long> likedPostIds = new HashSet<>(postLikeRepository.findLikedPostIdsByUserIdAndPostIdIn(userId, postIds));
+
+        // 응답 변환
+        List<PostResponse> postResponses = posts.stream()
+                .map(post -> {
+                    User author = authorMap.get(post.getAuthorId());
+                    long likeCount = postLikeRepository.countByPostId(post.getId());
+                    long commentCount = commentRepository.countByPostId(post.getId());
+                    boolean isLiked = likedPostIds.contains(post.getId());
+                    return PostResponse.from(post, author, likeCount, commentCount, isLiked);
+                })
+                .toList();
+
+        int totalPages = (int) Math.ceil((double) commentedPostIds.size() / pageSize);
+
+        return PostListResponse.of(
+                postResponses,
+                commentedPostIds.size(),
+                page,
+                pageSize,
+                totalPages
+        );
     }
 }

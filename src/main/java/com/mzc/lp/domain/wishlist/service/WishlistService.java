@@ -13,6 +13,8 @@ import com.mzc.lp.domain.wishlist.exception.AlreadyInWishlistException;
 import com.mzc.lp.domain.wishlist.exception.WishlistItemNotFoundException;
 import com.mzc.lp.domain.wishlist.repository.WishlistRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -24,6 +26,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 @Transactional(readOnly = true)
 public class WishlistService {
 
@@ -46,18 +49,25 @@ public class WishlistService {
             throw new AlreadyInWishlistException(userId, courseId);
         }
 
-        // 찜 아이템 생성 및 저장
-        WishlistItem item = WishlistItem.create(userId, courseId);
-        WishlistItem savedItem = wishlistRepository.save(item);
+        try {
+            // 찜 아이템 생성 및 저장
+            WishlistItem item = WishlistItem.create(userId, courseId);
+            WishlistItem savedItem = wishlistRepository.save(item);
+            wishlistRepository.flush(); // 즉시 DB에 반영하여 제약조건 위반 확인
 
-        return WishlistItemResponse.of(
-                savedItem,
-                course.getTitle(),
-                course.getThumbnailUrl(),
-                course.getLevel() != null ? course.getLevel().name() : null,
-                course.getType() != null ? course.getType().name() : null,
-                course.getEstimatedHours()
-        );
+            return WishlistItemResponse.of(
+                    savedItem,
+                    course.getTitle(),
+                    course.getThumbnailUrl(),
+                    course.getLevel() != null ? course.getLevel().name() : null,
+                    course.getType() != null ? course.getType().name() : null,
+                    course.getEstimatedHours()
+            );
+        } catch (DataIntegrityViolationException e) {
+            // 동시성 이슈로 인한 중복 찜 시도
+            log.debug("Concurrent wishlist add attempt detected for course {} by user {}", courseId, userId);
+            throw new AlreadyInWishlistException(userId, courseId);
+        }
     }
 
     /**

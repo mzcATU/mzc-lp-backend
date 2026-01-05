@@ -49,7 +49,8 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/uploads/**").permitAll()  // 정적 리소스 (썸네일 등) 인증 없이 접근 허용
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/courses", "/api/courses/**").permitAll()  // 강의 목록/상세 조회 공개
-                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/community/posts", "/api/community/posts/**", "/api/community/categories").permitAll();  // 커뮤니티 게시글/카테고리 조회 공개
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/community/posts", "/api/community/posts/**", "/api/community/categories").permitAll()  // 커뮤니티 게시글/카테고리 조회 공개
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/public/course-times", "/api/public/course-times/**").permitAll();  // 학습자용 차수 목록/상세 조회 공개
                     // H2 Console은 명시적으로 활성화된 경우에만 허용
                     if (h2ConsoleEnabled) {
                         auth.requestMatchers("/h2-console/**").permitAll();

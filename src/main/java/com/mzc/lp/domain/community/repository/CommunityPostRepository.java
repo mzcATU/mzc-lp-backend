@@ -49,6 +49,9 @@ public interface CommunityPostRepository extends JpaRepository<CommunityPost, Lo
 
     List<CommunityPost> findByAuthorId(Long authorId);
 
+    @Query("SELECT p FROM CommunityPost p WHERE p.authorId = :authorId ORDER BY p.createdAt DESC")
+    Page<CommunityPost> findByAuthorIdOrderByCreatedAtDesc(@Param("authorId") Long authorId, Pageable pageable);
+
     long countByCategory(String category);
 
     long countByType(PostType type);
