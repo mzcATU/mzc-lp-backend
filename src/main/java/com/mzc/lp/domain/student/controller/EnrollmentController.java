@@ -3,10 +3,12 @@ package com.mzc.lp.domain.student.controller;
 import com.mzc.lp.common.dto.ApiResponse;
 import com.mzc.lp.common.security.UserPrincipal;
 import com.mzc.lp.domain.student.constant.EnrollmentStatus;
+import com.mzc.lp.domain.student.dto.request.BulkEnrollmentRequest;
 import com.mzc.lp.domain.student.dto.request.CompleteEnrollmentRequest;
 import com.mzc.lp.domain.student.dto.request.ForceEnrollRequest;
 import com.mzc.lp.domain.student.dto.request.UpdateEnrollmentStatusRequest;
 import com.mzc.lp.domain.student.dto.request.UpdateProgressRequest;
+import com.mzc.lp.domain.student.dto.response.BulkEnrollmentResponse;
 import com.mzc.lp.domain.student.dto.response.CourseTimeEnrollmentStatsResponse;
 import com.mzc.lp.domain.student.dto.response.EnrollmentDetailResponse;
 import com.mzc.lp.domain.student.dto.response.EnrollmentResponse;
@@ -81,6 +83,19 @@ public class EnrollmentController {
         Page<EnrollmentResponse> response = enrollmentService.getEnrollmentsByCourseTime(
                 courseTimeId, status, pageable, principal.id(), hasAdminRole(principal));
         return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    /**
+     * 일괄 수강 신청
+     */
+    @PostMapping("/api/enrollments/bulk")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<BulkEnrollmentResponse>> bulkEnroll(
+            @Valid @RequestBody BulkEnrollmentRequest request,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        BulkEnrollmentResponse response = enrollmentService.bulkEnroll(request, principal.id());
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
     }
 
     // ========== 수강 관리 API ==========

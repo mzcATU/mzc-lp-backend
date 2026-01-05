@@ -10,10 +10,10 @@ import java.util.List;
 @NoArgsConstructor
 public class WishlistCheckRequest {
 
-    @NotEmpty(message = "강의 ID 목록은 필수입니다")
-    private List<Long> courseIds;
+    @NotEmpty(message = "차수 ID 목록은 필수입니다")
+    private List<Long> courseTimeIds;
 
-    public WishlistCheckRequest(List<Long> courseIds) {
-        this.courseIds = courseIds;
+    public WishlistCheckRequest(List<Long> courseTimeIds) {
+        this.courseTimeIds = courseTimeIds;
     }
 }

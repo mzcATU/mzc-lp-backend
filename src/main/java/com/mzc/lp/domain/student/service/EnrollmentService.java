@@ -1,10 +1,12 @@
 package com.mzc.lp.domain.student.service;
 
 import com.mzc.lp.domain.student.constant.EnrollmentStatus;
+import com.mzc.lp.domain.student.dto.request.BulkEnrollmentRequest;
 import com.mzc.lp.domain.student.dto.request.CompleteEnrollmentRequest;
 import com.mzc.lp.domain.student.dto.request.ForceEnrollRequest;
 import com.mzc.lp.domain.student.dto.request.UpdateEnrollmentStatusRequest;
 import com.mzc.lp.domain.student.dto.request.UpdateProgressRequest;
+import com.mzc.lp.domain.student.dto.response.BulkEnrollmentResponse;
 import com.mzc.lp.domain.student.dto.response.EnrollmentDetailResponse;
 import com.mzc.lp.domain.student.dto.response.EnrollmentResponse;
 import com.mzc.lp.domain.student.dto.response.ForceEnrollResultResponse;
@@ -42,4 +44,7 @@ public interface EnrollmentService {
 
     // 수강 취소
     void cancelEnrollment(Long enrollmentId, Long userId, boolean isAdmin);
+
+    // 일괄 수강 신청
+    BulkEnrollmentResponse bulkEnroll(BulkEnrollmentRequest request, Long userId);
 }
