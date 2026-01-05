@@ -162,7 +162,12 @@ public class MemberPoolServiceImpl implements MemberPoolService {
         );
 
         Page<Employee> employees = employeeRepository.findByMemberPoolConditionsWithPage(
-                tenantId, departmentIds, positions, jobTitles, statuses, pageable
+                tenantId,
+                !departmentIds.isEmpty(), departmentIds.isEmpty() ? List.of(-1L) : departmentIds,
+                !positions.isEmpty(), positions.isEmpty() ? List.of("") : positions,
+                !jobTitles.isEmpty(), jobTitles.isEmpty() ? List.of("") : jobTitles,
+                !statuses.isEmpty(), statuses.isEmpty() ? List.of(EmployeeStatus.ACTIVE) : statuses,
+                pageable
         );
 
         return employees.map(MemberPoolMemberResponse::from);
@@ -171,13 +176,16 @@ public class MemberPoolServiceImpl implements MemberPoolService {
     @Override
     public Page<MemberPoolMemberResponse> previewMembers(Long tenantId, MemberPoolConditionDto conditions, Pageable pageable) {
         List<EmployeeStatus> statuses = convertToStatuses(conditions.employeeStatuses());
+        List<Long> departmentIds = conditions.departments();
+        List<String> positions = conditions.positions();
+        List<String> jobTitles = conditions.jobTitles();
 
         Page<Employee> employees = employeeRepository.findByMemberPoolConditionsWithPage(
                 tenantId,
-                conditions.departments(),
-                conditions.positions(),
-                conditions.jobTitles(),
-                statuses,
+                !departmentIds.isEmpty(), departmentIds.isEmpty() ? List.of(-1L) : departmentIds,
+                !positions.isEmpty(), positions.isEmpty() ? List.of("") : positions,
+                !jobTitles.isEmpty(), jobTitles.isEmpty() ? List.of("") : jobTitles,
+                !statuses.isEmpty(), statuses.isEmpty() ? List.of(EmployeeStatus.ACTIVE) : statuses,
                 pageable
         );
 
@@ -222,13 +230,16 @@ public class MemberPoolServiceImpl implements MemberPoolService {
 
     private long countMembers(Long tenantId, MemberPoolConditionDto conditions) {
         List<EmployeeStatus> statuses = convertToStatuses(conditions.employeeStatuses());
+        List<Long> departmentIds = conditions.departments();
+        List<String> positions = conditions.positions();
+        List<String> jobTitles = conditions.jobTitles();
 
         return employeeRepository.countByMemberPoolConditions(
                 tenantId,
-                conditions.departments(),
-                conditions.positions(),
-                conditions.jobTitles(),
-                statuses
+                !departmentIds.isEmpty(), departmentIds.isEmpty() ? List.of(-1L) : departmentIds,
+                !positions.isEmpty(), positions.isEmpty() ? List.of("") : positions,
+                !jobTitles.isEmpty(), jobTitles.isEmpty() ? List.of("") : jobTitles,
+                !statuses.isEmpty(), statuses.isEmpty() ? List.of(EmployeeStatus.ACTIVE) : statuses
         );
     }
 

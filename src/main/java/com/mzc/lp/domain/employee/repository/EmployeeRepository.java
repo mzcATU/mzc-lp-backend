@@ -68,43 +68,55 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
     // 멤버 풀 조건 검색 쿼리
     @Query("SELECT e FROM Employee e JOIN FETCH e.user u LEFT JOIN FETCH e.department d WHERE e.tenantId = :tenantId " +
-           "AND (:departmentIds IS NULL OR SIZE(:departmentIds) = 0 OR e.department.id IN :departmentIds) " +
-           "AND (:positions IS NULL OR SIZE(:positions) = 0 OR e.position IN :positions) " +
-           "AND (:jobTitles IS NULL OR SIZE(:jobTitles) = 0 OR e.jobTitle IN :jobTitles) " +
-           "AND (:statuses IS NULL OR SIZE(:statuses) = 0 OR e.status IN :statuses)")
+           "AND (:hasDepartmentIds = false OR e.department.id IN :departmentIds) " +
+           "AND (:hasPositions = false OR e.position IN :positions) " +
+           "AND (:hasJobTitles = false OR e.jobTitle IN :jobTitles) " +
+           "AND (:hasStatuses = false OR e.status IN :statuses)")
     List<Employee> findByMemberPoolConditions(@Param("tenantId") Long tenantId,
+                                               @Param("hasDepartmentIds") boolean hasDepartmentIds,
                                                @Param("departmentIds") List<Long> departmentIds,
+                                               @Param("hasPositions") boolean hasPositions,
                                                @Param("positions") List<String> positions,
+                                               @Param("hasJobTitles") boolean hasJobTitles,
                                                @Param("jobTitles") List<String> jobTitles,
+                                               @Param("hasStatuses") boolean hasStatuses,
                                                @Param("statuses") List<EmployeeStatus> statuses);
 
     // 멤버 풀 조건 검색 (페이징)
     @Query(value = "SELECT e FROM Employee e JOIN e.user u LEFT JOIN e.department d WHERE e.tenantId = :tenantId " +
-           "AND (:departmentIds IS NULL OR SIZE(:departmentIds) = 0 OR e.department.id IN :departmentIds) " +
-           "AND (:positions IS NULL OR SIZE(:positions) = 0 OR e.position IN :positions) " +
-           "AND (:jobTitles IS NULL OR SIZE(:jobTitles) = 0 OR e.jobTitle IN :jobTitles) " +
-           "AND (:statuses IS NULL OR SIZE(:statuses) = 0 OR e.status IN :statuses)",
+           "AND (:hasDepartmentIds = false OR e.department.id IN :departmentIds) " +
+           "AND (:hasPositions = false OR e.position IN :positions) " +
+           "AND (:hasJobTitles = false OR e.jobTitle IN :jobTitles) " +
+           "AND (:hasStatuses = false OR e.status IN :statuses)",
            countQuery = "SELECT COUNT(e) FROM Employee e WHERE e.tenantId = :tenantId " +
-           "AND (:departmentIds IS NULL OR SIZE(:departmentIds) = 0 OR e.department.id IN :departmentIds) " +
-           "AND (:positions IS NULL OR SIZE(:positions) = 0 OR e.position IN :positions) " +
-           "AND (:jobTitles IS NULL OR SIZE(:jobTitles) = 0 OR e.jobTitle IN :jobTitles) " +
-           "AND (:statuses IS NULL OR SIZE(:statuses) = 0 OR e.status IN :statuses)")
+           "AND (:hasDepartmentIds = false OR e.department.id IN :departmentIds) " +
+           "AND (:hasPositions = false OR e.position IN :positions) " +
+           "AND (:hasJobTitles = false OR e.jobTitle IN :jobTitles) " +
+           "AND (:hasStatuses = false OR e.status IN :statuses)")
     Page<Employee> findByMemberPoolConditionsWithPage(@Param("tenantId") Long tenantId,
+                                                       @Param("hasDepartmentIds") boolean hasDepartmentIds,
                                                        @Param("departmentIds") List<Long> departmentIds,
+                                                       @Param("hasPositions") boolean hasPositions,
                                                        @Param("positions") List<String> positions,
+                                                       @Param("hasJobTitles") boolean hasJobTitles,
                                                        @Param("jobTitles") List<String> jobTitles,
+                                                       @Param("hasStatuses") boolean hasStatuses,
                                                        @Param("statuses") List<EmployeeStatus> statuses,
                                                        Pageable pageable);
 
     // 멤버 풀 조건 카운트
     @Query("SELECT COUNT(e) FROM Employee e WHERE e.tenantId = :tenantId " +
-           "AND (:departmentIds IS NULL OR SIZE(:departmentIds) = 0 OR e.department.id IN :departmentIds) " +
-           "AND (:positions IS NULL OR SIZE(:positions) = 0 OR e.position IN :positions) " +
-           "AND (:jobTitles IS NULL OR SIZE(:jobTitles) = 0 OR e.jobTitle IN :jobTitles) " +
-           "AND (:statuses IS NULL OR SIZE(:statuses) = 0 OR e.status IN :statuses)")
+           "AND (:hasDepartmentIds = false OR e.department.id IN :departmentIds) " +
+           "AND (:hasPositions = false OR e.position IN :positions) " +
+           "AND (:hasJobTitles = false OR e.jobTitle IN :jobTitles) " +
+           "AND (:hasStatuses = false OR e.status IN :statuses)")
     long countByMemberPoolConditions(@Param("tenantId") Long tenantId,
+                                      @Param("hasDepartmentIds") boolean hasDepartmentIds,
                                       @Param("departmentIds") List<Long> departmentIds,
+                                      @Param("hasPositions") boolean hasPositions,
                                       @Param("positions") List<String> positions,
+                                      @Param("hasJobTitles") boolean hasJobTitles,
                                       @Param("jobTitles") List<String> jobTitles,
+                                      @Param("hasStatuses") boolean hasStatuses,
                                       @Param("statuses") List<EmployeeStatus> statuses);
 }
