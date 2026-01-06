@@ -15,17 +15,14 @@ import java.time.Instant;
                 @UniqueConstraint(
                         name = "uk_certificate_number",
                         columnNames = {"tenant_id", "certificate_number"}
-                ),
-                @UniqueConstraint(
-                        name = "uk_certificate_enrollment",
-                        columnNames = {"tenant_id", "enrollment_id"}
                 )
         },
         indexes = {
                 @Index(name = "idx_certificate_user", columnList = "tenant_id, user_id"),
                 @Index(name = "idx_certificate_status", columnList = "tenant_id, status"),
                 @Index(name = "idx_certificate_issued_at", columnList = "tenant_id, issued_at"),
-                @Index(name = "idx_certificate_template", columnList = "tenant_id, template_id")
+                @Index(name = "idx_certificate_template", columnList = "tenant_id, template_id"),
+                @Index(name = "idx_certificate_enrollment", columnList = "tenant_id, enrollment_id")
         }
 )
 @Getter
@@ -81,6 +78,24 @@ public class Certificate extends TenantEntity {
 
     @Column(name = "revoked_reason", length = 500)
     private String revokedReason;
+
+    /**
+     * 재발급 횟수
+     */
+    @Column(name = "reissue_count", nullable = false)
+    private int reissueCount = 0;
+
+    /**
+     * 원본 수료증 ID (재발급인 경우)
+     */
+    @Column(name = "original_certificate_id")
+    private Long originalCertificateId;
+
+    /**
+     * 재발급 사유
+     */
+    @Column(name = "reissue_reason", length = 500)
+    private String reissueReason;
 
     public static Certificate create(
             String certificateNumber,
@@ -145,10 +160,55 @@ public class Certificate extends TenantEntity {
         return certificate;
     }
 
+    /**
+     * 재발급 수료증 생성
+     */
+    public static Certificate createReissue(
+            String certificateNumber,
+            Certificate original,
+            String reissueReason
+    ) {
+        Certificate certificate = new Certificate();
+        certificate.certificateNumber = certificateNumber;
+        certificate.template = original.template;
+        certificate.userId = original.userId;
+        certificate.userName = original.userName;
+        certificate.enrollmentId = original.enrollmentId;
+        certificate.courseTimeId = original.courseTimeId;
+        certificate.courseTimeTitle = original.courseTimeTitle;
+        certificate.programId = original.programId;
+        certificate.programTitle = original.programTitle;
+        certificate.completedAt = original.completedAt;
+        certificate.issuedAt = Instant.now();
+        certificate.status = CertificateStatus.ISSUED;
+        certificate.reissueCount = original.reissueCount + 1;
+        certificate.originalCertificateId = original.getId();
+        certificate.reissueReason = reissueReason;
+
+        // 템플릿에 유효 기간이 설정되어 있으면 만료일 계산
+        if (original.template != null && original.template.getValidityMonths() != null) {
+            certificate.expiresAt = certificate.issuedAt
+                    .atZone(java.time.ZoneId.systemDefault())
+                    .plusMonths(original.template.getValidityMonths())
+                    .toInstant();
+        }
+
+        return certificate;
+    }
+
     public void revoke(String reason) {
         this.status = CertificateStatus.REVOKED;
         this.revokedAt = Instant.now();
         this.revokedReason = reason;
+    }
+
+    /**
+     * 재발급으로 인한 무효화
+     */
+    public void invalidateForReissue(String reason) {
+        this.status = CertificateStatus.REVOKED;
+        this.revokedAt = Instant.now();
+        this.revokedReason = "재발급으로 인한 무효화: " + reason;
     }
 
     public void expire() {

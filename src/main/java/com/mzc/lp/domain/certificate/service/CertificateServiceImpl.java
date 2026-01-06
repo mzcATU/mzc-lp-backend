@@ -1,6 +1,7 @@
 package com.mzc.lp.domain.certificate.service;
 
 import com.mzc.lp.common.context.TenantContext;
+import com.mzc.lp.domain.certificate.constant.CertificateStatus;
 import com.mzc.lp.domain.certificate.dto.response.CertificateDetailResponse;
 import com.mzc.lp.domain.certificate.dto.response.CertificateResponse;
 import com.mzc.lp.domain.certificate.dto.response.CertificateVerifyResponse;
@@ -8,6 +9,7 @@ import com.mzc.lp.domain.certificate.entity.Certificate;
 import com.mzc.lp.domain.certificate.exception.CertificateAlreadyIssuedException;
 import com.mzc.lp.domain.certificate.exception.CertificateNotFoundException;
 import com.mzc.lp.domain.certificate.repository.CertificateRepository;
+import com.mzc.lp.domain.student.constant.EnrollmentStatus;
 import com.mzc.lp.domain.student.entity.Enrollment;
 import com.mzc.lp.domain.student.exception.EnrollmentNotFoundException;
 import com.mzc.lp.domain.student.exception.UnauthorizedEnrollmentAccessException;
@@ -44,8 +46,9 @@ public class CertificateServiceImpl implements CertificateService {
         Long tenantId = TenantContext.getCurrentTenantId();
         log.info("Issuing certificate: enrollmentId={}, tenantId={}", enrollmentId, tenantId);
 
-        // 중복 발급 체크
-        if (certificateRepository.existsByEnrollmentIdAndTenantId(enrollmentId, tenantId)) {
+        // 유효한 수료증 중복 발급 체크 (ISSUED 상태인 것만)
+        if (certificateRepository.existsByEnrollmentIdAndTenantIdAndStatus(
+                enrollmentId, tenantId, CertificateStatus.ISSUED)) {
             throw new CertificateAlreadyIssuedException(enrollmentId);
         }
 
@@ -81,6 +84,102 @@ public class CertificateServiceImpl implements CertificateService {
         Certificate saved = certificateRepository.save(certificate);
         log.info("Certificate issued: certificateId={}, certificateNumber={}",
                 saved.getId(), saved.getCertificateNumber());
+
+        return CertificateDetailResponse.from(saved);
+    }
+
+    @Override
+    @Transactional
+    public CertificateDetailResponse issueCertificateByUser(Long enrollmentId, Long userId) {
+        Long tenantId = TenantContext.getCurrentTenantId();
+        log.info("Issuing certificate by user: enrollmentId={}, userId={}, tenantId={}",
+                enrollmentId, userId, tenantId);
+
+        // Enrollment 조회
+        Enrollment enrollment = enrollmentRepository.findByIdAndTenantId(enrollmentId, tenantId)
+                .orElseThrow(() -> new EnrollmentNotFoundException(enrollmentId));
+
+        // 본인 수강 확인
+        if (!enrollment.getUserId().equals(userId)) {
+            throw new UnauthorizedEnrollmentAccessException(enrollmentId, userId);
+        }
+
+        // 수강 완료 상태 확인
+        if (enrollment.getStatus() != EnrollmentStatus.COMPLETED) {
+            throw new IllegalStateException("수강을 완료해야 수료증을 발급받을 수 있습니다.");
+        }
+
+        // 유효한 수료증 중복 발급 체크
+        if (certificateRepository.existsByEnrollmentIdAndTenantIdAndStatus(
+                enrollmentId, tenantId, CertificateStatus.ISSUED)) {
+            throw new CertificateAlreadyIssuedException(enrollmentId);
+        }
+
+        // CourseTime 조회
+        CourseTime courseTime = courseTimeRepository.findByIdAndTenantId(
+                enrollment.getCourseTimeId(), tenantId
+        ).orElseThrow(() -> new CourseTimeNotFoundException(enrollment.getCourseTimeId()));
+
+        // User 조회
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
+
+        // 수료증 번호 생성
+        String certificateNumber = certificateNumberGenerator.generate(tenantId);
+
+        // Certificate 생성
+        Certificate certificate = Certificate.create(
+                certificateNumber,
+                userId,
+                user.getName(),
+                enrollmentId,
+                courseTime.getId(),
+                courseTime.getTitle(),
+                courseTime.getProgram() != null ? courseTime.getProgram().getId() : null,
+                courseTime.getProgram() != null ? courseTime.getProgram().getTitle() : null,
+                enrollment.getCompletedAt()
+        );
+
+        Certificate saved = certificateRepository.save(certificate);
+        log.info("Certificate issued by user: certificateId={}, certificateNumber={}",
+                saved.getId(), saved.getCertificateNumber());
+
+        return CertificateDetailResponse.from(saved);
+    }
+
+    @Override
+    @Transactional
+    public CertificateDetailResponse reissueCertificate(Long certificateId, String reason, Long userId) {
+        Long tenantId = TenantContext.getCurrentTenantId();
+        log.info("Reissuing certificate: certificateId={}, userId={}, reason={}",
+                certificateId, userId, reason);
+
+        // 기존 수료증 조회
+        Certificate original = certificateRepository.findByIdAndTenantId(certificateId, tenantId)
+                .orElseThrow(() -> new CertificateNotFoundException(certificateId));
+
+        // 본인 소유 확인
+        if (!original.getUserId().equals(userId)) {
+            throw new UnauthorizedEnrollmentAccessException(certificateId, userId);
+        }
+
+        // 유효한 수료증인지 확인
+        if (!original.isValid()) {
+            throw new IllegalStateException("유효하지 않은 수료증은 재발급할 수 없습니다.");
+        }
+
+        // 기존 수료증 무효화
+        original.invalidateForReissue(reason);
+
+        // 새 수료증 번호 생성
+        String newCertificateNumber = certificateNumberGenerator.generate(tenantId);
+
+        // 재발급 수료증 생성
+        Certificate reissued = Certificate.createReissue(newCertificateNumber, original, reason);
+
+        Certificate saved = certificateRepository.save(reissued);
+        log.info("Certificate reissued: originalId={}, newId={}, newCertificateNumber={}, reissueCount={}",
+                certificateId, saved.getId(), saved.getCertificateNumber(), saved.getReissueCount());
 
         return CertificateDetailResponse.from(saved);
     }
