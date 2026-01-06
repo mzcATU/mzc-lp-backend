@@ -125,7 +125,8 @@ class CertificateServiceTest extends TenantTestSupport {
             User user = mock(User.class);
             given(user.getName()).willReturn("테스트 사용자");
 
-            given(certificateRepository.existsByEnrollmentIdAndTenantId(enrollmentId, TENANT_ID))
+            given(certificateRepository.existsByEnrollmentIdAndTenantIdAndStatus(
+                    enrollmentId, TENANT_ID, CertificateStatus.ISSUED))
                     .willReturn(false);
             given(enrollmentRepository.findByIdAndTenantId(enrollmentId, TENANT_ID))
                     .willReturn(Optional.of(enrollment));
@@ -166,7 +167,8 @@ class CertificateServiceTest extends TenantTestSupport {
             // given
             Long enrollmentId = 1L;
 
-            given(certificateRepository.existsByEnrollmentIdAndTenantId(enrollmentId, TENANT_ID))
+            given(certificateRepository.existsByEnrollmentIdAndTenantIdAndStatus(
+                    enrollmentId, TENANT_ID, CertificateStatus.ISSUED))
                     .willReturn(true);
 
             // when & then

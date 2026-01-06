@@ -9,9 +9,21 @@ import org.springframework.data.domain.Pageable;
 public interface CertificateService {
 
     /**
-     * 수료 시 수료증 자동 발급
+     * 수료증 발급 (내부/이벤트 호출용)
      */
     CertificateDetailResponse issueCertificate(Long enrollmentId);
+
+    /**
+     * 수료증 발급 (사용자 API 요청)
+     */
+    CertificateDetailResponse issueCertificateByUser(Long enrollmentId, Long userId);
+
+    /**
+     * 수료증 재발급
+     * - 기존 수료증 자동 무효화
+     * - 새로운 수료증 번호 발급
+     */
+    CertificateDetailResponse reissueCertificate(Long certificateId, String reason, Long userId);
 
     /**
      * 내 수료증 목록 조회

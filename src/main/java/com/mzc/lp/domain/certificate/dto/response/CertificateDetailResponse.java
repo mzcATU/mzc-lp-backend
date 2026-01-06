@@ -17,9 +17,13 @@ public record CertificateDetailResponse(
         String programTitle,
         Instant completedAt,
         Instant issuedAt,
+        Instant expiresAt,
         CertificateStatus status,
         Instant revokedAt,
-        String revokedReason
+        String revokedReason,
+        int reissueCount,
+        Long originalCertificateId,
+        String reissueReason
 ) {
     public static CertificateDetailResponse from(Certificate certificate) {
         return new CertificateDetailResponse(
@@ -34,9 +38,13 @@ public record CertificateDetailResponse(
                 certificate.getProgramTitle(),
                 certificate.getCompletedAt(),
                 certificate.getIssuedAt(),
+                certificate.getExpiresAt(),
                 certificate.getStatus(),
                 certificate.getRevokedAt(),
-                certificate.getRevokedReason()
+                certificate.getRevokedReason(),
+                certificate.getReissueCount(),
+                certificate.getOriginalCertificateId(),
+                certificate.getReissueReason()
         );
     }
 }

@@ -2,15 +2,18 @@ package com.mzc.lp.domain.certificate.controller;
 
 import com.mzc.lp.common.dto.ApiResponse;
 import com.mzc.lp.common.security.UserPrincipal;
+import com.mzc.lp.domain.certificate.dto.request.ReissueCertificateRequest;
 import com.mzc.lp.domain.certificate.dto.response.CertificateDetailResponse;
 import com.mzc.lp.domain.certificate.dto.response.CertificateResponse;
 import com.mzc.lp.domain.certificate.dto.response.CertificateVerifyResponse;
 import com.mzc.lp.domain.certificate.service.CertificateService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -25,6 +28,39 @@ import java.nio.charset.StandardCharsets;
 public class CertificateController {
 
     private final CertificateService certificateService;
+
+    /**
+     * 수료증 발급
+     * POST /api/enrollments/{enrollmentId}/certificate
+     */
+    @PostMapping("/api/enrollments/{enrollmentId}/certificate")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<CertificateDetailResponse>> issueCertificate(
+            @PathVariable Long enrollmentId,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        CertificateDetailResponse response = certificateService.issueCertificateByUser(
+                enrollmentId, principal.id());
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(response));
+    }
+
+    /**
+     * 수료증 재발급
+     * POST /api/certificates/{id}/reissue
+     */
+    @PostMapping("/api/certificates/{id}/reissue")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<CertificateDetailResponse>> reissueCertificate(
+            @PathVariable Long id,
+            @Valid @RequestBody ReissueCertificateRequest request,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        CertificateDetailResponse response = certificateService.reissueCertificate(
+                id, request.reason(), principal.id());
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(response));
+    }
 
     /**
      * 내 수료증 목록 조회
