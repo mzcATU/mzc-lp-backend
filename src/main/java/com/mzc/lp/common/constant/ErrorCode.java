@@ -154,7 +154,10 @@ public enum ErrorCode {
     BANNER_NOT_FOUND(HttpStatus.NOT_FOUND, "BNR001", "Banner not found"),
 
     // Auto Enrollment Rule (AER)
-    AUTO_ENROLLMENT_RULE_NOT_FOUND(HttpStatus.NOT_FOUND, "AER001", "Auto enrollment rule not found");
+    AUTO_ENROLLMENT_RULE_NOT_FOUND(HttpStatus.NOT_FOUND, "AER001", "Auto enrollment rule not found"),
+
+    // Member Pool (MP)
+    MEMBER_POOL_NOT_FOUND(HttpStatus.NOT_FOUND, "MP001", "Member pool not found");
 
     private final HttpStatus status;
     private final String code;
