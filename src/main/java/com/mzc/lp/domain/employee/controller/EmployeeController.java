@@ -5,7 +5,10 @@ import com.mzc.lp.common.security.UserPrincipal;
 import com.mzc.lp.domain.employee.constant.EmployeeStatus;
 import com.mzc.lp.domain.employee.dto.request.ChangeEmployeeStatusRequest;
 import com.mzc.lp.domain.employee.dto.request.CreateEmployeeRequest;
+import com.mzc.lp.domain.employee.dto.request.CreateLmsAccountRequest;
 import com.mzc.lp.domain.employee.dto.request.UpdateEmployeeRequest;
+import com.mzc.lp.domain.employee.dto.response.CreateLmsAccountResponse;
+import com.mzc.lp.domain.employee.dto.response.EmployeeLmsAccountResponse;
 import com.mzc.lp.domain.employee.dto.response.EmployeeResponse;
 import com.mzc.lp.domain.employee.service.EmployeeService;
 import jakarta.validation.Valid;
@@ -126,5 +129,49 @@ public class EmployeeController {
     ) {
         employeeService.delete(principal.tenantId(), employeeId);
         return ResponseEntity.noContent().build();
+    }
+
+    // ========== LMS 계정 연동 API ==========
+
+    /**
+     * 임직원의 LMS 계정 조회
+     */
+    @GetMapping("/{employeeId}/lms-account")
+    @PreAuthorize("hasAnyRole('OPERATOR', 'TENANT_ADMIN')")
+    public ResponseEntity<ApiResponse<EmployeeLmsAccountResponse>> getLmsAccount(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long employeeId
+    ) {
+        EmployeeLmsAccountResponse response = employeeService.getLmsAccount(
+                principal.tenantId(), employeeId);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    /**
+     * 임직원의 LMS 계정 생성
+     */
+    @PostMapping("/{employeeId}/lms-account")
+    @PreAuthorize("hasRole('TENANT_ADMIN')")
+    public ResponseEntity<ApiResponse<CreateLmsAccountResponse>> createLmsAccount(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long employeeId,
+            @Valid @RequestBody CreateLmsAccountRequest request
+    ) {
+        CreateLmsAccountResponse response = employeeService.createLmsAccount(
+                principal.tenantId(), employeeId, request);
+        return ResponseEntity.status(201).body(ApiResponse.success(response));
+    }
+
+    /**
+     * 임직원의 LMS 계정 존재 여부 확인
+     */
+    @GetMapping("/{employeeId}/has-lms-account")
+    @PreAuthorize("hasAnyRole('OPERATOR', 'TENANT_ADMIN')")
+    public ResponseEntity<ApiResponse<Boolean>> hasLmsAccount(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long employeeId
+    ) {
+        boolean hasAccount = employeeService.hasLmsAccount(principal.tenantId(), employeeId);
+        return ResponseEntity.ok(ApiResponse.success(hasAccount));
     }
 }
