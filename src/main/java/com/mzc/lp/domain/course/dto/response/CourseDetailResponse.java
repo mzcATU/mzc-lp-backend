@@ -23,6 +23,8 @@ public record CourseDetailResponse(
         List<CourseItemResponse> items,
         int itemCount,
         boolean isComplete,
+        Double averageRating,
+        long reviewCount,
         Instant createdAt,
         Instant updatedAt
 ) {
@@ -42,10 +44,15 @@ public record CourseDetailResponse(
 
     public static CourseDetailResponse from(Course course, List<CourseItemResponse> items) {
         int count = items != null ? items.size() : 0;
-        return from(course, items, count);
+        return from(course, items, count, null, 0L);
     }
 
     public static CourseDetailResponse from(Course course, List<CourseItemResponse> items, int itemCount) {
+        return from(course, items, itemCount, null, 0L);
+    }
+
+    public static CourseDetailResponse from(Course course, List<CourseItemResponse> items, int itemCount,
+                                             Double averageRating, long reviewCount) {
         return new CourseDetailResponse(
                 course.getId(),
                 course.getTitle(),
@@ -61,6 +68,8 @@ public record CourseDetailResponse(
                 items,
                 itemCount,
                 checkCompleteness(course, itemCount),
+                averageRating != null ? Math.round(averageRating * 10.0) / 10.0 : 0.0,
+                reviewCount,
                 course.getCreatedAt(),
                 course.getUpdatedAt()
         );
