@@ -114,4 +114,11 @@ public interface TenantSettingsService {
      * @return 공개 브랜딩 정보
      */
     PublicBrandingResponse getPublicBranding(String identifier, String type);
+
+    /**
+     * 테넌트 ID로 브랜딩 정보 조회 (인증된 사용자용)
+     * @param tenantId 테넌트 ID
+     * @return 브랜딩 정보
+     */
+    PublicBrandingResponse getBrandingByTenantId(Long tenantId);
 }

@@ -4,6 +4,7 @@ import com.mzc.lp.common.dto.ApiResponse;
 import com.mzc.lp.domain.tenant.dto.request.CreateTenantRequest;
 import com.mzc.lp.domain.tenant.dto.request.UpdateTenantRequest;
 import com.mzc.lp.domain.tenant.dto.request.UpdateTenantStatusRequest;
+import com.mzc.lp.domain.tenant.dto.response.CreateTenantResponse;
 import com.mzc.lp.domain.tenant.dto.response.TenantResponse;
 import com.mzc.lp.domain.tenant.service.TenantService;
 import jakarta.validation.Valid;
@@ -27,15 +28,15 @@ public class TenantController {
     private final TenantService tenantService;
 
     /**
-     * 테넌트 생성
+     * 테넌트 생성 (TENANT_ADMIN 계정도 함께 생성)
      * POST /api/tenants
      */
     @PostMapping
     @PreAuthorize("hasRole('SYSTEM_ADMIN')")
-    public ResponseEntity<ApiResponse<TenantResponse>> createTenant(
+    public ResponseEntity<ApiResponse<CreateTenantResponse>> createTenant(
             @Valid @RequestBody CreateTenantRequest request
     ) {
-        TenantResponse response = tenantService.createTenant(request);
+        CreateTenantResponse response = tenantService.createTenant(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
     }
 

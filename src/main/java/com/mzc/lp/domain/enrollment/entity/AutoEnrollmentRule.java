@@ -20,7 +20,7 @@ public class AutoEnrollmentRule extends TenantEntity {
     private String description;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 30)
+    @Column(name = "trigger_type", nullable = false, length = 30)
     private AutoEnrollmentTrigger trigger;
 
     @Column(name = "department_id")
