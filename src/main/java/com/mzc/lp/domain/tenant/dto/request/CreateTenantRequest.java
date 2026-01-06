@@ -28,7 +28,16 @@ public record CreateTenantRequest(
         PlanType plan,
 
         @Size(max = 255, message = "커스텀 도메인은 255자 이하여야 합니다")
-        String customDomain
+        String customDomain,
+
+        @NotBlank(message = "관리자 이메일은 필수입니다")
+        @jakarta.validation.constraints.Email(message = "유효한 이메일 형식이어야 합니다")
+        @Size(max = 100, message = "관리자 이메일은 100자 이하여야 합니다")
+        String adminEmail,
+
+        @NotBlank(message = "관리자 이름은 필수입니다")
+        @Size(max = 50, message = "관리자 이름은 50자 이하여야 합니다")
+        String adminName
 ) {
     public CreateTenantRequest {
         if (code != null) {
@@ -42,6 +51,12 @@ public record CreateTenantRequest(
         }
         if (customDomain != null) {
             customDomain = customDomain.trim().toLowerCase();
+        }
+        if (adminEmail != null) {
+            adminEmail = adminEmail.trim().toLowerCase();
+        }
+        if (adminName != null) {
+            adminName = adminName.trim();
         }
     }
 }

@@ -7,6 +7,7 @@ import com.mzc.lp.domain.tenant.dto.request.UpdateDesignSettingsRequest;
 import com.mzc.lp.domain.tenant.dto.request.UpdateLayoutSettingsRequest;
 import com.mzc.lp.domain.tenant.dto.request.UpdateTenantSettingsRequest;
 import com.mzc.lp.domain.tenant.dto.response.NavigationItemResponse;
+import com.mzc.lp.domain.tenant.dto.response.PublicBrandingResponse;
 import com.mzc.lp.domain.tenant.dto.response.TenantSettingsResponse;
 import com.mzc.lp.domain.tenant.service.TenantSettingsService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -58,6 +59,14 @@ public class TenantSettingsController {
     // ============================================
     // 디자인/브랜딩 설정 API
     // ============================================
+
+    @Operation(summary = "현재 테넌트 브랜딩 조회", description = "로그인한 사용자의 테넌트 브랜딩 정보를 조회합니다")
+    @GetMapping("/branding")
+    public ResponseEntity<ApiResponse<PublicBrandingResponse>> getBranding() {
+        Long tenantId = TenantContext.getCurrentTenantId();
+        PublicBrandingResponse response = tenantSettingsService.getBrandingByTenantId(tenantId);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
 
     @Operation(summary = "디자인 설정 업데이트", description = "로고, 색상, 폰트 등 디자인 설정을 업데이트합니다")
     @PutMapping("/design")

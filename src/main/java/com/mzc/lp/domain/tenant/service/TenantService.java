@@ -3,6 +3,7 @@ package com.mzc.lp.domain.tenant.service;
 import com.mzc.lp.domain.tenant.dto.request.CreateTenantRequest;
 import com.mzc.lp.domain.tenant.dto.request.UpdateTenantRequest;
 import com.mzc.lp.domain.tenant.dto.request.UpdateTenantStatusRequest;
+import com.mzc.lp.domain.tenant.dto.response.CreateTenantResponse;
 import com.mzc.lp.domain.tenant.dto.response.TenantResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -10,9 +11,9 @@ import org.springframework.data.domain.Pageable;
 public interface TenantService {
 
     /**
-     * 테넌트 생성
+     * 테넌트 생성 (TENANT_ADMIN 계정도 함께 생성)
      */
-    TenantResponse createTenant(CreateTenantRequest request);
+    CreateTenantResponse createTenant(CreateTenantRequest request);
 
     /**
      * 테넌트 목록 조회 (페이징)

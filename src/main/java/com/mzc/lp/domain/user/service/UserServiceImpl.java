@@ -34,6 +34,8 @@ import com.mzc.lp.domain.user.repository.UserRepository;
 import com.mzc.lp.common.service.FileStorageService;
 import com.mzc.lp.domain.employee.entity.Employee;
 import com.mzc.lp.domain.employee.repository.EmployeeRepository;
+import com.mzc.lp.domain.tenant.entity.Tenant;
+import com.mzc.lp.domain.tenant.repository.TenantRepository;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -61,6 +63,7 @@ public class UserServiceImpl implements UserService {
     private final FileStorageService fileStorageService;
     private final UserExcelParser userExcelParser;
     private final EmployeeRepository employeeRepository;
+    private final TenantRepository tenantRepository;
 
     @Override
     public UserDetailResponse getMe(Long userId) {
@@ -68,7 +71,19 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
         List<CourseRoleResponse> courseRoles = getCourseRolesWithProgramTitle(userId);
-        return UserDetailResponse.from(user, courseRoles);
+
+        // 테넌트 정보 조회 (subdomain, customDomain)
+        String tenantSubdomain = null;
+        String tenantCustomDomain = null;
+        if (user.getTenantId() != null) {
+            Tenant tenant = tenantRepository.findById(user.getTenantId()).orElse(null);
+            if (tenant != null) {
+                tenantSubdomain = tenant.getSubdomain();
+                tenantCustomDomain = tenant.getCustomDomain();
+            }
+        }
+
+        return UserDetailResponse.from(user, courseRoles, tenantSubdomain, tenantCustomDomain);
     }
 
     @Override

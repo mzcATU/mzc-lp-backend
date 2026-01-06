@@ -1,8 +1,10 @@
 package com.mzc.lp.domain.tenant.service;
 
+import com.mzc.lp.common.context.TenantContext;
 import com.mzc.lp.domain.tenant.dto.request.CreateTenantRequest;
 import com.mzc.lp.domain.tenant.dto.request.UpdateTenantRequest;
 import com.mzc.lp.domain.tenant.dto.request.UpdateTenantStatusRequest;
+import com.mzc.lp.domain.tenant.dto.response.CreateTenantResponse;
 import com.mzc.lp.domain.tenant.dto.response.TenantResponse;
 import com.mzc.lp.domain.tenant.entity.Tenant;
 import com.mzc.lp.domain.tenant.exception.DuplicateCustomDomainException;
@@ -10,12 +12,18 @@ import com.mzc.lp.domain.tenant.exception.DuplicateSubdomainException;
 import com.mzc.lp.domain.tenant.exception.DuplicateTenantCodeException;
 import com.mzc.lp.domain.tenant.exception.TenantDomainNotFoundException;
 import com.mzc.lp.domain.tenant.repository.TenantRepository;
+import com.mzc.lp.domain.user.constant.TenantRole;
+import com.mzc.lp.domain.user.entity.User;
+import com.mzc.lp.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.security.SecureRandom;
 
 @Slf4j
 @Service
@@ -24,11 +32,17 @@ import org.springframework.transaction.annotation.Transactional;
 public class TenantServiceImpl implements TenantService {
 
     private final TenantRepository tenantRepository;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    private static final String TEMP_PASSWORD_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%";
+    private static final int TEMP_PASSWORD_LENGTH = 12;
 
     @Override
     @Transactional
-    public TenantResponse createTenant(CreateTenantRequest request) {
-        log.info("Creating tenant: code={}, name={}", request.code(), request.name());
+    public CreateTenantResponse createTenant(CreateTenantRequest request) {
+        log.info("Creating tenant: code={}, name={}, adminEmail={}",
+                request.code(), request.name(), request.adminEmail());
 
         // 중복 검증
         validateDuplicateCode(request.code());
@@ -37,6 +51,7 @@ public class TenantServiceImpl implements TenantService {
             validateDuplicateCustomDomain(request.customDomain());
         }
 
+        // 1. 테넌트 생성
         Tenant tenant = Tenant.create(
                 request.code(),
                 request.name(),
@@ -49,7 +64,53 @@ public class TenantServiceImpl implements TenantService {
         Tenant saved = tenantRepository.save(tenant);
         log.info("Tenant created: tenantId={}, code={}", saved.getId(), saved.getCode());
 
-        return TenantResponse.from(saved);
+        // 2. TENANT_ADMIN 사용자 생성
+        String tempPassword = generateTempPassword();
+        User tenantAdmin = createTenantAdmin(saved.getId(), request.adminEmail(), request.adminName(), tempPassword);
+        log.info("Tenant admin created: userId={}, email={}, tempPassword={}",
+                tenantAdmin.getId(), request.adminEmail(), tempPassword);
+
+        return CreateTenantResponse.from(saved, tenantAdmin, tempPassword);
+    }
+
+    /**
+     * 테넌트 관리자 계정 생성
+     */
+    private User createTenantAdmin(Long tenantId, String email, String name, String rawPassword) {
+        // TenantContext 설정 (User 엔티티의 tenantId 자동 주입을 위해)
+        Long originalTenantId = null;
+        try {
+            originalTenantId = TenantContext.getCurrentTenantId();
+        } catch (Exception ignored) {
+            // TenantContext가 설정되지 않은 경우
+        }
+
+        try {
+            TenantContext.setTenantId(tenantId);
+
+            User admin = User.create(email, name, passwordEncoder.encode(rawPassword));
+            admin.updateRole(TenantRole.TENANT_ADMIN);
+            return userRepository.save(admin);
+        } finally {
+            // 원래 TenantContext 복원
+            if (originalTenantId != null) {
+                TenantContext.setTenantId(originalTenantId);
+            } else {
+                TenantContext.clear();
+            }
+        }
+    }
+
+    /**
+     * 임시 비밀번호 생성
+     */
+    private String generateTempPassword() {
+        SecureRandom random = new SecureRandom();
+        StringBuilder sb = new StringBuilder(TEMP_PASSWORD_LENGTH);
+        for (int i = 0; i < TEMP_PASSWORD_LENGTH; i++) {
+            sb.append(TEMP_PASSWORD_CHARS.charAt(random.nextInt(TEMP_PASSWORD_CHARS.length())));
+        }
+        return sb.toString();
     }
 
     @Override

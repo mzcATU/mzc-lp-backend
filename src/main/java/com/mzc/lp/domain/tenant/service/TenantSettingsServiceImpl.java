@@ -287,6 +287,22 @@ public class TenantSettingsServiceImpl implements TenantSettingsService {
         return PublicBrandingResponse.from(settingsResponse, tenant.getName());
     }
 
+    @Override
+    public PublicBrandingResponse getBrandingByTenantId(Long tenantId) {
+        Tenant tenant = tenantRepository.findById(tenantId)
+                .orElse(null);
+
+        if (tenant == null) {
+            return PublicBrandingResponse.defaultBranding();
+        }
+
+        TenantSettings settings = tenantSettingsRepository.findByTenantId(tenantId)
+                .orElseGet(() -> TenantSettings.createDefault(tenant));
+
+        TenantSettingsResponse settingsResponse = TenantSettingsResponse.from(settings);
+        return PublicBrandingResponse.from(settingsResponse, tenant.getName());
+    }
+
     private TenantSettings initializeAndGet(Long tenantId) {
         Tenant tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new TenantDomainNotFoundException("Tenant not found: " + tenantId));
