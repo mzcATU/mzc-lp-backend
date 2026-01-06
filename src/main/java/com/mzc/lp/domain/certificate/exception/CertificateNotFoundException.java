@@ -16,4 +16,12 @@ public class CertificateNotFoundException extends BusinessException {
     public CertificateNotFoundException(String certificateNumber) {
         super(ErrorCode.CERTIFICATE_NOT_FOUND, "Certificate not found with number: " + certificateNumber);
     }
+
+    public static CertificateNotFoundException withMessage(String message) {
+        return new CertificateNotFoundException(ErrorCode.CERTIFICATE_NOT_FOUND, message);
+    }
+
+    private CertificateNotFoundException(ErrorCode errorCode, String message) {
+        super(errorCode, message);
+    }
 }

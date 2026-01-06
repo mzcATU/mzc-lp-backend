@@ -46,6 +46,21 @@ public class CertificateController {
     }
 
     /**
+     * 수강별 수료증 조회
+     * GET /api/enrollments/{enrollmentId}/certificate
+     */
+    @GetMapping("/api/enrollments/{enrollmentId}/certificate")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<CertificateDetailResponse>> getCertificateByEnrollment(
+            @PathVariable Long enrollmentId,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        CertificateDetailResponse response = certificateService.getCertificateByEnrollment(
+                enrollmentId, principal.id());
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    /**
      * 수료증 재발급
      * POST /api/certificates/{id}/reissue
      */

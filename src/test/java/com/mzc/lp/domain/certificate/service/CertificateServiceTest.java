@@ -265,6 +265,76 @@ class CertificateServiceTest extends TenantTestSupport {
         }
     }
 
+    // ==================== 수강별 수료증 조회 테스트 ====================
+
+    @Nested
+    @DisplayName("getCertificateByEnrollment - 수강별 수료증 조회")
+    class GetCertificateByEnrollment {
+
+        @Test
+        @DisplayName("성공 - 수강별 수료증 조회")
+        void getCertificateByEnrollment_success() {
+            // given
+            Long enrollmentId = 1L;
+            Long userId = 1L;
+            Enrollment enrollment = mock(Enrollment.class);
+            given(enrollment.getUserId()).willReturn(userId);
+
+            Certificate certificate = createTestCertificate(userId, "CERT-001-2026-000001");
+
+            given(enrollmentRepository.findByIdAndTenantId(enrollmentId, TENANT_ID))
+                    .willReturn(Optional.of(enrollment));
+            given(certificateRepository.findByEnrollmentIdAndTenantIdAndStatus(
+                    enrollmentId, TENANT_ID, CertificateStatus.ISSUED))
+                    .willReturn(Optional.of(certificate));
+
+            // when
+            CertificateDetailResponse response = certificateService.getCertificateByEnrollment(enrollmentId, userId);
+
+            // then
+            assertThat(response).isNotNull();
+            assertThat(response.certificateNumber()).isEqualTo("CERT-001-2026-000001");
+        }
+
+        @Test
+        @DisplayName("실패 - 다른 사용자 수강 조회 시도")
+        void getCertificateByEnrollment_fail_unauthorized() {
+            // given
+            Long enrollmentId = 1L;
+            Long ownerUserId = 1L;
+            Long otherUserId = 999L;
+            Enrollment enrollment = mock(Enrollment.class);
+            given(enrollment.getUserId()).willReturn(ownerUserId);
+
+            given(enrollmentRepository.findByIdAndTenantId(enrollmentId, TENANT_ID))
+                    .willReturn(Optional.of(enrollment));
+
+            // when & then
+            assertThatThrownBy(() -> certificateService.getCertificateByEnrollment(enrollmentId, otherUserId))
+                    .isInstanceOf(UnauthorizedEnrollmentAccessException.class);
+        }
+
+        @Test
+        @DisplayName("실패 - 수료증이 없는 수강")
+        void getCertificateByEnrollment_fail_noCertificate() {
+            // given
+            Long enrollmentId = 1L;
+            Long userId = 1L;
+            Enrollment enrollment = mock(Enrollment.class);
+            given(enrollment.getUserId()).willReturn(userId);
+
+            given(enrollmentRepository.findByIdAndTenantId(enrollmentId, TENANT_ID))
+                    .willReturn(Optional.of(enrollment));
+            given(certificateRepository.findByEnrollmentIdAndTenantIdAndStatus(
+                    enrollmentId, TENANT_ID, CertificateStatus.ISSUED))
+                    .willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> certificateService.getCertificateByEnrollment(enrollmentId, userId))
+                    .isInstanceOf(CertificateNotFoundException.class);
+        }
+    }
+
     // ==================== PDF 다운로드 테스트 ====================
 
     @Nested

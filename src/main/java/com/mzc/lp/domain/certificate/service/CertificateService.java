@@ -36,6 +36,11 @@ public interface CertificateService {
     CertificateDetailResponse getCertificate(Long certificateId, Long userId);
 
     /**
+     * 수강별 수료증 조회
+     */
+    CertificateDetailResponse getCertificateByEnrollment(Long enrollmentId, Long userId);
+
+    /**
      * 수료증 PDF 다운로드
      */
     byte[] downloadCertificatePdf(Long certificateId, Long userId);
