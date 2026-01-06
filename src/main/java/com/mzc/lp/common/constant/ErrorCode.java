@@ -160,7 +160,15 @@ public enum ErrorCode {
     AUTO_ENROLLMENT_RULE_NOT_FOUND(HttpStatus.NOT_FOUND, "AER001", "Auto enrollment rule not found"),
 
     // Member Pool (MP)
-    MEMBER_POOL_NOT_FOUND(HttpStatus.NOT_FOUND, "MP001", "Member pool not found");
+    MEMBER_POOL_NOT_FOUND(HttpStatus.NOT_FOUND, "MP001", "Member pool not found"),
+
+    // Roadmap (RM)
+    ROADMAP_NOT_FOUND(HttpStatus.NOT_FOUND, "RM001", "Roadmap not found"),
+    ROADMAP_NOT_MODIFIABLE(HttpStatus.BAD_REQUEST, "RM002", "Roadmap is not modifiable in current status"),
+    UNAUTHORIZED_ROADMAP_ACCESS(HttpStatus.FORBIDDEN, "RM003", "Not authorized to access this roadmap"),
+    INVALID_PROGRAM_FOR_ROADMAP(HttpStatus.BAD_REQUEST, "RM004", "Invalid program for roadmap"),
+    DUPLICATE_PROGRAM_IN_ROADMAP(HttpStatus.CONFLICT, "RM005", "Program already exists in roadmap"),
+    ROADMAP_HAS_ENROLLMENTS(HttpStatus.BAD_REQUEST, "RM006", "Cannot delete roadmap with enrollments");
 
     private final HttpStatus status;
     private final String code;
