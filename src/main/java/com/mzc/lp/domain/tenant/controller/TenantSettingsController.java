@@ -63,7 +63,10 @@ public class TenantSettingsController {
     @Operation(summary = "현재 테넌트 브랜딩 조회", description = "로그인한 사용자의 테넌트 브랜딩 정보를 조회합니다")
     @GetMapping("/branding")
     public ResponseEntity<ApiResponse<PublicBrandingResponse>> getBranding() {
-        Long tenantId = TenantContext.getCurrentTenantId();
+        Long tenantId = TenantContext.getCurrentTenantIdOrNull();
+        if (tenantId == null) {
+            return ResponseEntity.ok(ApiResponse.success(PublicBrandingResponse.defaultBranding()));
+        }
         PublicBrandingResponse response = tenantSettingsService.getBrandingByTenantId(tenantId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
