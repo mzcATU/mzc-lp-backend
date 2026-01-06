@@ -208,6 +208,27 @@ public class CertificateServiceImpl implements CertificateService {
     }
 
     @Override
+    public CertificateDetailResponse getCertificateByEnrollment(Long enrollmentId, Long userId) {
+        Long tenantId = TenantContext.getCurrentTenantId();
+
+        // Enrollment 조회
+        Enrollment enrollment = enrollmentRepository.findByIdAndTenantId(enrollmentId, tenantId)
+                .orElseThrow(() -> new EnrollmentNotFoundException(enrollmentId));
+
+        // 본인 수강 확인
+        if (!enrollment.getUserId().equals(userId)) {
+            throw new UnauthorizedEnrollmentAccessException(enrollmentId, userId);
+        }
+
+        // 유효한 수료증 조회
+        Certificate certificate = certificateRepository.findByEnrollmentIdAndTenantIdAndStatus(
+                enrollmentId, tenantId, CertificateStatus.ISSUED
+        ).orElseThrow(() -> CertificateNotFoundException.withMessage("해당 수강에 대한 유효한 수료증이 없습니다."));
+
+        return CertificateDetailResponse.from(certificate);
+    }
+
+    @Override
     public byte[] downloadCertificatePdf(Long certificateId, Long userId) {
         Long tenantId = TenantContext.getCurrentTenantId();
 
