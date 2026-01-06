@@ -41,6 +41,11 @@ public interface ProgramRepository extends JpaRepository<Program, Long> {
 
     boolean existsByIdAndTenantId(Long id, Long tenantId);
 
+    /**
+     * 특정 스냅샷을 참조하는 프로그램 수 조회
+     */
+    long countBySnapshotId(Long snapshotId);
+
     // ===== 통계 집계 쿼리 =====
 
     /**
