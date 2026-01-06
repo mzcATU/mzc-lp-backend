@@ -110,7 +110,9 @@ class TenantControllerTest extends TenantTestSupport {
                     TenantType.B2B,
                     "newcompany",
                     PlanType.PRO,
-                    "learn.newcompany.com"
+                    "learn.newcompany.com",
+                    "admin@newcompany.com",
+                    "새회사관리자"
             );
 
             // when & then
@@ -139,7 +141,9 @@ class TenantControllerTest extends TenantTestSupport {
                     TenantType.B2B,
                     "newcompany",
                     PlanType.PRO,
-                    null
+                    null,
+                    "admin@newcompany.com",
+                    "새회사관리자"
             );
 
             // when & then
@@ -165,7 +169,9 @@ class TenantControllerTest extends TenantTestSupport {
                     TenantType.B2B,
                     "newcompany",
                     PlanType.PRO,
-                    null
+                    null,
+                    "admin@duplicate.com",
+                    "중복회사관리자"
             );
 
             // when & then
