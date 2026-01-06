@@ -8,6 +8,7 @@ import com.mzc.lp.domain.tenant.dto.request.UpdateLayoutSettingsRequest;
 import com.mzc.lp.domain.tenant.dto.request.UpdateTenantSettingsRequest;
 import com.mzc.lp.domain.tenant.dto.response.NavigationItemResponse;
 import com.mzc.lp.domain.tenant.dto.response.PublicBrandingResponse;
+import com.mzc.lp.domain.tenant.dto.response.PublicLayoutResponse;
 import com.mzc.lp.domain.tenant.dto.response.TenantSettingsResponse;
 import com.mzc.lp.domain.tenant.service.TenantSettingsService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -202,6 +203,32 @@ public class TenantSettingsController {
     public ResponseEntity<ApiResponse<List<NavigationItemResponse>>> resetNavigationItems() {
         Long tenantId = TenantContext.getCurrentTenantId();
         List<NavigationItemResponse> response = tenantSettingsService.initializeDefaultNavigationItems(tenantId);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    // ============================================
+    // 공개 레이아웃 API (TU용, 인증 불필요)
+    // ============================================
+
+    @Operation(summary = "현재 테넌트 레이아웃 조회", description = "로그인한 사용자의 테넌트 레이아웃 정보를 조회합니다 (네비게이션 포함)")
+    @GetMapping("/layout/public")
+    public ResponseEntity<ApiResponse<PublicLayoutResponse>> getPublicLayout() {
+        Long tenantId = TenantContext.getCurrentTenantIdOrNull();
+        if (tenantId == null) {
+            return ResponseEntity.ok(ApiResponse.success(PublicLayoutResponse.defaultLayout()));
+        }
+        PublicLayoutResponse response = tenantSettingsService.getLayoutByTenantId(tenantId);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @Operation(summary = "활성화된 네비게이션 항목 조회 (TU용)", description = "활성화된 네비게이션 메뉴 항목만 조회합니다")
+    @GetMapping("/navigation/public")
+    public ResponseEntity<ApiResponse<List<NavigationItemResponse>>> getPublicNavigationItems() {
+        Long tenantId = TenantContext.getCurrentTenantIdOrNull();
+        if (tenantId == null) {
+            return ResponseEntity.ok(ApiResponse.success(List.of()));
+        }
+        List<NavigationItemResponse> response = tenantSettingsService.getEnabledNavigationItems(tenantId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 }
