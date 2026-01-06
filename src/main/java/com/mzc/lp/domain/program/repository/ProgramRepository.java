@@ -96,4 +96,32 @@ public interface ProgramRepository extends JpaRepository<Program, Long> {
     List<ProgramStatsProjection> findProgramStatsByOwner(
             @Param("createdBy") Long createdBy,
             @Param("tenantId") Long tenantId);
+
+    // ===== 로드맵 생성용 내 프로그램 조회 =====
+
+    /**
+     * 제목으로 검색 (tenantId 필터)
+     */
+    Page<Program> findByTenantIdAndTitleContaining(Long tenantId, String title, Pageable pageable);
+
+    /**
+     * ID 목록과 제목으로 검색
+     */
+    @Query("SELECT p FROM Program p WHERE p.tenantId = :tenantId AND p.id IN :ids AND p.title LIKE %:title%")
+    Page<Program> findByTenantIdAndIdInAndTitleContaining(
+            @Param("tenantId") Long tenantId,
+            @Param("ids") java.util.Set<Long> ids,
+            @Param("title") String title,
+            Pageable pageable
+    );
+
+    /**
+     * ID 목록으로 조회
+     */
+    @Query("SELECT p FROM Program p WHERE p.tenantId = :tenantId AND p.id IN :ids")
+    Page<Program> findByTenantIdAndIdIn(
+            @Param("tenantId") Long tenantId,
+            @Param("ids") java.util.Set<Long> ids,
+            Pageable pageable
+    );
 }

@@ -190,4 +190,23 @@ public class ProgramController {
         ProgramResponse response = programService.linkSnapshot(programId, snapshotId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
+
+    /**
+     * 내 프로그램 목록 조회 (로드맵 생성용)
+     * GET /api/programs/my
+     */
+    @GetMapping("/my")
+    @PreAuthorize("hasAnyRole('DESIGNER', 'OWNER')")
+    public ResponseEntity<ApiResponse<Page<ProgramResponse>>> getMyPrograms(
+            @RequestParam(required = false) String search,
+            @PageableDefault(size = 20) Pageable pageable,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        Page<ProgramResponse> response = programService.getMyPrograms(
+                principal.id(),
+                search,
+                pageable
+        );
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
 }
