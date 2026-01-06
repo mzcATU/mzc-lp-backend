@@ -5,6 +5,7 @@ import com.mzc.lp.domain.certificate.constant.CertificateStatus;
 import com.mzc.lp.domain.certificate.dto.response.CertificateDetailResponse;
 import com.mzc.lp.domain.certificate.dto.response.CertificateResponse;
 import com.mzc.lp.domain.certificate.dto.response.CertificateVerifyResponse;
+import com.mzc.lp.domain.certificate.dto.response.CourseTimeCertificatesResponse;
 import com.mzc.lp.domain.certificate.entity.Certificate;
 import com.mzc.lp.domain.certificate.exception.CertificateAlreadyIssuedException;
 import com.mzc.lp.domain.certificate.exception.CertificateNotFoundException;
@@ -491,7 +492,7 @@ class CertificateServiceTest extends TenantTestSupport {
     class RevokeCertificate {
 
         @Test
-        @DisplayName("성공 - 수료증 폐기")
+        @DisplayName("성공 - 수료증 폐기 및 응답 반환")
         void revokeCertificate_success() {
             // given
             Long certificateId = 1L;
@@ -502,9 +503,11 @@ class CertificateServiceTest extends TenantTestSupport {
                     .willReturn(Optional.of(certificate));
 
             // when
-            certificateService.revokeCertificate(certificateId, reason);
+            CertificateDetailResponse response = certificateService.revokeCertificate(certificateId, reason);
 
             // then
+            assertThat(response).isNotNull();
+            assertThat(response.status()).isEqualTo(CertificateStatus.REVOKED);
             assertThat(certificate.isRevoked()).isTrue();
             assertThat(certificate.getRevokedReason()).isEqualTo(reason);
         }
@@ -521,6 +524,113 @@ class CertificateServiceTest extends TenantTestSupport {
             // when & then
             assertThatThrownBy(() -> certificateService.revokeCertificate(certificateId, "테스트"))
                     .isInstanceOf(CertificateNotFoundException.class);
+        }
+    }
+
+    // ==================== 차수별 수료증 현황 조회 테스트 ====================
+
+    @Nested
+    @DisplayName("getCertificatesByCourseTime - 차수별 수료증 현황 조회")
+    class GetCertificatesByCourseTime {
+
+        @Test
+        @DisplayName("성공 - 차수별 수료증 현황 조회")
+        void getCertificatesByCourseTime_success() {
+            // given
+            Long courseTimeId = 1L;
+            Pageable pageable = PageRequest.of(0, 20);
+
+            // 전체 수강 인원 10명, 발급된 수료증 5개
+            long totalEnrollments = 10L;
+            long issuedCount = 5L;
+
+            List<Certificate> certificates = List.of(
+                    createTestCertificate(1L, "CERT-001-2026-000001"),
+                    createTestCertificate(2L, "CERT-001-2026-000002"),
+                    createTestCertificate(3L, "CERT-001-2026-000003")
+            );
+            Page<Certificate> certificatePage = new PageImpl<>(certificates, pageable, certificates.size());
+
+            given(enrollmentRepository.countByCourseTimeIdAndTenantId(courseTimeId, TENANT_ID))
+                    .willReturn(totalEnrollments);
+            given(certificateRepository.countByCourseTimeIdAndTenantIdAndStatus(
+                    courseTimeId, TENANT_ID, CertificateStatus.ISSUED))
+                    .willReturn(issuedCount);
+            given(certificateRepository.findByCourseTimeIdAndTenantIdOrderByIssuedAtDesc(
+                    courseTimeId, TENANT_ID, pageable))
+                    .willReturn(certificatePage);
+
+            // when
+            CourseTimeCertificatesResponse response = certificateService.getCertificatesByCourseTime(courseTimeId, pageable);
+
+            // then
+            assertThat(response).isNotNull();
+            assertThat(response.summary().total()).isEqualTo(10L);
+            assertThat(response.summary().issued()).isEqualTo(5L);
+            assertThat(response.summary().pending()).isEqualTo(5L);
+            assertThat(response.certificates().getContent()).hasSize(3);
+        }
+
+        @Test
+        @DisplayName("성공 - 수강 인원이 없는 차수")
+        void getCertificatesByCourseTime_success_noEnrollments() {
+            // given
+            Long courseTimeId = 999L;
+            Pageable pageable = PageRequest.of(0, 20);
+
+            given(enrollmentRepository.countByCourseTimeIdAndTenantId(courseTimeId, TENANT_ID))
+                    .willReturn(0L);
+            given(certificateRepository.countByCourseTimeIdAndTenantIdAndStatus(
+                    courseTimeId, TENANT_ID, CertificateStatus.ISSUED))
+                    .willReturn(0L);
+            given(certificateRepository.findByCourseTimeIdAndTenantIdOrderByIssuedAtDesc(
+                    courseTimeId, TENANT_ID, pageable))
+                    .willReturn(Page.empty(pageable));
+
+            // when
+            CourseTimeCertificatesResponse response = certificateService.getCertificatesByCourseTime(courseTimeId, pageable);
+
+            // then
+            assertThat(response.summary().total()).isEqualTo(0L);
+            assertThat(response.summary().issued()).isEqualTo(0L);
+            assertThat(response.summary().pending()).isEqualTo(0L);
+            assertThat(response.certificates().getContent()).isEmpty();
+        }
+
+        @Test
+        @DisplayName("성공 - 모든 수강생이 수료증 발급받은 차수")
+        void getCertificatesByCourseTime_success_allIssued() {
+            // given
+            Long courseTimeId = 1L;
+            Pageable pageable = PageRequest.of(0, 20);
+
+            // 전체 수강 인원 3명, 발급된 수료증 3개
+            long totalEnrollments = 3L;
+            long issuedCount = 3L;
+
+            List<Certificate> certificates = List.of(
+                    createTestCertificate(1L, "CERT-001-2026-000001"),
+                    createTestCertificate(2L, "CERT-001-2026-000002"),
+                    createTestCertificate(3L, "CERT-001-2026-000003")
+            );
+            Page<Certificate> certificatePage = new PageImpl<>(certificates, pageable, certificates.size());
+
+            given(enrollmentRepository.countByCourseTimeIdAndTenantId(courseTimeId, TENANT_ID))
+                    .willReturn(totalEnrollments);
+            given(certificateRepository.countByCourseTimeIdAndTenantIdAndStatus(
+                    courseTimeId, TENANT_ID, CertificateStatus.ISSUED))
+                    .willReturn(issuedCount);
+            given(certificateRepository.findByCourseTimeIdAndTenantIdOrderByIssuedAtDesc(
+                    courseTimeId, TENANT_ID, pageable))
+                    .willReturn(certificatePage);
+
+            // when
+            CourseTimeCertificatesResponse response = certificateService.getCertificatesByCourseTime(courseTimeId, pageable);
+
+            // then
+            assertThat(response.summary().total()).isEqualTo(3L);
+            assertThat(response.summary().issued()).isEqualTo(3L);
+            assertThat(response.summary().pending()).isEqualTo(0L);
         }
     }
 }

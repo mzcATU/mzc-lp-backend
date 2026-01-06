@@ -5,6 +5,8 @@ import com.mzc.lp.domain.certificate.constant.CertificateStatus;
 import com.mzc.lp.domain.certificate.dto.response.CertificateDetailResponse;
 import com.mzc.lp.domain.certificate.dto.response.CertificateResponse;
 import com.mzc.lp.domain.certificate.dto.response.CertificateVerifyResponse;
+import com.mzc.lp.domain.certificate.dto.response.CourseTimeCertificateSummary;
+import com.mzc.lp.domain.certificate.dto.response.CourseTimeCertificatesResponse;
 import com.mzc.lp.domain.certificate.entity.Certificate;
 import com.mzc.lp.domain.certificate.exception.CertificateAlreadyIssuedException;
 import com.mzc.lp.domain.certificate.exception.CertificateNotFoundException;
@@ -252,7 +254,7 @@ public class CertificateServiceImpl implements CertificateService {
 
     @Override
     @Transactional
-    public void revokeCertificate(Long certificateId, String reason) {
+    public CertificateDetailResponse revokeCertificate(Long certificateId, String reason) {
         Long tenantId = TenantContext.getCurrentTenantId();
 
         Certificate certificate = certificateRepository.findByIdAndTenantId(certificateId, tenantId)
@@ -260,5 +262,30 @@ public class CertificateServiceImpl implements CertificateService {
 
         certificate.revoke(reason);
         log.info("Certificate revoked: certificateId={}, reason={}", certificateId, reason);
+
+        return CertificateDetailResponse.from(certificate);
+    }
+
+    @Override
+    public CourseTimeCertificatesResponse getCertificatesByCourseTime(Long courseTimeId, Pageable pageable) {
+        Long tenantId = TenantContext.getCurrentTenantId();
+        log.info("Getting certificates by courseTime: courseTimeId={}, tenantId={}", courseTimeId, tenantId);
+
+        // 전체 수강 인원 조회
+        long totalEnrollments = enrollmentRepository.countByCourseTimeIdAndTenantId(courseTimeId, tenantId);
+
+        // 발급된 수료증 수 조회
+        long issuedCount = certificateRepository.countByCourseTimeIdAndTenantIdAndStatus(
+                courseTimeId, tenantId, CertificateStatus.ISSUED);
+
+        // Summary 생성
+        CourseTimeCertificateSummary summary = CourseTimeCertificateSummary.of(totalEnrollments, issuedCount);
+
+        // 수료증 목록 조회 (페이징)
+        Page<CertificateResponse> certificates = certificateRepository
+                .findByCourseTimeIdAndTenantIdOrderByIssuedAtDesc(courseTimeId, tenantId, pageable)
+                .map(CertificateResponse::from);
+
+        return CourseTimeCertificatesResponse.of(summary, certificates);
     }
 }

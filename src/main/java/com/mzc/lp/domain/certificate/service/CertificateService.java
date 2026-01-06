@@ -3,6 +3,7 @@ package com.mzc.lp.domain.certificate.service;
 import com.mzc.lp.domain.certificate.dto.response.CertificateDetailResponse;
 import com.mzc.lp.domain.certificate.dto.response.CertificateResponse;
 import com.mzc.lp.domain.certificate.dto.response.CertificateVerifyResponse;
+import com.mzc.lp.domain.certificate.dto.response.CourseTimeCertificatesResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -53,5 +54,12 @@ public interface CertificateService {
     /**
      * 수료증 폐기 (관리자)
      */
-    void revokeCertificate(Long certificateId, String reason);
+    CertificateDetailResponse revokeCertificate(Long certificateId, String reason);
+
+    /**
+     * 차수별 수료증 현황 조회 (관리자)
+     * - summary: 전체 수강 인원, 발급 수, 미발급 수
+     * - certificates: 발급된 수료증 목록 (페이징)
+     */
+    CourseTimeCertificatesResponse getCertificatesByCourseTime(Long courseTimeId, Pageable pageable);
 }

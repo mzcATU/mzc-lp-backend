@@ -3,9 +3,11 @@ package com.mzc.lp.domain.certificate.controller;
 import com.mzc.lp.common.dto.ApiResponse;
 import com.mzc.lp.common.security.UserPrincipal;
 import com.mzc.lp.domain.certificate.dto.request.ReissueCertificateRequest;
+import com.mzc.lp.domain.certificate.dto.request.RevokeCertificateRequest;
 import com.mzc.lp.domain.certificate.dto.response.CertificateDetailResponse;
 import com.mzc.lp.domain.certificate.dto.response.CertificateResponse;
 import com.mzc.lp.domain.certificate.dto.response.CertificateVerifyResponse;
+import com.mzc.lp.domain.certificate.dto.response.CourseTimeCertificatesResponse;
 import com.mzc.lp.domain.certificate.service.CertificateService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -147,11 +149,25 @@ public class CertificateController {
      */
     @DeleteMapping("/api/certificates/{id}")
     @PreAuthorize("hasAnyRole('OPERATOR', 'TENANT_ADMIN')")
-    public ResponseEntity<Void> revokeCertificate(
+    public ResponseEntity<ApiResponse<CertificateDetailResponse>> revokeCertificate(
             @PathVariable Long id,
-            @RequestParam String reason
+            @Valid @RequestBody RevokeCertificateRequest request
     ) {
-        certificateService.revokeCertificate(id, reason);
-        return ResponseEntity.noContent().build();
+        CertificateDetailResponse response = certificateService.revokeCertificate(id, request.reason());
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    /**
+     * 차수별 수료증 현황 조회 (관리자)
+     * GET /api/times/{timeId}/certificates
+     */
+    @GetMapping("/api/times/{timeId}/certificates")
+    @PreAuthorize("hasAnyRole('OPERATOR', 'TENANT_ADMIN')")
+    public ResponseEntity<ApiResponse<CourseTimeCertificatesResponse>> getCertificatesByCourseTime(
+            @PathVariable Long timeId,
+            @PageableDefault(size = 20) Pageable pageable
+    ) {
+        CourseTimeCertificatesResponse response = certificateService.getCertificatesByCourseTime(timeId, pageable);
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 }
