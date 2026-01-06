@@ -33,9 +33,46 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
 
+    // permitAll() 엔드포인트 목록 - 토큰 검증을 건너뜀
+    private static final Set<String> PERMIT_ALL_PATHS = Set.of(
+            "/api/auth/",
+            "/uploads/",
+            "/actuator/health",
+            "/swagger-ui",
+            "/v3/api-docs"
+    );
+
     private final JwtProvider jwtProvider;
     private final UserCourseRoleRepository userCourseRoleRepository;
     private final UserRepository userRepository;
+
+    /**
+     * permitAll() 엔드포인트인지 확인
+     */
+    private boolean isPermitAllPath(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        String method = request.getMethod();
+
+        // 정적 경로 체크
+        for (String permitPath : PERMIT_ALL_PATHS) {
+            if (path.startsWith(permitPath)) {
+                return true;
+            }
+        }
+
+        // GET 메서드로만 허용된 공개 API
+        if ("GET".equalsIgnoreCase(method)) {
+            if (path.equals("/api/tenant/settings/branding") ||
+                path.startsWith("/api/courses") ||
+                path.startsWith("/api/community/posts") ||
+                path.equals("/api/community/categories") ||
+                path.startsWith("/api/public/course-times")) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     @Override
     protected void doFilterInternal(
@@ -43,6 +80,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain
     ) throws ServletException, IOException {
+        // permitAll() 경로는 토큰 검증 없이 통과
+        if (isPermitAllPath(request)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         String token = resolveToken(request);
 
         if (StringUtils.hasText(token)) {

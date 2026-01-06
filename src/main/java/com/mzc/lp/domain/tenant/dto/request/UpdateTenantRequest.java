@@ -1,6 +1,7 @@
 package com.mzc.lp.domain.tenant.dto.request;
 
 import com.mzc.lp.domain.tenant.constant.PlanType;
+import com.mzc.lp.domain.tenant.constant.TenantStatus;
 import jakarta.validation.constraints.Size;
 
 public record UpdateTenantRequest(
@@ -10,7 +11,9 @@ public record UpdateTenantRequest(
         @Size(max = 255, message = "커스텀 도메인은 255자 이하여야 합니다")
         String customDomain,
 
-        PlanType plan
+        PlanType plan,
+
+        TenantStatus status
 ) {
     public UpdateTenantRequest {
         if (name != null) {
