@@ -72,9 +72,10 @@ public interface RoadmapRepository extends JpaRepository<Roadmap, Long> {
     /**
      * 작성자의 평균 강의 수
      */
-    @Query("SELECT AVG(SIZE(r.id)) FROM Roadmap r " +
-           "LEFT JOIN RoadmapProgram rp ON rp.roadmap.id = r.id " +
-           "WHERE r.authorId = :authorId " +
-           "GROUP BY r.id")
+    @Query(value = "SELECT COALESCE(AVG(program_count), 0.0) FROM (" +
+           "SELECT COUNT(rp.id) as program_count FROM roadmaps r " +
+           "LEFT JOIN roadmap_programs rp ON rp.roadmap_id = r.id " +
+           "WHERE r.author_id = :authorId " +
+           "GROUP BY r.id) as subquery", nativeQuery = true)
     Double getAverageCourseCountByAuthorId(@Param("authorId") Long authorId);
 }
