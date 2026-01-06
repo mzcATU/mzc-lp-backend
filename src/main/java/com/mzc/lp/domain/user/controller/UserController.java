@@ -211,9 +211,12 @@ public class UserController {
             @AuthenticationPrincipal UserPrincipal principal,
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "defaultPassword", required = false) String defaultPassword,
-            @RequestParam(value = "role", required = false) TenantRole role
+            @RequestParam(value = "role", required = false) TenantRole role,
+            @RequestParam(value = "autoLinkEmployees", required = false) Boolean autoLinkEmployees,
+            @RequestParam(value = "sendWelcomeEmail", required = false) Boolean sendWelcomeEmail
     ) {
-        FileBulkCreateUsersRequest request = new FileBulkCreateUsersRequest(defaultPassword, role);
+        FileBulkCreateUsersRequest request = new FileBulkCreateUsersRequest(
+                defaultPassword, role, autoLinkEmployees, sendWelcomeEmail);
         BulkCreateUsersResponse response = userService.fileBulkCreateUsers(principal.tenantId(), file, request);
         return ResponseEntity.status(201).body(ApiResponse.success(response));
     }

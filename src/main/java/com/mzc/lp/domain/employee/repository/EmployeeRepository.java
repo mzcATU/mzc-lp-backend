@@ -43,6 +43,21 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     boolean existsByTenantIdAndUserId(Long tenantId, Long userId);
     boolean existsByDepartmentId(Long departmentId);
 
+    // 이메일 기반 임직원 조회 (LMS 계정 자동 연동용)
+    @Query("SELECT e FROM Employee e JOIN FETCH e.user u LEFT JOIN FETCH e.department d " +
+           "WHERE e.tenantId = :tenantId AND u.email IN :emails")
+    List<Employee> findByTenantIdAndUserEmailIn(@Param("tenantId") Long tenantId,
+                                                  @Param("emails") List<String> emails);
+
+    // 이메일로 단건 조회
+    @Query("SELECT e FROM Employee e JOIN e.user u WHERE e.tenantId = :tenantId AND u.email = :email")
+    Optional<Employee> findByTenantIdAndUserEmail(@Param("tenantId") Long tenantId,
+                                                   @Param("email") String email);
+
+    // User 엔티티가 없는 임직원 조회 (LMS 계정 미생성 상태)
+    @Query("SELECT e FROM Employee e WHERE e.tenantId = :tenantId AND e.user IS NULL")
+    List<Employee> findByTenantIdAndUserIsNull(@Param("tenantId") Long tenantId);
+
     // 검색 쿼리
     @Query("SELECT e FROM Employee e JOIN e.user u WHERE e.tenantId = :tenantId " +
            "AND (LOWER(e.employeeNumber) LIKE LOWER(CONCAT('%', :keyword, '%')) " +

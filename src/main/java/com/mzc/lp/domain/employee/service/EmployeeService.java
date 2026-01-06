@@ -3,7 +3,10 @@ package com.mzc.lp.domain.employee.service;
 import com.mzc.lp.domain.employee.constant.EmployeeStatus;
 import com.mzc.lp.domain.employee.dto.request.ChangeEmployeeStatusRequest;
 import com.mzc.lp.domain.employee.dto.request.CreateEmployeeRequest;
+import com.mzc.lp.domain.employee.dto.request.CreateLmsAccountRequest;
 import com.mzc.lp.domain.employee.dto.request.UpdateEmployeeRequest;
+import com.mzc.lp.domain.employee.dto.response.CreateLmsAccountResponse;
+import com.mzc.lp.domain.employee.dto.response.EmployeeLmsAccountResponse;
 import com.mzc.lp.domain.employee.dto.response.EmployeeResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -29,4 +32,11 @@ public interface EmployeeService {
     List<EmployeeResponse> getByDepartment(Long tenantId, Long departmentId);
 
     Page<EmployeeResponse> search(Long tenantId, Long departmentId, EmployeeStatus status, String keyword, Pageable pageable);
+
+    // LMS 계정 연동 API
+    EmployeeLmsAccountResponse getLmsAccount(Long tenantId, Long employeeId);
+
+    CreateLmsAccountResponse createLmsAccount(Long tenantId, Long employeeId, CreateLmsAccountRequest request);
+
+    boolean hasLmsAccount(Long tenantId, Long employeeId);
 }

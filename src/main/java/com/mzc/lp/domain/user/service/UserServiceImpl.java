@@ -32,9 +32,13 @@ import com.mzc.lp.domain.user.repository.RefreshTokenRepository;
 import com.mzc.lp.domain.user.repository.UserCourseRoleRepository;
 import com.mzc.lp.domain.user.repository.UserRepository;
 import com.mzc.lp.common.service.FileStorageService;
+import com.mzc.lp.domain.employee.entity.Employee;
+import com.mzc.lp.domain.employee.repository.EmployeeRepository;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -56,6 +60,7 @@ public class UserServiceImpl implements UserService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final FileStorageService fileStorageService;
     private final UserExcelParser userExcelParser;
+    private final EmployeeRepository employeeRepository;
 
     @Override
     public UserDetailResponse getMe(Long userId) {
@@ -350,7 +355,8 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public BulkCreateUsersResponse fileBulkCreateUsers(Long tenantId, MultipartFile file, FileBulkCreateUsersRequest request) {
-        log.info("File bulk creating users: tenantId={}, fileName={}", tenantId, file.getOriginalFilename());
+        log.info("File bulk creating users: tenantId={}, fileName={}, autoLinkEmployees={}",
+                tenantId, file.getOriginalFilename(), request.autoLinkEmployees());
 
         List<FileUserRow> userRows;
         try {
@@ -371,6 +377,25 @@ public class UserServiceImpl implements UserService {
 
         List<BulkCreateUsersResponse.CreatedUserInfo> createdUsers = new ArrayList<>();
         List<BulkCreateUsersResponse.FailedUserInfo> failedUsers = new ArrayList<>();
+        List<BulkCreateUsersResponse.AutoLinkedUserInfo> autoLinkedUsers = new ArrayList<>();
+
+        // 자동 연동을 위한 임직원 이메일 매핑 조회
+        Map<String, Employee> employeeEmailMap = Map.of();
+        if (Boolean.TRUE.equals(request.autoLinkEmployees())) {
+            List<String> emails = userRows.stream()
+                    .map(FileUserRow::email)
+                    .filter(email -> email != null && !email.isBlank())
+                    .toList();
+
+            List<Employee> matchedEmployees = employeeRepository.findByTenantIdAndUserEmailIn(tenantId, emails);
+            employeeEmailMap = matchedEmployees.stream()
+                    .collect(Collectors.toMap(
+                            e -> e.getUser().getEmail().toLowerCase(),
+                            e -> e,
+                            (e1, e2) -> e1
+                    ));
+            log.info("Found {} employees matching uploaded emails", matchedEmployees.size());
+        }
 
         TenantContext.setTenantId(tenantId);
 
@@ -408,11 +433,38 @@ public class UserServiceImpl implements UserService {
 
                     User savedUser = userRepository.save(user);
 
+                    // 임직원 자동 연동 체크
+                    Employee matchedEmployee = employeeEmailMap.get(row.email().toLowerCase());
+                    boolean employeeLinked = matchedEmployee != null;
+                    Long employeeId = employeeLinked ? matchedEmployee.getId() : null;
+
                     createdUsers.add(new BulkCreateUsersResponse.CreatedUserInfo(
                             savedUser.getId(),
                             savedUser.getEmail(),
-                            savedUser.getName()
+                            savedUser.getName(),
+                            employeeLinked,
+                            employeeId
                     ));
+
+                    // 자동 연동된 임직원 정보 추가
+                    if (employeeLinked) {
+                        String departmentName = matchedEmployee.getDepartment() != null
+                                ? matchedEmployee.getDepartment().getName()
+                                : null;
+
+                        autoLinkedUsers.add(new BulkCreateUsersResponse.AutoLinkedUserInfo(
+                                savedUser.getId(),
+                                savedUser.getEmail(),
+                                matchedEmployee.getId(),
+                                matchedEmployee.getEmployeeNumber(),
+                                matchedEmployee.getUser().getName(),
+                                departmentName,
+                                matchedEmployee.getPosition(),
+                                matchedEmployee.getJobTitle()
+                        ));
+
+                        log.debug("Auto-linked user {} with employee {}", savedUser.getEmail(), matchedEmployee.getEmployeeNumber());
+                    }
                 } catch (Exception e) {
                     log.warn("Failed to create user: email={}, error={}", row.email(), e.getMessage());
                     failedUsers.add(new BulkCreateUsersResponse.FailedUserInfo(row.email(), e.getMessage()));
@@ -422,8 +474,9 @@ public class UserServiceImpl implements UserService {
             TenantContext.clear();
         }
 
-        log.info("File bulk user creation completed: created={}, failed={}", createdUsers.size(), failedUsers.size());
-        return BulkCreateUsersResponse.of(userRows.size(), createdUsers, failedUsers);
+        log.info("File bulk user creation completed: created={}, failed={}, autoLinked={}",
+                createdUsers.size(), failedUsers.size(), autoLinkedUsers.size());
+        return BulkCreateUsersResponse.of(userRows.size(), createdUsers, failedUsers, autoLinkedUsers);
     }
 
     // ========== Private Helper Methods ==========

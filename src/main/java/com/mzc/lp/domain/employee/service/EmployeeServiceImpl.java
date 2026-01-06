@@ -9,7 +9,10 @@ import com.mzc.lp.domain.department.repository.DepartmentRepository;
 import com.mzc.lp.domain.employee.constant.EmployeeStatus;
 import com.mzc.lp.domain.employee.dto.request.ChangeEmployeeStatusRequest;
 import com.mzc.lp.domain.employee.dto.request.CreateEmployeeRequest;
+import com.mzc.lp.domain.employee.dto.request.CreateLmsAccountRequest;
 import com.mzc.lp.domain.employee.dto.request.UpdateEmployeeRequest;
+import com.mzc.lp.domain.employee.dto.response.CreateLmsAccountResponse;
+import com.mzc.lp.domain.employee.dto.response.EmployeeLmsAccountResponse;
 import com.mzc.lp.domain.employee.dto.response.EmployeeResponse;
 import com.mzc.lp.domain.employee.entity.Employee;
 import com.mzc.lp.domain.employee.exception.EmployeeNotFoundException;
@@ -18,7 +21,10 @@ import com.mzc.lp.domain.employee.repository.EmployeeRepository;
 import com.mzc.lp.domain.user.entity.User;
 import com.mzc.lp.domain.user.exception.UserNotFoundException;
 import com.mzc.lp.domain.user.repository.UserRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import lombok.RequiredArgsConstructor;
+
+import java.security.SecureRandom;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -36,6 +42,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     private final EmployeeRepository employeeRepository;
     private final UserRepository userRepository;
     private final DepartmentRepository departmentRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional
@@ -187,5 +194,121 @@ public class EmployeeServiceImpl implements EmployeeService {
                                           String keyword, Pageable pageable) {
         return employeeRepository.searchWithFilters(tenantId, departmentId, status, keyword, pageable)
                 .map(EmployeeResponse::from);
+    }
+
+    // ========== LMS 계정 연동 API ==========
+
+    @Override
+    public EmployeeLmsAccountResponse getLmsAccount(Long tenantId, Long employeeId) {
+        log.info("Getting LMS account for employee: tenantId={}, employeeId={}", tenantId, employeeId);
+
+        Employee employee = employeeRepository.findByIdAndTenantId(employeeId, tenantId)
+                .orElseThrow(() -> new EmployeeNotFoundException(employeeId));
+
+        if (employee.getUser() != null) {
+            return EmployeeLmsAccountResponse.withAccount(employee);
+        } else {
+            return EmployeeLmsAccountResponse.withoutAccount(
+                    employee.getId(),
+                    employee.getEmployeeNumber(),
+                    null
+            );
+        }
+    }
+
+    @Override
+    @Transactional
+    public CreateLmsAccountResponse createLmsAccount(Long tenantId, Long employeeId, CreateLmsAccountRequest request) {
+        log.info("Creating LMS account for employee: tenantId={}, employeeId={}", tenantId, employeeId);
+
+        Employee employee = employeeRepository.findByIdAndTenantId(employeeId, tenantId)
+                .orElseThrow(() -> new EmployeeNotFoundException(employeeId));
+
+        // 이미 User가 연결되어 있는지 체크
+        if (employee.getUser() != null) {
+            throw new BusinessException(ErrorCode.EMPLOYEE_USER_ALREADY_EXISTS,
+                    "해당 임직원은 이미 LMS 계정이 연결되어 있습니다");
+        }
+
+        // 비밀번호 결정
+        String rawPassword;
+        if (Boolean.TRUE.equals(request.generatePassword())) {
+            rawPassword = generateRandomPassword();
+        } else if (request.password() != null && !request.password().isBlank()) {
+            rawPassword = request.password();
+        } else {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "비밀번호가 지정되지 않았습니다");
+        }
+
+        // 이메일은 사번@회사도메인 형태로 생성 (임시)
+        String email = employee.getEmployeeNumber() + "@company.com";
+
+        // 이메일 중복 체크
+        if (userRepository.existsByTenantIdAndEmail(tenantId, email)) {
+            throw new BusinessException(ErrorCode.DUPLICATE_EMAIL, "이미 사용 중인 이메일입니다: " + email);
+        }
+
+        // TenantContext 설정
+        TenantContext.setTenantId(tenantId);
+
+        try {
+            String encodedPassword = passwordEncoder.encode(rawPassword);
+            User user = User.create(email, employee.getEmployeeNumber(), encodedPassword);
+
+            if (request.role() != null) {
+                user.updateRole(request.role());
+            }
+
+            User savedUser = userRepository.save(user);
+
+            log.info("LMS account created for employee: employeeId={}, userId={}", employeeId, savedUser.getId());
+
+            return CreateLmsAccountResponse.from(savedUser, employee, rawPassword);
+        } finally {
+            TenantContext.clear();
+        }
+    }
+
+    @Override
+    public boolean hasLmsAccount(Long tenantId, Long employeeId) {
+        Employee employee = employeeRepository.findByIdAndTenantId(employeeId, tenantId)
+                .orElseThrow(() -> new EmployeeNotFoundException(employeeId));
+        return employee.getUser() != null;
+    }
+
+    /**
+     * 랜덤 비밀번호 생성 (12자리, 대소문자+숫자+특수문자 포함)
+     */
+    private String generateRandomPassword() {
+        String upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        String lower = "abcdefghijklmnopqrstuvwxyz";
+        String digits = "0123456789";
+        String special = "!@#$%^&*";
+        String allChars = upper + lower + digits + special;
+
+        SecureRandom random = new SecureRandom();
+        StringBuilder password = new StringBuilder(12);
+
+        // 최소 1개씩 포함
+        password.append(upper.charAt(random.nextInt(upper.length())));
+        password.append(lower.charAt(random.nextInt(lower.length())));
+        password.append(digits.charAt(random.nextInt(digits.length())));
+        password.append(special.charAt(random.nextInt(special.length())));
+
+        // 나머지는 랜덤
+        for (int i = 4; i < 12; i++) {
+            password.append(allChars.charAt(random.nextInt(allChars.length())));
+        }
+
+        // 셔플
+        char[] chars = password.toString().toCharArray();
+        for (int i = chars.length - 1; i > 0; i--) {
+            int j = random.nextInt(i + 1);
+            char temp = chars[i];
+            chars[i] = chars[j];
+            chars[j] = temp;
+        }
+
+        return new String(chars);
     }
 }
