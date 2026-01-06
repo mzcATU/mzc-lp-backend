@@ -521,7 +521,9 @@ class CourseControllerTest extends TenantTestSupport {
                     .andExpect(jsonPath("$.data.title").value("Spring Boot 기초"))
                     .andExpect(jsonPath("$.data.items").isArray())
                     .andExpect(jsonPath("$.data.itemCount").value(0))
-                    .andExpect(jsonPath("$.data.isComplete").value(false)); // items가 없으므로 미완성
+                    .andExpect(jsonPath("$.data.isComplete").value(false)) // items가 없으므로 미완성
+                    .andExpect(jsonPath("$.data.averageRating").value(0.0))
+                    .andExpect(jsonPath("$.data.reviewCount").value(0));
         }
 
         @Test
@@ -560,7 +562,9 @@ class CourseControllerTest extends TenantTestSupport {
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
                     .andExpect(jsonPath("$.data.isComplete").value(true))
-                    .andExpect(jsonPath("$.data.itemCount").value(1));
+                    .andExpect(jsonPath("$.data.itemCount").value(1))
+                    .andExpect(jsonPath("$.data.averageRating").value(0.0))
+                    .andExpect(jsonPath("$.data.reviewCount").value(0));
         }
 
         @Test
@@ -597,7 +601,9 @@ class CourseControllerTest extends TenantTestSupport {
                             .header("Authorization", "Bearer " + accessToken))
                     .andDo(print())
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.data.isComplete").value(false));
+                    .andExpect(jsonPath("$.data.isComplete").value(false))
+                    .andExpect(jsonPath("$.data.averageRating").value(0.0))
+                    .andExpect(jsonPath("$.data.reviewCount").value(0));
         }
 
         @Test

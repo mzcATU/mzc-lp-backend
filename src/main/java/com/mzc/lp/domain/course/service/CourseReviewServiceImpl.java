@@ -14,7 +14,6 @@ import com.mzc.lp.domain.student.constant.EnrollmentStatus;
 import com.mzc.lp.domain.student.repository.EnrollmentRepository;
 import com.mzc.lp.domain.ts.repository.CourseTimeRepository;
 import com.mzc.lp.domain.user.entity.User;
-import com.mzc.lp.domain.user.exception.UserNotFoundException;
 import com.mzc.lp.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -24,7 +23,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
@@ -90,12 +88,23 @@ public class CourseReviewServiceImpl implements CourseReviewService {
                     String userName = getUserName(review.getUserId());
                     return CourseReviewResponse.from(review, userName);
                 })
-                .collect(Collectors.toList());
+                .toList();
 
         // 5. 리뷰 통계 조회
         Object[] stats = reviewRepository.findReviewStatsForCourse(courseId, tenantId);
-        Long reviewCount = stats != null && stats[0] != null ? ((Number) stats[0]).longValue() : 0L;
-        Double averageRating = stats != null && stats[1] != null ? ((Number) stats[1]).doubleValue() : null;
+        Long reviewCount = 0L;
+        Double averageRating = null;
+
+        if (stats != null && stats.length >= 2) {
+            // stats[0]은 COUNT, stats[1]은 AVG
+            // 리뷰가 없을 경우 COUNT는 0, AVG는 null
+            if (stats[0] instanceof Number count) {
+                reviewCount = count.longValue();
+            }
+            if (stats[1] instanceof Number avg) {
+                averageRating = avg.doubleValue();
+            }
+        }
 
         return CourseReviewListResponse.of(
                 reviews,
@@ -117,8 +126,19 @@ public class CourseReviewServiceImpl implements CourseReviewService {
                 .orElseThrow(() -> new CourseNotFoundException(courseId));
 
         Object[] stats = reviewRepository.findReviewStatsForCourse(courseId, tenantId);
-        Long reviewCount = stats != null && stats[0] != null ? ((Number) stats[0]).longValue() : 0L;
-        Double averageRating = stats != null && stats[1] != null ? ((Number) stats[1]).doubleValue() : null;
+        Long reviewCount = 0L;
+        Double averageRating = null;
+
+        if (stats != null && stats.length >= 2) {
+            // stats[0]은 COUNT, stats[1]은 AVG
+            // 리뷰가 없을 경우 COUNT는 0, AVG는 null
+            if (stats[0] instanceof Number count) {
+                reviewCount = count.longValue();
+            }
+            if (stats[1] instanceof Number avg) {
+                averageRating = avg.doubleValue();
+            }
+        }
 
         return CourseReviewStatsResponse.of(courseId, averageRating, reviewCount);
     }
@@ -216,8 +236,9 @@ public class CourseReviewServiceImpl implements CourseReviewService {
      * 사용자 이름 조회
      */
     private String getUserName(Long userId) {
+        // findById는 tenant filter가 적용되지 않으므로, 직접 확인 필요
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
-        return user.getName();
+                .orElse(null);
+        return user != null ? user.getName() : "알 수 없음";
     }
 }

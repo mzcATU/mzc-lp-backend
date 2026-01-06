@@ -92,8 +92,19 @@ public class CourseServiceImpl implements CourseService {
 
         // 리뷰 통계 조회
         Object[] stats = reviewRepository.findReviewStatsForCourse(courseId, tenantId);
-        Long reviewCount = stats != null && stats[0] != null ? ((Number) stats[0]).longValue() : 0L;
-        Double averageRating = stats != null && stats[1] != null ? ((Number) stats[1]).doubleValue() : null;
+        Long reviewCount = 0L;
+        Double averageRating = null;
+
+        if (stats != null && stats.length >= 2) {
+            // stats[0]은 COUNT, stats[1]은 AVG
+            // 리뷰가 없을 경우 COUNT는 0, AVG는 null
+            if (stats[0] instanceof Number count) {
+                reviewCount = count.longValue();
+            }
+            if (stats[1] instanceof Number avg) {
+                averageRating = avg.doubleValue();
+            }
+        }
 
         return CourseDetailResponse.from(course, items, items.size(), averageRating, reviewCount);
     }
