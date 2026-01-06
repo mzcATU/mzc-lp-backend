@@ -7,6 +7,7 @@ import com.mzc.lp.domain.tenant.constant.TenantType;
 import com.mzc.lp.domain.tenant.entity.Tenant;
 import com.mzc.lp.domain.tenant.repository.TenantRepository;
 import com.mzc.lp.domain.user.entity.User;
+import com.mzc.lp.domain.user.repository.UserCourseRoleRepository;
 import com.mzc.lp.domain.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -32,10 +33,14 @@ class SaDashboardServiceTest extends TenantTestSupport {
     private UserRepository userRepository;
 
     @Autowired
+    private UserCourseRoleRepository userCourseRoleRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @BeforeEach
     void setUp() {
+        userCourseRoleRepository.deleteAll();
         userRepository.deleteAll();
         tenantRepository.deleteAll();
     }
