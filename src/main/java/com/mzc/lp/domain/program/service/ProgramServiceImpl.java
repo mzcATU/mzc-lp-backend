@@ -224,8 +224,30 @@ public class ProgramServiceImpl implements ProgramService {
             program.close();
             log.info("Program closed instead of deleted: id={}", programId);
         } else {
+            // 스냅샷도 함께 삭제 (다른 프로그램에서 참조하지 않는 경우)
+            deleteSnapshotIfNotReferenced(program);
+
             programRepository.delete(program);
             log.info("Program deleted: id={}", programId);
+        }
+    }
+
+    /**
+     * 스냅샷이 다른 프로그램에서 참조되지 않으면 삭제
+     */
+    private void deleteSnapshotIfNotReferenced(Program program) {
+        var snapshot = program.getSnapshot();
+        if (snapshot == null) {
+            return;
+        }
+
+        long refCount = programRepository.countBySnapshotId(snapshot.getId());
+        if (refCount <= 1) {
+            snapshotRepository.delete(snapshot);
+            log.info("Snapshot deleted with program: snapshotId={}", snapshot.getId());
+        } else {
+            log.info("Snapshot not deleted, still referenced by {} other programs: snapshotId={}",
+                    refCount - 1, snapshot.getId());
         }
     }
 
