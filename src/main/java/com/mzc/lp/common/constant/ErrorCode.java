@@ -138,6 +138,8 @@ public enum ErrorCode {
     CERTIFICATE_NOT_FOUND(HttpStatus.NOT_FOUND, "CERT001", "Certificate not found"),
     CERTIFICATE_ALREADY_ISSUED(HttpStatus.CONFLICT, "CERT002", "Certificate already issued for this enrollment"),
     CERTIFICATE_REVOKED(HttpStatus.BAD_REQUEST, "CERT003", "Certificate has been revoked"),
+    CERTIFICATE_TEMPLATE_NOT_FOUND(HttpStatus.NOT_FOUND, "CERT004", "Certificate template not found"),
+    CERTIFICATE_TEMPLATE_CODE_DUPLICATE(HttpStatus.CONFLICT, "CERT005", "Certificate template code already exists"),
 
     // Department (DEPT)
     DEPARTMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "DEPT001", "Department not found"),
