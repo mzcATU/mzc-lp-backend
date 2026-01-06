@@ -22,6 +22,7 @@ public record PostResponse(
         Boolean isLiked,
         Boolean isPinned,
         Boolean isSolved,
+        Long courseTimeId,
         Instant createdAt,
         Instant updatedAt
 ) {
@@ -51,6 +52,7 @@ public record PostResponse(
                 isLiked,
                 post.getIsPinned(),
                 post.getIsSolved(),
+                post.getCourseTimeId(),
                 post.getCreatedAt(),
                 post.getUpdatedAt()
         );

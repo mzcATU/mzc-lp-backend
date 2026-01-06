@@ -13,7 +13,8 @@ import lombok.NoArgsConstructor;
                 @Index(name = "idx_community_post_category", columnList = "category"),
                 @Index(name = "idx_community_post_type", columnList = "type"),
                 @Index(name = "idx_community_post_author", columnList = "author_id"),
-                @Index(name = "idx_community_post_created", columnList = "created_at")
+                @Index(name = "idx_community_post_created", columnList = "created_at"),
+                @Index(name = "idx_community_post_course_time", columnList = "course_time_id")
         })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -47,6 +48,12 @@ public class CommunityPost extends TenantEntity {
     @Column(length = 500)
     private String tags;
 
+    /**
+     * 코스 커뮤니티용 차수 ID (null이면 전체 커뮤니티)
+     */
+    @Column(name = "course_time_id")
+    private Long courseTimeId;
+
     public static CommunityPost create(PostType type, String category, String title, String content, Long authorId, String tags) {
         CommunityPost post = new CommunityPost();
         post.type = type;
@@ -58,6 +65,16 @@ public class CommunityPost extends TenantEntity {
         post.viewCount = 0;
         post.isPinned = false;
         post.isSolved = false;
+        return post;
+    }
+
+    /**
+     * 코스 커뮤니티 게시글 생성
+     */
+    public static CommunityPost createForCourse(PostType type, String category, String title, String content,
+                                                 Long authorId, String tags, Long courseTimeId) {
+        CommunityPost post = create(type, category, title, content, authorId, tags);
+        post.courseTimeId = courseTimeId;
         return post;
     }
 
