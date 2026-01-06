@@ -43,4 +43,16 @@ public interface CertificateRepository extends JpaRepository<Certificate, Long> 
     );
 
     Long countByTenantIdAndCertificateNumberStartingWith(Long tenantId, String prefix);
+
+    /**
+     * 차수별 수료증 목록 조회 (페이징)
+     */
+    Page<Certificate> findByCourseTimeIdAndTenantIdOrderByIssuedAtDesc(
+            Long courseTimeId, Long tenantId, Pageable pageable);
+
+    /**
+     * 차수별 발급된 수료증 카운트
+     */
+    long countByCourseTimeIdAndTenantIdAndStatus(
+            Long courseTimeId, Long tenantId, CertificateStatus status);
 }
