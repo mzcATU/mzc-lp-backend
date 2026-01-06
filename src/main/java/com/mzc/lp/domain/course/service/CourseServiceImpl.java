@@ -9,6 +9,7 @@ import com.mzc.lp.domain.course.entity.Course;
 import com.mzc.lp.domain.course.exception.CourseNotFoundException;
 import com.mzc.lp.domain.course.exception.CourseOwnershipException;
 import com.mzc.lp.domain.course.repository.CourseRepository;
+import com.mzc.lp.domain.course.repository.CourseReviewRepository;
 import com.mzc.lp.common.context.TenantContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +29,7 @@ import java.util.stream.Collectors;
 public class CourseServiceImpl implements CourseService {
 
     private final CourseRepository courseRepository;
+    private final CourseReviewRepository reviewRepository;
 
     @Override
     @Transactional
@@ -80,14 +82,20 @@ public class CourseServiceImpl implements CourseService {
     public CourseDetailResponse getCourseDetail(Long courseId) {
         log.debug("Getting course detail: courseId={}", courseId);
 
-        Course course = courseRepository.findByIdWithItems(courseId, TenantContext.getCurrentTenantId())
+        Long tenantId = TenantContext.getCurrentTenantId();
+        Course course = courseRepository.findByIdWithItems(courseId, tenantId)
                 .orElseThrow(() -> new CourseNotFoundException(courseId));
 
         List<CourseItemResponse> items = course.getItems().stream()
                 .map(CourseItemResponse::from)
                 .toList();
 
-        return CourseDetailResponse.from(course, items, items.size());
+        // 리뷰 통계 조회
+        Object[] stats = reviewRepository.findReviewStatsForCourse(courseId, tenantId);
+        Long reviewCount = stats != null && stats[0] != null ? ((Number) stats[0]).longValue() : 0L;
+        Double averageRating = stats != null && stats[1] != null ? ((Number) stats[1]).doubleValue() : null;
+
+        return CourseDetailResponse.from(course, items, items.size(), averageRating, reviewCount);
     }
 
     @Override

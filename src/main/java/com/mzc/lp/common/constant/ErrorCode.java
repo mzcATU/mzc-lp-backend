@@ -36,6 +36,10 @@ public enum ErrorCode {
     CM_LEARNING_OBJECT_NOT_FOUND(HttpStatus.NOT_FOUND, "CM008", "LearningObject not found"),
     CM_SNAPSHOT_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "CM009", "SnapshotItem not found"),
     CM_UNAUTHORIZED_COURSE_ACCESS(HttpStatus.FORBIDDEN, "CM010", "Not authorized to access this course"),
+    CM_REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "CM011", "Course review not found"),
+    CM_REVIEW_ALREADY_EXISTS(HttpStatus.CONFLICT, "CM012", "Review already exists for this course"),
+    CM_NOT_COMPLETED_COURSE(HttpStatus.BAD_REQUEST, "CM013", "Cannot write review for incomplete course"),
+    CM_NOT_REVIEW_OWNER(HttpStatus.FORBIDDEN, "CM014", "Not authorized to modify this review"),
 
     // Content (CMS)
     CONTENT_NOT_FOUND(HttpStatus.NOT_FOUND, "CT001", "Content not found"),
