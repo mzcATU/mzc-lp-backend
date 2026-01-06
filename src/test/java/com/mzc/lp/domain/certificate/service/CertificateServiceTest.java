@@ -67,10 +67,14 @@ class CertificateServiceTest extends TenantTestSupport {
     private static final Long TENANT_ID = 1L;
 
     private Certificate createTestCertificate(Long userId, String certificateNumber) {
+        return createTestCertificateWithName(userId, certificateNumber, "테스트 사용자");
+    }
+
+    private Certificate createTestCertificateWithName(Long userId, String certificateNumber, String userName) {
         Certificate certificate = Certificate.create(
                 certificateNumber,
                 userId,
-                "테스트 사용자",
+                userName,
                 1L,
                 1L,
                 "테스트 차수",
@@ -386,6 +390,7 @@ class CertificateServiceTest extends TenantTestSupport {
             // then
             assertThat(response.valid()).isTrue();
             assertThat(response.certificateNumber()).isEqualTo(certificateNumber);
+            assertThat(response.userName()).isEqualTo("테*****자"); // "테스트 사용자" (7글자) → "테*****자" 마스킹 확인
             assertThat(response.message()).contains("유효한");
         }
 
@@ -425,6 +430,57 @@ class CertificateServiceTest extends TenantTestSupport {
             assertThat(response.valid()).isFalse();
             assertThat(response.certificateNumber()).isEqualTo(certificateNumber);
             assertThat(response.message()).contains("존재하지 않는");
+        }
+
+        @Test
+        @DisplayName("성공 - 3글자 이름 마스킹 (홍길동 → 홍*동)")
+        void verifyCertificate_success_maskThreeCharName() {
+            // given
+            String certificateNumber = "CERT-001-2026-000001";
+            Certificate certificate = createTestCertificateWithName(1L, certificateNumber, "홍길동");
+
+            given(certificateRepository.findByCertificateNumber(certificateNumber))
+                    .willReturn(Optional.of(certificate));
+
+            // when
+            CertificateVerifyResponse response = certificateService.verifyCertificate(certificateNumber);
+
+            // then
+            assertThat(response.userName()).isEqualTo("홍*동");
+        }
+
+        @Test
+        @DisplayName("성공 - 2글자 이름 마스킹 (홍길 → 홍*)")
+        void verifyCertificate_success_maskTwoCharName() {
+            // given
+            String certificateNumber = "CERT-001-2026-000002";
+            Certificate certificate = createTestCertificateWithName(1L, certificateNumber, "홍길");
+
+            given(certificateRepository.findByCertificateNumber(certificateNumber))
+                    .willReturn(Optional.of(certificate));
+
+            // when
+            CertificateVerifyResponse response = certificateService.verifyCertificate(certificateNumber);
+
+            // then
+            assertThat(response.userName()).isEqualTo("홍*");
+        }
+
+        @Test
+        @DisplayName("성공 - 4글자 이름 마스킹 (남궁민수 → 남**수)")
+        void verifyCertificate_success_maskFourCharName() {
+            // given
+            String certificateNumber = "CERT-001-2026-000003";
+            Certificate certificate = createTestCertificateWithName(1L, certificateNumber, "남궁민수");
+
+            given(certificateRepository.findByCertificateNumber(certificateNumber))
+                    .willReturn(Optional.of(certificate));
+
+            // when
+            CertificateVerifyResponse response = certificateService.verifyCertificate(certificateNumber);
+
+            // then
+            assertThat(response.userName()).isEqualTo("남**수");
         }
     }
 

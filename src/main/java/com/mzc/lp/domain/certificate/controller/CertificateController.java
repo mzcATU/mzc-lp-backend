@@ -130,11 +130,10 @@ public class CertificateController {
     }
 
     /**
-     * 수료증 진위 확인
+     * 수료증 진위 확인 (Public API - 인증 불필요)
      * GET /api/certificates/verify/{certificateNumber}
      */
     @GetMapping("/api/certificates/verify/{certificateNumber}")
-    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<CertificateVerifyResponse>> verifyCertificate(
             @PathVariable String certificateNumber
     ) {
