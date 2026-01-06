@@ -23,8 +23,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.security.SecureRandom;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -35,8 +33,7 @@ public class TenantServiceImpl implements TenantService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    private static final String TEMP_PASSWORD_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%";
-    private static final int TEMP_PASSWORD_LENGTH = 12;
+    private static final String DEFAULT_TENANT_ADMIN_PASSWORD = "1q2w3e4r!";
 
     @Override
     @Transactional
@@ -65,12 +62,11 @@ public class TenantServiceImpl implements TenantService {
         log.info("Tenant created: tenantId={}, code={}", saved.getId(), saved.getCode());
 
         // 2. TENANT_ADMIN 사용자 생성
-        String tempPassword = generateTempPassword();
-        User tenantAdmin = createTenantAdmin(saved.getId(), request.adminEmail(), request.adminName(), tempPassword);
-        log.info("Tenant admin created: userId={}, email={}, tempPassword={}",
-                tenantAdmin.getId(), request.adminEmail(), tempPassword);
+        User tenantAdmin = createTenantAdmin(saved.getId(), request.adminEmail(), request.adminName(), DEFAULT_TENANT_ADMIN_PASSWORD);
+        log.info("Tenant admin created: userId={}, email={}, tenantId={}",
+                tenantAdmin.getId(), request.adminEmail(), saved.getId());
 
-        return CreateTenantResponse.from(saved, tenantAdmin, tempPassword);
+        return CreateTenantResponse.from(saved, tenantAdmin, DEFAULT_TENANT_ADMIN_PASSWORD);
     }
 
     /**
@@ -99,18 +95,6 @@ public class TenantServiceImpl implements TenantService {
                 TenantContext.clear();
             }
         }
-    }
-
-    /**
-     * 임시 비밀번호 생성
-     */
-    private String generateTempPassword() {
-        SecureRandom random = new SecureRandom();
-        StringBuilder sb = new StringBuilder(TEMP_PASSWORD_LENGTH);
-        for (int i = 0; i < TEMP_PASSWORD_LENGTH; i++) {
-            sb.append(TEMP_PASSWORD_CHARS.charAt(random.nextInt(TEMP_PASSWORD_CHARS.length())));
-        }
-        return sb.toString();
     }
 
     @Override
@@ -160,6 +144,13 @@ public class TenantServiceImpl implements TenantService {
         }
 
         tenant.update(request.name(), request.customDomain(), request.plan());
+
+        // 상태 변경 처리
+        if (request.status() != null) {
+            tenant.changeStatus(request.status());
+            log.info("Tenant status changed: tenantId={}, newStatus={}", tenantId, request.status());
+        }
+
         log.info("Tenant updated: tenantId={}", tenantId);
 
         return TenantResponse.from(tenant);

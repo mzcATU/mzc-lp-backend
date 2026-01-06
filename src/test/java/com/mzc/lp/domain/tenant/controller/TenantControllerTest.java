@@ -277,7 +277,8 @@ class TenantControllerTest extends TenantTestSupport {
             UpdateTenantRequest request = new UpdateTenantRequest(
                     "수정된회사명",
                     "new.domain.com",
-                    PlanType.ENTERPRISE
+                    PlanType.ENTERPRISE,
+                    null
             );
 
             // when & then
