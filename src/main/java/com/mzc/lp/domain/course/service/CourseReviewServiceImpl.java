@@ -49,14 +49,11 @@ public class CourseReviewServiceImpl implements CourseReviewService {
             throw new CourseReviewAlreadyExistsException(courseId, userId);
         }
 
-        // 3. 수강 완료 여부 확인 - 해당 코스의 어느 차수라도 완료했으면 OK
-        boolean hasCompletedCourse = hasCompletedAnyCourseTime(courseId, userId, tenantId);
-        if (!hasCompletedCourse) {
-            throw new CourseNotCompletedException(courseId);
-        }
+        // 3. 진도율 계산 - 해당 코스의 모든 차수에서 가장 높은 진도율 사용
+        Integer completionRate = calculateMaxCompletionRate(courseId, userId, tenantId);
 
         // 4. 리뷰 생성
-        CourseReview review = CourseReview.create(courseId, userId, request.rating(), request.content());
+        CourseReview review = CourseReview.create(courseId, userId, request.rating(), request.content(), completionRate);
         CourseReview savedReview = reviewRepository.save(review);
 
         // 5. 사용자 이름 조회 및 응답 생성
@@ -210,9 +207,9 @@ public class CourseReviewServiceImpl implements CourseReviewService {
     }
 
     /**
-     * 해당 코스의 어느 차수라도 완료했는지 확인
+     * 해당 코스의 모든 차수에서 가장 높은 진도율 계산
      */
-    private boolean hasCompletedAnyCourseTime(Long courseId, Long userId, Long tenantId) {
+    private Integer calculateMaxCompletionRate(Long courseId, Long userId, Long tenantId) {
         // 1. 해당 코스의 모든 차수 ID 조회
         List<Long> courseTimeIds = courseTimeRepository.findByCmCourseIdAndTenantId(courseId, tenantId)
                 .stream()
@@ -220,16 +217,25 @@ public class CourseReviewServiceImpl implements CourseReviewService {
                 .toList();
 
         if (courseTimeIds.isEmpty()) {
-            return false;
+            return 0;
         }
 
-        // 2. 해당 차수들 중 COMPLETED 상태인 수강 신청이 있는지 확인
+        // 2. 모든 차수의 진도율 중 최대값 반환
         return courseTimeIds.stream()
-                .anyMatch(courseTimeId ->
+                .map(courseTimeId ->
                         enrollmentRepository.findByUserIdAndCourseTimeIdAndTenantId(userId, courseTimeId, tenantId)
-                                .map(enrollment -> enrollment.getStatus() == EnrollmentStatus.COMPLETED)
-                                .orElse(false)
-                );
+                                .map(enrollment -> {
+                                    // 완료 상태면 100%, 아니면 현재 진도율 반환
+                                    if (enrollment.getStatus() == EnrollmentStatus.COMPLETED) {
+                                        return 100;
+                                    }
+                                    // 진행 중인 경우 Enrollment의 progressPercent 값 사용
+                                    return enrollment.getProgressPercent();
+                                })
+                                .orElse(0)
+                )
+                .max(Integer::compareTo)
+                .orElse(0);
     }
 
     /**
