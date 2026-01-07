@@ -114,15 +114,12 @@ class CourseCommunityServiceTest extends TenantTestSupport {
     class GetPosts {
 
         @Test
-        @DisplayName("성공 - 수강생이 게시글 목록 조회")
+        @DisplayName("성공 - 게시글 목록 조회")
         void getPosts_success() {
             // given
             Long courseTimeId = 1L;
             Long userId = 100L;
             int page = 0, pageSize = 20;
-
-            given(enrollmentRepository.existsByUserIdAndCourseTimeIdAndTenantId(userId, courseTimeId, TENANT_ID))
-                    .willReturn(true);
 
             List<CommunityPost> posts = List.of(
                     createTestPost(1L, courseTimeId, userId),
@@ -150,22 +147,6 @@ class CourseCommunityServiceTest extends TenantTestSupport {
             // then
             assertThat(response).isNotNull();
             assertThat(response.posts()).hasSize(2);
-        }
-
-        @Test
-        @DisplayName("실패 - 수강생이 아닌 경우")
-        void getPosts_fail_notEnrolled() {
-            // given
-            Long courseTimeId = 1L;
-            Long userId = 100L;
-
-            given(enrollmentRepository.existsByUserIdAndCourseTimeIdAndTenantId(userId, courseTimeId, TENANT_ID))
-                    .willReturn(false);
-
-            // when & then
-            assertThatThrownBy(() -> courseCommunityService.getPosts(
-                    courseTimeId, null, null, null, "latest", 0, 20, userId))
-                    .isInstanceOf(NotEnrolledException.class);
         }
     }
 
@@ -237,15 +218,12 @@ class CourseCommunityServiceTest extends TenantTestSupport {
     class GetPost {
 
         @Test
-        @DisplayName("성공 - 수강생이 게시글 상세 조회")
+        @DisplayName("성공 - 게시글 상세 조회")
         void getPost_success() {
             // given
             Long courseTimeId = 1L;
             Long postId = 1L;
             Long userId = 100L;
-
-            given(enrollmentRepository.existsByUserIdAndCourseTimeIdAndTenantId(userId, courseTimeId, TENANT_ID))
-                    .willReturn(true);
 
             CommunityPost post = createTestPost(postId, courseTimeId, userId);
             given(postRepository.findByIdAndCourseTimeId(postId, courseTimeId))
@@ -277,8 +255,6 @@ class CourseCommunityServiceTest extends TenantTestSupport {
             Long postId = 999L;
             Long userId = 100L;
 
-            given(enrollmentRepository.existsByUserIdAndCourseTimeIdAndTenantId(userId, courseTimeId, TENANT_ID))
-                    .willReturn(true);
             given(postRepository.findByIdAndCourseTimeId(postId, courseTimeId))
                     .willReturn(Optional.empty());
 
@@ -401,9 +377,6 @@ class CourseCommunityServiceTest extends TenantTestSupport {
             // given
             Long courseTimeId = 1L;
             Long userId = 100L;
-
-            given(enrollmentRepository.existsByUserIdAndCourseTimeIdAndTenantId(userId, courseTimeId, TENANT_ID))
-                    .willReturn(true);
 
             given(postRepository.countByCourseTimeId(courseTimeId)).willReturn(10L);
             given(postRepository.countByCourseTimeIdAndCategory(courseTimeId, "question")).willReturn(5L);
