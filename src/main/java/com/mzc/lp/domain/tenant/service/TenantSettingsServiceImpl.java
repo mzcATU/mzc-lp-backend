@@ -6,6 +6,7 @@ import com.mzc.lp.domain.tenant.dto.request.UpdateLayoutSettingsRequest;
 import com.mzc.lp.domain.tenant.dto.request.UpdateTenantSettingsRequest;
 import com.mzc.lp.domain.tenant.dto.response.NavigationItemResponse;
 import com.mzc.lp.domain.tenant.dto.response.PublicBrandingResponse;
+import com.mzc.lp.domain.tenant.dto.response.PublicLayoutResponse;
 import com.mzc.lp.domain.tenant.dto.response.TenantSettingsResponse;
 import com.mzc.lp.domain.tenant.constant.TenantStatus;
 import com.mzc.lp.domain.tenant.entity.NavigationItem;
@@ -285,6 +286,81 @@ public class TenantSettingsServiceImpl implements TenantSettingsService {
 
         TenantSettingsResponse settingsResponse = TenantSettingsResponse.from(settings);
         return PublicBrandingResponse.from(settingsResponse, tenant.getName());
+    }
+
+    @Override
+    public PublicBrandingResponse getBrandingByTenantId(Long tenantId) {
+        Tenant tenant = tenantRepository.findById(tenantId)
+                .orElse(null);
+
+        if (tenant == null) {
+            return PublicBrandingResponse.defaultBranding();
+        }
+
+        TenantSettings settings = tenantSettingsRepository.findByTenantId(tenantId)
+                .orElseGet(() -> TenantSettings.createDefault(tenant));
+
+        TenantSettingsResponse settingsResponse = TenantSettingsResponse.from(settings);
+        return PublicBrandingResponse.from(settingsResponse, tenant.getName());
+    }
+
+    // ============================================
+    // 공개 레이아웃 정보 (TU용)
+    // ============================================
+
+    @Override
+    public PublicLayoutResponse getPublicLayout(String identifier, String type) {
+        final Tenant tenant;
+
+        if ("subdomain".equals(type)) {
+            tenant = tenantRepository.findBySubdomain(identifier)
+                    .filter(t -> t.getStatus() == TenantStatus.ACTIVE)
+                    .orElse(null);
+        } else if ("customDomain".equals(type)) {
+            tenant = tenantRepository.findByCustomDomain(identifier)
+                    .filter(t -> t.getStatus() == TenantStatus.ACTIVE)
+                    .orElse(null);
+        } else {
+            tenant = null;
+        }
+
+        if (tenant == null) {
+            return PublicLayoutResponse.defaultLayout();
+        }
+
+        return getLayoutByTenantId(tenant.getId());
+    }
+
+    @Override
+    @Transactional
+    public PublicLayoutResponse getLayoutByTenantId(Long tenantId) {
+        Tenant tenant = tenantRepository.findById(tenantId)
+                .orElse(null);
+
+        if (tenant == null) {
+            return PublicLayoutResponse.defaultLayout();
+        }
+
+        TenantSettings settings = tenantSettingsRepository.findByTenantId(tenantId)
+                .orElseGet(() -> TenantSettings.createDefault(tenant));
+
+        List<NavigationItemResponse> navigationItems = getEnabledNavigationItems(tenantId);
+
+        return PublicLayoutResponse.from(settings, navigationItems);
+    }
+
+    @Override
+    @Transactional
+    public List<NavigationItemResponse> getEnabledNavigationItems(Long tenantId) {
+        // 네비게이션 항목이 없으면 기본 항목 초기화
+        if (!navigationItemRepository.existsByTenantId(tenantId)) {
+            initializeDefaultNavigationItems(tenantId);
+        }
+
+        return navigationItemRepository.findByTenantIdAndEnabledTrueOrderByDisplayOrderAsc(tenantId)
+                .stream()
+                .map(NavigationItemResponse::from)
+                .toList();
     }
 
     private TenantSettings initializeAndGet(Long tenantId) {

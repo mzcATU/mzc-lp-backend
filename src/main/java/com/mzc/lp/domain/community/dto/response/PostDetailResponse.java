@@ -22,6 +22,7 @@ public record PostDetailResponse(
         Boolean isLiked,
         Boolean isPinned,
         Boolean isSolved,
+        Long courseTimeId,
         Instant createdAt,
         Instant updatedAt,
         RelatedCourseResponse relatedCourse
@@ -52,6 +53,7 @@ public record PostDetailResponse(
                 isLiked,
                 post.getIsPinned(),
                 post.getIsSolved(),
+                post.getCourseTimeId(),
                 post.getCreatedAt(),
                 post.getUpdatedAt(),
                 null  // relatedCourse는 추후 구현

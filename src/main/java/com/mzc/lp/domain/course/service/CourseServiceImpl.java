@@ -9,6 +9,7 @@ import com.mzc.lp.domain.course.entity.Course;
 import com.mzc.lp.domain.course.exception.CourseNotFoundException;
 import com.mzc.lp.domain.course.exception.CourseOwnershipException;
 import com.mzc.lp.domain.course.repository.CourseRepository;
+import com.mzc.lp.domain.course.repository.CourseReviewRepository;
 import com.mzc.lp.common.context.TenantContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +29,7 @@ import java.util.stream.Collectors;
 public class CourseServiceImpl implements CourseService {
 
     private final CourseRepository courseRepository;
+    private final CourseReviewRepository reviewRepository;
 
     @Override
     @Transactional
@@ -80,14 +82,31 @@ public class CourseServiceImpl implements CourseService {
     public CourseDetailResponse getCourseDetail(Long courseId) {
         log.debug("Getting course detail: courseId={}", courseId);
 
-        Course course = courseRepository.findByIdWithItems(courseId, TenantContext.getCurrentTenantId())
+        Long tenantId = TenantContext.getCurrentTenantId();
+        Course course = courseRepository.findByIdWithItems(courseId, tenantId)
                 .orElseThrow(() -> new CourseNotFoundException(courseId));
 
         List<CourseItemResponse> items = course.getItems().stream()
                 .map(CourseItemResponse::from)
                 .toList();
 
-        return CourseDetailResponse.from(course, items, items.size());
+        // 리뷰 통계 조회
+        Object[] stats = reviewRepository.findReviewStatsForCourse(courseId, tenantId);
+        Long reviewCount = 0L;
+        Double averageRating = null;
+
+        if (stats != null && stats.length >= 2) {
+            // stats[0]은 COUNT, stats[1]은 AVG
+            // 리뷰가 없을 경우 COUNT는 0, AVG는 null
+            if (stats[0] instanceof Number count) {
+                reviewCount = count.longValue();
+            }
+            if (stats[1] instanceof Number avg) {
+                averageRating = avg.doubleValue();
+            }
+        }
+
+        return CourseDetailResponse.from(course, items, items.size(), averageRating, reviewCount);
     }
 
     @Override

@@ -63,12 +63,20 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public TokenResponse login(LoginRequest request) {
-        // 사용자 조회
-        User user = userRepository.findByEmail(request.email())
-                .orElseThrow(InvalidCredentialsException::new);
+        log.info("Login attempt: email={}", request.email());
+
+        // 사용자 조회 (테넌트 필터 우회 - Native Query)
+        User user = userRepository.findByEmailForLogin(request.email())
+                .orElseThrow(() -> {
+                    log.warn("Login failed: user not found for email={}", request.email());
+                    return new InvalidCredentialsException();
+                });
+
+        log.info("User found: userId={}, tenantId={}, role={}", user.getId(), user.getTenantId(), user.getRole());
 
         // 비밀번호 검증
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
+            log.warn("Login failed: password mismatch for email={}", request.email());
             throw new InvalidCredentialsException();
         }
 

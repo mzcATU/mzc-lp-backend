@@ -15,6 +15,13 @@ public interface UserRepository extends JpaRepository<User, Long>, UserRepositor
 
     Optional<User> findByEmail(String email);
 
+    /**
+     * 로그인용 이메일 조회 - 테넌트 필터 없이 전체 사용자 대상 조회
+     * Native Query로 Hibernate 필터 우회
+     */
+    @Query(value = "SELECT * FROM users WHERE email = :email LIMIT 1", nativeQuery = true)
+    Optional<User> findByEmailForLogin(@Param("email") String email);
+
     boolean existsByEmail(String email);
     boolean existsByTenantIdAndEmail(Long tenantId, String email);
 

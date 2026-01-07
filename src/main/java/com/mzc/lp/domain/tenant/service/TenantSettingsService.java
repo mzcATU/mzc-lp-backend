@@ -6,6 +6,7 @@ import com.mzc.lp.domain.tenant.dto.request.UpdateLayoutSettingsRequest;
 import com.mzc.lp.domain.tenant.dto.request.UpdateTenantSettingsRequest;
 import com.mzc.lp.domain.tenant.dto.response.NavigationItemResponse;
 import com.mzc.lp.domain.tenant.dto.response.PublicBrandingResponse;
+import com.mzc.lp.domain.tenant.dto.response.PublicLayoutResponse;
 import com.mzc.lp.domain.tenant.dto.response.TenantSettingsResponse;
 
 import java.util.List;
@@ -114,4 +115,37 @@ public interface TenantSettingsService {
      * @return 공개 브랜딩 정보
      */
     PublicBrandingResponse getPublicBranding(String identifier, String type);
+
+    /**
+     * 테넌트 ID로 브랜딩 정보 조회 (인증된 사용자용)
+     * @param tenantId 테넌트 ID
+     * @return 브랜딩 정보
+     */
+    PublicBrandingResponse getBrandingByTenantId(Long tenantId);
+
+    // ============================================
+    // 공개 레이아웃 정보 (TU용)
+    // ============================================
+
+    /**
+     * 공개 레이아웃 정보 조회 (인증 불필요)
+     * @param identifier subdomain 또는 customDomain
+     * @param type "subdomain" 또는 "customDomain"
+     * @return 공개 레이아웃 정보
+     */
+    PublicLayoutResponse getPublicLayout(String identifier, String type);
+
+    /**
+     * 테넌트 ID로 레이아웃 정보 조회 (인증된 사용자용)
+     * @param tenantId 테넌트 ID
+     * @return 레이아웃 정보
+     */
+    PublicLayoutResponse getLayoutByTenantId(Long tenantId);
+
+    /**
+     * 활성화된 네비게이션 항목만 조회 (TU용)
+     * @param tenantId 테넌트 ID
+     * @return 활성화된 네비게이션 항목 목록
+     */
+    List<NavigationItemResponse> getEnabledNavigationItems(Long tenantId);
 }

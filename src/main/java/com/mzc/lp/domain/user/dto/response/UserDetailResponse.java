@@ -15,6 +15,8 @@ public record UserDetailResponse(
         String role,
         String status,
         Long tenantId,
+        String tenantSubdomain,
+        String tenantCustomDomain,
         Instant createdAt,
         Instant updatedAt,
         List<CourseRoleResponse> courseRoles
@@ -29,6 +31,8 @@ public record UserDetailResponse(
                 user.getRole().name(),
                 user.getStatus().name(),
                 user.getTenantId(),
+                null,
+                null,
                 user.getCreatedAt(),
                 user.getUpdatedAt(),
                 Collections.emptyList()
@@ -45,6 +49,26 @@ public record UserDetailResponse(
                 user.getRole().name(),
                 user.getStatus().name(),
                 user.getTenantId(),
+                null,
+                null,
+                user.getCreatedAt(),
+                user.getUpdatedAt(),
+                courseRoles != null ? courseRoles : Collections.emptyList()
+        );
+    }
+
+    public static UserDetailResponse from(User user, List<CourseRoleResponse> courseRoles, String tenantSubdomain, String tenantCustomDomain) {
+        return new UserDetailResponse(
+                user.getId(),
+                user.getEmail(),
+                user.getName(),
+                user.getPhone(),
+                user.getProfileImageUrl(),
+                user.getRole().name(),
+                user.getStatus().name(),
+                user.getTenantId(),
+                tenantSubdomain,
+                tenantCustomDomain,
                 user.getCreatedAt(),
                 user.getUpdatedAt(),
                 courseRoles != null ? courseRoles : Collections.emptyList()
