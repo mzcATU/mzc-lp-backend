@@ -17,12 +17,15 @@ import com.mzc.lp.domain.tenant.repository.NavigationItemRepository;
 import com.mzc.lp.domain.tenant.repository.TenantRepository;
 import com.mzc.lp.domain.tenant.repository.TenantSettingsRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -241,11 +244,18 @@ public class TenantSettingsServiceImpl implements TenantSettingsService {
     @Override
     @Transactional
     public List<NavigationItemResponse> initializeDefaultNavigationItems(Long tenantId) {
-        Tenant tenant = tenantRepository.findById(tenantId)
+        // 비관적 락으로 테넌트 조회하여 동시 초기화 방지
+        Tenant tenant = tenantRepository.findByIdWithLock(tenantId)
                 .orElseThrow(() -> new TenantDomainNotFoundException("Tenant not found: " + tenantId));
 
-        // 기존 항목 삭제
-        navigationItemRepository.deleteAllByTenantId(tenantId);
+        // 락 획득 후 다시 확인 (다른 트랜잭션이 이미 초기화했을 수 있음)
+        if (navigationItemRepository.existsByTenantId(tenantId)) {
+            log.debug("Navigation items already initialized for tenant: {}", tenantId);
+            return navigationItemRepository.findByTenantIdOrderByDisplayOrderAsc(tenantId)
+                    .stream()
+                    .map(NavigationItemResponse::from)
+                    .toList();
+        }
 
         // 기본 네비게이션 항목 생성
         List<NavigationItem> defaultItems = new ArrayList<>();
@@ -254,11 +264,19 @@ public class TenantSettingsServiceImpl implements TenantSettingsService {
         defaultItems.add(NavigationItem.createDefault(tenant, "내 학습", "Award", "/my-learning", 3));
         defaultItems.add(NavigationItem.createDefault(tenant, "도움말", "HelpCircle", "/help", 4));
 
-        List<NavigationItem> saved = navigationItemRepository.saveAll(defaultItems);
-
-        return saved.stream()
-                .map(NavigationItemResponse::from)
-                .toList();
+        try {
+            List<NavigationItem> saved = navigationItemRepository.saveAll(defaultItems);
+            return saved.stream()
+                    .map(NavigationItemResponse::from)
+                    .toList();
+        } catch (DataIntegrityViolationException e) {
+            // 동시성 충돌 시 기존 데이터 조회
+            log.warn("Concurrent navigation initialization for tenant: {}, fetching existing", tenantId);
+            return navigationItemRepository.findByTenantIdOrderByDisplayOrderAsc(tenantId)
+                    .stream()
+                    .map(NavigationItemResponse::from)
+                    .toList();
+        }
     }
 
     @Override
@@ -354,7 +372,12 @@ public class TenantSettingsServiceImpl implements TenantSettingsService {
     public List<NavigationItemResponse> getEnabledNavigationItems(Long tenantId) {
         // 네비게이션 항목이 없으면 기본 항목 초기화
         if (!navigationItemRepository.existsByTenantId(tenantId)) {
-            initializeDefaultNavigationItems(tenantId);
+            try {
+                initializeDefaultNavigationItems(tenantId);
+            } catch (Exception e) {
+                // 데드락 또는 동시성 예외 발생 시 로그 남기고 기존 데이터 조회 시도
+                log.warn("Failed to initialize navigation items for tenant {}: {}", tenantId, e.getMessage());
+            }
         }
 
         return navigationItemRepository.findByTenantIdAndEnabledTrueOrderByDisplayOrderAsc(tenantId)
