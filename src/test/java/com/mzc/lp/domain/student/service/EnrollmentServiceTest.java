@@ -297,7 +297,7 @@ class EnrollmentServiceTest extends TenantTestSupport {
             Long enrollmentId = 1L;
             Long userId = 1L;
             Enrollment enrollment = createTestEnrollment(userId, 1L, EnrollmentStatus.ENROLLED);
-            UpdateProgressRequest request = new UpdateProgressRequest(50);
+            UpdateProgressRequest request = new UpdateProgressRequest(1L, 50, 0);
 
             given(enrollmentRepository.findByIdAndTenantId(enrollmentId, TENANT_ID))
                     .willReturn(Optional.of(enrollment));
@@ -314,7 +314,7 @@ class EnrollmentServiceTest extends TenantTestSupport {
         void updateProgress_fail_notFound() {
             // given
             Long enrollmentId = 999L;
-            UpdateProgressRequest request = new UpdateProgressRequest(50);
+            UpdateProgressRequest request = new UpdateProgressRequest(1L, 50, 0);
 
             given(enrollmentRepository.findByIdAndTenantId(enrollmentId, TENANT_ID))
                     .willReturn(Optional.empty());
