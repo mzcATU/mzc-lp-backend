@@ -106,6 +106,13 @@ public interface TenantSettingsService {
      */
     List<NavigationItemResponse> initializeDefaultNavigationItems(Long tenantId);
 
+    /**
+     * 네비게이션 항목을 기본값으로 리셋 (기존 항목 삭제 후 재생성)
+     * @param tenantId 테넌트 ID
+     * @return 리셋된 항목 목록
+     */
+    List<NavigationItemResponse> resetNavigationItems(Long tenantId);
+
     // ============================================
     // 공개 브랜딩 정보 (인증 불필요)
     // ============================================
