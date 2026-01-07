@@ -280,7 +280,8 @@ public class SnapshotServiceImpl implements SnapshotService {
                             content.getResolution(),
                             null,  // codec - Content에 없음
                             null,  // bitrate - Content에 없음
-                            content.getPageCount()
+                            content.getPageCount(),
+                            content.getExternalUrl()           // 외부링크 URL
                     );
                     snapshotLo = snapshotLoRepository.save(snapshotLo);
 
