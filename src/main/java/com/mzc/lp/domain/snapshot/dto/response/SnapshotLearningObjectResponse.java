@@ -10,6 +10,7 @@ public record SnapshotLearningObjectResponse(
         Integer duration,
         String thumbnailUrl,
         String resolution,
+        String externalUrl,
         Boolean isCustomized
 ) {
     public static SnapshotLearningObjectResponse from(SnapshotLearningObject slo) {
@@ -24,6 +25,7 @@ public record SnapshotLearningObjectResponse(
                 slo.getDuration(),
                 slo.getThumbnailUrl(),
                 slo.getResolution(),
+                slo.getExternalUrl(),
                 slo.getIsCustomized()
         );
     }
