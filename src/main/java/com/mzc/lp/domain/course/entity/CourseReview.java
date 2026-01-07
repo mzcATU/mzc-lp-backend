@@ -10,10 +10,10 @@ import lombok.NoArgsConstructor;
 @Table(name = "cm_course_reviews",
         uniqueConstraints = @UniqueConstraint(
                 name = "uk_course_review",
-                columnNames = {"tenant_id", "course_id", "user_id"}
+                columnNames = {"tenant_id", "course_time_id", "user_id"}
         ),
         indexes = {
-                @Index(name = "idx_course_review_course", columnList = "tenant_id, course_id"),
+                @Index(name = "idx_course_review_course_time", columnList = "tenant_id, course_time_id"),
                 @Index(name = "idx_course_review_user", columnList = "tenant_id, user_id"),
                 @Index(name = "idx_course_review_rating", columnList = "tenant_id, rating")
         }
@@ -29,8 +29,8 @@ public class CourseReview extends TenantEntity {
     @Version
     private Long version;
 
-    @Column(name = "course_id", nullable = false)
-    private Long courseId;
+    @Column(name = "course_time_id", nullable = false)
+    private Long courseTimeId;
 
     @Column(name = "user_id", nullable = false)
     private Long userId;
@@ -45,9 +45,9 @@ public class CourseReview extends TenantEntity {
     private Integer completionRate;  // 0-100 (%)
 
     // ===== 정적 팩토리 메서드 =====
-    public static CourseReview create(Long courseId, Long userId, Integer rating, String content, Integer completionRate) {
+    public static CourseReview create(Long courseTimeId, Long userId, Integer rating, String content, Integer completionRate) {
         CourseReview review = new CourseReview();
-        review.courseId = courseId;
+        review.courseTimeId = courseTimeId;
         review.userId = userId;
         review.validateAndSetRating(rating);
         review.content = content;

@@ -135,7 +135,7 @@ class CourseReviewControllerTest extends TenantTestSupport {
         CreateReviewRequest request = new CreateReviewRequest(5, "정말 좋은 강의였습니다!");
 
         // When & Then
-        mockMvc.perform(post("/api/courses/{courseId}/reviews", testCourse.getId())
+        mockMvc.perform(post("/api/times/{timeId}/reviews", testCourseTime.getId())
                         .header("Authorization", "Bearer " + accessToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -156,7 +156,7 @@ class CourseReviewControllerTest extends TenantTestSupport {
         CreateReviewRequest request = new CreateReviewRequest(5, "좋아요");
 
         // When & Then
-        mockMvc.perform(post("/api/courses/{courseId}/reviews", testCourse.getId())
+        mockMvc.perform(post("/api/times/{timeId}/reviews", testCourseTime.getId())
                         .header("Authorization", "Bearer " + accessToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -177,7 +177,7 @@ class CourseReviewControllerTest extends TenantTestSupport {
         CreateReviewRequest request = new CreateReviewRequest(4, "중간까지 들었는데 좋네요");
 
         // When & Then
-        mockMvc.perform(post("/api/courses/{courseId}/reviews", testCourse.getId())
+        mockMvc.perform(post("/api/times/{timeId}/reviews", testCourseTime.getId())
                         .header("Authorization", "Bearer " + accessToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -197,16 +197,17 @@ class CourseReviewControllerTest extends TenantTestSupport {
         otherUser = userRepository.save(otherUser);
 
         // Given - 리뷰 생성
-        CourseReview review1 = CourseReview.create(testCourse.getId(), testUser.getId(), 5, "좋아요", 100);
-        CourseReview review2 = CourseReview.create(testCourse.getId(), otherUser.getId(), 4, "괜찮아요", 50);
+        CourseReview review1 = CourseReview.create(testCourseTime.getId(), testUser.getId(), 5, "좋아요", 100);
+        CourseReview review2 = CourseReview.create(testCourseTime.getId(), otherUser.getId(), 4, "괜찮아요", 50);
         reviewRepository.save(review1);
         reviewRepository.save(review2);
 
         // When & Then
-        mockMvc.perform(get("/api/courses/{courseId}/reviews", testCourse.getId())
+        mockMvc.perform(get("/api/times/{timeId}/reviews", testCourseTime.getId())
+                        .header("Authorization", "Bearer " + accessToken)
                         .param("page", "0")
-                        .param("pageSize", "20")
-                        .param("sortBy", "latest"))
+                        .param("size", "10")
+                        .param("sort", "latest"))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.reviews").isArray())
@@ -222,13 +223,13 @@ class CourseReviewControllerTest extends TenantTestSupport {
         enrollment.complete(100);
         enrollmentRepository.save(enrollment);
 
-        CourseReview review = CourseReview.create(testCourse.getId(), testUser.getId(), 4, "괜찮아요", 100);
+        CourseReview review = CourseReview.create(testCourseTime.getId(), testUser.getId(), 4, "괜찮아요", 100);
         review = reviewRepository.save(review);
 
         UpdateReviewRequest request = new UpdateReviewRequest(5, "수정: 정말 좋아요!");
 
         // When & Then
-        mockMvc.perform(put("/api/courses/{courseId}/reviews/{reviewId}", testCourse.getId(), review.getId())
+        mockMvc.perform(put("/api/times/{timeId}/reviews/{reviewId}", testCourseTime.getId(), review.getId())
                         .header("Authorization", "Bearer " + accessToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -242,11 +243,11 @@ class CourseReviewControllerTest extends TenantTestSupport {
     @DisplayName("리뷰 삭제 성공")
     void deleteReview_Success() throws Exception {
         // Given
-        CourseReview review = CourseReview.create(testCourse.getId(), testUser.getId(), 5, "좋아요", 100);
+        CourseReview review = CourseReview.create(testCourseTime.getId(), testUser.getId(), 5, "좋아요", 100);
         review = reviewRepository.save(review);
 
         // When & Then
-        mockMvc.perform(delete("/api/courses/{courseId}/reviews/{reviewId}", testCourse.getId(), review.getId())
+        mockMvc.perform(delete("/api/times/{timeId}/reviews/{reviewId}", testCourseTime.getId(), review.getId())
                         .header("Authorization", "Bearer " + accessToken))
                 .andDo(print())
                 .andExpect(status().isNoContent());
@@ -261,16 +262,17 @@ class CourseReviewControllerTest extends TenantTestSupport {
         otherUser = userRepository.save(otherUser);
 
         // Given - 리뷰 생성
-        CourseReview review1 = CourseReview.create(testCourse.getId(), testUser.getId(), 5, "좋아요", 100);
-        CourseReview review2 = CourseReview.create(testCourse.getId(), otherUser.getId(), 4, "괜찮아요", 80);
+        CourseReview review1 = CourseReview.create(testCourseTime.getId(), testUser.getId(), 5, "좋아요", 100);
+        CourseReview review2 = CourseReview.create(testCourseTime.getId(), otherUser.getId(), 4, "괜찮아요", 80);
         reviewRepository.saveAndFlush(review1);
         reviewRepository.saveAndFlush(review2);
 
         // When & Then
-        mockMvc.perform(get("/api/courses/{courseId}/reviews/stats", testCourse.getId()))
+        mockMvc.perform(get("/api/times/{timeId}/reviews/stats", testCourseTime.getId())
+                        .header("Authorization", "Bearer " + accessToken))
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.courseId").value(testCourse.getId()))
+                .andExpect(jsonPath("$.data.courseTimeId").value(testCourseTime.getId()))
                 .andExpect(jsonPath("$.data.averageRating").exists())
                 .andExpect(jsonPath("$.data.reviewCount").exists());
     }
