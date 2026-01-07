@@ -40,6 +40,8 @@ public enum ErrorCode {
     CM_REVIEW_ALREADY_EXISTS(HttpStatus.CONFLICT, "CM012", "Review already exists for this course"),
     CM_NOT_COMPLETED_COURSE(HttpStatus.BAD_REQUEST, "CM013", "Cannot write review for incomplete course"),
     CM_NOT_REVIEW_OWNER(HttpStatus.FORBIDDEN, "CM014", "Not authorized to modify this review"),
+    CM_ANNOUNCEMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "CM015", "Announcement not found"),
+    CM_NOT_ANNOUNCEMENT_AUTHOR(HttpStatus.FORBIDDEN, "CM016", "Not authorized to modify this announcement"),
 
     // Content (CMS)
     CONTENT_NOT_FOUND(HttpStatus.NOT_FOUND, "CT001", "Content not found"),
