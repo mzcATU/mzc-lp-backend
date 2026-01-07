@@ -257,23 +257,38 @@ public class SnapshotServiceImpl implements SnapshotService {
             String itemType = null;
 
             if (courseItem.getLearningObjectId() != null) {
-                // displayName이 있으면 사용, 없으면 itemName(파일명) 사용
-                String displayName = courseItem.getDisplayName() != null && !courseItem.getDisplayName().isBlank()
-                        ? courseItem.getDisplayName()
-                        : courseItem.getItemName();
-                snapshotLo = SnapshotLearningObject.create(
-                        courseItem.getLearningObjectId(),
-                        displayName
-                );
-                snapshotLo = snapshotLoRepository.save(snapshotLo);
-
-                // LearningObject에서 Content의 contentType을 가져옴
-                itemType = learningObjectRepository.findByIdAndTenantId(
+                // LearningObject에서 Content 정보를 가져옴
+                LearningObject lo = learningObjectRepository.findByIdAndTenantId(
                         courseItem.getLearningObjectId(), TenantContext.getCurrentTenantId())
-                        .map(lo -> lo.getContent() != null && lo.getContent().getContentType() != null
-                                ? lo.getContent().getContentType().name()
-                                : "VIDEO")
-                        .orElse("VIDEO");
+                        .orElse(null);
+
+                if (lo != null && lo.getContent() != null) {
+                    var content = lo.getContent();
+
+                    // displayName이 있으면 사용, 없으면 itemName(파일명) 사용
+                    String displayName = courseItem.getDisplayName() != null && !courseItem.getDisplayName().isBlank()
+                            ? courseItem.getDisplayName()
+                            : courseItem.getItemName();
+
+                    // createFromLo를 사용하여 올바른 contentId와 sourceLoId 설정
+                    snapshotLo = SnapshotLearningObject.createFromLo(
+                            courseItem.getLearningObjectId(),  // sourceLoId
+                            content.getId(),                   // 실제 contentId
+                            displayName,
+                            content.getDuration(),
+                            content.getThumbnailPath(),
+                            content.getResolution(),
+                            null,  // codec - Content에 없음
+                            null,  // bitrate - Content에 없음
+                            content.getPageCount()
+                    );
+                    snapshotLo = snapshotLoRepository.save(snapshotLo);
+
+                    // Content의 contentType을 가져옴
+                    itemType = content.getContentType() != null
+                            ? content.getContentType().name()
+                            : "VIDEO";
+                }
             }
 
             SnapshotItem parentItem = null;
