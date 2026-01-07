@@ -8,10 +8,10 @@ import com.mzc.lp.domain.course.dto.response.CourseReviewResponse;
 import com.mzc.lp.domain.course.dto.response.CourseReviewStatsResponse;
 import com.mzc.lp.domain.course.entity.CourseReview;
 import com.mzc.lp.domain.course.exception.*;
-import com.mzc.lp.domain.course.repository.CourseRepository;
 import com.mzc.lp.domain.course.repository.CourseReviewRepository;
 import com.mzc.lp.domain.student.constant.EnrollmentStatus;
 import com.mzc.lp.domain.student.repository.EnrollmentRepository;
+import com.mzc.lp.domain.ts.exception.CourseTimeNotFoundException;
 import com.mzc.lp.domain.ts.repository.CourseTimeRepository;
 import com.mzc.lp.domain.user.entity.User;
 import com.mzc.lp.domain.user.repository.UserRepository;
@@ -30,30 +30,29 @@ import java.util.List;
 public class CourseReviewServiceImpl implements CourseReviewService {
 
     private final CourseReviewRepository reviewRepository;
-    private final CourseRepository courseRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final CourseTimeRepository courseTimeRepository;
     private final UserRepository userRepository;
 
     @Override
     @Transactional
-    public CourseReviewResponse createReview(Long courseId, Long userId, CreateReviewRequest request) {
+    public CourseReviewResponse createReview(Long courseTimeId, Long userId, CreateReviewRequest request) {
         Long tenantId = TenantContext.getCurrentTenantId();
 
-        // 1. 코스 존재 확인
-        courseRepository.findByIdAndTenantId(courseId, tenantId)
-                .orElseThrow(() -> new CourseNotFoundException(courseId));
+        // 1. 차수 존재 확인
+        courseTimeRepository.findByIdAndTenantId(courseTimeId, tenantId)
+                .orElseThrow(() -> new CourseTimeNotFoundException(courseTimeId));
 
         // 2. 이미 작성한 리뷰가 있는지 확인
-        if (reviewRepository.existsByCourseIdAndUserIdAndTenantId(courseId, userId, tenantId)) {
-            throw new CourseReviewAlreadyExistsException(courseId, userId);
+        if (reviewRepository.existsByCourseTimeIdAndUserIdAndTenantId(courseTimeId, userId, tenantId)) {
+            throw new CourseReviewAlreadyExistsException(courseTimeId, userId);
         }
 
-        // 3. 진도율 계산 - 해당 코스의 모든 차수에서 가장 높은 진도율 사용
-        Integer completionRate = calculateMaxCompletionRate(courseId, userId, tenantId);
+        // 3. 진도율 계산 - 해당 차수의 진도율 조회
+        Integer completionRate = calculateCompletionRate(courseTimeId, userId, tenantId);
 
         // 4. 리뷰 생성
-        CourseReview review = CourseReview.create(courseId, userId, request.rating(), request.content(), completionRate);
+        CourseReview review = CourseReview.create(courseTimeId, userId, request.rating(), request.content(), completionRate);
         CourseReview savedReview = reviewRepository.save(review);
 
         // 5. 사용자 이름 조회 및 응답 생성
@@ -62,12 +61,12 @@ public class CourseReviewServiceImpl implements CourseReviewService {
     }
 
     @Override
-    public CourseReviewListResponse getReviews(Long courseId, String sortBy, int page, int pageSize) {
+    public CourseReviewListResponse getReviews(Long courseTimeId, String sortBy, int page, int pageSize) {
         Long tenantId = TenantContext.getCurrentTenantId();
 
-        // 1. 코스 존재 확인
-        courseRepository.findByIdAndTenantId(courseId, tenantId)
-                .orElseThrow(() -> new CourseNotFoundException(courseId));
+        // 1. 차수 존재 확인
+        courseTimeRepository.findByIdAndTenantId(courseTimeId, tenantId)
+                .orElseThrow(() -> new CourseTimeNotFoundException(courseTimeId));
 
         // 2. 정렬 기준 설정
         Sort sort = switch (sortBy != null ? sortBy : "latest") {
@@ -77,7 +76,7 @@ public class CourseReviewServiceImpl implements CourseReviewService {
 
         // 3. 리뷰 목록 조회
         PageRequest pageable = PageRequest.of(page, pageSize, sort);
-        Page<CourseReview> reviewPage = reviewRepository.findByCourseIdAndTenantId(courseId, tenantId, pageable);
+        Page<CourseReview> reviewPage = reviewRepository.findByCourseTimeIdAndTenantId(courseTimeId, tenantId, pageable);
 
         // 4. 사용자 이름과 함께 응답 생성
         List<CourseReviewResponse> reviews = reviewPage.getContent().stream()
@@ -88,13 +87,11 @@ public class CourseReviewServiceImpl implements CourseReviewService {
                 .toList();
 
         // 5. 리뷰 통계 조회
-        Object[] stats = reviewRepository.findReviewStatsForCourse(courseId, tenantId);
+        Object[] stats = reviewRepository.findReviewStatsForCourseTime(courseTimeId, tenantId);
         Long reviewCount = 0L;
         Double averageRating = null;
 
         if (stats != null && stats.length >= 2) {
-            // stats[0]은 COUNT, stats[1]은 AVG
-            // 리뷰가 없을 경우 COUNT는 0, AVG는 null
             if (stats[0] instanceof Number count) {
                 reviewCount = count.longValue();
             }
@@ -115,20 +112,18 @@ public class CourseReviewServiceImpl implements CourseReviewService {
     }
 
     @Override
-    public CourseReviewStatsResponse getReviewStats(Long courseId) {
+    public CourseReviewStatsResponse getReviewStats(Long courseTimeId) {
         Long tenantId = TenantContext.getCurrentTenantId();
 
-        // 코스 존재 확인
-        courseRepository.findByIdAndTenantId(courseId, tenantId)
-                .orElseThrow(() -> new CourseNotFoundException(courseId));
+        // 차수 존재 확인
+        courseTimeRepository.findByIdAndTenantId(courseTimeId, tenantId)
+                .orElseThrow(() -> new CourseTimeNotFoundException(courseTimeId));
 
-        Object[] stats = reviewRepository.findReviewStatsForCourse(courseId, tenantId);
+        Object[] stats = reviewRepository.findReviewStatsForCourseTime(courseTimeId, tenantId);
         Long reviewCount = 0L;
         Double averageRating = null;
 
         if (stats != null && stats.length >= 2) {
-            // stats[0]은 COUNT, stats[1]은 AVG
-            // 리뷰가 없을 경우 COUNT는 0, AVG는 null
             if (stats[0] instanceof Number count) {
                 reviewCount = count.longValue();
             }
@@ -137,18 +132,18 @@ public class CourseReviewServiceImpl implements CourseReviewService {
             }
         }
 
-        return CourseReviewStatsResponse.of(courseId, averageRating, reviewCount);
+        return CourseReviewStatsResponse.of(courseTimeId, averageRating, reviewCount);
     }
 
     @Override
-    public CourseReviewResponse getMyReview(Long courseId, Long userId) {
+    public CourseReviewResponse getMyReview(Long courseTimeId, Long userId) {
         Long tenantId = TenantContext.getCurrentTenantId();
 
-        // 코스 존재 확인
-        courseRepository.findByIdAndTenantId(courseId, tenantId)
-                .orElseThrow(() -> new CourseNotFoundException(courseId));
+        // 차수 존재 확인
+        courseTimeRepository.findByIdAndTenantId(courseTimeId, tenantId)
+                .orElseThrow(() -> new CourseTimeNotFoundException(courseTimeId));
 
-        return reviewRepository.findByCourseIdAndUserIdAndTenantId(courseId, userId, tenantId)
+        return reviewRepository.findByCourseTimeIdAndUserIdAndTenantId(courseTimeId, userId, tenantId)
                 .map(review -> {
                     String userName = getUserName(userId);
                     return CourseReviewResponse.from(review, userName);
@@ -158,15 +153,15 @@ public class CourseReviewServiceImpl implements CourseReviewService {
 
     @Override
     @Transactional
-    public CourseReviewResponse updateReview(Long courseId, Long reviewId, Long userId, UpdateReviewRequest request) {
+    public CourseReviewResponse updateReview(Long courseTimeId, Long reviewId, Long userId, UpdateReviewRequest request) {
         Long tenantId = TenantContext.getCurrentTenantId();
 
         // 1. 리뷰 조회
         CourseReview review = reviewRepository.findByIdAndTenantId(reviewId, tenantId)
                 .orElseThrow(() -> new CourseReviewNotFoundException(reviewId));
 
-        // 2. 코스 ID 일치 확인
-        if (!review.getCourseId().equals(courseId)) {
+        // 2. 차수 ID 일치 확인
+        if (!review.getCourseTimeId().equals(courseTimeId)) {
             throw new CourseReviewNotFoundException(reviewId);
         }
 
@@ -185,15 +180,15 @@ public class CourseReviewServiceImpl implements CourseReviewService {
 
     @Override
     @Transactional
-    public void deleteReview(Long courseId, Long reviewId, Long userId, boolean isAdmin) {
+    public void deleteReview(Long courseTimeId, Long reviewId, Long userId, boolean isAdmin) {
         Long tenantId = TenantContext.getCurrentTenantId();
 
         // 1. 리뷰 조회
         CourseReview review = reviewRepository.findByIdAndTenantId(reviewId, tenantId)
                 .orElseThrow(() -> new CourseReviewNotFoundException(reviewId));
 
-        // 2. 코스 ID 일치 확인
-        if (!review.getCourseId().equals(courseId)) {
+        // 2. 차수 ID 일치 확인
+        if (!review.getCourseTimeId().equals(courseTimeId)) {
             throw new CourseReviewNotFoundException(reviewId);
         }
 
@@ -207,34 +202,18 @@ public class CourseReviewServiceImpl implements CourseReviewService {
     }
 
     /**
-     * 해당 코스의 모든 차수에서 가장 높은 진도율 계산
+     * 해당 차수의 진도율 계산
      */
-    private Integer calculateMaxCompletionRate(Long courseId, Long userId, Long tenantId) {
-        // 1. 해당 코스의 모든 차수 ID 조회
-        List<Long> courseTimeIds = courseTimeRepository.findByCmCourseIdAndTenantId(courseId, tenantId)
-                .stream()
-                .map(ct -> ct.getId())
-                .toList();
-
-        if (courseTimeIds.isEmpty()) {
-            return 0;
-        }
-
-        // 2. 모든 차수의 진도율 중 최대값 반환
-        return courseTimeIds.stream()
-                .map(courseTimeId ->
-                        enrollmentRepository.findByUserIdAndCourseTimeIdAndTenantId(userId, courseTimeId, tenantId)
-                                .map(enrollment -> {
-                                    // 완료 상태면 100%, 아니면 현재 진도율 반환
-                                    if (enrollment.getStatus() == EnrollmentStatus.COMPLETED) {
-                                        return 100;
-                                    }
-                                    // 진행 중인 경우 Enrollment의 progressPercent 값 사용
-                                    return enrollment.getProgressPercent();
-                                })
-                                .orElse(0)
-                )
-                .max(Integer::compareTo)
+    private Integer calculateCompletionRate(Long courseTimeId, Long userId, Long tenantId) {
+        return enrollmentRepository.findByUserIdAndCourseTimeIdAndTenantId(userId, courseTimeId, tenantId)
+                .map(enrollment -> {
+                    // 완료 상태면 100%, 아니면 현재 진도율 반환
+                    if (enrollment.getStatus() == EnrollmentStatus.COMPLETED) {
+                        return 100;
+                    }
+                    // 진행 중인 경우 Enrollment의 progressPercent 값 사용
+                    return enrollment.getProgressPercent();
+                })
                 .orElse(0);
     }
 
@@ -242,7 +221,6 @@ public class CourseReviewServiceImpl implements CourseReviewService {
      * 사용자 이름 조회
      */
     private String getUserName(Long userId) {
-        // findById는 tenant filter가 적용되지 않으므로, 직접 확인 필요
         User user = userRepository.findById(userId)
                 .orElse(null);
         return user != null ? user.getName() : "알 수 없음";

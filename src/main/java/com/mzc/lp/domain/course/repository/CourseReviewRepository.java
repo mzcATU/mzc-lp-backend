@@ -13,17 +13,22 @@ public interface CourseReviewRepository extends JpaRepository<CourseReview, Long
 
     Optional<CourseReview> findByIdAndTenantId(Long id, Long tenantId);
 
-    Optional<CourseReview> findByCourseIdAndUserIdAndTenantId(Long courseId, Long userId, Long tenantId);
+    Optional<CourseReview> findByCourseTimeIdAndUserIdAndTenantId(Long courseTimeId, Long userId, Long tenantId);
 
-    Page<CourseReview> findByCourseIdAndTenantId(Long courseId, Long tenantId, Pageable pageable);
+    Page<CourseReview> findByCourseTimeIdAndTenantId(Long courseTimeId, Long tenantId, Pageable pageable);
 
-    boolean existsByCourseIdAndUserIdAndTenantId(Long courseId, Long userId, Long tenantId);
+    boolean existsByCourseTimeIdAndUserIdAndTenantId(Long courseTimeId, Long userId, Long tenantId);
 
-    long countByCourseIdAndTenantId(Long courseId, Long tenantId);
+    long countByCourseTimeIdAndTenantId(Long courseTimeId, Long tenantId);
 
-    @Query("SELECT AVG(r.rating) FROM CourseReview r WHERE r.courseId = :courseId AND r.tenantId = :tenantId")
-    Double findAverageRatingByCourseId(@Param("courseId") Long courseId, @Param("tenantId") Long tenantId);
+    @Query("SELECT AVG(r.rating) FROM CourseReview r WHERE r.courseTimeId = :courseTimeId AND r.tenantId = :tenantId")
+    Double findAverageRatingByCourseTimeId(@Param("courseTimeId") Long courseTimeId, @Param("tenantId") Long tenantId);
 
-    @Query("SELECT COUNT(r), AVG(r.rating) FROM CourseReview r WHERE r.courseId = :courseId AND r.tenantId = :tenantId")
+    @Query("SELECT COUNT(r), AVG(r.rating) FROM CourseReview r WHERE r.courseTimeId = :courseTimeId AND r.tenantId = :tenantId")
+    Object[] findReviewStatsForCourseTime(@Param("courseTimeId") Long courseTimeId, @Param("tenantId") Long tenantId);
+
+    @Query("SELECT COUNT(r), AVG(r.rating) FROM CourseReview r " +
+            "JOIN com.mzc.lp.domain.ts.entity.CourseTime ct ON r.courseTimeId = ct.id " +
+            "WHERE ct.cmCourseId = :courseId AND r.tenantId = :tenantId")
     Object[] findReviewStatsForCourse(@Param("courseId") Long courseId, @Param("tenantId") Long tenantId);
 }
