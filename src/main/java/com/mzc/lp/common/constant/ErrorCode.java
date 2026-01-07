@@ -40,6 +40,9 @@ public enum ErrorCode {
     CM_REVIEW_ALREADY_EXISTS(HttpStatus.CONFLICT, "CM012", "Review already exists for this course"),
     CM_NOT_COMPLETED_COURSE(HttpStatus.BAD_REQUEST, "CM013", "Cannot write review for incomplete course"),
     CM_NOT_REVIEW_OWNER(HttpStatus.FORBIDDEN, "CM014", "Not authorized to modify this review"),
+    CM_ANNOUNCEMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "CM015", "Announcement not found"),
+    CM_NOT_ANNOUNCEMENT_AUTHOR(HttpStatus.FORBIDDEN, "CM016", "Not authorized to modify this announcement"),
+    CM_COURSE_INCOMPLETE(HttpStatus.BAD_REQUEST, "CM017", "Course is incomplete and cannot be published"),
 
     // Content (CMS)
     CONTENT_NOT_FOUND(HttpStatus.NOT_FOUND, "CT001", "Content not found"),
@@ -172,7 +175,8 @@ public enum ErrorCode {
     UNAUTHORIZED_ROADMAP_ACCESS(HttpStatus.FORBIDDEN, "RM003", "Not authorized to access this roadmap"),
     INVALID_PROGRAM_FOR_ROADMAP(HttpStatus.BAD_REQUEST, "RM004", "Invalid program for roadmap"),
     DUPLICATE_PROGRAM_IN_ROADMAP(HttpStatus.CONFLICT, "RM005", "Program already exists in roadmap"),
-    ROADMAP_HAS_ENROLLMENTS(HttpStatus.BAD_REQUEST, "RM006", "Cannot delete roadmap with enrollments");
+    ROADMAP_HAS_ENROLLMENTS(HttpStatus.BAD_REQUEST, "RM006", "Cannot delete roadmap with enrollments"),
+    DESTRUCTIVE_UPDATE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "RM007", "Destructive update not allowed for published roadmap with enrollments");
 
     private final HttpStatus status;
     private final String code;

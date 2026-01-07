@@ -113,4 +113,32 @@ public class CourseController {
         courseService.deleteCourse(courseId, principal.id(), isTenantAdmin);
         return ResponseEntity.noContent().build();
     }
+
+    /**
+     * 강의 발행
+     * POST /api/courses/{courseId}/publish
+     */
+    @PostMapping("/{courseId:\\d+}/publish")
+    @PreAuthorize("hasAnyRole('DESIGNER', 'OPERATOR', 'TENANT_ADMIN')")
+    public ResponseEntity<ApiResponse<CourseResponse>> publishCourse(
+            @PathVariable @Positive Long courseId,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        CourseResponse response = courseService.publishCourse(courseId);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    /**
+     * 강의 발행 취소
+     * POST /api/courses/{courseId}/unpublish
+     */
+    @PostMapping("/{courseId:\\d+}/unpublish")
+    @PreAuthorize("hasAnyRole('DESIGNER', 'OPERATOR', 'TENANT_ADMIN')")
+    public ResponseEntity<ApiResponse<CourseResponse>> unpublishCourse(
+            @PathVariable @Positive Long courseId,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        CourseResponse response = courseService.unpublishCourse(courseId);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
 }

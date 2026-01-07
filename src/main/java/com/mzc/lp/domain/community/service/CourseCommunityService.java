@@ -65,9 +65,6 @@ public class CourseCommunityService {
      */
     public PostListResponse getPosts(Long courseTimeId, String keyword, String category,
                                      String type, String sortBy, int page, int pageSize, Long userId) {
-        // 수강 검증
-        validateEnrollment(courseTimeId, userId);
-
         PostType postType = null;
         if (type != null && !type.equalsIgnoreCase("all")) {
             try {
@@ -130,9 +127,6 @@ public class CourseCommunityService {
      */
     @Transactional
     public PostDetailResponse getPost(Long courseTimeId, Long postId, Long userId) {
-        // 수강 검증
-        validateEnrollment(courseTimeId, userId);
-
         CommunityPost post = postRepository.findByIdAndCourseTimeId(postId, courseTimeId)
                 .orElseThrow(() -> new PostNotFoundException(postId));
 
@@ -287,9 +281,6 @@ public class CourseCommunityService {
      * 코스 커뮤니티 카테고리 목록 조회
      */
     public CategoryResponse getCategories(Long courseTimeId, Long userId) {
-        // 수강 검증
-        validateEnrollment(courseTimeId, userId);
-
         List<CategoryResponse.CategoryItem> categories = List.of(
                 CategoryResponse.CategoryItem.of("all", "전체", null,
                         postRepository.countByCourseTimeId(courseTimeId), "grid"),

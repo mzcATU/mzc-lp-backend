@@ -41,13 +41,17 @@ public class CourseReview extends TenantEntity {
     @Column(columnDefinition = "TEXT")
     private String content;
 
+    @Column(name = "completion_rate", nullable = false)
+    private Integer completionRate;  // 0-100 (%)
+
     // ===== 정적 팩토리 메서드 =====
-    public static CourseReview create(Long courseId, Long userId, Integer rating, String content) {
+    public static CourseReview create(Long courseId, Long userId, Integer rating, String content, Integer completionRate) {
         CourseReview review = new CourseReview();
         review.courseId = courseId;
         review.userId = userId;
         review.validateAndSetRating(rating);
         review.content = content;
+        review.validateAndSetCompletionRate(completionRate);
         return review;
     }
 
@@ -71,6 +75,13 @@ public class CourseReview extends TenantEntity {
             throw new IllegalArgumentException("Rating must be between 1 and 5");
         }
         this.rating = rating;
+    }
+
+    private void validateAndSetCompletionRate(Integer completionRate) {
+        if (completionRate == null || completionRate < 0 || completionRate > 100) {
+            throw new IllegalArgumentException("Completion rate must be between 0 and 100");
+        }
+        this.completionRate = completionRate;
     }
 
     // ===== 검증 메서드 =====

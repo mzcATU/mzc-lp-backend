@@ -61,9 +61,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         // GET 메서드로만 허용된 공개 API
+        // 주의: /api/courses/my는 인증이 필요하므로 제외
         if ("GET".equalsIgnoreCase(method)) {
             if (path.equals("/api/tenant/settings/branding") ||
-                path.startsWith("/api/courses") ||
+                (path.startsWith("/api/courses") && !path.equals("/api/courses/my")) ||
                 path.startsWith("/api/community/posts") ||
                 path.equals("/api/community/categories") ||
                 path.startsWith("/api/public/course-times")) {
