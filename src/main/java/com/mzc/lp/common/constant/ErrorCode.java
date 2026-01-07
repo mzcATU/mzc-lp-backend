@@ -174,7 +174,8 @@ public enum ErrorCode {
     UNAUTHORIZED_ROADMAP_ACCESS(HttpStatus.FORBIDDEN, "RM003", "Not authorized to access this roadmap"),
     INVALID_PROGRAM_FOR_ROADMAP(HttpStatus.BAD_REQUEST, "RM004", "Invalid program for roadmap"),
     DUPLICATE_PROGRAM_IN_ROADMAP(HttpStatus.CONFLICT, "RM005", "Program already exists in roadmap"),
-    ROADMAP_HAS_ENROLLMENTS(HttpStatus.BAD_REQUEST, "RM006", "Cannot delete roadmap with enrollments");
+    ROADMAP_HAS_ENROLLMENTS(HttpStatus.BAD_REQUEST, "RM006", "Cannot delete roadmap with enrollments"),
+    DESTRUCTIVE_UPDATE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "RM007", "Destructive update not allowed for published roadmap with enrollments");
 
     private final HttpStatus status;
     private final String code;
