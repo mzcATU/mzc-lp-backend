@@ -27,6 +27,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Arrays;
 import java.util.List;
@@ -294,24 +295,39 @@ class RoadmapServiceTest {
     }
 
     @Test
-    @DisplayName("로드맵 수정 - PUBLISHED 상태 수정 불가")
-    void updateRoadmap_NotModifiable_Fail() {
+    @DisplayName("로드맵 수정 - PUBLISHED 상태에서도 수정 가능")
+    void updateRoadmap_PublishedStatus_Success() {
         // given
         Long roadmapId = 1L;
         Long authorId = 1L;
         UpdateRoadmapRequest request = new UpdateRoadmapRequest(
                 "수정된 제목",
-                null,
-                null,
-                null
+                "수정된 설명",
+                Arrays.asList(1L, 2L),
+                RoadmapStatus.PUBLISHED
         );
 
         Roadmap roadmap = Roadmap.create("원본 제목", "원본 설명", authorId, RoadmapStatus.PUBLISHED);
         given(roadmapRepository.findById(roadmapId)).willReturn(Optional.of(roadmap));
 
-        // when & then
-        assertThatThrownBy(() -> roadmapService.updateRoadmap(roadmapId, request, authorId))
-                .isInstanceOf(RoadmapNotModifiableException.class);
+        Program program1 = mock(Program.class);
+        Program program2 = mock(Program.class);
+        given(programRepository.findById(1L)).willReturn(Optional.of(program1));
+        given(programRepository.findById(2L)).willReturn(Optional.of(program2));
+        given(userCourseRoleRepository.existsByUserIdAndCourseIdIsNullAndRole(authorId, CourseRole.DESIGNER))
+                .willReturn(true);
+        given(roadmapProgramRepository.countByRoadmapId(roadmapId)).willReturn(2);
+
+        // when
+        RoadmapResponse response = roadmapService.updateRoadmap(roadmapId, request, authorId);
+
+        // then
+        assertThat(response).isNotNull();
+        assertThat(roadmap.getTitle()).isEqualTo("수정된 제목");
+        assertThat(roadmap.getDescription()).isEqualTo("수정된 설명");
+        assertThat(roadmap.getStatus()).isEqualTo(RoadmapStatus.PUBLISHED);
+        verify(roadmapProgramRepository).deleteByRoadmapId(roadmapId);
+        verify(roadmapProgramRepository, times(2)).save(any(RoadmapProgram.class));
     }
 
     @Test
@@ -422,5 +438,239 @@ class RoadmapServiceTest {
         assertThat(response.totalRoadmaps()).isEqualTo(5L);
         assertThat(response.totalEnrollments()).isEqualTo(100L);
         assertThat(response.averageCourseCount()).isEqualTo(3.5);
+    }
+
+    // ===== Safe vs Destructive Update Tests =====
+
+    @Test
+    @DisplayName("로드맵 수정 - Safe Update: 메타데이터만 변경 (성공)")
+    void updateRoadmap_SafeUpdate_MetadataOnly_Success() {
+        // given
+        Long roadmapId = 1L;
+        Long authorId = 1L;
+        UpdateRoadmapRequest request = new UpdateRoadmapRequest(
+                "수정된 제목",
+                "수정된 설명",
+                null, // 프로그램 변경 없음
+                RoadmapStatus.PUBLISHED
+        );
+
+        Roadmap roadmap = Roadmap.create("원본 제목", "원본 설명", authorId, RoadmapStatus.PUBLISHED);
+        ReflectionTestUtils.setField(roadmap, "enrolledStudents", 10); // 수강생 있음
+        given(roadmapRepository.findById(roadmapId)).willReturn(Optional.of(roadmap));
+        given(roadmapProgramRepository.countByRoadmapId(roadmapId)).willReturn(2);
+
+        // when
+        RoadmapResponse response = roadmapService.updateRoadmap(roadmapId, request, authorId);
+
+        // then
+        assertThat(response.title()).isEqualTo("수정된 제목");
+        assertThat(response.description()).isEqualTo("수정된 설명");
+        verify(roadmapProgramRepository, never()).deleteByRoadmapId(any());
+    }
+
+    @Test
+    @DisplayName("로드맵 수정 - Safe Update: 프로그램 추가 (성공)")
+    void updateRoadmap_SafeUpdate_AddPrograms_Success() {
+        // given
+        Long roadmapId = 1L;
+        Long authorId = 1L;
+        UpdateRoadmapRequest request = new UpdateRoadmapRequest(
+                "제목",
+                "설명",
+                Arrays.asList(1L, 2L, 3L), // 기존 [1, 2]에서 3 추가
+                RoadmapStatus.PUBLISHED
+        );
+
+        Roadmap roadmap = Roadmap.create("제목", "설명", authorId, RoadmapStatus.PUBLISHED);
+        ReflectionTestUtils.setField(roadmap, "enrolledStudents", 10); // 수강생 있음
+
+        Program program1 = mock(Program.class);
+        Program program2 = mock(Program.class);
+        Program program3 = mock(Program.class);
+        lenient().when(program1.getId()).thenReturn(1L);
+        lenient().when(program2.getId()).thenReturn(2L);
+        lenient().when(program3.getId()).thenReturn(3L);
+
+        RoadmapProgram rp1 = RoadmapProgram.create(roadmap, program1, 0);
+        RoadmapProgram rp2 = RoadmapProgram.create(roadmap, program2, 1);
+
+        given(roadmapRepository.findById(roadmapId)).willReturn(Optional.of(roadmap));
+        given(roadmapProgramRepository.findByRoadmapIdOrderByOrderIndexAsc(roadmapId))
+                .willReturn(Arrays.asList(rp1, rp2));
+        given(programRepository.findById(1L)).willReturn(Optional.of(program1));
+        given(programRepository.findById(2L)).willReturn(Optional.of(program2));
+        given(programRepository.findById(3L)).willReturn(Optional.of(program3));
+        given(userCourseRoleRepository.existsByUserIdAndCourseIdIsNullAndRole(authorId, CourseRole.DESIGNER))
+                .willReturn(true);
+        given(roadmapProgramRepository.countByRoadmapId(roadmapId)).willReturn(3);
+
+        // when
+        RoadmapResponse response = roadmapService.updateRoadmap(roadmapId, request, authorId);
+
+        // then
+        assertThat(response.courseCount()).isEqualTo(3);
+        verify(roadmapProgramRepository).deleteByRoadmapId(roadmapId);
+        verify(roadmapProgramRepository, times(3)).save(any(RoadmapProgram.class));
+    }
+
+    @Test
+    @DisplayName("로드맵 수정 - Destructive Update: 프로그램 삭제 (수강생 있음, 실패)")
+    void updateRoadmap_DestructiveUpdate_RemoveProgram_WithEnrollments_Fail() {
+        // given
+        Long roadmapId = 1L;
+        Long authorId = 1L;
+        UpdateRoadmapRequest request = new UpdateRoadmapRequest(
+                "제목",
+                "설명",
+                Arrays.asList(1L), // 기존 [1, 2]에서 2 삭제
+                RoadmapStatus.PUBLISHED
+        );
+
+        Roadmap roadmap = Roadmap.create("제목", "설명", authorId, RoadmapStatus.PUBLISHED);
+        ReflectionTestUtils.setField(roadmap, "enrolledStudents", 10); // 수강생 있음
+
+        Program program1 = mock(Program.class);
+        Program program2 = mock(Program.class);
+        lenient().when(program1.getId()).thenReturn(1L);
+        lenient().when(program2.getId()).thenReturn(2L);
+
+        RoadmapProgram rp1 = RoadmapProgram.create(roadmap, program1, 0);
+        RoadmapProgram rp2 = RoadmapProgram.create(roadmap, program2, 1);
+
+        given(roadmapRepository.findById(roadmapId)).willReturn(Optional.of(roadmap));
+        given(roadmapProgramRepository.findByRoadmapIdOrderByOrderIndexAsc(roadmapId))
+                .willReturn(Arrays.asList(rp1, rp2));
+        given(programRepository.findById(1L)).willReturn(Optional.of(program1));
+        given(userCourseRoleRepository.existsByUserIdAndCourseIdIsNullAndRole(authorId, CourseRole.DESIGNER))
+                .willReturn(true);
+
+        // when & then
+        assertThatThrownBy(() -> roadmapService.updateRoadmap(roadmapId, request, authorId))
+                .isInstanceOf(DestructiveUpdateNotAllowedException.class);
+
+        verify(roadmapProgramRepository, never()).deleteByRoadmapId(any());
+    }
+
+    @Test
+    @DisplayName("로드맵 수정 - Destructive Update: 순서 변경 (수강생 있음, 실패)")
+    void updateRoadmap_DestructiveUpdate_ReorderPrograms_WithEnrollments_Fail() {
+        // given
+        Long roadmapId = 1L;
+        Long authorId = 1L;
+        UpdateRoadmapRequest request = new UpdateRoadmapRequest(
+                "제목",
+                "설명",
+                Arrays.asList(2L, 1L), // 기존 [1, 2]에서 순서 변경
+                RoadmapStatus.PUBLISHED
+        );
+
+        Roadmap roadmap = Roadmap.create("제목", "설명", authorId, RoadmapStatus.PUBLISHED);
+        ReflectionTestUtils.setField(roadmap, "enrolledStudents", 10); // 수강생 있음
+
+        Program program1 = mock(Program.class);
+        Program program2 = mock(Program.class);
+        lenient().when(program1.getId()).thenReturn(1L);
+        lenient().when(program2.getId()).thenReturn(2L);
+
+        RoadmapProgram rp1 = RoadmapProgram.create(roadmap, program1, 0);
+        RoadmapProgram rp2 = RoadmapProgram.create(roadmap, program2, 1);
+
+        given(roadmapRepository.findById(roadmapId)).willReturn(Optional.of(roadmap));
+        given(roadmapProgramRepository.findByRoadmapIdOrderByOrderIndexAsc(roadmapId))
+                .willReturn(Arrays.asList(rp1, rp2));
+        given(programRepository.findById(1L)).willReturn(Optional.of(program1));
+        given(programRepository.findById(2L)).willReturn(Optional.of(program2));
+        given(userCourseRoleRepository.existsByUserIdAndCourseIdIsNullAndRole(authorId, CourseRole.DESIGNER))
+                .willReturn(true);
+
+        // when & then
+        assertThatThrownBy(() -> roadmapService.updateRoadmap(roadmapId, request, authorId))
+                .isInstanceOf(DestructiveUpdateNotAllowedException.class);
+
+        verify(roadmapProgramRepository, never()).deleteByRoadmapId(any());
+    }
+
+    @Test
+    @DisplayName("로드맵 수정 - Destructive Update: 프로그램 삭제 (수강생 없음, 성공)")
+    void updateRoadmap_DestructiveUpdate_RemoveProgram_NoEnrollments_Success() {
+        // given
+        Long roadmapId = 1L;
+        Long authorId = 1L;
+        UpdateRoadmapRequest request = new UpdateRoadmapRequest(
+                "제목",
+                "설명",
+                Arrays.asList(1L), // 기존 [1, 2]에서 2 삭제
+                RoadmapStatus.PUBLISHED
+        );
+
+        Roadmap roadmap = Roadmap.create("제목", "설명", authorId, RoadmapStatus.PUBLISHED);
+        ReflectionTestUtils.setField(roadmap, "enrolledStudents", 0); // 수강생 없음
+
+        Program program1 = mock(Program.class);
+        Program program2 = mock(Program.class);
+        lenient().when(program1.getId()).thenReturn(1L);
+        lenient().when(program2.getId()).thenReturn(2L);
+
+        RoadmapProgram rp1 = RoadmapProgram.create(roadmap, program1, 0);
+        RoadmapProgram rp2 = RoadmapProgram.create(roadmap, program2, 1);
+
+        given(roadmapRepository.findById(roadmapId)).willReturn(Optional.of(roadmap));
+        lenient().when(roadmapProgramRepository.findByRoadmapIdOrderByOrderIndexAsc(roadmapId))
+                .thenReturn(Arrays.asList(rp1, rp2));
+        given(programRepository.findById(1L)).willReturn(Optional.of(program1));
+        given(userCourseRoleRepository.existsByUserIdAndCourseIdIsNullAndRole(authorId, CourseRole.DESIGNER))
+                .willReturn(true);
+        given(roadmapProgramRepository.countByRoadmapId(roadmapId)).willReturn(1);
+
+        // when
+        RoadmapResponse response = roadmapService.updateRoadmap(roadmapId, request, authorId);
+
+        // then
+        assertThat(response.courseCount()).isEqualTo(1);
+        verify(roadmapProgramRepository).deleteByRoadmapId(roadmapId);
+        verify(roadmapProgramRepository).save(any(RoadmapProgram.class));
+    }
+
+    @Test
+    @DisplayName("로드맵 수정 - Destructive Update: DRAFT 상태에서는 항상 허용")
+    void updateRoadmap_DestructiveUpdate_DraftStatus_Success() {
+        // given
+        Long roadmapId = 1L;
+        Long authorId = 1L;
+        UpdateRoadmapRequest request = new UpdateRoadmapRequest(
+                "제목",
+                "설명",
+                Arrays.asList(2L, 1L), // 순서 변경
+                RoadmapStatus.DRAFT
+        );
+
+        Roadmap roadmap = Roadmap.create("제목", "설명", authorId, RoadmapStatus.DRAFT);
+        ReflectionTestUtils.setField(roadmap, "enrolledStudents", 10); // 수강생이 있어도 DRAFT이면 허용
+
+        Program program1 = mock(Program.class);
+        Program program2 = mock(Program.class);
+        lenient().when(program1.getId()).thenReturn(1L);
+        lenient().when(program2.getId()).thenReturn(2L);
+
+        RoadmapProgram rp1 = RoadmapProgram.create(roadmap, program1, 0);
+        RoadmapProgram rp2 = RoadmapProgram.create(roadmap, program2, 1);
+
+        given(roadmapRepository.findById(roadmapId)).willReturn(Optional.of(roadmap));
+        lenient().when(roadmapProgramRepository.findByRoadmapIdOrderByOrderIndexAsc(roadmapId))
+                .thenReturn(Arrays.asList(rp1, rp2));
+        given(programRepository.findById(1L)).willReturn(Optional.of(program1));
+        given(programRepository.findById(2L)).willReturn(Optional.of(program2));
+        given(userCourseRoleRepository.existsByUserIdAndCourseIdIsNullAndRole(authorId, CourseRole.DESIGNER))
+                .willReturn(true);
+        given(roadmapProgramRepository.countByRoadmapId(roadmapId)).willReturn(2);
+
+        // when
+        RoadmapResponse response = roadmapService.updateRoadmap(roadmapId, request, authorId);
+
+        // then
+        assertThat(response.courseCount()).isEqualTo(2);
+        verify(roadmapProgramRepository).deleteByRoadmapId(roadmapId);
+        verify(roadmapProgramRepository, times(2)).save(any(RoadmapProgram.class));
     }
 }

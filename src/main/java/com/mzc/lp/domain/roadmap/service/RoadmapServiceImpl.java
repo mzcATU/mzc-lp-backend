@@ -151,21 +151,31 @@ public class RoadmapServiceImpl implements RoadmapService {
             throw new com.mzc.lp.domain.roadmap.exception.RoadmapOwnershipException(roadmapId);
         }
 
-        // 3. 수정 가능 상태 확인 (DRAFT만 수정 가능)
-        if (!roadmap.isModifiable()) {
-            throw new com.mzc.lp.domain.roadmap.exception.RoadmapNotModifiableException(roadmap.getStatus());
-        }
-
-        // 4. 기본 정보 업데이트
+        // 3. 기본 정보 및 상태 업데이트
         roadmap.update(request.title(), request.description(), request.status());
 
-        // 5. programIds가 제공된 경우 프로그램 목록 업데이트
+        // 4. programIds가 제공된 경우 프로그램 목록 업데이트
         if (request.programIds() != null && !request.programIds().isEmpty()) {
             // 중복 검증
             validateNoDuplicatePrograms(request.programIds());
 
             // 권한 검증
             validateProgramsAndPermissions(request.programIds(), currentUserId);
+
+            // 파괴적 업데이트 검증: PUBLISHED 상태이고 수강생이 있는 경우
+            if (roadmap.getStatus() == RoadmapStatus.PUBLISHED && roadmap.getEnrolledStudents() > 0) {
+                // 기존 프로그램 목록 조회
+                List<Long> currentProgramIds = roadmapProgramRepository
+                        .findByRoadmapIdOrderByOrderIndexAsc(roadmapId)
+                        .stream()
+                        .map(rp -> rp.getProgram().getId())
+                        .toList();
+
+                // 파괴적 업데이트인지 확인 (프로그램 삭제 또는 순서 변경)
+                if (isDestructiveUpdate(currentProgramIds, request.programIds())) {
+                    throw new com.mzc.lp.domain.roadmap.exception.DestructiveUpdateNotAllowedException(roadmapId);
+                }
+            }
 
             // 기존 프로그램 삭제
             roadmapProgramRepository.deleteByRoadmapId(roadmapId);
@@ -174,7 +184,7 @@ public class RoadmapServiceImpl implements RoadmapService {
             saveRoadmapPrograms(roadmap, request.programIds());
         }
 
-        // 6. 응답 생성
+        // 5. 응답 생성
         int courseCount = roadmapProgramRepository.countByRoadmapId(roadmapId);
         return RoadmapResponse.from(roadmap, courseCount);
     }
@@ -194,15 +204,10 @@ public class RoadmapServiceImpl implements RoadmapService {
             throw new com.mzc.lp.domain.roadmap.exception.RoadmapOwnershipException(roadmapId);
         }
 
-        // 3. 수정 가능 상태 확인 (DRAFT만 수정 가능)
-        if (!roadmap.isModifiable()) {
-            throw new com.mzc.lp.domain.roadmap.exception.RoadmapNotModifiableException(roadmap.getStatus());
-        }
-
-        // 4. 기본 정보 업데이트 (최소 검증)
+        // 3. 기본 정보 업데이트 (최소 검증)
         roadmap.updateBasicInfo(request.title(), request.description());
 
-        // 5. programIds가 제공된 경우에만 업데이트
+        // 4. programIds가 제공된 경우에만 업데이트
         if (request.programIds() != null) {
             // 기존 프로그램 삭제
             roadmapProgramRepository.deleteByRoadmapId(roadmapId);
@@ -218,7 +223,7 @@ public class RoadmapServiceImpl implements RoadmapService {
             }
         }
 
-        // 6. 응답 생성
+        // 5. 응답 생성
         int courseCount = roadmapProgramRepository.countByRoadmapId(roadmapId);
         return RoadmapResponse.from(roadmap, courseCount);
     }
@@ -243,7 +248,10 @@ public class RoadmapServiceImpl implements RoadmapService {
         //     throw new RoadmapHasEnrollmentsException(roadmapId);
         // }
 
-        // 4. 로드맵 삭제 (RoadmapProgram은 CASCADE로 자동 삭제)
+        // 4. 로드맵-프로그램 연결 먼저 삭제
+        roadmapProgramRepository.deleteByRoadmapId(roadmapId);
+
+        // 5. 로드맵 삭제
         roadmapRepository.delete(roadmap);
     }
 
@@ -298,6 +306,38 @@ public class RoadmapServiceImpl implements RoadmapService {
     }
 
     // ===== Private Helper Methods =====
+
+    /**
+     * 업데이트가 파괴적인지 검사 (프로그램 삭제 또는 재정렬)
+     * Safe: 메타데이터 변경, 프로그램 추가
+     * Destructive: 프로그램 삭제, 순서 변경
+     */
+    private boolean isDestructiveUpdate(List<Long> currentProgramIds, List<Long> newProgramIds) {
+        // 1. 프로그램 삭제 검사: 기존 프로그램이 새 목록에 없는 경우
+        for (Long currentId : currentProgramIds) {
+            if (!newProgramIds.contains(currentId)) {
+                log.debug("Destructive update detected: Program {} removed", currentId);
+                return true;
+            }
+        }
+
+        // 2. 순서 변경 검사: 기존 프로그램의 순서가 변경된 경우
+        // 기존 프로그램들이 새 목록에서도 같은 상대적 순서를 유지하는지 확인
+        List<Long> existingInNew = newProgramIds.stream()
+                .filter(currentProgramIds::contains)
+                .toList();
+
+        List<Long> existingInCurrent = currentProgramIds.stream()
+                .filter(newProgramIds::contains)
+                .toList();
+
+        if (!existingInNew.equals(existingInCurrent)) {
+            log.debug("Destructive update detected: Program order changed");
+            return true;
+        }
+
+        return false;
+    }
 
     /**
      * 프로그램 ID 중복 검증
