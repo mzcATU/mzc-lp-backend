@@ -47,6 +47,9 @@ public class SnapshotLearningObject extends TenantEntity {
     @Column(name = "page_count")
     private Integer pageCount;
 
+    @Column(name = "external_url", length = 2000)
+    private String externalUrl;
+
     @Column(name = "is_customized", nullable = false)
     private Boolean isCustomized;
 
@@ -62,7 +65,8 @@ public class SnapshotLearningObject extends TenantEntity {
     public static SnapshotLearningObject createFromLo(Long sourceLoId, Long contentId,
                                                        String displayName, Integer duration,
                                                        String thumbnailUrl, String resolution,
-                                                       String codec, Long bitrate, Integer pageCount) {
+                                                       String codec, Long bitrate, Integer pageCount,
+                                                       String externalUrl) {
         SnapshotLearningObject slo = new SnapshotLearningObject();
         slo.sourceLoId = sourceLoId;
         slo.contentId = contentId;
@@ -73,6 +77,7 @@ public class SnapshotLearningObject extends TenantEntity {
         slo.codec = codec;
         slo.bitrate = bitrate;
         slo.pageCount = pageCount;
+        slo.externalUrl = externalUrl;
         slo.isCustomized = false;
         return slo;
     }

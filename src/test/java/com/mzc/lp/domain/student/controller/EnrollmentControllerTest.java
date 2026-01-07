@@ -418,7 +418,7 @@ class EnrollmentControllerTest extends TenantTestSupport {
             CourseTime courseTime = createRecruitingCourseTime();
             Enrollment enrollment = createEnrollment(user.getId(), courseTime.getId());
             String accessToken = loginAndGetAccessToken("user@example.com", "Password123!");
-            UpdateProgressRequest request = new UpdateProgressRequest(50);
+            UpdateProgressRequest request = new UpdateProgressRequest(1L, 50, 0);
 
             // when & then
             mockMvc.perform(patch("/api/enrollments/{enrollmentId}/progress", enrollment.getId())
