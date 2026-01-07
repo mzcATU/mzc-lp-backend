@@ -80,7 +80,7 @@ public class MemberPoolController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('TENANT_ADMIN')")
+    @PreAuthorize("hasAnyRole('OPERATOR', 'TENANT_ADMIN')")
     public ResponseEntity<ApiResponse<MemberPoolResponse>> create(
             @AuthenticationPrincipal UserPrincipal principal,
             @Valid @RequestBody CreateMemberPoolRequest request
@@ -90,7 +90,7 @@ public class MemberPoolController {
     }
 
     @PutMapping("/{poolId}")
-    @PreAuthorize("hasRole('TENANT_ADMIN')")
+    @PreAuthorize("hasAnyRole('OPERATOR', 'TENANT_ADMIN')")
     public ResponseEntity<ApiResponse<MemberPoolResponse>> update(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long poolId,
@@ -101,7 +101,7 @@ public class MemberPoolController {
     }
 
     @DeleteMapping("/{poolId}")
-    @PreAuthorize("hasRole('TENANT_ADMIN')")
+    @PreAuthorize("hasAnyRole('OPERATOR', 'TENANT_ADMIN')")
     public ResponseEntity<Void> delete(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long poolId
@@ -111,7 +111,7 @@ public class MemberPoolController {
     }
 
     @PostMapping("/{poolId}/activate")
-    @PreAuthorize("hasRole('TENANT_ADMIN')")
+    @PreAuthorize("hasAnyRole('OPERATOR', 'TENANT_ADMIN')")
     public ResponseEntity<ApiResponse<MemberPoolResponse>> activate(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long poolId
@@ -121,7 +121,7 @@ public class MemberPoolController {
     }
 
     @PostMapping("/{poolId}/deactivate")
-    @PreAuthorize("hasRole('TENANT_ADMIN')")
+    @PreAuthorize("hasAnyRole('OPERATOR', 'TENANT_ADMIN')")
     public ResponseEntity<ApiResponse<MemberPoolResponse>> deactivate(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long poolId
