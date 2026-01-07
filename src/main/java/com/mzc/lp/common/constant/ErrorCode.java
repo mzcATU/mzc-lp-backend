@@ -176,7 +176,11 @@ public enum ErrorCode {
     INVALID_PROGRAM_FOR_ROADMAP(HttpStatus.BAD_REQUEST, "RM004", "Invalid program for roadmap"),
     DUPLICATE_PROGRAM_IN_ROADMAP(HttpStatus.CONFLICT, "RM005", "Program already exists in roadmap"),
     ROADMAP_HAS_ENROLLMENTS(HttpStatus.BAD_REQUEST, "RM006", "Cannot delete roadmap with enrollments"),
-    DESTRUCTIVE_UPDATE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "RM007", "Destructive update not allowed for published roadmap with enrollments");
+    DESTRUCTIVE_UPDATE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "RM007", "Destructive update not allowed for published roadmap with enrollments"),
+
+    // Tenant Notice (TN)
+    TENANT_NOTICE_NOT_FOUND(HttpStatus.NOT_FOUND, "TNN001", "Tenant notice not found"),
+    TENANT_NOTICE_ALREADY_PUBLISHED(HttpStatus.BAD_REQUEST, "TNN002", "Tenant notice is already published");
 
     private final HttpStatus status;
     private final String code;
