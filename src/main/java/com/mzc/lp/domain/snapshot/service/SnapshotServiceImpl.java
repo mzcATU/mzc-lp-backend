@@ -5,6 +5,8 @@ import com.mzc.lp.domain.course.entity.CourseItem;
 import com.mzc.lp.domain.course.exception.CourseNotFoundException;
 import com.mzc.lp.domain.course.repository.CourseItemRepository;
 import com.mzc.lp.domain.course.repository.CourseRepository;
+import com.mzc.lp.domain.learning.entity.LearningObject;
+import com.mzc.lp.domain.learning.repository.LearningObjectRepository;
 import com.mzc.lp.domain.snapshot.constant.SnapshotStatus;
 import com.mzc.lp.domain.snapshot.dto.request.CreateSnapshotRequest;
 import com.mzc.lp.domain.snapshot.dto.request.UpdateSnapshotRequest;
@@ -48,6 +50,7 @@ public class SnapshotServiceImpl implements SnapshotService {
     private final CourseRepository courseRepository;
     private final CourseItemRepository courseItemRepository;
     private final CourseRelationRepository courseRelationRepository;
+    private final LearningObjectRepository learningObjectRepository;
 
     @Override
     @Transactional
@@ -251,21 +254,32 @@ public class SnapshotServiceImpl implements SnapshotService {
 
         for (CourseItem courseItem : courseItems) {
             SnapshotLearningObject snapshotLo = null;
+            String itemType = null;
 
             if (courseItem.getLearningObjectId() != null) {
+                // displayName이 있으면 사용, 없으면 itemName(파일명) 사용
+                String displayName = courseItem.getDisplayName() != null && !courseItem.getDisplayName().isBlank()
+                        ? courseItem.getDisplayName()
+                        : courseItem.getItemName();
                 snapshotLo = SnapshotLearningObject.create(
                         courseItem.getLearningObjectId(),
-                        courseItem.getItemName()
+                        displayName
                 );
                 snapshotLo = snapshotLoRepository.save(snapshotLo);
+
+                // LearningObject에서 Content의 contentType을 가져옴
+                itemType = learningObjectRepository.findByIdAndTenantId(
+                        courseItem.getLearningObjectId(), TenantContext.getCurrentTenantId())
+                        .map(lo -> lo.getContent() != null && lo.getContent().getContentType() != null
+                                ? lo.getContent().getContentType().name()
+                                : "VIDEO")
+                        .orElse("VIDEO");
             }
 
             SnapshotItem parentItem = null;
             if (courseItem.getParent() != null) {
                 parentItem = itemMapping.get(courseItem.getParent().getId());
             }
-
-            String itemType = courseItem.isFolder() ? null : "CONTENT";
 
             SnapshotItem snapshotItem = SnapshotItem.createFromCourseItem(
                     snapshot,
