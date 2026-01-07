@@ -199,12 +199,12 @@ public class TenantSettingsController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    @Operation(summary = "네비게이션 초기화", description = "네비게이션 메뉴를 기본값으로 초기화합니다")
+    @Operation(summary = "네비게이션 초기화", description = "네비게이션 메뉴를 기본값으로 리셋합니다 (기존 항목 삭제 후 재생성)")
     @PostMapping("/navigation/reset")
     @PreAuthorize("hasRole('TENANT_ADMIN')")
     public ResponseEntity<ApiResponse<List<NavigationItemResponse>>> resetNavigationItems() {
         Long tenantId = TenantContext.getCurrentTenantId();
-        List<NavigationItemResponse> response = tenantSettingsService.initializeDefaultNavigationItems(tenantId);
+        List<NavigationItemResponse> response = tenantSettingsService.resetNavigationItems(tenantId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
