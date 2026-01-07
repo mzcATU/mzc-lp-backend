@@ -3,10 +3,12 @@ package com.mzc.lp.domain.tenant.service;
 import com.mzc.lp.domain.tenant.dto.request.NavigationItemRequest;
 import com.mzc.lp.domain.tenant.dto.request.UpdateDesignSettingsRequest;
 import com.mzc.lp.domain.tenant.dto.request.UpdateLayoutSettingsRequest;
+import com.mzc.lp.domain.tenant.dto.request.UpdateTenantFeaturesRequest;
 import com.mzc.lp.domain.tenant.dto.request.UpdateTenantSettingsRequest;
 import com.mzc.lp.domain.tenant.dto.response.NavigationItemResponse;
 import com.mzc.lp.domain.tenant.dto.response.PublicBrandingResponse;
 import com.mzc.lp.domain.tenant.dto.response.PublicLayoutResponse;
+import com.mzc.lp.domain.tenant.dto.response.TenantFeaturesResponse;
 import com.mzc.lp.domain.tenant.dto.response.TenantSettingsResponse;
 import com.mzc.lp.domain.tenant.constant.TenantStatus;
 import com.mzc.lp.domain.tenant.entity.NavigationItem;
@@ -392,5 +394,74 @@ public class TenantSettingsServiceImpl implements TenantSettingsService {
 
         TenantSettings settings = TenantSettings.createDefault(tenant);
         return tenantSettingsRepository.save(settings);
+    }
+
+    // ============================================
+    // 테넌트 기능 On/Off 설정
+    // ============================================
+
+    @Override
+    public TenantFeaturesResponse getTenantFeatures(Long tenantId) {
+        TenantSettings settings = tenantSettingsRepository.findByTenantId(tenantId)
+                .orElse(null);
+
+        if (settings == null) {
+            return TenantFeaturesResponse.defaultFeatures();
+        }
+
+        return TenantFeaturesResponse.from(settings);
+    }
+
+    @Override
+    @Transactional
+    public TenantFeaturesResponse updateTenantFeatures(Long tenantId, UpdateTenantFeaturesRequest request) {
+        TenantSettings settings = tenantSettingsRepository.findByTenantId(tenantId)
+                .orElseGet(() -> initializeAndGet(tenantId));
+
+        settings.updateTenantFeatures(
+                request.communityEnabled(),
+                request.userCourseCreationEnabled(),
+                request.cartEnabled(),
+                request.wishlistEnabled(),
+                request.instructorTabEnabled()
+        );
+
+        return TenantFeaturesResponse.from(settings);
+    }
+
+    @Override
+    public TenantFeaturesResponse getPublicTenantFeatures(String identifier, String type) {
+        Tenant tenant = findTenantByIdentifier(identifier, type);
+        if (tenant == null) {
+            return TenantFeaturesResponse.defaultFeatures();
+        }
+
+        return getFeaturesByTenantId(tenant.getId());
+    }
+
+    @Override
+    public TenantFeaturesResponse getFeaturesByTenantId(Long tenantId) {
+        Tenant tenant = tenantRepository.findById(tenantId).orElse(null);
+        if (tenant == null) {
+            return TenantFeaturesResponse.defaultFeatures();
+        }
+
+        TenantSettings settings = tenantSettingsRepository.findByTenantId(tenantId)
+                .orElseGet(() -> TenantSettings.createDefault(tenant));
+
+        return TenantFeaturesResponse.from(settings);
+    }
+
+    private Tenant findTenantByIdentifier(String identifier, String type) {
+        if ("subdomain".equals(type)) {
+            return tenantRepository.findBySubdomain(identifier)
+                    .filter(t -> t.getStatus() == TenantStatus.ACTIVE)
+                    .orElse(null);
+        } else if ("customDomain".equals(type)) {
+            return tenantRepository.findByCustomDomain(identifier)
+                    .filter(t -> t.getStatus() == TenantStatus.ACTIVE)
+                    .orElse(null);
+        }
+        return null;
     }
 }

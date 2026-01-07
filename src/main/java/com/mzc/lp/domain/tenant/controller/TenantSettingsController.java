@@ -5,10 +5,12 @@ import com.mzc.lp.common.dto.ApiResponse;
 import com.mzc.lp.domain.tenant.dto.request.NavigationItemRequest;
 import com.mzc.lp.domain.tenant.dto.request.UpdateDesignSettingsRequest;
 import com.mzc.lp.domain.tenant.dto.request.UpdateLayoutSettingsRequest;
+import com.mzc.lp.domain.tenant.dto.request.UpdateTenantFeaturesRequest;
 import com.mzc.lp.domain.tenant.dto.request.UpdateTenantSettingsRequest;
 import com.mzc.lp.domain.tenant.dto.response.NavigationItemResponse;
 import com.mzc.lp.domain.tenant.dto.response.PublicBrandingResponse;
 import com.mzc.lp.domain.tenant.dto.response.PublicLayoutResponse;
+import com.mzc.lp.domain.tenant.dto.response.TenantFeaturesResponse;
 import com.mzc.lp.domain.tenant.dto.response.TenantSettingsResponse;
 import com.mzc.lp.domain.tenant.service.TenantSettingsService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -229,6 +231,41 @@ public class TenantSettingsController {
             return ResponseEntity.ok(ApiResponse.success(List.of()));
         }
         List<NavigationItemResponse> response = tenantSettingsService.getEnabledNavigationItems(tenantId);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    // ============================================
+    // 테넌트 기능 On/Off 설정 API
+    // ============================================
+
+    @Operation(summary = "테넌트 기능 설정 조회", description = "현재 테넌트의 기능 On/Off 설정을 조회합니다")
+    @GetMapping("/features")
+    @PreAuthorize("hasAnyRole('TENANT_ADMIN', 'OPERATOR')")
+    public ResponseEntity<ApiResponse<TenantFeaturesResponse>> getTenantFeatures() {
+        Long tenantId = TenantContext.getCurrentTenantId();
+        TenantFeaturesResponse response = tenantSettingsService.getTenantFeatures(tenantId);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @Operation(summary = "테넌트 기능 설정 업데이트", description = "현재 테넌트의 기능 On/Off 설정을 업데이트합니다")
+    @PutMapping("/features")
+    @PreAuthorize("hasRole('TENANT_ADMIN')")
+    public ResponseEntity<ApiResponse<TenantFeaturesResponse>> updateTenantFeatures(
+            @Valid @RequestBody UpdateTenantFeaturesRequest request
+    ) {
+        Long tenantId = TenantContext.getCurrentTenantId();
+        TenantFeaturesResponse response = tenantSettingsService.updateTenantFeatures(tenantId, request);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @Operation(summary = "현재 테넌트 기능 설정 조회 (TU용)", description = "로그인한 사용자의 테넌트 기능 설정을 조회합니다")
+    @GetMapping("/features/public")
+    public ResponseEntity<ApiResponse<TenantFeaturesResponse>> getPublicTenantFeatures() {
+        Long tenantId = TenantContext.getCurrentTenantIdOrNull();
+        if (tenantId == null) {
+            return ResponseEntity.ok(ApiResponse.success(TenantFeaturesResponse.defaultFeatures()));
+        }
+        TenantFeaturesResponse response = tenantSettingsService.getFeaturesByTenantId(tenantId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 }
