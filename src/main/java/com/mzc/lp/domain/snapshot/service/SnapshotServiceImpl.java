@@ -5,6 +5,8 @@ import com.mzc.lp.domain.course.entity.CourseItem;
 import com.mzc.lp.domain.course.exception.CourseNotFoundException;
 import com.mzc.lp.domain.course.repository.CourseItemRepository;
 import com.mzc.lp.domain.course.repository.CourseRepository;
+import com.mzc.lp.domain.learning.entity.LearningObject;
+import com.mzc.lp.domain.learning.repository.LearningObjectRepository;
 import com.mzc.lp.domain.snapshot.constant.SnapshotStatus;
 import com.mzc.lp.domain.snapshot.dto.request.CreateSnapshotRequest;
 import com.mzc.lp.domain.snapshot.dto.request.UpdateSnapshotRequest;
@@ -48,6 +50,7 @@ public class SnapshotServiceImpl implements SnapshotService {
     private final CourseRepository courseRepository;
     private final CourseItemRepository courseItemRepository;
     private final CourseRelationRepository courseRelationRepository;
+    private final LearningObjectRepository learningObjectRepository;
 
     @Override
     @Transactional
@@ -251,21 +254,48 @@ public class SnapshotServiceImpl implements SnapshotService {
 
         for (CourseItem courseItem : courseItems) {
             SnapshotLearningObject snapshotLo = null;
+            String itemType = null;
 
             if (courseItem.getLearningObjectId() != null) {
-                snapshotLo = SnapshotLearningObject.create(
-                        courseItem.getLearningObjectId(),
-                        courseItem.getItemName()
-                );
-                snapshotLo = snapshotLoRepository.save(snapshotLo);
+                // LearningObject에서 Content 정보를 가져옴
+                LearningObject lo = learningObjectRepository.findByIdAndTenantId(
+                        courseItem.getLearningObjectId(), TenantContext.getCurrentTenantId())
+                        .orElse(null);
+
+                if (lo != null && lo.getContent() != null) {
+                    var content = lo.getContent();
+
+                    // displayName이 있으면 사용, 없으면 itemName(파일명) 사용
+                    String displayName = courseItem.getDisplayName() != null && !courseItem.getDisplayName().isBlank()
+                            ? courseItem.getDisplayName()
+                            : courseItem.getItemName();
+
+                    // createFromLo를 사용하여 올바른 contentId와 sourceLoId 설정
+                    snapshotLo = SnapshotLearningObject.createFromLo(
+                            courseItem.getLearningObjectId(),  // sourceLoId
+                            content.getId(),                   // 실제 contentId
+                            displayName,
+                            content.getDuration(),
+                            content.getThumbnailPath(),
+                            content.getResolution(),
+                            null,  // codec - Content에 없음
+                            null,  // bitrate - Content에 없음
+                            content.getPageCount(),
+                            content.getExternalUrl()           // 외부링크 URL
+                    );
+                    snapshotLo = snapshotLoRepository.save(snapshotLo);
+
+                    // Content의 contentType을 가져옴
+                    itemType = content.getContentType() != null
+                            ? content.getContentType().name()
+                            : "VIDEO";
+                }
             }
 
             SnapshotItem parentItem = null;
             if (courseItem.getParent() != null) {
                 parentItem = itemMapping.get(courseItem.getParent().getId());
             }
-
-            String itemType = courseItem.isFolder() ? null : "CONTENT";
 
             SnapshotItem snapshotItem = SnapshotItem.createFromCourseItem(
                     snapshot,
