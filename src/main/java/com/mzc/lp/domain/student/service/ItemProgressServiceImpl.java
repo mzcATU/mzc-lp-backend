@@ -1,6 +1,8 @@
 package com.mzc.lp.domain.student.service;
 
 import com.mzc.lp.common.context.TenantContext;
+import com.mzc.lp.domain.snapshot.entity.SnapshotItem;
+import com.mzc.lp.domain.snapshot.repository.SnapshotItemRepository;
 import com.mzc.lp.domain.student.dto.request.UpdateItemProgressRequest;
 import com.mzc.lp.domain.student.dto.response.ItemProgressResponse;
 import com.mzc.lp.domain.student.entity.Enrollment;
@@ -9,6 +11,8 @@ import com.mzc.lp.domain.student.exception.EnrollmentNotFoundException;
 import com.mzc.lp.domain.student.exception.UnauthorizedEnrollmentAccessException;
 import com.mzc.lp.domain.student.repository.EnrollmentRepository;
 import com.mzc.lp.domain.student.repository.ItemProgressRepository;
+import com.mzc.lp.domain.ts.entity.CourseTime;
+import com.mzc.lp.domain.ts.repository.CourseTimeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -23,6 +27,8 @@ public class ItemProgressServiceImpl implements ItemProgressService {
 
     private final ItemProgressRepository itemProgressRepository;
     private final EnrollmentRepository enrollmentRepository;
+    private final CourseTimeRepository courseTimeRepository;
+    private final SnapshotItemRepository snapshotItemRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -140,22 +146,49 @@ public class ItemProgressServiceImpl implements ItemProgressService {
     }
 
     /**
-     * 전체 수강 진도율 업데이트 (아이템 완료율 기반)
+     * 전체 수강 진도율 업데이트 (스냅샷 아이템 기준 완료율)
+     * 진도율 = 완료된 아이템 수 / 스냅샷 전체 아이템 수 × 100
      */
     private void updateEnrollmentProgress(Long enrollmentId, Long tenantId) {
-        Double completionRate = itemProgressRepository.getCompletionRateByEnrollmentId(enrollmentId, tenantId);
+        Enrollment enrollment = enrollmentRepository.findByIdAndTenantId(enrollmentId, tenantId)
+                .orElse(null);
 
-        if (completionRate != null) {
-            Enrollment enrollment = enrollmentRepository.findByIdAndTenantId(enrollmentId, tenantId)
-                    .orElse(null);
-
-            if (enrollment != null) {
-                enrollment.updateProgress(completionRate.intValue());
-                enrollmentRepository.save(enrollment);
-
-                log.info("Updated enrollment progress: enrollmentId={}, progressPercent={}",
-                        enrollmentId, completionRate.intValue());
-            }
+        if (enrollment == null) {
+            return;
         }
+
+        // 1. Enrollment → CourseTime → Program → Snapshot 순서로 snapshotId 조회
+        CourseTime courseTime = courseTimeRepository.findByIdAndTenantId(enrollment.getCourseTimeId(), tenantId)
+                .orElse(null);
+
+        if (courseTime == null || courseTime.getProgram() == null || courseTime.getProgram().getSnapshot() == null) {
+            log.warn("Cannot calculate progress: missing snapshot for enrollmentId={}", enrollmentId);
+            return;
+        }
+
+        Long snapshotId = courseTime.getProgram().getSnapshot().getId();
+
+        // 2. 스냅샷의 전체 학습 아이템 수 조회 (폴더 제외, LearningObject가 있는 아이템만)
+        List<SnapshotItem> snapshotItems = snapshotItemRepository.findItemsOnlyBySnapshotId(snapshotId, tenantId);
+        int totalItems = snapshotItems.size();
+
+        if (totalItems == 0) {
+            log.warn("No learnable items in snapshot: snapshotId={}", snapshotId);
+            return;
+        }
+
+        // 3. 완료된 아이템 수 조회
+        long completedItems = itemProgressRepository.countByEnrollmentIdAndCompletedAndTenantId(enrollmentId, true, tenantId);
+
+        // 4. 진도율 계산
+        int progressPercent = (int) Math.round((completedItems * 100.0) / totalItems);
+        progressPercent = Math.min(progressPercent, 100); // 최대 100%
+
+        // 5. 진도율 업데이트
+        enrollment.updateProgress(progressPercent);
+        enrollmentRepository.save(enrollment);
+
+        log.info("Updated enrollment progress: enrollmentId={}, completedItems={}/{}, progressPercent={}",
+                enrollmentId, completedItems, totalItems, progressPercent);
     }
 }
