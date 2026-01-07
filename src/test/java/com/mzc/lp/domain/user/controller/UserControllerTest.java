@@ -160,7 +160,9 @@ class UserControllerTest extends TenantTestSupport {
             UpdateProfileRequest request = new UpdateProfileRequest(
                     "김철수",
                     "010-9876-5432",
-                    "https://cdn.example.com/profile.jpg"
+                    "https://cdn.example.com/profile.jpg",
+                    null,
+                    null
             );
 
             // when & then
@@ -182,7 +184,7 @@ class UserControllerTest extends TenantTestSupport {
             // given
             createTestUser();
             String accessToken = loginAndGetAccessToken();
-            UpdateProfileRequest request = new UpdateProfileRequest("김철수", null, null);
+            UpdateProfileRequest request = new UpdateProfileRequest("김철수", null, null, null, null);
 
             // when & then
             mockMvc.perform(put("/api/users/me")
@@ -199,7 +201,7 @@ class UserControllerTest extends TenantTestSupport {
         @DisplayName("실패 - 인증 없이 접근")
         void updateMe_fail_unauthorized() throws Exception {
             // given
-            UpdateProfileRequest request = new UpdateProfileRequest("김철수", null, null);
+            UpdateProfileRequest request = new UpdateProfileRequest("김철수", null, null, null, null);
 
             // when & then
             mockMvc.perform(put("/api/users/me")
