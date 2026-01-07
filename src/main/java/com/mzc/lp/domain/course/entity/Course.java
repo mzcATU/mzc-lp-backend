@@ -3,6 +3,7 @@ package com.mzc.lp.domain.course.entity;
 import com.mzc.lp.common.constant.ValidationMessages;
 import com.mzc.lp.common.entity.TenantEntity;
 import com.mzc.lp.domain.course.constant.CourseLevel;
+import com.mzc.lp.domain.course.constant.CourseStatus;
 import com.mzc.lp.domain.course.constant.CourseType;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -40,6 +41,10 @@ public class Course extends TenantEntity {
     @Column(length = 20)
     private CourseType type;
 
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20, nullable = false)
+    private CourseStatus status = CourseStatus.DRAFT;
+
     @Column
     private Integer estimatedHours;
 
@@ -68,6 +73,7 @@ public class Course extends TenantEntity {
         Course course = new Course();
         course.title = title;
         course.createdBy = createdBy;
+        course.status = CourseStatus.DRAFT;
         return course;
     }
 
@@ -88,6 +94,7 @@ public class Course extends TenantEntity {
         course.endDate = endDate;
         course.tags = tags != null ? new ArrayList<>(tags) : new ArrayList<>();
         course.createdBy = createdBy;
+        course.status = CourseStatus.DRAFT;
         return course;
     }
 
@@ -149,6 +156,27 @@ public class Course extends TenantEntity {
         this.startDate = startDate;
         this.endDate = endDate;
         this.tags = tags != null ? new ArrayList<>(tags) : new ArrayList<>();
+    }
+
+    // ===== Status 관련 비즈니스 메서드 =====
+    public void publish() {
+        this.status = CourseStatus.PUBLISHED;
+    }
+
+    public void unpublish() {
+        this.status = CourseStatus.DRAFT;
+    }
+
+    public void updateStatus(CourseStatus status) {
+        this.status = status;
+    }
+
+    public boolean isDraft() {
+        return this.status == CourseStatus.DRAFT;
+    }
+
+    public boolean isPublished() {
+        return this.status == CourseStatus.PUBLISHED;
     }
 
     // ===== 연관관계 편의 메서드 =====

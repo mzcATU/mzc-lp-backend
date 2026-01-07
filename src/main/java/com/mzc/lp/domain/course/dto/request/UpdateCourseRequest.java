@@ -1,6 +1,7 @@
 package com.mzc.lp.domain.course.dto.request;
 
 import com.mzc.lp.domain.course.constant.CourseLevel;
+import com.mzc.lp.domain.course.constant.CourseStatus;
 import com.mzc.lp.domain.course.constant.CourseType;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
@@ -31,7 +32,9 @@ public record UpdateCourseRequest(
 
         LocalDate endDate,
 
-        List<String> tags
+        List<String> tags,
+
+        CourseStatus status
 ) {
     public UpdateCourseRequest {
         if (title != null) {

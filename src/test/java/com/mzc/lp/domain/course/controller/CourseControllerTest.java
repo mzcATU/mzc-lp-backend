@@ -646,6 +646,7 @@ class CourseControllerTest extends TenantTestSupport {
                     null,
                     null,
                     null,
+                    null,
                     null
             );
 
@@ -673,6 +674,7 @@ class CourseControllerTest extends TenantTestSupport {
             Course course = createTestCourse("원래 제목");
             UpdateCourseRequest request = new UpdateCourseRequest(
                     "수정된 제목만",
+                    null,
                     null,
                     null,
                     null,
@@ -711,6 +713,7 @@ class CourseControllerTest extends TenantTestSupport {
                     null,
                     null,
                     null,
+                    null,
                     null
             );
 
@@ -734,6 +737,7 @@ class CourseControllerTest extends TenantTestSupport {
             Course course = createTestCourse("테스트 강의");
             UpdateCourseRequest request = new UpdateCourseRequest(
                     "수정 시도",
+                    null,
                     null,
                     null,
                     null,
