@@ -36,6 +36,10 @@ public enum ErrorCode {
     CM_LEARNING_OBJECT_NOT_FOUND(HttpStatus.NOT_FOUND, "CM008", "LearningObject not found"),
     CM_SNAPSHOT_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "CM009", "SnapshotItem not found"),
     CM_UNAUTHORIZED_COURSE_ACCESS(HttpStatus.FORBIDDEN, "CM010", "Not authorized to access this course"),
+    CM_REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "CM011", "Course review not found"),
+    CM_REVIEW_ALREADY_EXISTS(HttpStatus.CONFLICT, "CM012", "Review already exists for this course"),
+    CM_NOT_COMPLETED_COURSE(HttpStatus.BAD_REQUEST, "CM013", "Cannot write review for incomplete course"),
+    CM_NOT_REVIEW_OWNER(HttpStatus.FORBIDDEN, "CM014", "Not authorized to modify this review"),
 
     // Content (CMS)
     CONTENT_NOT_FOUND(HttpStatus.NOT_FOUND, "CT001", "Content not found"),
@@ -130,6 +134,7 @@ public enum ErrorCode {
     COMMUNITY_ALREADY_LIKED(HttpStatus.CONFLICT, "CMT003", "Already liked"),
     COMMUNITY_NOT_POST_AUTHOR(HttpStatus.FORBIDDEN, "CMT004", "Not authorized to modify this post"),
     COMMUNITY_NOT_COMMENT_AUTHOR(HttpStatus.FORBIDDEN, "CMT005", "Not authorized to modify this comment"),
+    COMMUNITY_NOT_ENROLLED(HttpStatus.FORBIDDEN, "CMT006", "Not enrolled in this course"),
 
     // Notification (NF)
     NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "NF001", "Notification not found"),
@@ -159,7 +164,15 @@ public enum ErrorCode {
     AUTO_ENROLLMENT_RULE_NOT_FOUND(HttpStatus.NOT_FOUND, "AER001", "Auto enrollment rule not found"),
 
     // Member Pool (MP)
-    MEMBER_POOL_NOT_FOUND(HttpStatus.NOT_FOUND, "MP001", "Member pool not found");
+    MEMBER_POOL_NOT_FOUND(HttpStatus.NOT_FOUND, "MP001", "Member pool not found"),
+
+    // Roadmap (RM)
+    ROADMAP_NOT_FOUND(HttpStatus.NOT_FOUND, "RM001", "Roadmap not found"),
+    ROADMAP_NOT_MODIFIABLE(HttpStatus.BAD_REQUEST, "RM002", "Roadmap is not modifiable in current status"),
+    UNAUTHORIZED_ROADMAP_ACCESS(HttpStatus.FORBIDDEN, "RM003", "Not authorized to access this roadmap"),
+    INVALID_PROGRAM_FOR_ROADMAP(HttpStatus.BAD_REQUEST, "RM004", "Invalid program for roadmap"),
+    DUPLICATE_PROGRAM_IN_ROADMAP(HttpStatus.CONFLICT, "RM005", "Program already exists in roadmap"),
+    ROADMAP_HAS_ENROLLMENTS(HttpStatus.BAD_REQUEST, "RM006", "Cannot delete roadmap with enrollments");
 
     private final HttpStatus status;
     private final String code;

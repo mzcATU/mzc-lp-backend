@@ -369,4 +369,53 @@ public class ProgramServiceImpl implements ProgramService {
         log.info("Snapshot linked to program: programId={}, snapshotId={}", programId, snapshotId);
         return ProgramResponse.from(program);
     }
+
+    /**
+     * 내 프로그램 조회 (로드맵 생성용)
+     * DESIGNER 또는 OWNER 권한이 있는 프로그램만 조회
+     */
+    @Override
+    public Page<ProgramResponse> getMyPrograms(Long userId, String search, Pageable pageable) {
+        log.info("Getting my programs: userId={}, search={}", userId, search);
+
+        Long tenantId = TenantContext.getCurrentTenantId();
+
+        // 사용자의 모든 CourseRole 조회
+        List<UserCourseRole> userCourseRoles = userCourseRoleRepository.findByUserId(userId);
+
+        // DESIGNER 권한 확인 (courseId가 null)
+        boolean isDesigner = userCourseRoles.stream()
+                .anyMatch(ucr -> ucr.getCourseId() == null && ucr.getRole() == CourseRole.DESIGNER);
+
+        // OWNER 권한이 있는 프로그램 ID 목록
+        Set<Long> ownedProgramIds = userCourseRoles.stream()
+                .filter(ucr -> ucr.getCourseId() != null && ucr.getRole() == CourseRole.OWNER)
+                .map(UserCourseRole::getCourseId)
+                .collect(Collectors.toSet());
+
+        Page<Program> programs;
+
+        if (isDesigner) {
+            // DESIGNER면 모든 프로그램 조회 가능
+            if (search != null && !search.isBlank()) {
+                programs = programRepository.findByTenantIdAndTitleContaining(tenantId, search, pageable);
+            } else {
+                programs = programRepository.findByTenantId(tenantId, pageable);
+            }
+        } else if (!ownedProgramIds.isEmpty()) {
+            // OWNER인 프로그램만 조회
+            if (search != null && !search.isBlank()) {
+                programs = programRepository.findByTenantIdAndIdInAndTitleContaining(
+                        tenantId, ownedProgramIds, search, pageable
+                );
+            } else {
+                programs = programRepository.findByTenantIdAndIdIn(tenantId, ownedProgramIds, pageable);
+            }
+        } else {
+            // 권한이 없으면 빈 페이지 반환
+            return Page.empty(pageable);
+        }
+
+        return programs.map(ProgramResponse::from);
+    }
 }

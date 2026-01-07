@@ -37,4 +37,7 @@ public interface ProgramService {
 
     // Snapshot 연결
     ProgramResponse linkSnapshot(Long programId, Long snapshotId);
+
+    // 내 프로그램 조회 (로드맵 생성용)
+    Page<ProgramResponse> getMyPrograms(Long userId, String search, Pageable pageable);
 }
