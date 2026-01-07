@@ -30,6 +30,12 @@ public class User extends TenantEntity {
 
     private String profileImageUrl;
 
+    @Column(length = 100)
+    private String department;  // 부서 (개발팀, 회계팀 등)
+
+    @Column(length = 50)
+    private String position;    // 직급 (인턴, 신입, 대리, 과장, 차장, 팀장 등)
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private TenantRole role;
@@ -62,6 +68,12 @@ public class User extends TenantEntity {
         }
         this.phone = phone;
         this.profileImageUrl = profileImageUrl;
+    }
+
+    public void updateProfile(String name, String phone, String profileImageUrl, String department, String position) {
+        updateProfile(name, phone, profileImageUrl);
+        this.department = department;
+        this.position = position;
     }
 
     public void changePassword(String encodedPassword) {

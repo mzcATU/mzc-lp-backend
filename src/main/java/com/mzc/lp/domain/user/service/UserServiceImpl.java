@@ -96,7 +96,9 @@ public class UserServiceImpl implements UserService {
         String name = request.name() != null ? request.name() : user.getName();
         String phone = request.phone() != null ? request.phone() : user.getPhone();
         String profileImageUrl = request.profileImageUrl() != null ? request.profileImageUrl() : user.getProfileImageUrl();
-        user.updateProfile(name, phone, profileImageUrl);
+        String department = request.department() != null ? request.department() : user.getDepartment();
+        String position = request.position() != null ? request.position() : user.getPosition();
+        user.updateProfile(name, phone, profileImageUrl, department, position);
         List<CourseRoleResponse> courseRoles = getCourseRolesWithProgramTitle(userId);
         return UserDetailResponse.from(user, courseRoles);
     }
