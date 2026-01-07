@@ -131,6 +131,25 @@ public class TenantSettings extends BaseTimeEntity {
     @Column(nullable = false)
     private Boolean apiAccessEnabled = false;
 
+    // ============================================
+    // 테넌트 기능 On/Off 설정
+    // ============================================
+
+    @Column(nullable = false)
+    private Boolean communityEnabled = true;
+
+    @Column(nullable = false)
+    private Boolean userCourseCreationEnabled = false;
+
+    @Column(nullable = false)
+    private Boolean cartEnabled = true;
+
+    @Column(nullable = false)
+    private Boolean wishlistEnabled = true;
+
+    @Column(nullable = false)
+    private Boolean instructorTabEnabled = true;
+
     // 정적 팩토리 메서드
     public static TenantSettings createDefault(Tenant tenant) {
         TenantSettings settings = new TenantSettings();
@@ -225,5 +244,16 @@ public class TenantSettings extends BaseTimeEntity {
         if (allowCustomBranding != null) this.allowCustomBranding = allowCustomBranding;
         if (ssoEnabled != null) this.ssoEnabled = ssoEnabled;
         if (apiAccessEnabled != null) this.apiAccessEnabled = apiAccessEnabled;
+    }
+
+    // 테넌트 기능 On/Off 설정 업데이트
+    public void updateTenantFeatures(Boolean communityEnabled, Boolean userCourseCreationEnabled,
+                                     Boolean cartEnabled, Boolean wishlistEnabled,
+                                     Boolean instructorTabEnabled) {
+        if (communityEnabled != null) this.communityEnabled = communityEnabled;
+        if (userCourseCreationEnabled != null) this.userCourseCreationEnabled = userCourseCreationEnabled;
+        if (cartEnabled != null) this.cartEnabled = cartEnabled;
+        if (wishlistEnabled != null) this.wishlistEnabled = wishlistEnabled;
+        if (instructorTabEnabled != null) this.instructorTabEnabled = instructorTabEnabled;
     }
 }

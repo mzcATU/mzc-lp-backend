@@ -3,10 +3,12 @@ package com.mzc.lp.domain.tenant.service;
 import com.mzc.lp.domain.tenant.dto.request.NavigationItemRequest;
 import com.mzc.lp.domain.tenant.dto.request.UpdateDesignSettingsRequest;
 import com.mzc.lp.domain.tenant.dto.request.UpdateLayoutSettingsRequest;
+import com.mzc.lp.domain.tenant.dto.request.UpdateTenantFeaturesRequest;
 import com.mzc.lp.domain.tenant.dto.request.UpdateTenantSettingsRequest;
 import com.mzc.lp.domain.tenant.dto.response.NavigationItemResponse;
 import com.mzc.lp.domain.tenant.dto.response.PublicBrandingResponse;
 import com.mzc.lp.domain.tenant.dto.response.PublicLayoutResponse;
+import com.mzc.lp.domain.tenant.dto.response.TenantFeaturesResponse;
 import com.mzc.lp.domain.tenant.dto.response.TenantSettingsResponse;
 
 import java.util.List;
@@ -148,4 +150,38 @@ public interface TenantSettingsService {
      * @return 활성화된 네비게이션 항목 목록
      */
     List<NavigationItemResponse> getEnabledNavigationItems(Long tenantId);
+
+    // ============================================
+    // 테넌트 기능 On/Off 설정
+    // ============================================
+
+    /**
+     * 테넌트 기능 설정 조회
+     * @param tenantId 테넌트 ID
+     * @return 기능 설정
+     */
+    TenantFeaturesResponse getTenantFeatures(Long tenantId);
+
+    /**
+     * 테넌트 기능 설정 업데이트
+     * @param tenantId 테넌트 ID
+     * @param request 업데이트 요청
+     * @return 업데이트된 기능 설정
+     */
+    TenantFeaturesResponse updateTenantFeatures(Long tenantId, UpdateTenantFeaturesRequest request);
+
+    /**
+     * 공개 기능 설정 조회 (인증 불필요)
+     * @param identifier subdomain 또는 customDomain
+     * @param type "subdomain" 또는 "customDomain"
+     * @return 기능 설정
+     */
+    TenantFeaturesResponse getPublicTenantFeatures(String identifier, String type);
+
+    /**
+     * 테넌트 ID로 기능 설정 조회 (인증된 사용자용)
+     * @param tenantId 테넌트 ID
+     * @return 기능 설정
+     */
+    TenantFeaturesResponse getFeaturesByTenantId(Long tenantId);
 }
