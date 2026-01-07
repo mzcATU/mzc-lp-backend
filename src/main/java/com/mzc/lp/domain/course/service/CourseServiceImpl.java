@@ -1,11 +1,13 @@
 package com.mzc.lp.domain.course.service;
 
+import com.mzc.lp.domain.course.constant.CourseStatus;
 import com.mzc.lp.domain.course.dto.request.CreateCourseRequest;
 import com.mzc.lp.domain.course.dto.request.UpdateCourseRequest;
 import com.mzc.lp.domain.course.dto.response.CourseDetailResponse;
 import com.mzc.lp.domain.course.dto.response.CourseItemResponse;
 import com.mzc.lp.domain.course.dto.response.CourseResponse;
 import com.mzc.lp.domain.course.entity.Course;
+import com.mzc.lp.domain.course.exception.CourseIncompleteException;
 import com.mzc.lp.domain.course.exception.CourseNotFoundException;
 import com.mzc.lp.domain.course.exception.CourseOwnershipException;
 import com.mzc.lp.domain.course.repository.CourseRepository;
@@ -130,8 +132,16 @@ public class CourseServiceImpl implements CourseService {
                 request.tags()
         );
 
+        // status 업데이트 (PUBLISHED로 변경 시 isComplete 검증)
+        if (request.status() != null) {
+            if (request.status() == CourseStatus.PUBLISHED) {
+                validateCompleteness(course);
+            }
+            course.updateStatus(request.status());
+        }
+
         log.info("Course updated: id={}", courseId);
-        return CourseResponse.from(course);
+        return CourseResponse.from(course, course.getItems().size());
     }
 
     @Override
@@ -180,5 +190,46 @@ public class CourseServiceImpl implements CourseService {
                         row -> (Long) row[0],
                         row -> ((Number) row[1]).intValue()
                 ));
+    }
+
+    @Override
+    @Transactional
+    public CourseResponse publishCourse(Long courseId) {
+        log.info("Publishing course: courseId={}", courseId);
+
+        Long tenantId = TenantContext.getCurrentTenantId();
+        Course course = courseRepository.findByIdWithItems(courseId, tenantId)
+                .orElseThrow(() -> new CourseNotFoundException(courseId));
+
+        validateCompleteness(course);
+        course.publish();
+
+        log.info("Course published: id={}", courseId);
+        return CourseResponse.from(course, course.getItems().size());
+    }
+
+    @Override
+    @Transactional
+    public CourseResponse unpublishCourse(Long courseId) {
+        log.info("Unpublishing course: courseId={}", courseId);
+
+        Course course = courseRepository.findByIdAndTenantId(courseId, TenantContext.getCurrentTenantId())
+                .orElseThrow(() -> new CourseNotFoundException(courseId));
+
+        course.unpublish();
+
+        log.info("Course unpublished: id={}", courseId);
+        return CourseResponse.from(course);
+    }
+
+    private void validateCompleteness(Course course) {
+        boolean isComplete = course.getTitle() != null && !course.getTitle().isBlank()
+                && course.getDescription() != null && !course.getDescription().isBlank()
+                && course.getCategoryId() != null
+                && !course.getItems().isEmpty();
+
+        if (!isComplete) {
+            throw new CourseIncompleteException(course.getId());
+        }
     }
 }

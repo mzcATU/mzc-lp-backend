@@ -56,4 +56,19 @@ public interface CourseService {
      * @return 강의 목록 페이지
      */
     Page<CourseResponse> getMyCourses(Long creatorId, Pageable pageable);
+
+    /**
+     * 강의 발행
+     * @param courseId 강의 ID
+     * @return 발행된 강의 정보
+     * @throws com.mzc.lp.domain.course.exception.CourseIncompleteException 완성되지 않은 강의인 경우
+     */
+    CourseResponse publishCourse(Long courseId);
+
+    /**
+     * 강의 발행 취소
+     * @param courseId 강의 ID
+     * @return 발행 취소된 강의 정보
+     */
+    CourseResponse unpublishCourse(Long courseId);
 }

@@ -11,6 +11,7 @@ public record CourseReviewResponse(
         String userName,
         Integer rating,
         String content,
+        Integer completionRate,  // 0-100 (%)
         Instant createdAt,
         Instant updatedAt
 ) {
@@ -22,6 +23,7 @@ public record CourseReviewResponse(
                 userName,
                 review.getRating(),
                 review.getContent(),
+                review.getCompletionRate(),
                 review.getCreatedAt(),
                 review.getUpdatedAt()
         );

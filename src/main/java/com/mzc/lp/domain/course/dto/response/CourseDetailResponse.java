@@ -1,6 +1,7 @@
 package com.mzc.lp.domain.course.dto.response;
 
 import com.mzc.lp.domain.course.constant.CourseLevel;
+import com.mzc.lp.domain.course.constant.CourseStatus;
 import com.mzc.lp.domain.course.constant.CourseType;
 import com.mzc.lp.domain.course.entity.Course;
 
@@ -15,6 +16,7 @@ public record CourseDetailResponse(
         String thumbnailUrl,
         CourseLevel level,
         CourseType type,
+        CourseStatus status,
         Integer estimatedHours,
         Long categoryId,
         LocalDate startDate,
@@ -60,6 +62,7 @@ public record CourseDetailResponse(
                 course.getThumbnailUrl(),
                 course.getLevel(),
                 course.getType(),
+                course.getStatus(),
                 course.getEstimatedHours(),
                 course.getCategoryId(),
                 course.getStartDate(),
