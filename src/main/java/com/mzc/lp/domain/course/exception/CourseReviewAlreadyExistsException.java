@@ -9,8 +9,8 @@ public class CourseReviewAlreadyExistsException extends BusinessException {
         super(ErrorCode.CM_REVIEW_ALREADY_EXISTS);
     }
 
-    public CourseReviewAlreadyExistsException(Long courseId, Long userId) {
+    public CourseReviewAlreadyExistsException(Long courseTimeId, Long userId) {
         super(ErrorCode.CM_REVIEW_ALREADY_EXISTS,
-            "이미 작성한 리뷰가 있습니다. CourseId: " + courseId + ", UserId: " + userId);
+            "이미 작성한 리뷰가 있습니다. CourseTimeId: " + courseTimeId + ", UserId: " + userId);
     }
 }
