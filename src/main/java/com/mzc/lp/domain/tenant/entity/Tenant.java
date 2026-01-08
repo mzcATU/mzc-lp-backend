@@ -52,7 +52,7 @@ public class Tenant extends BaseTimeEntity {
         tenant.type = type;
         tenant.subdomain = subdomain;
         tenant.plan = plan != null ? plan : PlanType.FREE;
-        tenant.status = TenantStatus.PENDING;
+        tenant.status = TenantStatus.ACTIVE;  // 생성 시 바로 활성 상태
         return tenant;
     }
 

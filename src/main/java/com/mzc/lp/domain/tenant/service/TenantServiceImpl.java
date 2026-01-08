@@ -174,8 +174,12 @@ public class TenantServiceImpl implements TenantService {
         log.info("Deleting tenant: tenantId={}", tenantId);
 
         Tenant tenant = findTenantById(tenantId);
-        tenantRepository.delete(tenant);
-        log.info("Tenant deleted: tenantId={}", tenantId);
+
+        // 논리적 삭제 (Soft Delete) - TERMINATED 상태로 변경
+        tenant.terminate();
+        tenantRepository.save(tenant);
+
+        log.info("Tenant marked as TERMINATED: tenantId={}", tenantId);
     }
 
     // === Private Helper Methods ===
