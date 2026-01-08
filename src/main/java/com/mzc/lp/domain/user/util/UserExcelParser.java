@@ -388,7 +388,9 @@ public class UserExcelParser {
                     email.trim().toLowerCase(),
                     name != null ? name.trim() : null,
                     password != null ? password.trim() : null,
-                    phone != null ? phone.trim() : null
+                    phone != null ? phone.trim() : null,
+                    null,  // department
+                    null   // position
             );
         } catch (Exception e) {
             log.warn("Failed to parse row {}: {}", row.getRowNum(), e.getMessage());
@@ -413,7 +415,9 @@ public class UserExcelParser {
                     email.toLowerCase(),
                     name,
                     password,
-                    phone
+                    phone,
+                    null,  // department
+                    null   // position
             );
         } catch (Exception e) {
             log.warn("Failed to parse CSV line: {}", e.getMessage());
