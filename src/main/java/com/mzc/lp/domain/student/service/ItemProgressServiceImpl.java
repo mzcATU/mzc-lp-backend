@@ -186,6 +186,13 @@ public class ItemProgressServiceImpl implements ItemProgressService {
 
         // 5. 진도율 업데이트
         enrollment.updateProgress(progressPercent);
+
+        // 6. 진도율 100% 달성 시 자동 수료 처리
+        if (progressPercent == 100 && !enrollment.isCompleted()) {
+            enrollment.complete(null); // 점수 없이 수료 처리
+            log.info("Auto-completed enrollment: enrollmentId={}", enrollmentId);
+        }
+
         enrollmentRepository.save(enrollment);
 
         log.info("Updated enrollment progress: enrollmentId={}, completedItems={}/{}, progressPercent={}",
