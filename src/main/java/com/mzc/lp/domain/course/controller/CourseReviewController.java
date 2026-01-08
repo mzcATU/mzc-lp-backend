@@ -86,9 +86,9 @@ public class CourseReviewController {
 
     /**
      * 리뷰 수정
-     * PUT /api/times/{timeId}/reviews/{reviewId}
+     * PUT/PATCH /api/times/{timeId}/reviews/{reviewId}
      */
-    @PutMapping("/{reviewId}")
+    @RequestMapping(value = "/{reviewId}", method = {RequestMethod.PUT, RequestMethod.PATCH})
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<CourseReviewResponse>> updateReview(
             @PathVariable Long timeId,
