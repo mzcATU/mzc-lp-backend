@@ -31,4 +31,6 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
 
     @Query("SELECT c.id, COUNT(i) FROM Course c LEFT JOIN c.items i WHERE c.id IN :courseIds GROUP BY c.id")
     List<Object[]> countItemsByCourseIds(@Param("courseIds") List<Long> courseIds);
+
+    long countByTenantId(Long tenantId);
 }

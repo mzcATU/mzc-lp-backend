@@ -32,7 +32,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/sa/notices")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('SUPER_ADMIN')")
+@PreAuthorize("hasRole('SYSTEM_ADMIN')")
 public class NoticeController {
 
     private final NoticeService noticeService;

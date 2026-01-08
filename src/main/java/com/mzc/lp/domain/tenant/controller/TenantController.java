@@ -6,6 +6,7 @@ import com.mzc.lp.domain.tenant.dto.request.UpdateTenantRequest;
 import com.mzc.lp.domain.tenant.dto.request.UpdateTenantStatusRequest;
 import com.mzc.lp.domain.tenant.dto.response.CreateTenantResponse;
 import com.mzc.lp.domain.tenant.dto.response.TenantResponse;
+import com.mzc.lp.domain.tenant.dto.response.TenantUserStatsResponse;
 import com.mzc.lp.domain.tenant.service.TenantService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
@@ -119,5 +120,16 @@ public class TenantController {
     ) {
         tenantService.deleteTenant(tenantId);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * 테넌트별 사용자 수 통계
+     * GET /api/tenants/stats/users
+     */
+    @GetMapping("/stats/users")
+    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    public ResponseEntity<ApiResponse<TenantUserStatsResponse>> getTenantUserStats() {
+        TenantUserStatsResponse response = tenantService.getTenantUserStats();
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 }

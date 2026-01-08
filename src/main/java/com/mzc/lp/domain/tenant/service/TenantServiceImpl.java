@@ -6,12 +6,15 @@ import com.mzc.lp.domain.tenant.dto.request.UpdateTenantRequest;
 import com.mzc.lp.domain.tenant.dto.request.UpdateTenantStatusRequest;
 import com.mzc.lp.domain.tenant.dto.response.CreateTenantResponse;
 import com.mzc.lp.domain.tenant.dto.response.TenantResponse;
+import com.mzc.lp.domain.tenant.dto.response.TenantUserStatsResponse;
 import com.mzc.lp.domain.tenant.entity.Tenant;
 import com.mzc.lp.domain.tenant.exception.DuplicateCustomDomainException;
 import com.mzc.lp.domain.tenant.exception.DuplicateSubdomainException;
 import com.mzc.lp.domain.tenant.exception.DuplicateTenantCodeException;
 import com.mzc.lp.domain.tenant.exception.TenantDomainNotFoundException;
 import com.mzc.lp.domain.tenant.repository.TenantRepository;
+import com.mzc.lp.domain.tenant.repository.TenantSettingsRepository;
+import com.mzc.lp.domain.course.repository.CourseRepository;
 import com.mzc.lp.domain.user.constant.TenantRole;
 import com.mzc.lp.domain.user.entity.User;
 import com.mzc.lp.domain.user.repository.UserRepository;
@@ -19,6 +22,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+
+import java.util.List;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,7 +35,9 @@ import org.springframework.transaction.annotation.Transactional;
 public class TenantServiceImpl implements TenantService {
 
     private final TenantRepository tenantRepository;
+    private final TenantSettingsRepository tenantSettingsRepository;
     private final UserRepository userRepository;
+    private final CourseRepository courseRepository;
     private final PasswordEncoder passwordEncoder;
 
     private static final String DEFAULT_TENANT_ADMIN_PASSWORD = "1q2w3e4r!";
@@ -109,7 +116,11 @@ public class TenantServiceImpl implements TenantService {
             tenants = tenantRepository.findAll(pageable);
         }
 
-        return tenants.map(TenantResponse::from);
+        return tenants.map(tenant -> {
+            Long userCount = userRepository.countByTenantId(tenant.getId());
+            Long courseCount = courseRepository.countByTenantId(tenant.getId());
+            return TenantResponse.from(tenant, userCount, courseCount);
+        });
     }
 
     @Override
@@ -174,6 +185,11 @@ public class TenantServiceImpl implements TenantService {
         log.info("Deleting tenant: tenantId={}", tenantId);
 
         Tenant tenant = findTenantById(tenantId);
+
+        // 관련 설정 먼저 삭제
+        tenantSettingsRepository.deleteByTenantId(tenantId);
+        log.info("Tenant settings deleted: tenantId={}", tenantId);
+
         tenantRepository.delete(tenant);
         log.info("Tenant deleted: tenantId={}", tenantId);
     }
@@ -201,5 +217,27 @@ public class TenantServiceImpl implements TenantService {
         if (tenantRepository.existsByCustomDomain(customDomain)) {
             throw new DuplicateCustomDomainException(customDomain);
         }
+    }
+
+    @Override
+    public TenantUserStatsResponse getTenantUserStats() {
+        log.debug("Getting tenant user stats");
+
+        List<Tenant> allTenants = tenantRepository.findAll();
+
+        List<TenantUserStatsResponse.TenantUserCount> tenantUserCounts = allTenants.stream()
+                .map(tenant -> new TenantUserStatsResponse.TenantUserCount(
+                        tenant.getId(),
+                        tenant.getCode(),
+                        tenant.getName(),
+                        userRepository.countByTenantId(tenant.getId())
+                ))
+                .toList();
+
+        long totalUsers = tenantUserCounts.stream()
+                .mapToLong(TenantUserStatsResponse.TenantUserCount::userCount)
+                .sum();
+
+        return TenantUserStatsResponse.of(tenantUserCounts, totalUsers);
     }
 }

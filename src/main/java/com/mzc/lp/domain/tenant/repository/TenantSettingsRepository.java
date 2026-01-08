@@ -12,4 +12,6 @@ public interface TenantSettingsRepository extends JpaRepository<TenantSettings, 
     Optional<TenantSettings> findByTenantId(Long tenantId);
 
     boolean existsByTenantId(Long tenantId);
+
+    void deleteByTenantId(Long tenantId);
 }

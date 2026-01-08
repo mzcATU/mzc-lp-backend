@@ -1,5 +1,6 @@
 package com.mzc.lp.domain.banner.controller;
 
+import com.mzc.lp.common.context.TenantContext;
 import com.mzc.lp.common.dto.ApiResponse;
 import com.mzc.lp.common.security.UserPrincipal;
 import com.mzc.lp.domain.banner.constant.BannerPosition;
@@ -122,7 +123,8 @@ public class BannerController {
     public ResponseEntity<ApiResponse<List<BannerResponse>>> getDisplayableBanners(
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        List<BannerResponse> response = bannerService.getDisplayableBanners(principal.tenantId());
+        Long tenantId = principal != null ? principal.tenantId() : TenantContext.getCurrentTenantId();
+        List<BannerResponse> response = bannerService.getDisplayableBanners(tenantId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
@@ -131,8 +133,8 @@ public class BannerController {
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable BannerPosition position
     ) {
-        List<BannerResponse> response = bannerService.getDisplayableBannersByPosition(
-                principal.tenantId(), position);
+        Long tenantId = principal != null ? principal.tenantId() : TenantContext.getCurrentTenantId();
+        List<BannerResponse> response = bannerService.getDisplayableBannersByPosition(tenantId, position);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 }
