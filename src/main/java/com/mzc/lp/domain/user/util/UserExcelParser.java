@@ -99,6 +99,11 @@ public class UserExcelParser {
                 return FileParseResult.headerError("파일이 비어있습니다");
             }
 
+            // BOM(Byte Order Mark) 제거 (Excel에서 한글 CSV 저장 시 추가됨)
+            if (headerLine.startsWith("\uFEFF")) {
+                headerLine = headerLine.substring(1);
+            }
+
             Map<String, Integer> columnMap = parseCsvHeader(headerLine);
 
             // 필수 컬럼 검증
