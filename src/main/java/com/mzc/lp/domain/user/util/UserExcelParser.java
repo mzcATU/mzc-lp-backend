@@ -4,6 +4,7 @@ import com.mzc.lp.domain.user.dto.request.FileParseResult;
 import com.mzc.lp.domain.user.dto.request.FileParseResult.ParseError;
 import com.mzc.lp.domain.user.dto.request.FileUserRow;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.input.BOMInputStream;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Component;
@@ -90,8 +91,11 @@ public class UserExcelParser {
         List<FileUserRow> users = new ArrayList<>();
         List<ParseError> errors = new ArrayList<>();
 
-        try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
+        // BOMInputStream을 사용하여 UTF-8 BOM을 자동으로 제거
+        try (InputStream is = file.getInputStream();
+             BOMInputStream bomInputStream = new BOMInputStream(is);
+             BufferedReader reader = new BufferedReader(
+                     new InputStreamReader(bomInputStream, StandardCharsets.UTF_8))) {
 
             // 헤더 행 읽기
             String headerLine = reader.readLine();
@@ -99,10 +103,7 @@ public class UserExcelParser {
                 return FileParseResult.headerError("파일이 비어있습니다");
             }
 
-            // BOM(Byte Order Mark) 제거 (Excel에서 한글 CSV 저장 시 추가됨)
-            if (headerLine.startsWith("\uFEFF")) {
-                headerLine = headerLine.substring(1);
-            }
+            log.info("CSV header line after BOM removal: [{}]", headerLine);
 
             Map<String, Integer> columnMap = parseCsvHeader(headerLine);
 
@@ -244,8 +245,11 @@ public class UserExcelParser {
         Map<String, Integer> columnMap = new HashMap<>();
         String[] headers = headerLine.split(",", -1);
 
+        log.info("CSV headers count: {}", headers.length);
+
         for (int i = 0; i < headers.length; i++) {
             String normalizedHeader = headers[i].trim().toLowerCase();
+            log.info("Header[{}]: original='{}', normalized='{}'", i, headers[i], normalizedHeader);
 
             if (matchesAny(normalizedHeader, EMAIL_HEADERS)) {
                 columnMap.put("email", i);
