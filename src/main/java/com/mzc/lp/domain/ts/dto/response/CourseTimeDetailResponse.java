@@ -19,7 +19,8 @@ public record CourseTimeDetailResponse(
         @Deprecated(since = "1.0", forRemoval = true)
         Long cmCourseVersionId,
         Long programId,
-        String programName,
+        String programTitle,
+        String programDescription,
         String title,
         DeliveryType deliveryType,
         CourseTimeStatus status,
@@ -53,6 +54,7 @@ public record CourseTimeDetailResponse(
                 entity.getCmCourseVersionId(),
                 entity.getProgram() != null ? entity.getProgram().getId() : null,
                 entity.getProgram() != null ? entity.getProgram().getTitle() : null,
+                entity.getProgram() != null ? entity.getProgram().getDescription() : null,
                 entity.getTitle(),
                 entity.getDeliveryType(),
                 entity.getStatus(),

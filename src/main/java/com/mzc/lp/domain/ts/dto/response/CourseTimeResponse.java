@@ -19,6 +19,7 @@ public record CourseTimeResponse(
         @Deprecated(since = "1.0", forRemoval = true)
         Long cmCourseVersionId,
         String title,
+        String programTitle,
         DeliveryType deliveryType,
         CourseTimeStatus status,
         LocalDate enrollStartDate,
@@ -45,6 +46,7 @@ public record CourseTimeResponse(
                 entity.getCmCourseId(),
                 entity.getCmCourseVersionId(),
                 entity.getTitle(),
+                entity.getProgram() != null ? entity.getProgram().getTitle() : null,
                 entity.getDeliveryType(),
                 entity.getStatus(),
                 entity.getEnrollStartDate(),
