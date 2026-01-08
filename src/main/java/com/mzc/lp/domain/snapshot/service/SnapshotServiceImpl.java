@@ -271,6 +271,7 @@ public class SnapshotServiceImpl implements SnapshotService {
                             : courseItem.getItemName();
 
                     // createFromLo를 사용하여 올바른 contentId와 sourceLoId 설정
+                    // description은 CourseItem에서 가져옴 (강의 디자인 시 설정한 값)
                     snapshotLo = SnapshotLearningObject.createFromLo(
                             courseItem.getLearningObjectId(),  // sourceLoId
                             content.getId(),                   // 실제 contentId
@@ -281,7 +282,9 @@ public class SnapshotServiceImpl implements SnapshotService {
                             null,  // codec - Content에 없음
                             null,  // bitrate - Content에 없음
                             content.getPageCount(),
-                            content.getExternalUrl()           // 외부링크 URL
+                            content.getExternalUrl(),          // 외부링크 URL
+                            courseItem.getDescription(),       // 강의 디자인 시 설정한 설명
+                            content.getDownloadable()          // 다운로드 허용 여부
                     );
                     snapshotLo = snapshotLoRepository.save(snapshotLo);
 

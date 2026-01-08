@@ -25,8 +25,13 @@ public record BulkCreateUsersResponse(
 
     public record FailedUserInfo(
             String email,
-            String reason
-    ) {}
+            String reason,
+            Integer rowNumber  // 파일에서 실패한 행 번호 (nullable)
+    ) {
+        public FailedUserInfo(String email, String reason) {
+            this(email, reason, null);
+        }
+    }
 
     public record AutoLinkedUserInfo(
             Long userId,

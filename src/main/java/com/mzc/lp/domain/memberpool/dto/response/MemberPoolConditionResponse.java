@@ -5,7 +5,7 @@ import com.mzc.lp.domain.memberpool.entity.MemberPoolCondition;
 import java.util.List;
 
 public record MemberPoolConditionResponse(
-        List<Long> departments,
+        List<Long> departmentIds,
         List<String> positions,
         List<String> jobTitles,
         List<String> employeeStatuses

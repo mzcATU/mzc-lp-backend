@@ -7,6 +7,7 @@ import com.mzc.lp.common.context.TenantContext;
 import com.mzc.lp.domain.user.dto.request.AssignCourseRoleRequest;
 import com.mzc.lp.domain.user.dto.request.BulkCreateUsersRequest;
 import com.mzc.lp.domain.user.dto.request.FileBulkCreateUsersRequest;
+import com.mzc.lp.domain.user.dto.request.FileParseResult;
 import com.mzc.lp.domain.user.dto.request.FileUserRow;
 import com.mzc.lp.domain.user.util.UserExcelParser;
 import com.mzc.lp.domain.user.dto.request.ChangePasswordRequest;
@@ -375,26 +376,44 @@ public class UserServiceImpl implements UserService {
         log.info("File bulk creating users: tenantId={}, fileName={}, autoLinkEmployees={}",
                 tenantId, file.getOriginalFilename(), request.autoLinkEmployees());
 
-        List<FileUserRow> userRows;
+        List<BulkCreateUsersResponse.CreatedUserInfo> createdUsers = new ArrayList<>();
+        List<BulkCreateUsersResponse.FailedUserInfo> failedUsers = new ArrayList<>();
+        List<BulkCreateUsersResponse.AutoLinkedUserInfo> autoLinkedUsers = new ArrayList<>();
+
+        // 파일 파싱 (헤더 기반 매핑 + 검증)
+        FileParseResult parseResult;
         try {
             String filename = file.getOriginalFilename();
             if (filename != null && filename.toLowerCase().endsWith(".csv")) {
-                userRows = userExcelParser.parseCsv(file);
+                parseResult = userExcelParser.parseCsvWithValidation(file);
             } else {
-                userRows = userExcelParser.parseExcel(file);
+                parseResult = userExcelParser.parseExcelWithValidation(file);
             }
         } catch (Exception e) {
             log.error("Failed to parse file: {}", e.getMessage(), e);
             throw new IllegalArgumentException("파일 파싱에 실패했습니다: " + e.getMessage());
         }
 
-        if (userRows.isEmpty()) {
-            throw new IllegalArgumentException("파일에서 유효한 사용자 데이터를 찾을 수 없습니다");
+        // 헤더 에러인 경우 즉시 반환
+        if (parseResult.hasHeaderError()) {
+            String errorMessage = parseResult.errors().isEmpty() ? "헤더 오류"
+                    : parseResult.errors().get(0).message();
+            throw new IllegalArgumentException(errorMessage);
         }
 
-        List<BulkCreateUsersResponse.CreatedUserInfo> createdUsers = new ArrayList<>();
-        List<BulkCreateUsersResponse.FailedUserInfo> failedUsers = new ArrayList<>();
-        List<BulkCreateUsersResponse.AutoLinkedUserInfo> autoLinkedUsers = new ArrayList<>();
+        // 파싱 에러를 failedUsers에 추가
+        for (FileParseResult.ParseError error : parseResult.errors()) {
+            failedUsers.add(new BulkCreateUsersResponse.FailedUserInfo(
+                    error.value().isEmpty() ? "(행 " + error.rowNumber() + ")" : error.value(),
+                    error.message(),
+                    error.rowNumber()
+            ));
+        }
+
+        List<FileUserRow> userRows = parseResult.users();
+        if (userRows.isEmpty() && failedUsers.isEmpty()) {
+            throw new IllegalArgumentException("파일에서 유효한 사용자 데이터를 찾을 수 없습니다");
+        }
 
         // 자동 연동을 위한 임직원 이메일 매핑 조회
         Map<String, Employee> employeeEmailMap = Map.of();
