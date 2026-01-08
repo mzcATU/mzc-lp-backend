@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.input.BOMInputStream;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.mozilla.universalchardet.UniversalDetector;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -14,6 +15,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -91,11 +93,15 @@ public class UserExcelParser {
         List<FileUserRow> users = new ArrayList<>();
         List<ParseError> errors = new ArrayList<>();
 
+        // 파일 인코딩 감지
+        Charset detectedCharset = detectCharset(file);
+        log.info("Detected charset: {}", detectedCharset.name());
+
         // BOMInputStream을 사용하여 UTF-8 BOM을 자동으로 제거
         try (InputStream is = file.getInputStream();
              BOMInputStream bomInputStream = new BOMInputStream(is);
              BufferedReader reader = new BufferedReader(
-                     new InputStreamReader(bomInputStream, StandardCharsets.UTF_8))) {
+                     new InputStreamReader(bomInputStream, detectedCharset))) {
 
             // 헤더 행 읽기
             String headerLine = reader.readLine();
@@ -446,5 +452,40 @@ public class UserExcelParser {
             case FORMULA -> cell.getCellFormula();
             default -> null;
         };
+    }
+
+    /**
+     * CSV 파일의 문자 인코딩을 자동으로 감지합니다.
+     * UTF-8, EUC-KR, CP949 등을 자동으로 감지합니다.
+     */
+    private Charset detectCharset(MultipartFile file) throws IOException {
+        byte[] buffer = new byte[4096];
+
+        try (InputStream is = file.getInputStream()) {
+            UniversalDetector detector = new UniversalDetector(null);
+
+            int bytesRead;
+            while ((bytesRead = is.read(buffer)) > 0 && !detector.isDone()) {
+                detector.handleData(buffer, 0, bytesRead);
+            }
+            detector.dataEnd();
+
+            String detectedEncoding = detector.getDetectedCharset();
+            detector.reset();
+
+            if (detectedEncoding != null) {
+                log.info("Auto-detected encoding: {}", detectedEncoding);
+                try {
+                    return Charset.forName(detectedEncoding);
+                } catch (Exception e) {
+                    log.warn("Unsupported charset: {}, falling back to UTF-8", detectedEncoding);
+                    return StandardCharsets.UTF_8;
+                }
+            }
+
+            // 감지 실패 시 기본값 UTF-8 사용
+            log.info("Could not detect encoding, using UTF-8 as default");
+            return StandardCharsets.UTF_8;
+        }
     }
 }

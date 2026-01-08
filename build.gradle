@@ -57,6 +57,9 @@ dependencies {
     // CSV BOM handling
     implementation 'commons-io:commons-io:2.15.1'
 
+    // Character encoding detection
+    implementation 'com.github.albfernandez:juniversalchardet:2.4.0'
+
     // OpenAPI / Swagger
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
 
