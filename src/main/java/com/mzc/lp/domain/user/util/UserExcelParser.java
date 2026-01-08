@@ -31,6 +31,8 @@ public class UserExcelParser {
     private static final Set<String> NAME_HEADERS = Set.of("name", "이름", "성명", "사용자명");
     private static final Set<String> PASSWORD_HEADERS = Set.of("password", "비밀번호", "패스워드", "pw");
     private static final Set<String> PHONE_HEADERS = Set.of("phone", "전화번호", "휴대폰", "연락처", "tel");
+    private static final Set<String> DEPARTMENT_HEADERS = Set.of("department", "부서", "소속", "팀");
+    private static final Set<String> POSITION_HEADERS = Set.of("position", "직급", "직위", "직책");
 
     /**
      * Excel 파일 파싱 (헤더 기반 매핑, 검증 포함)
@@ -222,6 +224,10 @@ public class UserExcelParser {
                 columnMap.put("password", colIndex);
             } else if (matchesAny(normalizedHeader, PHONE_HEADERS)) {
                 columnMap.put("phone", colIndex);
+            } else if (matchesAny(normalizedHeader, DEPARTMENT_HEADERS)) {
+                columnMap.put("department", colIndex);
+            } else if (matchesAny(normalizedHeader, POSITION_HEADERS)) {
+                columnMap.put("position", colIndex);
             }
         }
 
@@ -244,6 +250,10 @@ public class UserExcelParser {
                 columnMap.put("password", i);
             } else if (matchesAny(normalizedHeader, PHONE_HEADERS)) {
                 columnMap.put("phone", i);
+            } else if (matchesAny(normalizedHeader, DEPARTMENT_HEADERS)) {
+                columnMap.put("department", i);
+            } else if (matchesAny(normalizedHeader, POSITION_HEADERS)) {
+                columnMap.put("position", i);
             }
         }
 
@@ -261,6 +271,8 @@ public class UserExcelParser {
             String name = getColumnValue(row, columnMap, "name");
             String password = getColumnValue(row, columnMap, "password");
             String phone = getColumnValue(row, columnMap, "phone");
+            String department = getColumnValue(row, columnMap, "department");
+            String position = getColumnValue(row, columnMap, "position");
 
             // 빈 행 스킵
             if ((email == null || email.isBlank()) && (name == null || name.isBlank())) {
@@ -284,7 +296,9 @@ public class UserExcelParser {
                     email,
                     name != null ? name.trim() : null,
                     password != null ? password.trim() : null,
-                    phone != null ? phone.trim() : null
+                    phone != null ? phone.trim() : null,
+                    department != null ? department.trim() : null,
+                    position != null ? position.trim() : null
             );
         } catch (Exception e) {
             log.warn("Failed to parse row {}: {}", rowNum, e.getMessage());
@@ -301,6 +315,8 @@ public class UserExcelParser {
             String name = getColumnValue(parts, columnMap, "name");
             String password = getColumnValue(parts, columnMap, "password");
             String phone = getColumnValue(parts, columnMap, "phone");
+            String department = getColumnValue(parts, columnMap, "department");
+            String position = getColumnValue(parts, columnMap, "position");
 
             // 빈 행 스킵
             if ((email == null || email.isBlank()) && (name == null || name.isBlank())) {
@@ -324,7 +340,9 @@ public class UserExcelParser {
                     email,
                     name != null ? name.trim() : null,
                     password != null ? password.trim() : null,
-                    phone != null ? phone.trim() : null
+                    phone != null ? phone.trim() : null,
+                    department != null ? department.trim() : null,
+                    position != null ? position.trim() : null
             );
         } catch (Exception e) {
             log.warn("Failed to parse CSV line {}: {}", rowNum, e.getMessage());
