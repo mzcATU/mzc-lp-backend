@@ -51,6 +51,7 @@ public class ContentServiceImpl implements ContentService {
     private final ContentVersionRepository contentVersionRepository;
     private final FileStorageService fileStorageService;
     private final ThumbnailService thumbnailService;
+    private final MediaMetadataService mediaMetadataService;
     private final ContentVersionService contentVersionService;
     private final LearningObjectRepository learningObjectRepository;
     private final ContentFolderRepository contentFolderRepository;
@@ -109,6 +110,9 @@ public class ContentServiceImpl implements ContentService {
             // 썸네일 자동 생성
             generateAndSetThumbnail(content, filePath, contentType);
         }
+
+        // 미디어 메타데이터 추출 (duration, pageCount, resolution)
+        extractAndSetMediaMetadata(content, filePath, contentType);
 
         Content savedContent = contentRepository.save(content);
         log.info("Content created: id={}, type={}, file={}, displayName={}", savedContent.getId(), contentType, uploadedFileName, displayName);
@@ -410,6 +414,38 @@ public class ContentServiceImpl implements ContentService {
                     .ifPresent(content::updateThumbnailPath);
         } catch (Exception e) {
             log.warn("Failed to generate thumbnail for content: {}", filePath, e);
+        }
+    }
+
+    private void extractAndSetMediaMetadata(Content content, String filePath, ContentType contentType) {
+        try {
+            // /uploads/... 형태의 경로에서 실제 파일 경로로 변환
+            String relativePath = filePath.startsWith("/uploads/")
+                    ? filePath.substring("/uploads/".length())
+                    : filePath;
+
+            Path absolutePath = Paths.get(uploadDir).toAbsolutePath().normalize().resolve(relativePath);
+
+            MediaMetadataService.MediaMetadata metadata = mediaMetadataService.extractMetadata(absolutePath, contentType);
+
+            // 콘텐츠 타입에 따라 메타데이터 설정
+            switch (contentType) {
+                case VIDEO -> content.updateVideoMetadata(metadata.duration(), metadata.resolution());
+                case AUDIO -> content.updateAudioMetadata(metadata.duration());
+                case DOCUMENT -> {
+                    if (metadata.pageCount() != null) {
+                        content.updateDocumentMetadata(metadata.pageCount());
+                    }
+                }
+                default -> { /* 이미지 등은 메타데이터 없음 */ }
+            }
+
+            if (metadata.duration() != null || metadata.pageCount() != null) {
+                log.info("Media metadata extracted for content: duration={}, pageCount={}, resolution={}",
+                        metadata.duration(), metadata.pageCount(), metadata.resolution());
+            }
+        } catch (Exception e) {
+            log.warn("Failed to extract media metadata for content: {}", filePath, e);
         }
     }
 

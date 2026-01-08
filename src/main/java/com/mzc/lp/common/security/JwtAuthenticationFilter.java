@@ -64,10 +64,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // 주의: /api/courses/my는 인증이 필요하므로 제외
         if ("GET".equalsIgnoreCase(method)) {
             if (path.equals("/api/tenant/settings/branding") ||
+                path.equals("/api/tenant/settings/features/public") ||
+                path.equals("/api/tenant/settings/layout/public") ||
+                path.equals("/api/tenant/settings/navigation/public") ||
                 (path.startsWith("/api/courses") && !path.equals("/api/courses/my")) ||
                 path.startsWith("/api/community/posts") ||
                 path.equals("/api/community/categories") ||
-                path.startsWith("/api/public/course-times")) {
+                path.startsWith("/api/public/course-times") ||
+                path.startsWith("/api/banners/public")) {
                 return true;
             }
         }

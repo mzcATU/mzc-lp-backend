@@ -5,6 +5,7 @@ import com.mzc.lp.domain.tenant.dto.request.UpdateTenantRequest;
 import com.mzc.lp.domain.tenant.dto.request.UpdateTenantStatusRequest;
 import com.mzc.lp.domain.tenant.dto.response.CreateTenantResponse;
 import com.mzc.lp.domain.tenant.dto.response.TenantResponse;
+import com.mzc.lp.domain.tenant.dto.response.TenantUserStatsResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -44,4 +45,9 @@ public interface TenantService {
      * 테넌트 삭제
      */
     void deleteTenant(Long tenantId);
+
+    /**
+     * 테넌트별 사용자 수 통계
+     */
+    TenantUserStatsResponse getTenantUserStats();
 }

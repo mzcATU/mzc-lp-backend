@@ -8,6 +8,8 @@ import com.mzc.lp.domain.enrollment.dto.response.AutoEnrollmentRuleResponse;
 import com.mzc.lp.domain.enrollment.entity.AutoEnrollmentRule;
 import com.mzc.lp.domain.enrollment.exception.AutoEnrollmentRuleNotFoundException;
 import com.mzc.lp.domain.enrollment.repository.AutoEnrollmentRuleRepository;
+import com.mzc.lp.domain.department.repository.DepartmentRepository;
+import com.mzc.lp.domain.ts.repository.CourseTimeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -22,6 +24,8 @@ import java.util.List;
 public class AutoEnrollmentRuleServiceImpl implements AutoEnrollmentRuleService {
 
     private final AutoEnrollmentRuleRepository ruleRepository;
+    private final DepartmentRepository departmentRepository;
+    private final CourseTimeRepository courseTimeRepository;
 
     @Override
     @Transactional
@@ -54,7 +58,7 @@ public class AutoEnrollmentRuleServiceImpl implements AutoEnrollmentRuleService 
             }
 
             AutoEnrollmentRule saved = ruleRepository.save(rule);
-            return AutoEnrollmentRuleResponse.from(saved);
+            return toResponseWithRelations(saved, tenantId);
         } finally {
             TenantContext.clear();
         }
@@ -80,7 +84,7 @@ public class AutoEnrollmentRuleServiceImpl implements AutoEnrollmentRuleService 
             rule.setSortOrder(request.sortOrder());
         }
 
-        return AutoEnrollmentRuleResponse.from(rule);
+        return toResponseWithRelations(rule, tenantId);
     }
 
     @Override
@@ -99,14 +103,14 @@ public class AutoEnrollmentRuleServiceImpl implements AutoEnrollmentRuleService 
         AutoEnrollmentRule rule = ruleRepository.findByIdAndTenantId(ruleId, tenantId)
                 .orElseThrow(() -> new AutoEnrollmentRuleNotFoundException(ruleId));
 
-        return AutoEnrollmentRuleResponse.from(rule);
+        return toResponseWithRelations(rule, tenantId);
     }
 
     @Override
     public List<AutoEnrollmentRuleResponse> getAll(Long tenantId) {
         return ruleRepository.findByTenantIdOrderBySortOrderAsc(tenantId)
                 .stream()
-                .map(AutoEnrollmentRuleResponse::from)
+                .map(rule -> toResponseWithRelations(rule, tenantId))
                 .toList();
     }
 
@@ -114,7 +118,7 @@ public class AutoEnrollmentRuleServiceImpl implements AutoEnrollmentRuleService 
     public List<AutoEnrollmentRuleResponse> getActiveRules(Long tenantId) {
         return ruleRepository.findByTenantIdAndIsActiveTrueOrderBySortOrderAsc(tenantId)
                 .stream()
-                .map(AutoEnrollmentRuleResponse::from)
+                .map(rule -> toResponseWithRelations(rule, tenantId))
                 .toList();
     }
 
@@ -122,7 +126,7 @@ public class AutoEnrollmentRuleServiceImpl implements AutoEnrollmentRuleService 
     public List<AutoEnrollmentRuleResponse> getByTrigger(Long tenantId, AutoEnrollmentTrigger trigger) {
         return ruleRepository.findByTenantIdAndTriggerOrderBySortOrderAsc(tenantId, trigger)
                 .stream()
-                .map(AutoEnrollmentRuleResponse::from)
+                .map(rule -> toResponseWithRelations(rule, tenantId))
                 .toList();
     }
 
@@ -135,7 +139,7 @@ public class AutoEnrollmentRuleServiceImpl implements AutoEnrollmentRuleService 
                 .orElseThrow(() -> new AutoEnrollmentRuleNotFoundException(ruleId));
 
         rule.activate();
-        return AutoEnrollmentRuleResponse.from(rule);
+        return toResponseWithRelations(rule, tenantId);
     }
 
     @Override
@@ -147,6 +151,25 @@ public class AutoEnrollmentRuleServiceImpl implements AutoEnrollmentRuleService 
                 .orElseThrow(() -> new AutoEnrollmentRuleNotFoundException(ruleId));
 
         rule.deactivate();
-        return AutoEnrollmentRuleResponse.from(rule);
+        return toResponseWithRelations(rule, tenantId);
+    }
+
+    private AutoEnrollmentRuleResponse toResponseWithRelations(AutoEnrollmentRule rule, Long tenantId) {
+        String departmentName = null;
+        String courseTimeTitle = null;
+
+        if (rule.getDepartmentId() != null) {
+            departmentName = departmentRepository.findByIdAndTenantId(rule.getDepartmentId(), tenantId)
+                    .map(dept -> dept.getName())
+                    .orElse(null);
+        }
+
+        if (rule.getCourseTimeId() != null) {
+            courseTimeTitle = courseTimeRepository.findByIdAndTenantId(rule.getCourseTimeId(), tenantId)
+                    .map(ct -> ct.getTitle())
+                    .orElse(null);
+        }
+
+        return AutoEnrollmentRuleResponse.from(rule, departmentName, courseTimeTitle);
     }
 }

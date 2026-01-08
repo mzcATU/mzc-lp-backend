@@ -64,7 +64,7 @@ public class AutoEnrollmentRuleController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('TENANT_ADMIN')")
+    @PreAuthorize("hasAnyRole('OPERATOR', 'TENANT_ADMIN')")
     public ResponseEntity<ApiResponse<AutoEnrollmentRuleResponse>> create(
             @AuthenticationPrincipal UserPrincipal principal,
             @Valid @RequestBody CreateAutoEnrollmentRuleRequest request
@@ -74,7 +74,7 @@ public class AutoEnrollmentRuleController {
     }
 
     @PutMapping("/{ruleId}")
-    @PreAuthorize("hasRole('TENANT_ADMIN')")
+    @PreAuthorize("hasAnyRole('OPERATOR', 'TENANT_ADMIN')")
     public ResponseEntity<ApiResponse<AutoEnrollmentRuleResponse>> update(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long ruleId,
@@ -85,7 +85,7 @@ public class AutoEnrollmentRuleController {
     }
 
     @DeleteMapping("/{ruleId}")
-    @PreAuthorize("hasRole('TENANT_ADMIN')")
+    @PreAuthorize("hasAnyRole('OPERATOR', 'TENANT_ADMIN')")
     public ResponseEntity<Void> delete(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long ruleId
@@ -95,7 +95,7 @@ public class AutoEnrollmentRuleController {
     }
 
     @PostMapping("/{ruleId}/activate")
-    @PreAuthorize("hasRole('TENANT_ADMIN')")
+    @PreAuthorize("hasAnyRole('OPERATOR', 'TENANT_ADMIN')")
     public ResponseEntity<ApiResponse<AutoEnrollmentRuleResponse>> activate(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long ruleId
@@ -105,7 +105,7 @@ public class AutoEnrollmentRuleController {
     }
 
     @PostMapping("/{ruleId}/deactivate")
-    @PreAuthorize("hasRole('TENANT_ADMIN')")
+    @PreAuthorize("hasAnyRole('OPERATOR', 'TENANT_ADMIN')")
     public ResponseEntity<ApiResponse<AutoEnrollmentRuleResponse>> deactivate(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long ruleId
