@@ -26,10 +26,9 @@ public record UserDetailResponse(
 ) {
     /**
      * 프로필 완성 여부 판단
-     * - 이름이 이메일 로컬파트와 동일하면 미완성 (단체 계정 생성 시 이메일 prefix를 이름으로 사용)
      * - 이름이 null이거나 빈 문자열이면 미완성
-     * - USER 역할: 부서(department)와 직급(position)이 모두 있어야 완성
-     * - 관리자 역할(SA, TA, TO, DESIGNER): 부서/직급 선택사항
+     * - 이름이 이메일 로컬파트와 동일하면 단체 생성된 계정으로 간주
+     *   단, 부서와 직급이 모두 있으면 완성으로 간주 (파일 업로드 시 부서/직급 포함 케이스)
      */
     private static Boolean isProfileCompleted(User user) {
         String name = user.getName();
@@ -42,17 +41,15 @@ public record UserDetailResponse(
         // 이메일 로컬파트(@ 앞부분) 추출
         String emailLocalPart = email.contains("@") ? email.substring(0, email.indexOf("@")) : email;
 
-        // 이름이 이메일 로컬파트와 동일하면 단체 생성된 계정으로 간주
+        // 이름이 이메일 로컬파트와 동일하면 단체 생성된 계정
+        // 하지만 부서와 직급이 모두 있으면 완성으로 간주 (파일에 부서/직급 포함된 경우)
         if (name.equals(emailLocalPart)) {
-            return false;
+            return user.getDepartment() != null && !user.getDepartment().isBlank() &&
+                   user.getPosition() != null && !user.getPosition().isBlank();
         }
 
-        // USER 역할은 부서와 직급이 필수
-        if (user.getRole() != com.mzc.lp.domain.user.constant.TenantRole.USER) {
-            return true;
-        }
-        return user.getDepartment() != null && !user.getDepartment().isBlank() &&
-               user.getPosition() != null && !user.getPosition().isBlank();
+        // 이름이 다르면 프로필 완성
+        return true;
     }
 
     public static UserDetailResponse from(User user) {
