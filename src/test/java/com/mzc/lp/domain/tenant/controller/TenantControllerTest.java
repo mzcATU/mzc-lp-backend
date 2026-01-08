@@ -125,7 +125,7 @@ class TenantControllerTest extends TenantTestSupport {
                     .andExpect(jsonPath("$.success").value(true))
                     .andExpect(jsonPath("$.data.code").value("NEWCOMPANY"))
                     .andExpect(jsonPath("$.data.name").value("새회사"))
-                    .andExpect(jsonPath("$.data.status").value("PENDING"));
+                    .andExpect(jsonPath("$.data.status").value("ACTIVE"));
         }
 
         @Test

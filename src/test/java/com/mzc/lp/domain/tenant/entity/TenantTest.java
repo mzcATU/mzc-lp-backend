@@ -33,7 +33,7 @@ class TenantTest {
             assertThat(tenant.getType()).isEqualTo(type);
             assertThat(tenant.getSubdomain()).isEqualTo(subdomain);
             assertThat(tenant.getPlan()).isEqualTo(PlanType.FREE);
-            assertThat(tenant.getStatus()).isEqualTo(TenantStatus.PENDING);
+            assertThat(tenant.getStatus()).isEqualTo(TenantStatus.ACTIVE);
             assertThat(tenant.getCustomDomain()).isNull();
         }
 
@@ -66,7 +66,11 @@ class TenantTest {
         void it_activates_tenant() {
             // given
             Tenant tenant = Tenant.create("TEST", "테스트", TenantType.B2C, "test", null);
-            assertThat(tenant.getStatus()).isEqualTo(TenantStatus.PENDING);
+            assertThat(tenant.getStatus()).isEqualTo(TenantStatus.ACTIVE);
+
+            // 상태를 SUSPENDED로 변경 후 다시 activate 테스트
+            tenant.suspend();
+            assertThat(tenant.getStatus()).isEqualTo(TenantStatus.SUSPENDED);
 
             // when
             tenant.activate();
@@ -157,12 +161,12 @@ class TenantTest {
     class Describe_status_check {
 
         @Test
-        @DisplayName("isPending은 PENDING 상태일 때 true를 반환한다")
-        void it_returns_true_for_pending() {
+        @DisplayName("isActive는 ACTIVE 상태일 때 true를 반환한다")
+        void it_returns_true_for_active() {
             Tenant tenant = Tenant.create("TEST", "테스트", TenantType.B2C, "test", null);
 
-            assertThat(tenant.isPending()).isTrue();
-            assertThat(tenant.isActive()).isFalse();
+            assertThat(tenant.isActive()).isTrue();
+            assertThat(tenant.isPending()).isFalse();
             assertThat(tenant.isSuspended()).isFalse();
             assertThat(tenant.isTerminated()).isFalse();
         }
