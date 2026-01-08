@@ -462,6 +462,12 @@ public class UserServiceImpl implements UserService {
                     String encodedPassword = passwordEncoder.encode(password);
                     User user = User.create(row.email(), name, encodedPassword, row.phone());
 
+                    // 부서 및 직급 설정
+                    if ((row.department() != null && !row.department().isBlank()) ||
+                        (row.position() != null && !row.position().isBlank())) {
+                        user.updateProfile(name, row.phone(), null, row.department(), row.position());
+                    }
+
                     // 역할 설정
                     if (request.role() != null) {
                         user.updateRole(request.role());
