@@ -35,4 +35,11 @@ public interface NoticeService {
     void distributeToAllTenants(Long noticeId);
 
     List<Long> getDistributedTenantIds(Long noticeId);
+
+    // TA용: 테넌트에 배포된 공지 조회
+    Page<NoticeResponse> getNoticesForTenant(Long tenantId, Pageable pageable);
+
+    NoticeResponse getNoticeForTenant(Long noticeId, Long tenantId);
+
+    void markNoticeAsRead(Long noticeId, Long tenantId);
 }

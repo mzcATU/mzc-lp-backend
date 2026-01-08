@@ -186,7 +186,11 @@ public class TenantServiceImpl implements TenantService {
 
         Tenant tenant = findTenantById(tenantId);
 
-        // 관련 설정 먼저 삭제
+        // 관련 사용자 먼저 삭제
+        userRepository.deleteByTenantId(tenantId);
+        log.info("Tenant users deleted: tenantId={}", tenantId);
+
+        // 관련 설정 삭제
         tenantSettingsRepository.deleteByTenantId(tenantId);
         log.info("Tenant settings deleted: tenantId={}", tenantId);
 
