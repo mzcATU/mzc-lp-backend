@@ -67,4 +67,9 @@ public interface UserRepository extends JpaRepository<User, Long>, UserRepositor
             "WHERE u.tenantId = :tenantId " +
             "AND u.status = 'ACTIVE'")
     long countActiveByTenantId(@Param("tenantId") Long tenantId);
+
+    /**
+     * 테넌트별 사용자 삭제 (테넌트 삭제 시 cascade용)
+     */
+    void deleteByTenantId(Long tenantId);
 }

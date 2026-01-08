@@ -26,10 +26,13 @@ public interface NoticeDistributionRepository extends JpaRepository<NoticeDistri
     @Query("SELECT CASE WHEN COUNT(nd) > 0 THEN true ELSE false END FROM NoticeDistribution nd WHERE nd.notice.id = :noticeId AND nd.tenantId = :tenantId")
     boolean existsByNoticeIdAndTenantId(@Param("noticeId") Long noticeId, @Param("tenantId") Long tenantId);
 
-    @Query("SELECT nd FROM NoticeDistribution nd " +
-            "JOIN nd.notice n " +
+    @Query(value = "SELECT nd FROM NoticeDistribution nd " +
+            "JOIN FETCH nd.notice n " +
             "WHERE nd.tenantId = :tenantId AND n.status = 'PUBLISHED' " +
-            "ORDER BY n.isPinned DESC, n.publishedAt DESC")
+            "ORDER BY n.isPinned DESC, n.publishedAt DESC",
+            countQuery = "SELECT COUNT(nd) FROM NoticeDistribution nd " +
+            "JOIN nd.notice n " +
+            "WHERE nd.tenantId = :tenantId AND n.status = 'PUBLISHED'")
     Page<NoticeDistribution> findPublishedByTenantId(@Param("tenantId") Long tenantId, Pageable pageable);
 
     @Query("SELECT COUNT(nd) FROM NoticeDistribution nd WHERE nd.notice.id = :noticeId")

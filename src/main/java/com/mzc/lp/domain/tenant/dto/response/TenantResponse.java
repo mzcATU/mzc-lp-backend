@@ -16,6 +16,8 @@ public record TenantResponse(
         PlanType plan,
         String subdomain,
         String customDomain,
+        Long userCount,
+        Long courseCount,
         Instant createdAt,
         Instant updatedAt
 ) {
@@ -29,6 +31,25 @@ public record TenantResponse(
                 entity.getPlan(),
                 entity.getSubdomain(),
                 entity.getCustomDomain(),
+                null,
+                null,
+                entity.getCreatedAt(),
+                entity.getUpdatedAt()
+        );
+    }
+
+    public static TenantResponse from(Tenant entity, Long userCount, Long courseCount) {
+        return new TenantResponse(
+                entity.getId(),
+                entity.getCode(),
+                entity.getName(),
+                entity.getType(),
+                entity.getStatus(),
+                entity.getPlan(),
+                entity.getSubdomain(),
+                entity.getCustomDomain(),
+                userCount,
+                courseCount,
                 entity.getCreatedAt(),
                 entity.getUpdatedAt()
         );

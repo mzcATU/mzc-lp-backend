@@ -184,4 +184,27 @@ public class NoticeServiceImpl implements NoticeService {
                 .map(NoticeDistribution::getTenantId)
                 .toList();
     }
+
+    @Override
+    public Page<NoticeResponse> getNoticesForTenant(Long tenantId, Pageable pageable) {
+        return noticeDistributionRepository.findPublishedByTenantId(tenantId, pageable)
+                .map(distribution -> NoticeResponse.from(distribution.getNotice(), 0L));
+    }
+
+    @Override
+    public NoticeResponse getNoticeForTenant(Long noticeId, Long tenantId) {
+        NoticeDistribution distribution = noticeDistributionRepository
+                .findByNoticeIdAndTenantId(noticeId, tenantId)
+                .orElseThrow(() -> new NoticeNotFoundException(noticeId));
+        return NoticeResponse.from(distribution.getNotice(), 0L);
+    }
+
+    @Override
+    @Transactional
+    public void markNoticeAsRead(Long noticeId, Long tenantId) {
+        NoticeDistribution distribution = noticeDistributionRepository
+                .findByNoticeIdAndTenantId(noticeId, tenantId)
+                .orElseThrow(() -> new NoticeNotFoundException(noticeId));
+        distribution.markAsRead();
+    }
 }

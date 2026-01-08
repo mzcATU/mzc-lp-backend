@@ -51,7 +51,11 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/tenant/settings/branding").permitAll()  // 테넌트 브랜딩 공개 조회
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/courses", "/api/courses/**").permitAll()  // 강의 목록/상세 조회 공개
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/community/posts", "/api/community/posts/**", "/api/community/categories").permitAll()  // 커뮤니티 게시글/카테고리 조회 공개
-                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/public/course-times", "/api/public/course-times/**").permitAll();  // 학습자용 차수 목록/상세 조회 공개
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/public/course-times", "/api/public/course-times/**").permitAll()  // 학습자용 차수 목록/상세 조회 공개
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/banners/public/**").permitAll()  // 배너 공개 조회
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/tenant/settings/features/public").permitAll()  // 테넌트 기능 설정 공개 조회
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/tenant/settings/layout/public").permitAll()  // 테넌트 레이아웃 설정 공개 조회
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/tenant/settings/navigation/public").permitAll();  // 테넌트 내비게이션 설정 공개 조회
                     // H2 Console은 명시적으로 활성화된 경우에만 허용
                     if (h2ConsoleEnabled) {
                         auth.requestMatchers("/h2-console/**").permitAll();
