@@ -259,12 +259,11 @@ public class TenantSettingsServiceImpl implements TenantSettingsService {
                     .toList();
         }
 
-        // 기본 네비게이션 항목 생성
+        // 기본 네비게이션 항목 생성 (TU 홈페이지 기본 메뉴와 일치)
         List<NavigationItem> defaultItems = new ArrayList<>();
-        defaultItems.add(NavigationItem.createDefault(tenant, "홈", "Home", "/", 1));
-        defaultItems.add(NavigationItem.createDefault(tenant, "강좌", "BookOpen", "/courses", 2));
-        defaultItems.add(NavigationItem.createDefault(tenant, "내 학습", "Award", "/my-learning", 3));
-        defaultItems.add(NavigationItem.createDefault(tenant, "도움말", "HelpCircle", "/help", 4));
+        defaultItems.add(NavigationItem.createDefault(tenant, "강의 탐색", "BookOpen", "/tu/b2c/courses", 1));
+        defaultItems.add(NavigationItem.createDefault(tenant, "로드맵", "Map", "/tu/b2c/roadmaps", 2));
+        defaultItems.add(NavigationItem.createDefault(tenant, "커뮤니티", "Users", "/tu/b2c/community", 3));
 
         try {
             List<NavigationItem> saved = navigationItemRepository.saveAll(defaultItems);
@@ -279,6 +278,28 @@ public class TenantSettingsServiceImpl implements TenantSettingsService {
                     .map(NavigationItemResponse::from)
                     .toList();
         }
+    }
+
+    @Override
+    @Transactional
+    public List<NavigationItemResponse> resetNavigationItems(Long tenantId) {
+        Tenant tenant = tenantRepository.findById(tenantId)
+                .orElseThrow(() -> new TenantDomainNotFoundException("Tenant not found: " + tenantId));
+
+        // 기존 네비게이션 항목 모두 삭제
+        navigationItemRepository.deleteAllByTenantId(tenantId);
+        navigationItemRepository.flush();
+
+        // 기본 네비게이션 항목 생성 (TU 홈페이지 기본 메뉴와 일치)
+        List<NavigationItem> defaultItems = new ArrayList<>();
+        defaultItems.add(NavigationItem.createDefault(tenant, "강의 탐색", "BookOpen", "/tu/b2c/courses", 1));
+        defaultItems.add(NavigationItem.createDefault(tenant, "로드맵", "Map", "/tu/b2c/roadmaps", 2));
+        defaultItems.add(NavigationItem.createDefault(tenant, "커뮤니티", "Users", "/tu/b2c/community", 3));
+
+        List<NavigationItem> saved = navigationItemRepository.saveAll(defaultItems);
+        return saved.stream()
+                .map(NavigationItemResponse::from)
+                .toList();
     }
 
     @Override
