@@ -11,6 +11,9 @@ public record SnapshotLearningObjectResponse(
         String thumbnailUrl,
         String resolution,
         String externalUrl,
+        String description,
+        Boolean downloadable,
+        Integer pageCount,
         Boolean isCustomized
 ) {
     public static SnapshotLearningObjectResponse from(SnapshotLearningObject slo) {
@@ -26,6 +29,9 @@ public record SnapshotLearningObjectResponse(
                 slo.getThumbnailUrl(),
                 slo.getResolution(),
                 slo.getExternalUrl(),
+                slo.getDescription(),
+                slo.getDownloadable(),
+                slo.getPageCount(),
                 slo.getIsCustomized()
         );
     }
