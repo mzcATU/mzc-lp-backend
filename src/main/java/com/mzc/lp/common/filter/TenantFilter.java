@@ -2,6 +2,9 @@ package com.mzc.lp.common.filter;
 
 import com.mzc.lp.common.context.TenantContext;
 import com.mzc.lp.common.security.JwtProvider;
+import com.mzc.lp.domain.tenant.constant.TenantStatus;
+import com.mzc.lp.domain.tenant.entity.Tenant;
+import com.mzc.lp.domain.tenant.repository.TenantRepository;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -15,10 +18,11 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.util.Optional;
 
 /**
  * Tenant Context 설정 Filter
- * 요청의 JWT 토큰에서 tenantId를 추출하여 TenantContext에 설정
+ * 요청의 JWT 토큰 또는 X-Subdomain 헤더에서 tenantId를 추출하여 TenantContext에 설정
  */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 10) // SecurityFilter 다음에 실행
@@ -27,14 +31,18 @@ public class TenantFilter implements Filter {
 
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
+    private static final String SUBDOMAIN_HEADER = "X-Subdomain";
 
     private final JwtProvider jwtProvider;
+    private final TenantRepository tenantRepository;
     private final Long defaultTenantId;
 
     public TenantFilter(
             JwtProvider jwtProvider,
+            TenantRepository tenantRepository,
             @Value("${tenant.default-id:1}") Long defaultTenantId) {
         this.jwtProvider = jwtProvider;
+        this.tenantRepository = tenantRepository;
         this.defaultTenantId = defaultTenantId;
     }
 
@@ -54,7 +62,12 @@ public class TenantFilter implements Filter {
                 // 1. JWT에서 tenantId 추출
                 Long tenantId = extractTenantIdFromRequest(httpRequest);
 
-                // 2. TenantContext에 설정
+                // 2. JWT에 tenantId가 없으면 X-Subdomain 헤더에서 추출
+                if (tenantId == null) {
+                    tenantId = extractTenantIdFromSubdomainHeader(httpRequest);
+                }
+
+                // 3. TenantContext에 설정
                 if (tenantId != null) {
                     TenantContext.setTenantId(tenantId);
                     log.debug("TenantId set in context: {} for request: {} {}",
@@ -109,6 +122,38 @@ public class TenantFilter implements Filter {
 
         } catch (Exception e) {
             log.warn("Failed to extract tenantId from JWT token: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * X-Subdomain 헤더에서 tenantId 추출
+     * Public API에서 서브도메인 기반 테넌트 식별에 사용
+     *
+     * @param request HTTP 요청
+     * @return 테넌트 ID (헤더 없거나 테넌트를 찾을 수 없으면 null)
+     */
+    private Long extractTenantIdFromSubdomainHeader(HttpServletRequest request) {
+        String subdomain = request.getHeader(SUBDOMAIN_HEADER);
+
+        if (subdomain == null || subdomain.isBlank()) {
+            return null;
+        }
+
+        try {
+            Optional<Tenant> tenantOpt = tenantRepository.findBySubdomainAndStatus(
+                    subdomain.trim(), TenantStatus.ACTIVE);
+
+            if (tenantOpt.isPresent()) {
+                Long tenantId = tenantOpt.get().getId();
+                log.debug("TenantId {} resolved from X-Subdomain header: {}", tenantId, subdomain);
+                return tenantId;
+            } else {
+                log.warn("Tenant not found for subdomain: {}", subdomain);
+                return null;
+            }
+        } catch (Exception e) {
+            log.warn("Failed to extract tenantId from X-Subdomain header: {}", e.getMessage());
             return null;
         }
     }
