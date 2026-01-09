@@ -16,6 +16,7 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -135,6 +136,93 @@ public interface CourseTimeRepository extends JpaRepository<CourseTime, Long>, J
             "WHERE ct.tenantId = :tenantId " +
             "AND ct.capacity > 0")
     Double getAverageCapacityUtilization(@Param("tenantId") Long tenantId);
+
+    // ===== 기간 필터 통계 쿼리 (TO 대시보드) =====
+
+    /**
+     * 테넌트별 상태별 차수 카운트 (기간 필터 - createdAt 기준)
+     */
+    @Query("SELECT ct.status AS status, COUNT(ct) AS count " +
+            "FROM CourseTime ct " +
+            "WHERE ct.tenantId = :tenantId " +
+            "AND ct.createdAt >= :startDate AND ct.createdAt < :endDate " +
+            "GROUP BY ct.status")
+    List<StatusCountProjection> countByTenantIdGroupByStatusWithPeriod(
+            @Param("tenantId") Long tenantId,
+            @Param("startDate") Instant startDate,
+            @Param("endDate") Instant endDate);
+
+    /**
+     * 테넌트별 운영 방식별 차수 카운트 (기간 필터 - createdAt 기준)
+     */
+    @Query("SELECT ct.deliveryType AS type, COUNT(ct) AS count " +
+            "FROM CourseTime ct " +
+            "WHERE ct.tenantId = :tenantId " +
+            "AND ct.createdAt >= :startDate AND ct.createdAt < :endDate " +
+            "GROUP BY ct.deliveryType")
+    List<TypeCountProjection> countByTenantIdGroupByDeliveryTypeWithPeriod(
+            @Param("tenantId") Long tenantId,
+            @Param("startDate") Instant startDate,
+            @Param("endDate") Instant endDate);
+
+    /**
+     * 테넌트별 무료/유료 차수 카운트 (기간 필터 - createdAt 기준)
+     */
+    @Query("SELECT ct.free AS value, COUNT(ct) AS count " +
+            "FROM CourseTime ct " +
+            "WHERE ct.tenantId = :tenantId " +
+            "AND ct.createdAt >= :startDate AND ct.createdAt < :endDate " +
+            "GROUP BY ct.free")
+    List<BooleanCountProjection> countByTenantIdGroupByFreeWithPeriod(
+            @Param("tenantId") Long tenantId,
+            @Param("startDate") Instant startDate,
+            @Param("endDate") Instant endDate);
+
+    /**
+     * 테넌트별 전체 차수 카운트 (기간 필터 - createdAt 기준)
+     */
+    @Query("SELECT COUNT(ct) FROM CourseTime ct " +
+            "WHERE ct.tenantId = :tenantId " +
+            "AND ct.createdAt >= :startDate AND ct.createdAt < :endDate")
+    long countByTenantIdWithPeriod(
+            @Param("tenantId") Long tenantId,
+            @Param("startDate") Instant startDate,
+            @Param("endDate") Instant endDate);
+
+    /**
+     * 테넌트별 평균 정원 활용률 (기간 필터 - createdAt 기준)
+     */
+    @Query("SELECT AVG(ct.currentEnrollment * 100.0 / ct.capacity) " +
+            "FROM CourseTime ct " +
+            "WHERE ct.tenantId = :tenantId " +
+            "AND ct.capacity > 0 " +
+            "AND ct.createdAt >= :startDate AND ct.createdAt < :endDate")
+    Double getAverageCapacityUtilizationWithPeriod(
+            @Param("tenantId") Long tenantId,
+            @Param("startDate") Instant startDate,
+            @Param("endDate") Instant endDate);
+
+    /**
+     * 강사 미배정 차수 카운트 (기간 필터 - createdAt 기준)
+     */
+    @Query("SELECT COUNT(ct) FROM CourseTime ct " +
+            "WHERE ct.tenantId = :tenantId " +
+            "AND ct.status IN :statuses " +
+            "AND ct.createdAt >= :startDate AND ct.createdAt < :endDate " +
+            "AND NOT EXISTS (" +
+            "    SELECT 1 FROM InstructorAssignment ia " +
+            "    WHERE ia.timeKey = ct.id " +
+            "    AND ia.tenantId = :tenantId " +
+            "    AND ia.role = :role " +
+            "    AND ia.status = :assignmentStatus" +
+            ")")
+    long countCourseTimesNeedingInstructorWithPeriod(
+            @Param("tenantId") Long tenantId,
+            @Param("statuses") List<CourseTimeStatus> statuses,
+            @Param("role") InstructorRole role,
+            @Param("assignmentStatus") AssignmentStatus assignmentStatus,
+            @Param("startDate") Instant startDate,
+            @Param("endDate") Instant endDate);
 
     /**
      * 과정(cmCourseId)별 상태별 차수 카운트

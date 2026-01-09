@@ -151,13 +151,16 @@ public class TenantSettingsServiceImpl implements TenantSettingsService {
     @Override
     @Transactional
     public List<NavigationItemResponse> getNavigationItems(Long tenantId) {
-        // 네비게이션 항목이 없으면 기본 항목 초기화
-        if (!navigationItemRepository.existsByTenantId(tenantId)) {
-            return initializeDefaultNavigationItems(tenantId);
+        // 먼저 네비게이션 항목 조회 시도
+        List<NavigationItem> items = navigationItemRepository.findByTenantIdOrderByDisplayOrderAsc(tenantId);
+
+        // 항목이 없으면 기본 항목 초기화 후 다시 조회
+        if (items.isEmpty()) {
+            initializeDefaultNavigationItems(tenantId);
+            items = navigationItemRepository.findByTenantIdOrderByDisplayOrderAsc(tenantId);
         }
 
-        return navigationItemRepository.findByTenantIdOrderByDisplayOrderAsc(tenantId)
-                .stream()
+        return items.stream()
                 .map(NavigationItemResponse::from)
                 .toList();
     }
@@ -393,18 +396,22 @@ public class TenantSettingsServiceImpl implements TenantSettingsService {
     @Override
     @Transactional
     public List<NavigationItemResponse> getEnabledNavigationItems(Long tenantId) {
-        // 네비게이션 항목이 없으면 기본 항목 초기화
-        if (!navigationItemRepository.existsByTenantId(tenantId)) {
+        // 먼저 활성화된 네비게이션 항목 조회 시도
+        List<NavigationItem> items = navigationItemRepository.findByTenantIdAndEnabledTrueOrderByDisplayOrderAsc(tenantId);
+
+        // 항목이 없으면 기본 항목 초기화 후 다시 조회
+        if (items.isEmpty()) {
             try {
                 initializeDefaultNavigationItems(tenantId);
+                items = navigationItemRepository.findByTenantIdAndEnabledTrueOrderByDisplayOrderAsc(tenantId);
             } catch (Exception e) {
                 // 데드락 또는 동시성 예외 발생 시 로그 남기고 기존 데이터 조회 시도
                 log.warn("Failed to initialize navigation items for tenant {}: {}", tenantId, e.getMessage());
+                items = navigationItemRepository.findByTenantIdAndEnabledTrueOrderByDisplayOrderAsc(tenantId);
             }
         }
 
-        return navigationItemRepository.findByTenantIdAndEnabledTrueOrderByDisplayOrderAsc(tenantId)
-                .stream()
+        return items.stream()
                 .map(NavigationItemResponse::from)
                 .toList();
     }

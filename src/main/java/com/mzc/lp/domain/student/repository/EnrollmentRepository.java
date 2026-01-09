@@ -1,6 +1,7 @@
 package com.mzc.lp.domain.student.repository;
 
 import com.mzc.lp.common.dto.stats.DailyCountProjection;
+import com.mzc.lp.common.dto.stats.DailyEnrollmentStatsProjection;
 import com.mzc.lp.common.dto.stats.MonthlyCountProjection;
 import com.mzc.lp.common.dto.stats.MonthlyEnrollmentStatsProjection;
 import com.mzc.lp.common.dto.stats.StatusCountProjection;
@@ -169,6 +170,72 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
             "FROM Enrollment e " +
             "WHERE e.tenantId = :tenantId")
     Double getCompletionRateByTenantId(@Param("tenantId") Long tenantId);
+
+    // ===== 기간 필터 통계 쿼리 (TO/TA 대시보드) =====
+
+    /**
+     * 테넌트별 상태별 수강 카운트 (기간 필터 - enrolledAt 기준)
+     */
+    @Query("SELECT e.status AS status, COUNT(e) AS count " +
+            "FROM Enrollment e " +
+            "WHERE e.tenantId = :tenantId " +
+            "AND e.enrolledAt >= :startDate AND e.enrolledAt < :endDate " +
+            "GROUP BY e.status")
+    List<StatusCountProjection> countByTenantIdGroupByStatusWithPeriod(
+            @Param("tenantId") Long tenantId,
+            @Param("startDate") Instant startDate,
+            @Param("endDate") Instant endDate);
+
+    /**
+     * 테넌트별 수강 유형별 카운트 (기간 필터 - enrolledAt 기준)
+     */
+    @Query("SELECT e.type AS type, COUNT(e) AS count " +
+            "FROM Enrollment e " +
+            "WHERE e.tenantId = :tenantId " +
+            "AND e.enrolledAt >= :startDate AND e.enrolledAt < :endDate " +
+            "GROUP BY e.type")
+    List<TypeCountProjection> countByTenantIdGroupByTypeWithPeriod(
+            @Param("tenantId") Long tenantId,
+            @Param("startDate") Instant startDate,
+            @Param("endDate") Instant endDate);
+
+    /**
+     * 테넌트별 전체 수강 카운트 (기간 필터 - enrolledAt 기준)
+     */
+    @Query("SELECT COUNT(e) FROM Enrollment e " +
+            "WHERE e.tenantId = :tenantId " +
+            "AND e.enrolledAt >= :startDate AND e.enrolledAt < :endDate")
+    long countByTenantIdWithPeriod(
+            @Param("tenantId") Long tenantId,
+            @Param("startDate") Instant startDate,
+            @Param("endDate") Instant endDate);
+
+    /**
+     * 테넌트별 수료율 (기간 필터 - enrolledAt 기준)
+     */
+    @Query("SELECT COUNT(CASE WHEN e.status = 'COMPLETED' THEN 1 END) * 100.0 / NULLIF(COUNT(e), 0) " +
+            "FROM Enrollment e " +
+            "WHERE e.tenantId = :tenantId " +
+            "AND e.enrolledAt >= :startDate AND e.enrolledAt < :endDate")
+    Double getCompletionRateByTenantIdWithPeriod(
+            @Param("tenantId") Long tenantId,
+            @Param("startDate") Instant startDate,
+            @Param("endDate") Instant endDate);
+
+    /**
+     * 테넌트별 일별 수강신청/수료 통계 (기간 내) - TA 대시보드 dailyTrend용
+     */
+    @Query("SELECT CAST(e.enrolledAt AS DATE) AS date, COUNT(e) AS enrollments, " +
+            "SUM(CASE WHEN e.status = 'COMPLETED' THEN 1 ELSE 0 END) AS completions " +
+            "FROM Enrollment e " +
+            "WHERE e.tenantId = :tenantId " +
+            "AND e.enrolledAt >= :startDate AND e.enrolledAt < :endDate " +
+            "GROUP BY CAST(e.enrolledAt AS DATE) " +
+            "ORDER BY CAST(e.enrolledAt AS DATE)")
+    List<DailyEnrollmentStatsProjection> countDailyEnrollmentStats(
+            @Param("tenantId") Long tenantId,
+            @Param("startDate") Instant startDate,
+            @Param("endDate") Instant endDate);
 
     /**
      * 차수별 수강 유형별 카운트

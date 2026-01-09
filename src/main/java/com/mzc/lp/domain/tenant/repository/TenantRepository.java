@@ -10,6 +10,8 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 public interface TenantRepository extends JpaRepository<Tenant, Long> {
@@ -39,4 +41,14 @@ public interface TenantRepository extends JpaRepository<Tenant, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT t FROM Tenant t WHERE t.id = :tenantId")
     Optional<Tenant> findByIdWithLock(@Param("tenantId") Long tenantId);
+
+    // ===== 기간 필터 통계 쿼리 (SA 대시보드) =====
+
+    /**
+     * 기간 내 생성된 테넌트 조회 (createdAt 기준)
+     */
+    @Query("SELECT t FROM Tenant t WHERE t.createdAt >= :startDate AND t.createdAt < :endDate")
+    List<Tenant> findAllWithPeriod(
+            @Param("startDate") Instant startDate,
+            @Param("endDate") Instant endDate);
 }

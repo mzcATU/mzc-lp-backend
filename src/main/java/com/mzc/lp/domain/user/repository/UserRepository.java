@@ -69,8 +69,44 @@ public interface UserRepository extends JpaRepository<User, Long>, UserRepositor
             "AND u.status = 'ACTIVE'")
     long countActiveByTenantId(@Param("tenantId") Long tenantId);
 
+    // ===== 기간 필터 통계 쿼리 (TA 대시보드) =====
+
+    /**
+     * 테넌트별 상태별 사용자 카운트 (기간 필터 - createdAt 기준)
+     */
+    @Query("SELECT u.status AS status, COUNT(u) AS count " +
+            "FROM User u " +
+            "WHERE u.tenantId = :tenantId " +
+            "AND u.createdAt >= :startDate AND u.createdAt < :endDate " +
+            "GROUP BY u.status")
+    List<StatusCountProjection> countByTenantIdGroupByStatusWithPeriod(
+            @Param("tenantId") Long tenantId,
+            @Param("startDate") Instant startDate,
+            @Param("endDate") Instant endDate);
+
+    /**
+     * 테넌트별 전체 사용자 카운트 (기간 필터 - createdAt 기준)
+     */
+    @Query("SELECT COUNT(u) FROM User u " +
+            "WHERE u.tenantId = :tenantId " +
+            "AND u.createdAt >= :startDate AND u.createdAt < :endDate")
+    long countByTenantIdWithPeriod(
+            @Param("tenantId") Long tenantId,
+            @Param("startDate") Instant startDate,
+            @Param("endDate") Instant endDate);
+
     /**
      * 테넌트별 사용자 삭제 (테넌트 삭제 시 cascade용)
      */
     void deleteByTenantId(Long tenantId);
+
+    // ===== 기간 필터 통계 쿼리 (SA 대시보드) - 전체 사용자 =====
+
+    /**
+     * 기간 내 생성된 전체 사용자 조회 (테넌트 무관, createdAt 기준)
+     */
+    @Query("SELECT u FROM User u WHERE u.createdAt >= :startDate AND u.createdAt < :endDate")
+    List<User> findAllWithPeriod(
+            @Param("startDate") Instant startDate,
+            @Param("endDate") Instant endDate);
 }

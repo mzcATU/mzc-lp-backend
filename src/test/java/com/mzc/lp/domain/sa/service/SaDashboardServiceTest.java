@@ -64,7 +64,7 @@ class SaDashboardServiceTest extends TenantTestSupport {
         userRepository.save(user2);
 
         // when
-        SaDashboardResponse response = saDashboardService.getDashboard();
+        SaDashboardResponse response = saDashboardService.getDashboard(null);
 
         // then
         assertThat(response).isNotNull();
@@ -80,7 +80,7 @@ class SaDashboardServiceTest extends TenantTestSupport {
     @DisplayName("데이터가 없을 때 대시보드 통계를 조회한다")
     void getDashboard_empty() {
         // when
-        SaDashboardResponse response = saDashboardService.getDashboard();
+        SaDashboardResponse response = saDashboardService.getDashboard(null);
 
         // then
         assertThat(response).isNotNull();

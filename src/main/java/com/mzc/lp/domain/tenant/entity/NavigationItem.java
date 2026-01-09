@@ -11,7 +11,9 @@ import lombok.NoArgsConstructor;
  * 테넌트별 사이드바/네비게이션 메뉴 항목을 관리
  */
 @Entity
-@Table(name = "navigation_items")
+@Table(name = "navigation_items", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_navigation_tenant_path", columnNames = {"tenant_id", "path"})
+})
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class NavigationItem extends BaseTimeEntity {

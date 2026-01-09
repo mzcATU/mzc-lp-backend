@@ -110,7 +110,7 @@ class OperatorDashboardServiceTest extends TenantTestSupport {
                     ));
 
             // when
-            OperatorTasksResponse response = operatorDashboardService.getOperatorTasks();
+            OperatorTasksResponse response = operatorDashboardService.getOperatorTasks(null);
 
             // then
             assertThat(response).isNotNull();
@@ -179,7 +179,7 @@ class OperatorDashboardServiceTest extends TenantTestSupport {
                     .willReturn(Collections.emptyList());
 
             // when
-            OperatorTasksResponse response = operatorDashboardService.getOperatorTasks();
+            OperatorTasksResponse response = operatorDashboardService.getOperatorTasks(null);
 
             // then
             assertThat(response).isNotNull();
@@ -248,7 +248,7 @@ class OperatorDashboardServiceTest extends TenantTestSupport {
                     ));
 
             // when
-            OperatorTasksResponse response = operatorDashboardService.getOperatorTasks();
+            OperatorTasksResponse response = operatorDashboardService.getOperatorTasks(null);
 
             // then
             assertThat(response).isNotNull();

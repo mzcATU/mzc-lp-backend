@@ -1,8 +1,9 @@
 package com.mzc.lp.domain.dashboard.service;
 
 import com.mzc.lp.common.context.TenantContext;
-import com.mzc.lp.common.dto.stats.MonthlyEnrollmentStatsProjection;
+import com.mzc.lp.common.dto.stats.DailyEnrollmentStatsProjection;
 import com.mzc.lp.common.dto.stats.StatusCountProjection;
+import com.mzc.lp.domain.dashboard.constant.DashboardPeriod;
 import com.mzc.lp.domain.dashboard.dto.response.AdminKpiResponse;
 import com.mzc.lp.domain.program.repository.ProgramRepository;
 import com.mzc.lp.domain.student.repository.EnrollmentRepository;
@@ -28,64 +29,123 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
     private final ProgramRepository programRepository;
     private final EnrollmentRepository enrollmentRepository;
 
-    private static final int MONTHLY_TREND_MONTHS = 12;
+    private static final int DEFAULT_DAILY_TREND_DAYS = 30;
 
     @Override
-    public AdminKpiResponse getKpiStats() {
+    public AdminKpiResponse getKpiStats(DashboardPeriod period) {
         Long tenantId = TenantContext.getCurrentTenantId();
 
+        // 기간 필터 설정
+        Instant startDate = period != null ? period.getStartInstant() : null;
+        Instant endDate = period != null ? period.getEndInstant() : null;
+
         // 사용자 통계
-        List<StatusCountProjection> userStatusProjections =
-                userRepository.countByTenantIdGroupByStatus(tenantId);
-        long totalUsers = userRepository.countByTenantId(tenantId);
-        long newUsersThisMonth = getNewUsersThisMonth(tenantId);
+        List<StatusCountProjection> userStatusProjections = getUserStatusProjections(tenantId, startDate, endDate);
+        long totalUsers = getTotalUsers(tenantId, startDate, endDate);
+        long newUsersInPeriod = getNewUsersInPeriod(tenantId, period);
 
         // 프로그램 통계
-        List<StatusCountProjection> programStatusProjections =
-                programRepository.countByTenantIdGroupByStatus(tenantId);
-        long totalPrograms = programRepository.countByTenantId(tenantId);
+        List<StatusCountProjection> programStatusProjections = getProgramStatusProjections(tenantId, startDate, endDate);
+        long totalPrograms = getTotalPrograms(tenantId, startDate, endDate);
 
         // 수강 통계
-        long totalEnrollments = enrollmentRepository.countByTenantId(tenantId);
+        long totalEnrollments = getTotalEnrollments(tenantId, startDate, endDate);
         List<StatusCountProjection> enrollmentStatusProjections =
-                enrollmentRepository.countByTenantIdGroupByStatus(tenantId);
-        Double completionRate = enrollmentRepository.getCompletionRateByTenantId(tenantId);
+                getEnrollmentStatusProjections(tenantId, startDate, endDate);
+        Double completionRate = getCompletionRate(tenantId, startDate, endDate);
 
-        // 월별 추이 (최근 12개월)
-        List<MonthlyEnrollmentStatsProjection> monthlyStats = getMonthlyStats(tenantId);
+        // 일별 추이
+        List<DailyEnrollmentStatsProjection> dailyStats = getDailyStats(tenantId, period);
 
-        log.debug("관리자 KPI 대시보드 조회 - 테넌트 ID: {}, 전체 사용자: {}, 이번 달 신규: {}, 전체 프로그램: {}, 전체 수강: {}",
-                tenantId, totalUsers, newUsersThisMonth, totalPrograms, totalEnrollments);
+        log.debug("관리자 KPI 대시보드 조회 - 테넌트 ID: {}, 기간: {}, 전체 사용자: {}, 기간 내 신규: {}, 전체 프로그램: {}, 전체 수강: {}",
+                tenantId, period != null ? period.getCode() : "전체",
+                totalUsers, newUsersInPeriod, totalPrograms, totalEnrollments);
 
         return AdminKpiResponse.of(
                 userStatusProjections,
                 totalUsers,
-                newUsersThisMonth,
+                newUsersInPeriod,
                 programStatusProjections,
                 totalPrograms,
                 totalEnrollments,
                 enrollmentStatusProjections,
                 completionRate,
-                monthlyStats
+                dailyStats
         );
     }
 
-    private long getNewUsersThisMonth(Long tenantId) {
-        LocalDate firstDayOfMonth = LocalDate.now().withDayOfMonth(1);
-        Instant since = firstDayOfMonth.atStartOfDay(ZoneId.systemDefault()).toInstant();
+    private List<StatusCountProjection> getUserStatusProjections(Long tenantId, Instant startDate, Instant endDate) {
+        if (startDate != null && endDate != null) {
+            return userRepository.countByTenantIdGroupByStatusWithPeriod(tenantId, startDate, endDate);
+        }
+        return userRepository.countByTenantIdGroupByStatus(tenantId);
+    }
+
+    private long getTotalUsers(Long tenantId, Instant startDate, Instant endDate) {
+        if (startDate != null && endDate != null) {
+            return userRepository.countByTenantIdWithPeriod(tenantId, startDate, endDate);
+        }
+        return userRepository.countByTenantId(tenantId);
+    }
+
+    private long getNewUsersInPeriod(Long tenantId, DashboardPeriod period) {
+        Instant since;
+        if (period != null) {
+            since = period.getStartInstant();
+        } else {
+            // 기간 미지정 시 이번 달 신규 사용자
+            LocalDate firstDayOfMonth = LocalDate.now().withDayOfMonth(1);
+            since = firstDayOfMonth.atStartOfDay(ZoneId.systemDefault()).toInstant();
+        }
         return userRepository.countNewUsersSince(tenantId, since);
     }
 
-    private List<MonthlyEnrollmentStatsProjection> getMonthlyStats(Long tenantId) {
-        LocalDate endDate = LocalDate.now().plusMonths(1).withDayOfMonth(1);
-        LocalDate startDate = endDate.minusMonths(MONTHLY_TREND_MONTHS);
+    private List<StatusCountProjection> getProgramStatusProjections(Long tenantId, Instant startDate, Instant endDate) {
+        if (startDate != null && endDate != null) {
+            return programRepository.countByTenantIdGroupByStatusWithPeriod(tenantId, startDate, endDate);
+        }
+        return programRepository.countByTenantIdGroupByStatus(tenantId);
+    }
+
+    private long getTotalPrograms(Long tenantId, Instant startDate, Instant endDate) {
+        if (startDate != null && endDate != null) {
+            return programRepository.countByTenantIdWithPeriod(tenantId, startDate, endDate);
+        }
+        return programRepository.countByTenantId(tenantId);
+    }
+
+    private long getTotalEnrollments(Long tenantId, Instant startDate, Instant endDate) {
+        if (startDate != null && endDate != null) {
+            return enrollmentRepository.countByTenantIdWithPeriod(tenantId, startDate, endDate);
+        }
+        return enrollmentRepository.countByTenantId(tenantId);
+    }
+
+    private List<StatusCountProjection> getEnrollmentStatusProjections(Long tenantId, Instant startDate, Instant endDate) {
+        if (startDate != null && endDate != null) {
+            return enrollmentRepository.countByTenantIdGroupByStatusWithPeriod(tenantId, startDate, endDate);
+        }
+        return enrollmentRepository.countByTenantIdGroupByStatus(tenantId);
+    }
+
+    private Double getCompletionRate(Long tenantId, Instant startDate, Instant endDate) {
+        if (startDate != null && endDate != null) {
+            return enrollmentRepository.getCompletionRateByTenantIdWithPeriod(tenantId, startDate, endDate);
+        }
+        return enrollmentRepository.getCompletionRateByTenantId(tenantId);
+    }
+
+    private List<DailyEnrollmentStatsProjection> getDailyStats(Long tenantId, DashboardPeriod period) {
+        int days = period != null ? period.getDays() : DEFAULT_DAILY_TREND_DAYS;
+        LocalDate endDate = LocalDate.now();
+        LocalDate startDate = endDate.minusDays(days - 1);
 
         Instant startInstant = startDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
-        Instant endInstant = endDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
+        Instant endInstant = endDate.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
 
-        List<MonthlyEnrollmentStatsProjection> monthlyStats =
-                enrollmentRepository.countMonthlyEnrollmentStats(tenantId, startInstant, endInstant);
+        List<DailyEnrollmentStatsProjection> dailyStats =
+                enrollmentRepository.countDailyEnrollmentStats(tenantId, startInstant, endInstant);
 
-        return monthlyStats != null ? monthlyStats : Collections.emptyList();
+        return dailyStats != null ? dailyStats : Collections.emptyList();
     }
 }

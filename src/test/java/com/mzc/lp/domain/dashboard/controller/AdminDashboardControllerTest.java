@@ -197,8 +197,8 @@ class AdminDashboardControllerTest extends TenantTestSupport {
                     .andExpect(jsonPath("$.data.enrollmentStats.totalEnrollments").value(2))
                     .andExpect(jsonPath("$.data.enrollmentStats.byStatus.enrolled").value(1))
                     .andExpect(jsonPath("$.data.enrollmentStats.byStatus.completed").value(1))
-                    // MonthlyTrend
-                    .andExpect(jsonPath("$.data.monthlyTrend").isArray());
+                    // DailyTrend
+                    .andExpect(jsonPath("$.data.dailyTrend").isArray());
         }
 
         @Test

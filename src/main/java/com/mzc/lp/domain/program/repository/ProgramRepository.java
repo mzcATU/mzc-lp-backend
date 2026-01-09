@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,6 +33,16 @@ public interface ProgramRepository extends JpaRepository<Program, Long> {
 
     @Query("SELECT COUNT(p) FROM Program p WHERE p.tenantId = :tenantId AND p.status = 'PENDING'")
     long countPendingPrograms(@Param("tenantId") Long tenantId);
+
+    /**
+     * 테넌트별 승인 대기 프로그램 카운트 (기간 필터 - submittedAt 기준)
+     */
+    @Query("SELECT COUNT(p) FROM Program p WHERE p.tenantId = :tenantId AND p.status = 'PENDING' " +
+            "AND p.submittedAt >= :startDate AND p.submittedAt < :endDate")
+    long countPendingProgramsWithPeriod(
+            @Param("tenantId") Long tenantId,
+            @Param("startDate") Instant startDate,
+            @Param("endDate") Instant endDate);
 
     @Query("SELECT p FROM Program p LEFT JOIN FETCH p.snapshot s LEFT JOIN FETCH s.sourceCourse WHERE p.id = :id AND p.tenantId = :tenantId")
     Optional<Program> findByIdWithSnapshot(@Param("id") Long id, @Param("tenantId") Long tenantId);
@@ -61,6 +72,30 @@ public interface ProgramRepository extends JpaRepository<Program, Long> {
      * 테넌트별 전체 프로그램 카운트
      */
     long countByTenantId(Long tenantId);
+
+    /**
+     * 테넌트별 상태별 프로그램 카운트 (기간 필터 - createdAt 기준)
+     */
+    @Query("SELECT p.status AS status, COUNT(p) AS count " +
+            "FROM Program p " +
+            "WHERE p.tenantId = :tenantId " +
+            "AND p.createdAt >= :startDate AND p.createdAt < :endDate " +
+            "GROUP BY p.status")
+    List<StatusCountProjection> countByTenantIdGroupByStatusWithPeriod(
+            @Param("tenantId") Long tenantId,
+            @Param("startDate") Instant startDate,
+            @Param("endDate") Instant endDate);
+
+    /**
+     * 테넌트별 전체 프로그램 카운트 (기간 필터 - createdAt 기준)
+     */
+    @Query("SELECT COUNT(p) FROM Program p " +
+            "WHERE p.tenantId = :tenantId " +
+            "AND p.createdAt >= :startDate AND p.createdAt < :endDate")
+    long countByTenantIdWithPeriod(
+            @Param("tenantId") Long tenantId,
+            @Param("startDate") Instant startDate,
+            @Param("endDate") Instant endDate);
 
     // ===== OWNER 통계 쿼리 =====
 

@@ -1,6 +1,6 @@
 package com.mzc.lp.domain.dashboard.dto.response;
 
-import com.mzc.lp.common.dto.stats.MonthlyEnrollmentStatsProjection;
+import com.mzc.lp.common.dto.stats.DailyEnrollmentStatsProjection;
 import com.mzc.lp.common.dto.stats.StatusCountProjection;
 import com.mzc.lp.domain.program.constant.ProgramStatus;
 import com.mzc.lp.domain.student.constant.EnrollmentStatus;
@@ -8,6 +8,7 @@ import com.mzc.lp.domain.user.constant.UserStatus;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -19,7 +20,7 @@ public record AdminKpiResponse(
         UserStats userStats,
         ProgramStats programStats,
         EnrollmentStats enrollmentStats,
-        List<MonthlyTrend> monthlyTrend
+        List<DailyTrend> dailyTrend
 ) {
     /**
      * 사용자 통계
@@ -30,12 +31,12 @@ public record AdminKpiResponse(
             Long suspended,
             Long withdrawn,
             Long total,
-            Long newThisMonth
+            Long newInPeriod
     ) {
         public static UserStats of(
                 List<StatusCountProjection> statusProjections,
                 Long total,
-                Long newThisMonth
+                Long newInPeriod
         ) {
             Map<String, Long> statusMap = statusProjections.stream()
                     .collect(Collectors.toMap(
@@ -49,7 +50,7 @@ public record AdminKpiResponse(
                     statusMap.getOrDefault(UserStatus.SUSPENDED.name(), 0L),
                     statusMap.getOrDefault(UserStatus.WITHDRAWN.name(), 0L),
                     total != null ? total : 0L,
-                    newThisMonth != null ? newThisMonth : 0L
+                    newInPeriod != null ? newInPeriod : 0L
             );
         }
     }
@@ -137,25 +138,24 @@ public record AdminKpiResponse(
     }
 
     /**
-     * 월별 추이
+     * 일별 추이
      */
-    public record MonthlyTrend(
-            String month,
+    public record DailyTrend(
+            LocalDate date,
             Long enrollments,
             Long completions
     ) {
-        public static MonthlyTrend from(MonthlyEnrollmentStatsProjection projection) {
-            String monthStr = String.format("%d-%02d", projection.getYear(), projection.getMonth());
-            return new MonthlyTrend(
-                    monthStr,
+        public static DailyTrend from(DailyEnrollmentStatsProjection projection) {
+            return new DailyTrend(
+                    projection.getDate(),
                     projection.getEnrollments() != null ? projection.getEnrollments() : 0L,
                     projection.getCompletions() != null ? projection.getCompletions() : 0L
             );
         }
 
-        public static List<MonthlyTrend> fromList(List<MonthlyEnrollmentStatsProjection> projections) {
+        public static List<DailyTrend> fromList(List<DailyEnrollmentStatsProjection> projections) {
             return projections.stream()
-                    .map(MonthlyTrend::from)
+                    .map(DailyTrend::from)
                     .toList();
         }
     }
@@ -163,19 +163,19 @@ public record AdminKpiResponse(
     public static AdminKpiResponse of(
             List<StatusCountProjection> userStatusProjections,
             Long totalUsers,
-            Long newUsersThisMonth,
+            Long newUsersInPeriod,
             List<StatusCountProjection> programStatusProjections,
             Long totalPrograms,
             Long totalEnrollments,
             List<StatusCountProjection> enrollmentStatusProjections,
             Double completionRate,
-            List<MonthlyEnrollmentStatsProjection> monthlyStats
+            List<DailyEnrollmentStatsProjection> dailyStats
     ) {
         return new AdminKpiResponse(
-                UserStats.of(userStatusProjections, totalUsers, newUsersThisMonth),
+                UserStats.of(userStatusProjections, totalUsers, newUsersInPeriod),
                 ProgramStats.of(programStatusProjections, totalPrograms),
                 EnrollmentStats.of(totalEnrollments, enrollmentStatusProjections, completionRate),
-                MonthlyTrend.fromList(monthlyStats)
+                DailyTrend.fromList(dailyStats)
         );
     }
 }

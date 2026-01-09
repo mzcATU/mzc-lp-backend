@@ -1,6 +1,6 @@
 package com.mzc.lp.domain.dashboard.service;
 
-import com.mzc.lp.common.dto.stats.MonthlyEnrollmentStatsProjection;
+import com.mzc.lp.common.dto.stats.DailyEnrollmentStatsProjection;
 import com.mzc.lp.common.dto.stats.StatusCountProjection;
 import com.mzc.lp.common.support.TenantTestSupport;
 import com.mzc.lp.domain.dashboard.dto.response.AdminKpiResponse;
@@ -17,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 
@@ -88,15 +89,15 @@ class AdminDashboardServiceTest extends TenantTestSupport {
             given(enrollmentRepository.getCompletionRateByTenantId(TENANT_ID))
                     .willReturn(50.0);
 
-            // 월별 추이 Mock
-            given(enrollmentRepository.countMonthlyEnrollmentStats(eq(TENANT_ID), any(Instant.class), any(Instant.class)))
+            // 일별 추이 Mock
+            given(enrollmentRepository.countDailyEnrollmentStats(eq(TENANT_ID), any(Instant.class), any(Instant.class)))
                     .willReturn(List.of(
-                            createMonthlyEnrollmentStatsProjection(2024, 12, 45L, 30L),
-                            createMonthlyEnrollmentStatsProjection(2024, 11, 40L, 35L)
+                            createDailyEnrollmentStatsProjection(LocalDate.now().minusDays(1), 45L, 30L),
+                            createDailyEnrollmentStatsProjection(LocalDate.now(), 40L, 35L)
                     ));
 
             // when
-            AdminKpiResponse response = adminDashboardService.getKpiStats();
+            AdminKpiResponse response = adminDashboardService.getKpiStats(null);
 
             // then
             assertThat(response).isNotNull();
@@ -107,7 +108,7 @@ class AdminDashboardServiceTest extends TenantTestSupport {
             assertThat(response.userStats().suspended()).isEqualTo(5L);
             assertThat(response.userStats().withdrawn()).isEqualTo(10L);
             assertThat(response.userStats().total()).isEqualTo(135L);
-            assertThat(response.userStats().newThisMonth()).isEqualTo(15L);
+            assertThat(response.userStats().newInPeriod()).isEqualTo(15L);
 
             // ProgramStats 검증
             assertThat(response.programStats().draft()).isEqualTo(3L);
@@ -125,11 +126,10 @@ class AdminDashboardServiceTest extends TenantTestSupport {
             assertThat(response.enrollmentStats().byStatus().failed()).isEqualTo(20L);
             assertThat(response.enrollmentStats().completionRate()).isEqualTo(new BigDecimal("50.0"));
 
-            // MonthlyTrend 검증
-            assertThat(response.monthlyTrend()).hasSize(2);
-            assertThat(response.monthlyTrend().get(0).month()).isEqualTo("2024-12");
-            assertThat(response.monthlyTrend().get(0).enrollments()).isEqualTo(45L);
-            assertThat(response.monthlyTrend().get(0).completions()).isEqualTo(30L);
+            // DailyTrend 검증
+            assertThat(response.dailyTrend()).hasSize(2);
+            assertThat(response.dailyTrend().get(0).enrollments()).isEqualTo(45L);
+            assertThat(response.dailyTrend().get(0).completions()).isEqualTo(30L);
         }
 
         @Test
@@ -152,11 +152,11 @@ class AdminDashboardServiceTest extends TenantTestSupport {
                     .willReturn(Collections.emptyList());
             given(enrollmentRepository.getCompletionRateByTenantId(TENANT_ID))
                     .willReturn(null);
-            given(enrollmentRepository.countMonthlyEnrollmentStats(eq(TENANT_ID), any(Instant.class), any(Instant.class)))
+            given(enrollmentRepository.countDailyEnrollmentStats(eq(TENANT_ID), any(Instant.class), any(Instant.class)))
                     .willReturn(Collections.emptyList());
 
             // when
-            AdminKpiResponse response = adminDashboardService.getKpiStats();
+            AdminKpiResponse response = adminDashboardService.getKpiStats(null);
 
             // then
             assertThat(response).isNotNull();
@@ -167,7 +167,7 @@ class AdminDashboardServiceTest extends TenantTestSupport {
             assertThat(response.userStats().suspended()).isEqualTo(0L);
             assertThat(response.userStats().withdrawn()).isEqualTo(0L);
             assertThat(response.userStats().total()).isEqualTo(0L);
-            assertThat(response.userStats().newThisMonth()).isEqualTo(0L);
+            assertThat(response.userStats().newInPeriod()).isEqualTo(0L);
 
             // ProgramStats 검증 - 모두 0
             assertThat(response.programStats().draft()).isEqualTo(0L);
@@ -183,8 +183,8 @@ class AdminDashboardServiceTest extends TenantTestSupport {
             assertThat(response.enrollmentStats().byStatus().completed()).isEqualTo(0L);
             assertThat(response.enrollmentStats().completionRate()).isEqualTo(BigDecimal.ZERO);
 
-            // MonthlyTrend 검증 - 빈 리스트
-            assertThat(response.monthlyTrend()).isEmpty();
+            // DailyTrend 검증 - 빈 리스트
+            assertThat(response.dailyTrend()).isEmpty();
         }
 
         @Test
@@ -214,13 +214,13 @@ class AdminDashboardServiceTest extends TenantTestSupport {
                     ));
             given(enrollmentRepository.getCompletionRateByTenantId(TENANT_ID))
                     .willReturn(20.0);
-            given(enrollmentRepository.countMonthlyEnrollmentStats(eq(TENANT_ID), any(Instant.class), any(Instant.class)))
+            given(enrollmentRepository.countDailyEnrollmentStats(eq(TENANT_ID), any(Instant.class), any(Instant.class)))
                     .willReturn(List.of(
-                            createMonthlyEnrollmentStatsProjection(2024, 12, 100L, 20L)
+                            createDailyEnrollmentStatsProjection(LocalDate.now(), 100L, 20L)
                     ));
 
             // when
-            AdminKpiResponse response = adminDashboardService.getKpiStats();
+            AdminKpiResponse response = adminDashboardService.getKpiStats(null);
 
             // then
             assertThat(response).isNotNull();
@@ -258,17 +258,12 @@ class AdminDashboardServiceTest extends TenantTestSupport {
         };
     }
 
-    private MonthlyEnrollmentStatsProjection createMonthlyEnrollmentStatsProjection(
-            Integer year, Integer month, Long enrollments, Long completions) {
-        return new MonthlyEnrollmentStatsProjection() {
+    private DailyEnrollmentStatsProjection createDailyEnrollmentStatsProjection(
+            LocalDate date, Long enrollments, Long completions) {
+        return new DailyEnrollmentStatsProjection() {
             @Override
-            public Integer getYear() {
-                return year;
-            }
-
-            @Override
-            public Integer getMonth() {
-                return month;
+            public LocalDate getDate() {
+                return date;
             }
 
             @Override

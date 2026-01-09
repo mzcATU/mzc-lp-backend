@@ -2071,3 +2071,180 @@ INSERT INTO cm_course_reviews (tenant_id, course_time_id, user_id, rating, conte
 (3, (SELECT id FROM course_times WHERE title = '프로덕트 매니지먼트 1차' AND tenant_id = 3), (SELECT id FROM users WHERE email = 'user18@company-b.com'), 4, 'PRD 작성법을 배울 수 있어서 좋았습니다.', 80, NOW() - INTERVAL 8 DAY, NOW(), 0),
 (3, (SELECT id FROM course_times WHERE title = '프로덕트 매니지먼트 1차' AND tenant_id = 3), (SELECT id FROM users WHERE email = 'user19@company-b.com'), 5, 'A/B 테스트 설계 방법이 실용적이었어요.', 90, NOW() - INTERVAL 7 DAY, NOW(), 0),
 (3, (SELECT id FROM course_times WHERE title = '프로덕트 매니지먼트 1차' AND tenant_id = 3), (SELECT id FROM users WHERE email = 'user20@company-b.com'), 4, '데이터 기반 의사결정의 중요성을 배웠습니다.', 85, NOW() - INTERVAL 6 DAY, NOW(), 0);
+
+-- =============================================
+-- 37. 콘텐츠(Content) 상세 데이터 (테넌트 1, 2, 3)
+-- =============================================
+
+-- ============================================
+-- 테넌트 1: VIDEO 콘텐츠
+-- ============================================
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, resolution, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 1001, 1, 0, 'ACTIVE', 1, 1, 'React 소개 영상', 'react-intro.mp4', 'react-intro-uuid.mp4', 'VIDEO', 52428800, 1200, '1920x1080', '/content/videos/react-intro-uuid.mp4', '/content/thumbnails/react-intro.jpg', 'React의 기본 개념과 특징을 소개합니다.', 'React,JavaScript,Frontend', true, '개발', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 1001);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, resolution, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 1002, 1, 0, 'ACTIVE', 1, 1, '개발환경 구성 가이드', 'dev-env-setup.mp4', 'dev-env-setup-uuid.mp4', 'VIDEO', 94371840, 1800, '1920x1080', '/content/videos/dev-env-setup-uuid.mp4', '/content/thumbnails/dev-env-setup.jpg', 'Node.js, npm, create-react-app 설치 및 설정 가이드', 'Node.js,npm,환경설정', true, '개발', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 1002);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, resolution, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 1003, 1, 0, 'ACTIVE', 1, 1, '함수형 컴포넌트 강의', 'func-component.mp4', 'func-component-uuid.mp4', 'VIDEO', 125829120, 2400, '1920x1080', '/content/videos/func-component-uuid.mp4', '/content/thumbnails/func-component.jpg', 'React 함수형 컴포넌트 작성법 상세 강의', 'React,Component,함수형', true, '개발', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 1003);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, resolution, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 1004, 1, 0, 'ACTIVE', 1, 1, 'Props와 State 이해하기', 'props-state.mp4', 'props-state-uuid.mp4', 'VIDEO', 110100480, 2100, '1920x1080', '/content/videos/props-state-uuid.mp4', '/content/thumbnails/props-state.jpg', 'Props와 State의 차이와 활용법', 'React,Props,State', true, '개발', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 1004);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, resolution, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 1005, 1, 0, 'ACTIVE', 1, 1, 'Spring Security 설정', 'spring-security.mp4', 'spring-security-uuid.mp4', 'VIDEO', 141557760, 2700, '1920x1080', '/content/videos/spring-security-uuid.mp4', '/content/thumbnails/spring-security.jpg', 'SecurityConfig 작성 및 기본 설정 강의', 'Spring,Security,Backend', true, '개발', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 1005);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, resolution, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 1006, 1, 0, 'ACTIVE', 1, 1, 'JWT 인증 구현하기', 'jwt-auth.mp4', 'jwt-auth-uuid.mp4', 'VIDEO', 157286400, 3000, '1920x1080', '/content/videos/jwt-auth-uuid.mp4', '/content/thumbnails/jwt-auth.jpg', 'JWT를 활용한 Stateless 인증 구현', 'JWT,Spring,Security', true, '개발', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 1006);
+
+-- AWS 강의 콘텐츠
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, resolution, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 1007, 1, 0, 'ACTIVE', 1, 1, 'AWS EC2 시작하기', 'aws-ec2.mp4', 'aws-ec2-uuid.mp4', 'VIDEO', 136314880, 2600, '1920x1080', '/content/videos/aws-ec2-uuid.mp4', '/content/thumbnails/aws-ec2.jpg', 'EC2 인스턴스 생성 및 설정', 'AWS,EC2,Cloud', true, '클라우드', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 1007);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, resolution, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 1008, 1, 0, 'ACTIVE', 1, 1, 'S3 버킷 활용법', 's3-bucket.mp4', 's3-bucket-uuid.mp4', 'VIDEO', 115343360, 2200, '1920x1080', '/content/videos/s3-bucket-uuid.mp4', '/content/thumbnails/s3-bucket.jpg', 'S3 버킷 생성 및 파일 업로드', 'AWS,S3,Storage', true, '클라우드', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 1008);
+
+-- Python 데이터 분석 콘텐츠
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, resolution, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 1009, 1, 0, 'ACTIVE', 1, 1, 'Pandas 기초', 'pandas-basic.mp4', 'pandas-basic-uuid.mp4', 'VIDEO', 120586240, 2300, '1920x1080', '/content/videos/pandas-basic-uuid.mp4', '/content/thumbnails/pandas-basic.jpg', 'Pandas DataFrame 기초 강의', 'Python,Pandas,Data', true, '데이터', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 1009);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, resolution, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 1010, 1, 0, 'ACTIVE', 1, 1, 'Matplotlib 시각화', 'matplotlib.mp4', 'matplotlib-uuid.mp4', 'VIDEO', 131072000, 2500, '1920x1080', '/content/videos/matplotlib-uuid.mp4', '/content/thumbnails/matplotlib.jpg', '데이터 시각화 기초', 'Python,Matplotlib,시각화', true, '데이터', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 1010);
+
+-- ============================================
+-- 테넌트 1: DOCUMENT 콘텐츠
+-- ============================================
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, page_count, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 1011, 1, 0, 'ACTIVE', 1, 1, 'React 핵심 요약 PDF', 'react-summary.pdf', 'react-summary-uuid.pdf', 'DOCUMENT', 2097152, 25, '/content/documents/react-summary-uuid.pdf', '/content/thumbnails/react-summary.jpg', 'React 핵심 개념 요약 문서', 'React,Summary,PDF', true, '개발', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 1011);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, page_count, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 1012, 1, 0, 'ACTIVE', 1, 1, 'Spring Boot 가이드', 'spring-guide.pdf', 'spring-guide-uuid.pdf', 'DOCUMENT', 3145728, 42, '/content/documents/spring-guide-uuid.pdf', '/content/thumbnails/spring-guide.jpg', 'Spring Boot 실무 가이드북', 'Spring,Guide,PDF', true, '개발', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 1012);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, page_count, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 1013, 1, 0, 'ACTIVE', 1, 1, 'AWS 아키텍처 다이어그램', 'aws-architecture.pptx', 'aws-architecture-uuid.pptx', 'DOCUMENT', 5242880, 35, '/content/documents/aws-architecture-uuid.pptx', '/content/thumbnails/aws-architecture.jpg', 'AWS 서비스 아키텍처 설계 자료', 'AWS,Architecture,PPT', true, '클라우드', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 1013);
+
+-- ============================================
+-- 테넌트 1: EXTERNAL_LINK 콘텐츠
+-- ============================================
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, content_type, external_url, duration, description, tags, downloadable, category, created_at, updated_at)
+SELECT 1014, 1, 0, 'ACTIVE', 1, 1, 'React 공식 문서', 'EXTERNAL_LINK', 'https://react.dev', NULL, 'React 공식 문서 링크', 'React,Documentation', false, '개발', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 1014);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, content_type, external_url, duration, description, tags, downloadable, category, created_at, updated_at)
+SELECT 1015, 1, 0, 'ACTIVE', 1, 1, 'Spring 공식 문서', 'EXTERNAL_LINK', 'https://spring.io/projects/spring-boot', NULL, 'Spring Boot 공식 문서', 'Spring,Documentation', false, '개발', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 1015);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, content_type, external_url, duration, description, tags, downloadable, category, created_at, updated_at)
+SELECT 1016, 1, 0, 'ACTIVE', 1, 1, 'AWS 공식 문서', 'EXTERNAL_LINK', 'https://docs.aws.amazon.com', NULL, 'AWS 공식 문서', 'AWS,Documentation', false, '클라우드', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 1016);
+
+-- ============================================
+-- 테넌트 1: IMAGE 콘텐츠
+-- ============================================
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, resolution, file_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 1017, 1, 0, 'ACTIVE', 1, 1, 'React 아키텍처 다이어그램', 'react-diagram.png', 'react-diagram-uuid.png', 'IMAGE', 524288, '1920x1080', '/content/images/react-diagram-uuid.png', 'React 컴포넌트 구조 다이어그램', 'React,Diagram,Architecture', true, '개발', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 1017);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, resolution, file_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 1018, 1, 0, 'ACTIVE', 1, 1, 'AWS 서비스 인포그래픽', 'aws-infographic.jpg', 'aws-infographic-uuid.jpg', 'IMAGE', 1048576, '2560x1440', '/content/images/aws-infographic-uuid.jpg', 'AWS 주요 서비스 인포그래픽', 'AWS,Infographic,Cloud', true, '클라우드', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 1018);
+
+-- ============================================
+-- 테넌트 1: AUDIO 콘텐츠
+-- ============================================
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, file_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 1019, 1, 0, 'ACTIVE', 1, 1, '개발자 성장 팟캐스트 EP.1', 'podcast-ep1.mp3', 'podcast-ep1-uuid.mp3', 'AUDIO', 31457280, 1800, '/content/audio/podcast-ep1-uuid.mp3', '주니어 개발자 성장기 팟캐스트', 'Podcast,Developer,Career', true, '일반', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 1019);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, file_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 1020, 1, 0, 'ACTIVE', 1, 1, '클라우드 트렌드 팟캐스트', 'cloud-podcast.mp3', 'cloud-podcast-uuid.mp3', 'AUDIO', 26214400, 1500, '/content/audio/cloud-podcast-uuid.mp3', '2025년 클라우드 트렌드 분석', 'Podcast,Cloud,Trend', true, '클라우드', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 1020);
+
+-- ============================================
+-- 테넌트 2: VIDEO 콘텐츠 (A사 교육센터)
+-- ============================================
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, resolution, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 2001, 2, 0, 'ACTIVE', (SELECT id FROM users WHERE email = 'designer1@company-a.com'), 1, '영업 기초 이론', 'sales-basic.mp4', 'sales-basic-uuid.mp4', 'VIDEO', 52428800, 1200, '1920x1080', '/content/videos/sales-basic-uuid.mp4', '/content/thumbnails/sales-basic.jpg', '영업의 기본 개념과 프로세스를 소개합니다.', '영업,Sales,기초', true, '영업교육', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 2001);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, resolution, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 2002, 2, 0, 'ACTIVE', (SELECT id FROM users WHERE email = 'designer1@company-a.com'), 1, '고객 상담 기법', 'customer-consulting.mp4', 'customer-consulting-uuid.mp4', 'VIDEO', 94371840, 1800, '1920x1080', '/content/videos/customer-consulting-uuid.mp4', '/content/thumbnails/customer-consulting.jpg', '효과적인 고객 상담 및 니즈 파악 기법', '상담,고객,커뮤니케이션', true, '영업교육', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 2002);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, resolution, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 2003, 2, 0, 'ACTIVE', (SELECT id FROM users WHERE email = 'designer1@company-a.com'), 1, '리더십 기초', 'leadership-basic.mp4', 'leadership-basic-uuid.mp4', 'VIDEO', 125829120, 2400, '1920x1080', '/content/videos/leadership-basic-uuid.mp4', '/content/thumbnails/leadership-basic.jpg', '리더십의 핵심 원리와 실천 방법', '리더십,Leadership,관리', true, '리더십', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 2003);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, resolution, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 2004, 2, 0, 'ACTIVE', (SELECT id FROM users WHERE email = 'designer1@company-a.com'), 1, '팀 빌딩 워크샵', 'team-building.mp4', 'team-building-uuid.mp4', 'VIDEO', 110100480, 2100, '1920x1080', '/content/videos/team-building-uuid.mp4', '/content/thumbnails/team-building.jpg', '효과적인 팀 구성과 협업 방법', '팀빌딩,협업,조직문화', true, '리더십', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 2004);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, resolution, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 2005, 2, 0, 'ACTIVE', (SELECT id FROM users WHERE email = 'designer2@company-a.com'), 1, '정보보안 기초', 'security-basic.mp4', 'security-basic-uuid.mp4', 'VIDEO', 141557760, 2700, '1920x1080', '/content/videos/security-basic-uuid.mp4', '/content/thumbnails/security-basic.jpg', '기업 정보보안의 기본 개념과 실천', '보안,Security,컴플라이언스', true, '컴플라이언스', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 2005);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, resolution, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 2006, 2, 0, 'ACTIVE', (SELECT id FROM users WHERE email = 'designer2@company-a.com'), 1, '신입사원 온보딩', 'onboarding.mp4', 'onboarding-uuid.mp4', 'VIDEO', 157286400, 3000, '1920x1080', '/content/videos/onboarding-uuid.mp4', '/content/thumbnails/onboarding.jpg', '신입사원을 위한 회사 소개 및 업무 가이드', '온보딩,신입,OJT', true, '신입교육', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 2006);
+
+-- 테넌트 2: DOCUMENT 콘텐츠
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, page_count, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 2011, 2, 0, 'ACTIVE', (SELECT id FROM users WHERE email = 'designer1@company-a.com'), 1, '영업 매뉴얼', 'sales-manual.pdf', 'sales-manual-uuid.pdf', 'DOCUMENT', 2097152, 50, '/content/documents/sales-manual-uuid.pdf', '/content/thumbnails/sales-manual.jpg', '영업 프로세스 및 가이드라인', '영업,매뉴얼,가이드', true, '영업교육', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 2011);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, page_count, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 2012, 2, 0, 'ACTIVE', (SELECT id FROM users WHERE email = 'designer2@company-a.com'), 1, '보안 정책 문서', 'security-policy.pdf', 'security-policy-uuid.pdf', 'DOCUMENT', 1048576, 30, '/content/documents/security-policy-uuid.pdf', '/content/thumbnails/security-policy.jpg', '회사 정보보안 정책 및 규정', '보안,정책,규정', true, '컴플라이언스', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 2012);
+
+-- ============================================
+-- 테넌트 3: VIDEO 콘텐츠 (B사 아카데미)
+-- ============================================
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, resolution, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 3001, 3, 0, 'ACTIVE', (SELECT id FROM users WHERE email = 'designer1@company-b.com'), 1, '스타트업 101', 'startup-101.mp4', 'startup-101-uuid.mp4', 'VIDEO', 52428800, 1200, '1920x1080', '/content/videos/startup-101-uuid.mp4', '/content/thumbnails/startup-101.jpg', '스타트업 창업의 기본 개념과 프로세스', '스타트업,창업,기초', true, '스타트업기초', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 3001);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, resolution, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 3002, 3, 0, 'ACTIVE', (SELECT id FROM users WHERE email = 'designer1@company-b.com'), 1, '디지털 마케팅 기초', 'digital-marketing.mp4', 'digital-marketing-uuid.mp4', 'VIDEO', 94371840, 1800, '1920x1080', '/content/videos/digital-marketing-uuid.mp4', '/content/thumbnails/digital-marketing.jpg', 'SEO, SEM, SNS 마케팅 기초', '마케팅,디지털,SNS', true, '마케팅', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 3002);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, resolution, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 3003, 3, 0, 'ACTIVE', (SELECT id FROM users WHERE email = 'designer1@company-b.com'), 1, '프로덕트 매니지먼트', 'product-management.mp4', 'product-management-uuid.mp4', 'VIDEO', 125829120, 2400, '1920x1080', '/content/videos/product-management-uuid.mp4', '/content/thumbnails/product-management.jpg', 'PM의 역할과 프로덕트 개발 프로세스', 'PM,프로덕트,기획', true, '프로덕트', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 3003);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, resolution, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 3004, 3, 0, 'ACTIVE', (SELECT id FROM users WHERE email = 'designer1@company-b.com'), 1, '그로스해킹 전략', 'growth-hacking.mp4', 'growth-hacking-uuid.mp4', 'VIDEO', 110100480, 2100, '1920x1080', '/content/videos/growth-hacking-uuid.mp4', '/content/thumbnails/growth-hacking.jpg', '스타트업을 위한 그로스해킹 전략', '그로스,해킹,성장', true, '그로스해킹', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 3004);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, resolution, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 3005, 3, 0, 'ACTIVE', (SELECT id FROM users WHERE email = 'designer2@company-b.com'), 1, '투자유치 전략', 'funding-strategy.mp4', 'funding-strategy-uuid.mp4', 'VIDEO', 141557760, 2700, '1920x1080', '/content/videos/funding-strategy-uuid.mp4', '/content/thumbnails/funding-strategy.jpg', 'VC 투자유치를 위한 준비와 전략', '투자,VC,펀딩', true, '투자유치', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 3005);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, resolution, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 3006, 3, 0, 'ACTIVE', (SELECT id FROM users WHERE email = 'designer2@company-b.com'), 1, '피칭 마스터클래스', 'pitching-master.mp4', 'pitching-master-uuid.mp4', 'VIDEO', 157286400, 3000, '1920x1080', '/content/videos/pitching-master-uuid.mp4', '/content/thumbnails/pitching-master.jpg', '성공적인 피칭을 위한 스토리텔링', '피칭,발표,스토리텔링', true, '투자유치', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 3006);
+
+-- 테넌트 3: DOCUMENT 콘텐츠
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, page_count, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 3011, 3, 0, 'ACTIVE', (SELECT id FROM users WHERE email = 'designer1@company-b.com'), 1, '사업계획서 템플릿', 'business-plan-template.pdf', 'business-plan-template-uuid.pdf', 'DOCUMENT', 2097152, 25, '/content/documents/business-plan-template-uuid.pdf', '/content/thumbnails/business-plan.jpg', '스타트업 사업계획서 작성 템플릿', '사업계획서,템플릿,창업', true, '스타트업기초', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 3011);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, page_count, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 3012, 3, 0, 'ACTIVE', (SELECT id FROM users WHERE email = 'designer2@company-b.com'), 1, '투자유치 체크리스트', 'funding-checklist.pdf', 'funding-checklist-uuid.pdf', 'DOCUMENT', 1048576, 15, '/content/documents/funding-checklist-uuid.pdf', '/content/thumbnails/funding-checklist.jpg', '시리즈 A 투자유치 준비 체크리스트', '투자,체크리스트,준비', true, '투자유치', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 3012);
+
+-- @Version 필드 NULL 수정
+UPDATE content SET version = 0 WHERE version IS NULL;
+UPDATE content SET current_version = 1 WHERE current_version IS NULL;
