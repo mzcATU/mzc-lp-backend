@@ -4,5 +4,7 @@ public record FileUserRow(
         String email,
         String name,
         String password,
-        String phone
+        String phone,
+        String department,
+        String position
 ) {}

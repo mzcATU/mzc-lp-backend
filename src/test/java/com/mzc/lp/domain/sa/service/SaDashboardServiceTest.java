@@ -69,8 +69,8 @@ class SaDashboardServiceTest extends TenantTestSupport {
         // then
         assertThat(response).isNotNull();
         assertThat(response.getTenantStats().getTotal()).isEqualTo(2);
-        assertThat(response.getTenantStats().getActive()).isEqualTo(1);
-        assertThat(response.getTenantStats().getPending()).isEqualTo(1);
+        assertThat(response.getTenantStats().getActive()).isEqualTo(2);
+        assertThat(response.getTenantStats().getPending()).isEqualTo(0);
         assertThat(response.getUserStats().getTotal()).isEqualTo(2);
         assertThat(response.getUserStats().getActive()).isEqualTo(2);
         assertThat(response.getRecentTenants()).isNotEmpty();

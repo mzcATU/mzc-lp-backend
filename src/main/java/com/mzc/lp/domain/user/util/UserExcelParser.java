@@ -4,8 +4,10 @@ import com.mzc.lp.domain.user.dto.request.FileParseResult;
 import com.mzc.lp.domain.user.dto.request.FileParseResult.ParseError;
 import com.mzc.lp.domain.user.dto.request.FileUserRow;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.input.BOMInputStream;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.mozilla.universalchardet.UniversalDetector;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -13,6 +15,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -31,6 +34,8 @@ public class UserExcelParser {
     private static final Set<String> NAME_HEADERS = Set.of("name", "이름", "성명", "사용자명");
     private static final Set<String> PASSWORD_HEADERS = Set.of("password", "비밀번호", "패스워드", "pw");
     private static final Set<String> PHONE_HEADERS = Set.of("phone", "전화번호", "휴대폰", "연락처", "tel");
+    private static final Set<String> DEPARTMENT_HEADERS = Set.of("department", "부서", "소속", "팀");
+    private static final Set<String> POSITION_HEADERS = Set.of("position", "직급", "직위", "직책");
 
     /**
      * Excel 파일 파싱 (헤더 기반 매핑, 검증 포함)
@@ -88,14 +93,23 @@ public class UserExcelParser {
         List<FileUserRow> users = new ArrayList<>();
         List<ParseError> errors = new ArrayList<>();
 
-        try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
+        // 파일 인코딩 감지
+        Charset detectedCharset = detectCharset(file);
+        log.info("Detected charset: {}", detectedCharset.name());
+
+        // BOMInputStream을 사용하여 UTF-8 BOM을 자동으로 제거
+        try (InputStream is = file.getInputStream();
+             BOMInputStream bomInputStream = new BOMInputStream(is);
+             BufferedReader reader = new BufferedReader(
+                     new InputStreamReader(bomInputStream, detectedCharset))) {
 
             // 헤더 행 읽기
             String headerLine = reader.readLine();
             if (headerLine == null || headerLine.isBlank()) {
                 return FileParseResult.headerError("파일이 비어있습니다");
             }
+
+            log.info("CSV header line after BOM removal: [{}]", headerLine);
 
             Map<String, Integer> columnMap = parseCsvHeader(headerLine);
 
@@ -222,6 +236,10 @@ public class UserExcelParser {
                 columnMap.put("password", colIndex);
             } else if (matchesAny(normalizedHeader, PHONE_HEADERS)) {
                 columnMap.put("phone", colIndex);
+            } else if (matchesAny(normalizedHeader, DEPARTMENT_HEADERS)) {
+                columnMap.put("department", colIndex);
+            } else if (matchesAny(normalizedHeader, POSITION_HEADERS)) {
+                columnMap.put("position", colIndex);
             }
         }
 
@@ -233,8 +251,11 @@ public class UserExcelParser {
         Map<String, Integer> columnMap = new HashMap<>();
         String[] headers = headerLine.split(",", -1);
 
+        log.info("CSV headers count: {}", headers.length);
+
         for (int i = 0; i < headers.length; i++) {
             String normalizedHeader = headers[i].trim().toLowerCase();
+            log.info("Header[{}]: original='{}', normalized='{}'", i, headers[i], normalizedHeader);
 
             if (matchesAny(normalizedHeader, EMAIL_HEADERS)) {
                 columnMap.put("email", i);
@@ -244,6 +265,10 @@ public class UserExcelParser {
                 columnMap.put("password", i);
             } else if (matchesAny(normalizedHeader, PHONE_HEADERS)) {
                 columnMap.put("phone", i);
+            } else if (matchesAny(normalizedHeader, DEPARTMENT_HEADERS)) {
+                columnMap.put("department", i);
+            } else if (matchesAny(normalizedHeader, POSITION_HEADERS)) {
+                columnMap.put("position", i);
             }
         }
 
@@ -261,6 +286,8 @@ public class UserExcelParser {
             String name = getColumnValue(row, columnMap, "name");
             String password = getColumnValue(row, columnMap, "password");
             String phone = getColumnValue(row, columnMap, "phone");
+            String department = getColumnValue(row, columnMap, "department");
+            String position = getColumnValue(row, columnMap, "position");
 
             // 빈 행 스킵
             if ((email == null || email.isBlank()) && (name == null || name.isBlank())) {
@@ -284,7 +311,9 @@ public class UserExcelParser {
                     email,
                     name != null ? name.trim() : null,
                     password != null ? password.trim() : null,
-                    phone != null ? phone.trim() : null
+                    phone != null ? phone.trim() : null,
+                    department != null ? department.trim() : null,
+                    position != null ? position.trim() : null
             );
         } catch (Exception e) {
             log.warn("Failed to parse row {}: {}", rowNum, e.getMessage());
@@ -301,6 +330,8 @@ public class UserExcelParser {
             String name = getColumnValue(parts, columnMap, "name");
             String password = getColumnValue(parts, columnMap, "password");
             String phone = getColumnValue(parts, columnMap, "phone");
+            String department = getColumnValue(parts, columnMap, "department");
+            String position = getColumnValue(parts, columnMap, "position");
 
             // 빈 행 스킵
             if ((email == null || email.isBlank()) && (name == null || name.isBlank())) {
@@ -324,7 +355,9 @@ public class UserExcelParser {
                     email,
                     name != null ? name.trim() : null,
                     password != null ? password.trim() : null,
-                    phone != null ? phone.trim() : null
+                    phone != null ? phone.trim() : null,
+                    department != null ? department.trim() : null,
+                    position != null ? position.trim() : null
             );
         } catch (Exception e) {
             log.warn("Failed to parse CSV line {}: {}", rowNum, e.getMessage());
@@ -370,7 +403,9 @@ public class UserExcelParser {
                     email.trim().toLowerCase(),
                     name != null ? name.trim() : null,
                     password != null ? password.trim() : null,
-                    phone != null ? phone.trim() : null
+                    phone != null ? phone.trim() : null,
+                    null,  // department
+                    null   // position
             );
         } catch (Exception e) {
             log.warn("Failed to parse row {}: {}", row.getRowNum(), e.getMessage());
@@ -395,7 +430,9 @@ public class UserExcelParser {
                     email.toLowerCase(),
                     name,
                     password,
-                    phone
+                    phone,
+                    null,  // department
+                    null   // position
             );
         } catch (Exception e) {
             log.warn("Failed to parse CSV line: {}", e.getMessage());
@@ -415,5 +452,40 @@ public class UserExcelParser {
             case FORMULA -> cell.getCellFormula();
             default -> null;
         };
+    }
+
+    /**
+     * CSV 파일의 문자 인코딩을 자동으로 감지합니다.
+     * UTF-8, EUC-KR, CP949 등을 자동으로 감지합니다.
+     */
+    private Charset detectCharset(MultipartFile file) throws IOException {
+        byte[] buffer = new byte[4096];
+
+        try (InputStream is = file.getInputStream()) {
+            UniversalDetector detector = new UniversalDetector(null);
+
+            int bytesRead;
+            while ((bytesRead = is.read(buffer)) > 0 && !detector.isDone()) {
+                detector.handleData(buffer, 0, bytesRead);
+            }
+            detector.dataEnd();
+
+            String detectedEncoding = detector.getDetectedCharset();
+            detector.reset();
+
+            if (detectedEncoding != null) {
+                log.info("Auto-detected encoding: {}", detectedEncoding);
+                try {
+                    return Charset.forName(detectedEncoding);
+                } catch (Exception e) {
+                    log.warn("Unsupported charset: {}, falling back to UTF-8", detectedEncoding);
+                    return StandardCharsets.UTF_8;
+                }
+            }
+
+            // 감지 실패 시 기본값 UTF-8 사용
+            log.info("Could not detect encoding, using UTF-8 as default");
+            return StandardCharsets.UTF_8;
+        }
     }
 }
