@@ -48,7 +48,8 @@ public interface UserRepository extends JpaRepository<User, Long>, UserRepositor
     /**
      * 테넌트별 전체 사용자 카운트
      */
-    long countByTenantId(Long tenantId);
+    @Query(value = "SELECT COUNT(*) FROM users WHERE tenant_id = :tenantId", nativeQuery = true)
+    long countByTenantId(@Param("tenantId") Long tenantId);
 
     /**
      * 테넌트별 신규 사용자 카운트 (특정 시점 이후 가입)

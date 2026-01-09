@@ -13,6 +13,7 @@ import com.mzc.lp.domain.tenant.exception.DuplicateSubdomainException;
 import com.mzc.lp.domain.tenant.exception.DuplicateTenantCodeException;
 import com.mzc.lp.domain.tenant.exception.TenantDomainNotFoundException;
 import com.mzc.lp.domain.tenant.repository.TenantRepository;
+import com.mzc.lp.domain.tenant.repository.TenantSettingsRepository;
 import com.mzc.lp.domain.course.repository.CourseRepository;
 import com.mzc.lp.domain.user.constant.TenantRole;
 import com.mzc.lp.domain.user.entity.User;
@@ -34,6 +35,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class TenantServiceImpl implements TenantService {
 
     private final TenantRepository tenantRepository;
+    private final TenantSettingsRepository tenantSettingsRepository;
     private final UserRepository userRepository;
     private final CourseRepository courseRepository;
     private final PasswordEncoder passwordEncoder;
@@ -184,11 +186,12 @@ public class TenantServiceImpl implements TenantService {
 
         Tenant tenant = findTenantById(tenantId);
 
-        // 논리적 삭제 (Soft Delete) - TERMINATED 상태로 변경
-        tenant.terminate();
-        tenantRepository.save(tenant);
+        // 관련 설정 먼저 삭제
+        tenantSettingsRepository.deleteByTenantId(tenantId);
+        log.info("Tenant settings deleted: tenantId={}", tenantId);
 
-        log.info("Tenant marked as TERMINATED: tenantId={}", tenantId);
+        tenantRepository.delete(tenant);
+        log.info("Tenant deleted: tenantId={}", tenantId);
     }
 
     // === Private Helper Methods ===

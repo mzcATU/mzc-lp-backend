@@ -25,6 +25,7 @@ import com.mzc.lp.domain.user.service.UserService;
 import java.util.List;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -35,6 +36,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
@@ -205,16 +207,20 @@ public class UserController {
         return ResponseEntity.status(201).body(ApiResponse.success(response));
     }
 
-    @PostMapping("/bulk/file")
+    @PostMapping(value = "/bulk/file", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('TENANT_ADMIN')")
     public ResponseEntity<ApiResponse<BulkCreateUsersResponse>> fileBulkCreateUsers(
             @AuthenticationPrincipal UserPrincipal principal,
-            @RequestParam("file") MultipartFile file,
+            @RequestPart("file") MultipartFile file,
             @RequestParam(value = "defaultPassword", required = false) String defaultPassword,
             @RequestParam(value = "role", required = false) TenantRole role,
             @RequestParam(value = "autoLinkEmployees", required = false) Boolean autoLinkEmployees,
             @RequestParam(value = "sendWelcomeEmail", required = false) Boolean sendWelcomeEmail
     ) {
+        log.info("fileBulkCreateUsers called: fileName={}, fileSize={}, contentType={}, defaultPassword={}, role={}, autoLinkEmployees={}",
+                file.getOriginalFilename(), file.getSize(), file.getContentType(),
+                defaultPassword != null ? "***" : null, role, autoLinkEmployees);
+
         FileBulkCreateUsersRequest request = new FileBulkCreateUsersRequest(
                 defaultPassword, role, autoLinkEmployees, sendWelcomeEmail);
         BulkCreateUsersResponse response = userService.fileBulkCreateUsers(principal.tenantId(), file, request);

@@ -249,6 +249,12 @@ public class UserExcelParser {
 
     private Map<String, Integer> parseCsvHeader(String headerLine) {
         Map<String, Integer> columnMap = new HashMap<>();
+
+        // BOM(Byte Order Mark) 제거 - Excel에서 UTF-8 CSV로 저장 시 추가될 수 있음
+        if (headerLine.startsWith("\uFEFF")) {
+            headerLine = headerLine.substring(1);
+        }
+
         String[] headers = headerLine.split(",", -1);
 
         log.info("CSV headers count: {}", headers.length);
