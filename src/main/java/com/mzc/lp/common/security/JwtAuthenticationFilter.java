@@ -140,6 +140,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         new UsernamePasswordAuthenticationToken(principal, null, authorities);
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+
+                // TenantContext에 tenantId 설정 (서비스 레이어에서 사용)
+                if (tenantId != null) {
+                    com.mzc.lp.common.context.TenantContext.setTenantId(tenantId);
+                }
+
                 log.debug("Authenticated user: {}, tenantId: {}, courseRoles: {}", email, tenantId, courseRoles);
             } else {
                 // 유효하지 않은 토큰 (만료 제외) - 401 반환
