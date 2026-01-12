@@ -9,6 +9,6 @@ public record AssignCourseRoleRequest(
         @NotNull(message = "Role is required")
         CourseRole role,
 
-        Integer revenueSharePercent  // OWNER인 경우 수익 분배 비율
+        Integer revenueSharePercent  // DESIGNER인 경우 수익 분배 비율
 ) {
 }

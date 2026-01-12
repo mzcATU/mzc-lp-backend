@@ -196,7 +196,7 @@ public class ProgramController {
      * GET /api/programs/my
      */
     @GetMapping("/my")
-    @PreAuthorize("hasAnyRole('DESIGNER', 'OWNER')")
+    @PreAuthorize("hasRole('DESIGNER')")
     public ResponseEntity<ApiResponse<Page<ProgramResponse>>> getMyPrograms(
             @RequestParam(required = false) String search,
             @PageableDefault(size = 20) Pageable pageable,

@@ -261,7 +261,7 @@ public interface CourseTimeRepository extends JpaRepository<CourseTime, Long>, J
             @Param("role") InstructorRole role,
             @Param("assignmentStatus") AssignmentStatus assignmentStatus);
 
-    // ===== OWNER 통계 쿼리 =====
+    // ===== 내 강의 통계 쿼리 =====
 
     /**
      * 프로그램 ID 목록에 속한 차수 ID 목록 조회

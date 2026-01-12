@@ -39,7 +39,7 @@ public class RoadmapController {
      * POST /api/roadmaps
      */
     @PostMapping
-    @PreAuthorize("hasAnyRole('DESIGNER', 'OWNER')")
+    @PreAuthorize("hasRole('DESIGNER')")
     public ResponseEntity<ApiResponse<RoadmapResponse>> createRoadmap(
             @Valid @RequestBody CreateRoadmapRequest request,
             @AuthenticationPrincipal UserPrincipal principal
@@ -54,7 +54,7 @@ public class RoadmapController {
      * GET /api/roadmaps?status=draft&sortBy=updatedAt
      */
     @GetMapping
-    @PreAuthorize("hasAnyRole('DESIGNER', 'OWNER')")
+    @PreAuthorize("hasRole('DESIGNER')")
     public ResponseEntity<ApiResponse<Page<RoadmapResponse>>> getMyRoadmaps(
             @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "updatedAt") String sortBy,
@@ -92,7 +92,7 @@ public class RoadmapController {
      * PATCH /api/roadmaps/{id}
      */
     @PatchMapping("/{id}")
-    @PreAuthorize("hasAnyRole('DESIGNER', 'OWNER')")
+    @PreAuthorize("hasRole('DESIGNER')")
     public ResponseEntity<ApiResponse<RoadmapResponse>> updateRoadmap(
             @PathVariable @Positive Long id,
             @Valid @RequestBody UpdateRoadmapRequest request,
@@ -107,7 +107,7 @@ public class RoadmapController {
      * PATCH /api/roadmaps/{id}/draft
      */
     @PatchMapping("/{id}/draft")
-    @PreAuthorize("hasAnyRole('DESIGNER', 'OWNER')")
+    @PreAuthorize("hasRole('DESIGNER')")
     public ResponseEntity<ApiResponse<RoadmapResponse>> saveDraft(
             @PathVariable @Positive Long id,
             @Valid @RequestBody SaveDraftRequest request,
@@ -122,7 +122,7 @@ public class RoadmapController {
      * DELETE /api/roadmaps/{id}
      */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('DESIGNER', 'OWNER')")
+    @PreAuthorize("hasRole('DESIGNER')")
     public ResponseEntity<Void> deleteRoadmap(
             @PathVariable @Positive Long id,
             @AuthenticationPrincipal UserPrincipal principal
@@ -136,7 +136,7 @@ public class RoadmapController {
      * POST /api/roadmaps/{id}/duplicate
      */
     @PostMapping("/{id}/duplicate")
-    @PreAuthorize("hasAnyRole('DESIGNER', 'OWNER')")
+    @PreAuthorize("hasRole('DESIGNER')")
     public ResponseEntity<ApiResponse<RoadmapResponse>> duplicateRoadmap(
             @PathVariable @Positive Long id,
             @AuthenticationPrincipal UserPrincipal principal
@@ -151,7 +151,7 @@ public class RoadmapController {
      * GET /api/roadmaps/statistics
      */
     @GetMapping("/statistics")
-    @PreAuthorize("hasAnyRole('DESIGNER', 'OWNER')")
+    @PreAuthorize("hasRole('DESIGNER')")
     public ResponseEntity<ApiResponse<RoadmapStatisticsResponse>> getStatistics(
             @AuthenticationPrincipal UserPrincipal principal
     ) {

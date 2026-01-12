@@ -95,8 +95,8 @@ public class ProgramServiceImpl implements ProgramService {
         User creator = userMap.get(program.getCreatedBy());
         User approver = program.getApprovedBy() != null ? userMap.get(program.getApprovedBy()) : null;
 
-        // OWNER 정보 조회
-        User owner = findOwnerByProgramId(programId);
+        // 강의 설계자 정보 조회
+        User owner = findDesignerByProgramId(programId);
 
         return ProgramDetailResponse.from(
                 program,
@@ -136,11 +136,11 @@ public class ProgramServiceImpl implements ProgramService {
         Map<Long, User> userMap = userRepository.findAllById(creatorIds).stream()
                 .collect(Collectors.toMap(User::getId, Function.identity()));
 
-        // 3. OWNER 일괄 조회 (programIds)
+        // 3. 강의 설계자 일괄 조회 (programIds)
         List<Long> programIds = programList.stream()
                 .map(Program::getId)
                 .toList();
-        Map<Long, User> ownerMap = findOwnersByProgramIds(programIds);
+        Map<Long, User> ownerMap = findDesignersByProgramIds(programIds);
 
         // 4. Snapshot + Course 일괄 조회 (courseStartDate/courseEndDate용)
         Map<Long, Program> programWithCourseMap = programRepository.findAllWithSnapshotAndCourse(programIds).stream()
@@ -161,25 +161,25 @@ public class ProgramServiceImpl implements ProgramService {
         });
     }
 
-    private User findOwnerByProgramId(Long programId) {
-        List<UserCourseRole> ownerRoles = userCourseRoleRepository.findByCourseIdAndRole(programId, CourseRole.OWNER);
-        if (ownerRoles.isEmpty()) {
+    private User findDesignerByProgramId(Long programId) {
+        List<UserCourseRole> designerRoles = userCourseRoleRepository.findByCourseIdAndRole(programId, CourseRole.DESIGNER);
+        if (designerRoles.isEmpty()) {
             return null;
         }
-        return ownerRoles.get(0).getUser();
+        return designerRoles.get(0).getUser();
     }
 
-    private Map<Long, User> findOwnersByProgramIds(List<Long> programIds) {
+    private Map<Long, User> findDesignersByProgramIds(List<Long> programIds) {
         if (programIds.isEmpty()) {
             return Map.of();
         }
 
-        // 각 프로그램의 OWNER 역할 조회 (null 안전하게 처리)
+        // 각 프로그램의 DESIGNER 역할 조회 (null 안전하게 처리)
         Map<Long, User> result = new java.util.HashMap<>();
         for (Long programId : programIds) {
-            List<UserCourseRole> ownerRoles = userCourseRoleRepository.findByCourseIdAndRole(programId, CourseRole.OWNER);
-            if (!ownerRoles.isEmpty()) {
-                result.put(programId, ownerRoles.get(0).getUser());
+            List<UserCourseRole> designerRoles = userCourseRoleRepository.findByCourseIdAndRole(programId, CourseRole.DESIGNER);
+            if (!designerRoles.isEmpty()) {
+                result.put(programId, designerRoles.get(0).getUser());
             }
         }
         return result;
@@ -299,30 +299,30 @@ public class ProgramServiceImpl implements ProgramService {
 
         program.approve(operatorId, request != null ? request.comment() : null);
 
-        // B2C: Program 생성자에게 OWNER 역할 자동 부여
-        assignOwnerRole(program);
+        // Program 생성자에게 CourseRole.DESIGNER 역할 자동 부여 (강의 소유자)
+        assignCourseDesignerRole(program);
 
         log.info("Program approved: id={}, approvedBy={}", programId, operatorId);
         return ProgramDetailResponse.from(program);
     }
 
-    private void assignOwnerRole(Program program) {
+    private void assignCourseDesignerRole(Program program) {
         Long creatorId = program.getCreatedBy();
         Long programId = program.getId();
 
-        // 이미 OWNER 역할이 있는지 확인
-        if (userCourseRoleRepository.existsByUserIdAndCourseIdAndRole(creatorId, programId, CourseRole.OWNER)) {
-            log.debug("OWNER role already exists: userId={}, programId={}", creatorId, programId);
+        // 이미 DESIGNER 역할이 있는지 확인
+        if (userCourseRoleRepository.existsByUserIdAndCourseIdAndRole(creatorId, programId, CourseRole.DESIGNER)) {
+            log.debug("CourseRole.DESIGNER already exists: userId={}, programId={}", creatorId, programId);
             return;
         }
 
         User creator = userRepository.findById(creatorId)
                 .orElseThrow(() -> new UserNotFoundException(creatorId));
 
-        UserCourseRole ownerRole = UserCourseRole.createOwner(creator, programId);
-        userCourseRoleRepository.save(ownerRole);
+        UserCourseRole designerRole = UserCourseRole.createCourseDesigner(creator, programId);
+        userCourseRoleRepository.save(designerRole);
 
-        log.info("OWNER role assigned: userId={}, programId={}", creatorId, programId);
+        log.info("CourseRole.DESIGNER assigned: userId={}, programId={}", creatorId, programId);
     }
 
     @Override
@@ -372,7 +372,7 @@ public class ProgramServiceImpl implements ProgramService {
 
     /**
      * 내 프로그램 조회 (로드맵 생성용)
-     * DESIGNER 또는 OWNER 권한이 있는 프로그램만 조회
+     * DESIGNER 권한이 있는 프로그램만 조회
      */
     @Override
     public Page<ProgramResponse> getMyPrograms(Long userId, String search, Pageable pageable) {
@@ -383,27 +383,27 @@ public class ProgramServiceImpl implements ProgramService {
         // 사용자의 모든 CourseRole 조회
         List<UserCourseRole> userCourseRoles = userCourseRoleRepository.findByUserId(userId);
 
-        // DESIGNER 권한 확인 (courseId가 null)
-        boolean isDesigner = userCourseRoles.stream()
+        // 테넌트 레벨 DESIGNER 권한 확인 (courseId가 null)
+        boolean isTenantDesigner = userCourseRoles.stream()
                 .anyMatch(ucr -> ucr.getCourseId() == null && ucr.getRole() == CourseRole.DESIGNER);
 
-        // OWNER 권한이 있는 프로그램 ID 목록
+        // 강의별 DESIGNER 권한이 있는 프로그램 ID 목록
         Set<Long> ownedProgramIds = userCourseRoles.stream()
-                .filter(ucr -> ucr.getCourseId() != null && ucr.getRole() == CourseRole.OWNER)
+                .filter(ucr -> ucr.getCourseId() != null && ucr.getRole() == CourseRole.DESIGNER)
                 .map(UserCourseRole::getCourseId)
                 .collect(Collectors.toSet());
 
         Page<Program> programs;
 
-        if (isDesigner) {
-            // DESIGNER면 모든 프로그램 조회 가능
+        if (isTenantDesigner) {
+            // 테넌트 레벨 DESIGNER면 모든 프로그램 조회 가능
             if (search != null && !search.isBlank()) {
                 programs = programRepository.findByTenantIdAndTitleContaining(tenantId, search, pageable);
             } else {
                 programs = programRepository.findByTenantId(tenantId, pageable);
             }
         } else if (!ownedProgramIds.isEmpty()) {
-            // OWNER인 프로그램만 조회
+            // 본인이 DESIGNER인 프로그램만 조회
             if (search != null && !search.isBlank()) {
                 programs = programRepository.findByTenantIdAndIdInAndTitleContaining(
                         tenantId, ownedProgramIds, search, pageable

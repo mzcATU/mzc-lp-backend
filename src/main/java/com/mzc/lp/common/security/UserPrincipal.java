@@ -7,7 +7,7 @@ public record UserPrincipal(
         Long tenantId,
         String email,
         String role,
-        Set<String> courseRoles  // DESIGNER, OWNER, INSTRUCTOR
+        Set<String> courseRoles  // DESIGNER, INSTRUCTOR
 ) {
     // 하위 호환성을 위한 생성자 (tenantId 없이)
     public UserPrincipal(Long id, String email, String role) {

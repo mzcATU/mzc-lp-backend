@@ -69,7 +69,7 @@ public class EnrollmentController {
     /**
      * 차수별 수강생 목록 조회
      * - OPERATOR/TENANT_ADMIN: 모든 차수 조회 가능
-     * - OWNER: 본인이 생성한 프로그램의 차수만 조회 가능
+     * - DESIGNER: 본인이 생성한 프로그램의 차수만 조회 가능
      * - 배정된 강사: 본인이 배정된 차수만 조회 가능
      */
     @GetMapping("/api/times/{courseTimeId}/enrollments")

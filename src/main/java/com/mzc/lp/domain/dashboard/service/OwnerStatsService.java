@@ -3,7 +3,7 @@ package com.mzc.lp.domain.dashboard.service;
 import com.mzc.lp.domain.dashboard.dto.response.OwnerStatsResponse;
 
 /**
- * OWNER 내 강의 통계 서비스 인터페이스
+ * 내 강의 통계 서비스 인터페이스 (Course Designer용)
  */
 public interface OwnerStatsService {
 

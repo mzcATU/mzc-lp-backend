@@ -286,7 +286,7 @@ public class UserServiceImpl implements UserService {
                 throw new RoleAlreadyExistsException(request.role().name());
             }
         } else {
-            // 강의 레벨 역할 (OWNER, INSTRUCTOR)
+            // 강의 레벨 역할 (DESIGNER, INSTRUCTOR)
             if (userCourseRoleRepository.existsByUserIdAndCourseIdAndRole(userId, request.courseId(), request.role())) {
                 throw new RoleAlreadyExistsException(request.role().name());
             }

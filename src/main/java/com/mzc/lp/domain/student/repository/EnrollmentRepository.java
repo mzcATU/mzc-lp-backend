@@ -290,7 +290,7 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
             @Param("startDate") Instant startDate,
             @Param("endDate") Instant endDate);
 
-    // ===== OWNER 통계 쿼리 =====
+    // ===== 내 강의 통계 쿼리 =====
 
     /**
      * 차수 ID 목록에 속한 수강 카운트

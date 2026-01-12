@@ -26,28 +26,35 @@ public class UserCourseRole extends TenantEntity {
     @Column(nullable = false, length = 20)
     private CourseRole role;
 
-    private Integer revenueSharePercent;  // 수익 분배 비율 (B2C OWNER: 70%)
+    private Integer revenueSharePercent;  // 수익 분배 비율 (B2C: 70%)
 
-    // B2C: 강의 개설 버튼 클릭 시 DESIGNER 부여
+    /**
+     * 테넌트 레벨 DESIGNER 역할 생성 (TenantRole.DESIGNER가 강의 개설 시)
+     * courseId = null: 특정 강의가 아닌 테넌트 레벨 설계 권한
+     */
     public static UserCourseRole createDesigner(User user) {
         UserCourseRole ucr = new UserCourseRole();
         ucr.user = user;
-        ucr.courseId = null;  // 아직 강의 없음
+        ucr.courseId = null;
         ucr.role = CourseRole.DESIGNER;
         return ucr;
     }
 
-    // 강의 승인 후 OWNER로 전환
-    public static UserCourseRole createOwner(User user, Long courseId) {
+    /**
+     * 강의별 DESIGNER 역할 생성 (강의 생성/승인 시 해당 강의의 설계자로 등록)
+     */
+    public static UserCourseRole createCourseDesigner(User user, Long courseId) {
         UserCourseRole ucr = new UserCourseRole();
         ucr.user = user;
         ucr.courseId = courseId;
-        ucr.role = CourseRole.OWNER;
+        ucr.role = CourseRole.DESIGNER;
         ucr.revenueSharePercent = 70;  // B2C 기본 70% (플랫폼 30%)
         return ucr;
     }
 
-    // B2B: OPERATOR가 강사 부여
+    /**
+     * 강의별 INSTRUCTOR 역할 생성 (OPERATOR가 차수에 강사 배정 시)
+     */
     public static UserCourseRole createInstructor(User user, Long courseId) {
         UserCourseRole ucr = new UserCourseRole();
         ucr.user = user;
@@ -56,7 +63,9 @@ public class UserCourseRole extends TenantEntity {
         return ucr;
     }
 
-    // OPERATOR가 역할 부여
+    /**
+     * 범용 역할 생성 (OPERATOR 권한)
+     */
     public static UserCourseRole create(User user, Long courseId, CourseRole role, Integer revenueSharePercent) {
         UserCourseRole ucr = new UserCourseRole();
         ucr.user = user;

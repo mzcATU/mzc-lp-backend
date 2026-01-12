@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * OWNER 내 강의 통계 Response
+ * 내 강의 통계 Response (Course Designer용)
  */
 public record OwnerStatsResponse(
         Overview overview,
