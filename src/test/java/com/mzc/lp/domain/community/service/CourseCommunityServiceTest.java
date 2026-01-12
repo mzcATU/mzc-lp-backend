@@ -75,7 +75,8 @@ class CourseCommunityServiceTest extends TenantTestSupport {
                 "테스트 내용",
                 authorId,
                 "tag1,tag2",
-                courseTimeId
+                courseTimeId,
+                false
         );
         // Reflection을 사용하여 id 설정 (테스트용)
         // CommunityPost -> TenantEntity -> BaseTimeEntity -> BaseEntity (id 필드 위치)
@@ -171,7 +172,8 @@ class CourseCommunityServiceTest extends TenantTestSupport {
                     "테스트 제목",
                     "테스트 내용",
                     "question",
-                    List.of("tag1", "tag2")
+                    List.of("tag1", "tag2"),
+                    false
             );
 
             CommunityPost savedPost = createTestPost(1L, courseTimeId, userId);
@@ -202,7 +204,8 @@ class CourseCommunityServiceTest extends TenantTestSupport {
                     "테스트 제목",
                     "테스트 내용",
                     "question",
-                    null
+                    null,
+                    false
             );
 
             // when & then
@@ -294,7 +297,8 @@ class CourseCommunityServiceTest extends TenantTestSupport {
                     "수정된 제목",
                     "수정된 내용",
                     "question",
-                    List.of("newtag")
+                    List.of("newtag"),
+                    false
             );
 
             // when
@@ -325,7 +329,8 @@ class CourseCommunityServiceTest extends TenantTestSupport {
                     "수정된 제목",
                     "수정된 내용",
                     "question",
-                    null
+                    null,
+                    false
             );
 
             // when & then
