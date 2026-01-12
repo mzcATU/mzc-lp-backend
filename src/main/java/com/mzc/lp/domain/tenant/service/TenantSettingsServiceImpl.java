@@ -2,6 +2,7 @@ package com.mzc.lp.domain.tenant.service;
 
 import com.mzc.lp.domain.tenant.dto.request.NavigationItemRequest;
 import com.mzc.lp.domain.tenant.dto.request.UpdateDesignSettingsRequest;
+import com.mzc.lp.domain.tenant.dto.request.UpdateExtendedBrandingRequest;
 import com.mzc.lp.domain.tenant.dto.request.UpdateLayoutSettingsRequest;
 import com.mzc.lp.domain.tenant.dto.request.UpdateTenantFeaturesRequest;
 import com.mzc.lp.domain.tenant.dto.request.UpdateTenantSettingsRequest;
@@ -128,6 +129,23 @@ public class TenantSettingsServiceImpl implements TenantSettingsService {
                 request.sidebarSettings(),
                 request.footerSettings(),
                 request.contentSettings()
+        );
+
+        return TenantSettingsResponse.from(settings);
+    }
+
+    @Override
+    @Transactional
+    public TenantSettingsResponse updateExtendedBrandingSettings(Long tenantId, UpdateExtendedBrandingRequest request) {
+        TenantSettings settings = tenantSettingsRepository.findByTenantId(tenantId)
+                .orElseGet(() -> initializeAndGet(tenantId));
+
+        settings.updateExtendedBranding(
+                request.companyName(),
+                request.bannerSettings(),
+                request.landingPageSettings(),
+                request.sidebarTUSettings(),
+                request.sidebarCOSettings()
         );
 
         return TenantSettingsResponse.from(settings);

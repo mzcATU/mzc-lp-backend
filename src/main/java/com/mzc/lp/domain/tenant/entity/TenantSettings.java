@@ -57,6 +57,29 @@ public class TenantSettings extends BaseTimeEntity {
     private String bodyFont;
 
     // ============================================
+    // 확장 브랜딩 설정
+    // ============================================
+
+    @Column(length = 200)
+    private String companyName;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "json")
+    private Map<String, Object> bannerSettings = new HashMap<>();
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "json")
+    private Map<String, Object> landingPageSettings = new HashMap<>();
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "json")
+    private Map<String, Object> sidebarTUSettings = new HashMap<>();
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "json")
+    private Map<String, Object> sidebarCOSettings = new HashMap<>();
+
+    // ============================================
     // 레이아웃 설정 (JSON)
     // ============================================
 
@@ -255,5 +278,18 @@ public class TenantSettings extends BaseTimeEntity {
         if (cartEnabled != null) this.cartEnabled = cartEnabled;
         if (wishlistEnabled != null) this.wishlistEnabled = wishlistEnabled;
         if (instructorTabEnabled != null) this.instructorTabEnabled = instructorTabEnabled;
+    }
+
+    // 확장 브랜딩 설정 업데이트
+    public void updateExtendedBranding(String companyName,
+                                       Map<String, Object> bannerSettings,
+                                       Map<String, Object> landingPageSettings,
+                                       Map<String, Object> sidebarTUSettings,
+                                       Map<String, Object> sidebarCOSettings) {
+        if (companyName != null) this.companyName = companyName;
+        if (bannerSettings != null) this.bannerSettings = bannerSettings;
+        if (landingPageSettings != null) this.landingPageSettings = landingPageSettings;
+        if (sidebarTUSettings != null) this.sidebarTUSettings = sidebarTUSettings;
+        if (sidebarCOSettings != null) this.sidebarCOSettings = sidebarCOSettings;
     }
 }
