@@ -143,7 +143,7 @@ public class CommunityPostService {
             throw new NotPostAuthorException(postId);
         }
 
-        post.update(request.title(), request.content(), request.category(), request.tagsAsString());
+        post.update(request.title(), request.content(), request.category(), request.tagsAsString(), request.isPrivate());
 
         User author = userRepository.findById(post.getAuthorId()).orElse(null);
         long likeCount = postLikeRepository.countByPostId(postId);

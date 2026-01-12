@@ -45,6 +45,9 @@ public class CommunityPost extends TenantEntity {
     @Column(name = "is_solved", nullable = false)
     private Boolean isSolved = false;
 
+    @Column(name = "is_private", nullable = false)
+    private Boolean isPrivate = false;
+
     @Column(length = 500)
     private String tags;
 
@@ -65,6 +68,7 @@ public class CommunityPost extends TenantEntity {
         post.viewCount = 0;
         post.isPinned = false;
         post.isSolved = false;
+        post.isPrivate = false;
         return post;
     }
 
@@ -72,13 +76,14 @@ public class CommunityPost extends TenantEntity {
      * 코스 커뮤니티 게시글 생성
      */
     public static CommunityPost createForCourse(PostType type, String category, String title, String content,
-                                                 Long authorId, String tags, Long courseTimeId) {
+                                                 Long authorId, String tags, Long courseTimeId, Boolean isPrivate) {
         CommunityPost post = create(type, category, title, content, authorId, tags);
         post.courseTimeId = courseTimeId;
+        post.isPrivate = isPrivate != null ? isPrivate : false;
         return post;
     }
 
-    public void update(String title, String content, String category, String tags) {
+    public void update(String title, String content, String category, String tags, Boolean isPrivate) {
         if (title != null && !title.isBlank()) {
             this.title = title;
         }
@@ -90,6 +95,9 @@ public class CommunityPost extends TenantEntity {
         }
         if (tags != null) {
             this.tags = tags;
+        }
+        if (isPrivate != null) {
+            this.isPrivate = isPrivate;
         }
     }
 

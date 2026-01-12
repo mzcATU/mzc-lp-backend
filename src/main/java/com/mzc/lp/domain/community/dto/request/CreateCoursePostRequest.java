@@ -25,7 +25,9 @@ public record CreateCoursePostRequest(
         @Size(max = 50, message = "카테고리는 50자 이내여야 합니다")
         String category,
 
-        List<String> tags
+        List<String> tags,
+
+        Boolean isPrivate
 ) {
     public String tagsAsString() {
         if (tags == null || tags.isEmpty()) {
