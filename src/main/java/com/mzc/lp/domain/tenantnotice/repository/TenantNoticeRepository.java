@@ -49,7 +49,7 @@ public interface TenantNoticeRepository extends JpaRepository<TenantNotice, Long
             Long tenantId, TenantNoticeStatus status, NoticeTargetAudience targetAudience, Pageable pageable);
 
     /**
-     * TU/TO용: 발행된 + 만료되지 않은 공지 조회
+     * TU/CO용: 발행된 + 만료되지 않은 공지 조회
      */
     @Query("SELECT n FROM TenantNotice n WHERE n.tenantId = :tenantId " +
             "AND n.status = 'PUBLISHED' " +
@@ -63,7 +63,7 @@ public interface TenantNoticeRepository extends JpaRepository<TenantNotice, Long
             Pageable pageable);
 
     /**
-     * TU/TO용: 발행된 + 만료되지 않은 공지 목록 (페이징 없이)
+     * TU/CO용: 발행된 + 만료되지 않은 공지 목록 (페이징 없이)
      */
     @Query("SELECT n FROM TenantNotice n WHERE n.tenantId = :tenantId " +
             "AND n.status = 'PUBLISHED' " +

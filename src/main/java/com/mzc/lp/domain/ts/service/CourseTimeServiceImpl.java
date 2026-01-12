@@ -108,8 +108,8 @@ public class CourseTimeServiceImpl implements CourseTimeService {
         CourseTime savedCourseTime = courseTimeRepository.save(courseTime);
         log.info("Course time created: id={}, programId={}", savedCourseTime.getId(), request.programId());
 
-        // B2C: Program OWNER를 MAIN 강사로 자동 배정
-        List<InstructorAssignmentResponse> instructors = assignOwnerAsMainInstructor(savedCourseTime, program, createdBy);
+        // B2C: Program DESIGNER를 MAIN 강사로 자동 배정
+        List<InstructorAssignmentResponse> instructors = assignCourseDesignerAsMainInstructor(savedCourseTime, program, createdBy);
 
         return CourseTimeDetailResponse.from(savedCourseTime, instructors);
     }
@@ -440,26 +440,26 @@ public class CourseTimeServiceImpl implements CourseTimeService {
     }
 
     /**
-     * B2C: Program OWNER를 차수의 MAIN 강사로 자동 배정
+     * B2C: Program DESIGNER(강의 설계자)를 차수의 MAIN 강사로 자동 배정
      */
-    private List<InstructorAssignmentResponse> assignOwnerAsMainInstructor(CourseTime courseTime, Program program, Long operatorId) {
-        // Program의 OWNER 조회
-        List<UserCourseRole> owners = userCourseRoleRepository.findByCourseIdAndRole(program.getId(), CourseRole.OWNER);
+    private List<InstructorAssignmentResponse> assignCourseDesignerAsMainInstructor(CourseTime courseTime, Program program, Long operatorId) {
+        // Program의 DESIGNER(강의 설계자) 조회
+        List<UserCourseRole> designers = userCourseRoleRepository.findByCourseIdAndRole(program.getId(), CourseRole.DESIGNER);
 
-        if (owners.isEmpty()) {
-            log.warn("No OWNER found for program: programId={}", program.getId());
+        if (designers.isEmpty()) {
+            log.warn("No CourseRole.DESIGNER found for program: programId={}", program.getId());
             return List.of();
         }
 
-        // 첫 번째 OWNER를 MAIN 강사로 배정 (B2C에서는 OWNER가 1명)
-        UserCourseRole ownerRole = owners.get(0);
-        Long ownerId = ownerRole.getUser().getId();
+        // 첫 번째 DESIGNER를 MAIN 강사로 배정
+        UserCourseRole designerRole = designers.get(0);
+        Long designerId = designerRole.getUser().getId();
 
-        AssignInstructorRequest assignRequest = new AssignInstructorRequest(ownerId, InstructorRole.MAIN, false);
+        AssignInstructorRequest assignRequest = new AssignInstructorRequest(designerId, InstructorRole.MAIN, false);
         InstructorAssignmentResponse assignment = instructorAssignmentService.assignInstructor(
                 courseTime.getId(), assignRequest, operatorId);
 
-        log.info("OWNER assigned as MAIN instructor: courseTimeId={}, userId={}", courseTime.getId(), ownerId);
+        log.info("DESIGNER assigned as MAIN instructor: courseTimeId={}, userId={}", courseTime.getId(), designerId);
 
         return List.of(assignment);
     }

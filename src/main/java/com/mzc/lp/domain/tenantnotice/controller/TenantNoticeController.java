@@ -23,7 +23,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * 테넌트 공지사항 컨트롤러 (TA/TO용)
+ * 테넌트 공지사항 컨트롤러 (TA/CO용)
  * 테넌트 관리자/운영자가 공지사항을 관리
  */
 @Tag(name = "Tenant Notices", description = "테넌트 공지사항 관리 API")

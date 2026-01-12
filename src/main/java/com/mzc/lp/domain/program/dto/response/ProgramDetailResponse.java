@@ -30,7 +30,7 @@ public record ProgramDetailResponse(
         Instant rejectedAt,
         // 제출 정보
         Instant submittedAt,
-        // OWNER 정보 (승인된 프로그램에만 존재)
+        // 강의 설계자 정보 (승인된 프로그램에만 존재)
         Long ownerId,
         String ownerName,
         String ownerEmail,

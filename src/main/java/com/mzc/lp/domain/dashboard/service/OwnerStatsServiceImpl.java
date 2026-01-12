@@ -33,7 +33,7 @@ public class OwnerStatsServiceImpl implements OwnerStatsService {
         List<Long> programIds = programRepository.findIdsByCreatedByAndTenantId(userId, tenantId);
 
         if (programIds.isEmpty()) {
-            log.debug("OWNER 통계 조회 - 사용자 ID: {}, 소유 프로그램 없음", userId);
+            log.debug("내 강의 통계 조회 - 사용자 ID: {}, 소유 프로그램 없음", userId);
             return createEmptyResponse();
         }
 
@@ -67,7 +67,7 @@ public class OwnerStatsServiceImpl implements OwnerStatsService {
                 ))
                 .toList();
 
-        log.debug("OWNER 통계 조회 - 사용자 ID: {}, 전체 프로그램: {}, 전체 차수: {}, 전체 수강생: {}",
+        log.debug("내 강의 통계 조회 - 사용자 ID: {}, 전체 프로그램: {}, 전체 차수: {}, 전체 수강생: {}",
                 userId, totalPrograms, totalCourseTimes, totalStudents);
 
         return OwnerStatsResponse.of(

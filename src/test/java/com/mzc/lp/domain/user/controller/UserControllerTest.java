@@ -959,8 +959,8 @@ class UserControllerTest extends TenantTestSupport {
         }
 
         @Test
-        @DisplayName("성공 - OPERATOR가 OWNER 역할 부여 (수익 분배율 포함)")
-        void assignCourseRole_success_owner_withRevenue() throws Exception {
+        @DisplayName("성공 - OPERATOR가 DESIGNER 역할 부여 (수익 분배율 포함)")
+        void assignCourseRole_success_designer_withRevenue() throws Exception {
             // given
             createOperatorUser();
             createTestUser();
@@ -968,7 +968,7 @@ class UserControllerTest extends TenantTestSupport {
             String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
             AssignCourseRoleRequest request = new AssignCourseRoleRequest(
                     200L,
-                    com.mzc.lp.domain.user.constant.CourseRole.OWNER,
+                    com.mzc.lp.domain.user.constant.CourseRole.DESIGNER,
                     70
             );
 
@@ -980,7 +980,7 @@ class UserControllerTest extends TenantTestSupport {
                     .andDo(print())
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$.success").value(true))
-                    .andExpect(jsonPath("$.data.role").value("OWNER"))
+                    .andExpect(jsonPath("$.data.role").value("DESIGNER"))
                     .andExpect(jsonPath("$.data.courseId").value(200))
                     .andExpect(jsonPath("$.data.revenueSharePercent").value(70));
         }

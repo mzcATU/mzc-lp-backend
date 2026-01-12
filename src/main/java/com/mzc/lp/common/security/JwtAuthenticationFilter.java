@@ -121,7 +121,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                             .orElse(null);
                 }
 
-                // DB에서 CourseRole 조회 (DESIGNER, OWNER, INSTRUCTOR)
+                // DB에서 CourseRole 조회 (DESIGNER, INSTRUCTOR)
                 Set<String> courseRoles = userCourseRoleRepository.findByUserId(userId)
                         .stream()
                         .map(ucr -> ucr.getRole().name())

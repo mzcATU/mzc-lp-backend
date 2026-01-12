@@ -16,14 +16,14 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * 시스템 공지사항 조회 컨트롤러 (TA/TO용)
+ * 시스템 공지사항 조회 컨트롤러 (TA/CO용)
  * SA가 테넌트에 배포한 시스템 공지를 조회
  */
 @Tag(name = "System Notices (TA)", description = "테넌트에 배포된 시스템 공지사항 조회 API")
 @RestController("systemNoticeForTenantController")
 @RequestMapping("/api/ta/notices")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyRole('TENANT_ADMIN', 'TENANT_OPERATOR')")
+@PreAuthorize("hasAnyRole('TENANT_ADMIN', 'OPERATOR')")
 public class SystemNoticeForTenantController {
 
     private final NoticeService noticeService;

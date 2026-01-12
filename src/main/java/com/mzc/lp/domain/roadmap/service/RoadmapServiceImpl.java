@@ -358,14 +358,14 @@ public class RoadmapServiceImpl implements RoadmapService {
             Program program = programRepository.findById(programId)
                     .orElseThrow(() -> new ProgramNotFoundException(programId));
 
-            // 2. 권한 확인: DESIGNER(테넌트 레벨) 또는 해당 프로그램의 OWNER
-            boolean isDesigner = userCourseRoleRepository
+            // 2. 권한 확인: DESIGNER(테넌트 레벨) 또는 해당 프로그램의 DESIGNER(강의 레벨)
+            boolean isTenantDesigner = userCourseRoleRepository
                     .existsByUserIdAndCourseIdIsNullAndRole(userId, CourseRole.DESIGNER);
 
-            boolean isOwner = userCourseRoleRepository
-                    .existsByUserIdAndCourseIdAndRole(userId, programId, CourseRole.OWNER);
+            boolean isCourseDesigner = userCourseRoleRepository
+                    .existsByUserIdAndCourseIdAndRole(userId, programId, CourseRole.DESIGNER);
 
-            if (!isDesigner && !isOwner) {
+            if (!isTenantDesigner && !isCourseDesigner) {
                 throw new InvalidProgramException(programId);
             }
         }

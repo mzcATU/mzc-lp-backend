@@ -17,7 +17,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * 테넌트 공지사항 조회 컨트롤러 (TU/TO용)
+ * 테넌트 공지사항 조회 컨트롤러 (TU/CO용)
  * 테넌트 사용자/운영자가 자신에게 발행된 공지사항을 조회
  */
 @Tag(name = "Tenant Notices (TU)", description = "테넌트 공지사항 조회 API")

@@ -152,7 +152,7 @@ class RoadmapServiceTest {
         given(programRepository.findById(1L)).willReturn(Optional.of(program));
         given(userCourseRoleRepository.existsByUserIdAndCourseIdIsNullAndRole(authorId, CourseRole.DESIGNER))
                 .willReturn(false);
-        given(userCourseRoleRepository.existsByUserIdAndCourseIdAndRole(authorId, 1L, CourseRole.OWNER))
+        given(userCourseRoleRepository.existsByUserIdAndCourseIdAndRole(authorId, 1L, CourseRole.DESIGNER))
                 .willReturn(false);
 
         // when & then

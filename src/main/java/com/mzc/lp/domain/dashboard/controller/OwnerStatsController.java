@@ -20,11 +20,11 @@ public class OwnerStatsController {
     private final OwnerStatsService ownerStatsService;
 
     /**
-     * OWNER 내 강의 통계 조회
-     * - OWNER 역할이 있거나, OPERATOR/TENANT_ADMIN 권한이 있으면 접근 가능
+     * 내 강의 통계 조회 (Course Designer)
+     * - DESIGNER 역할이 있거나, OPERATOR/TENANT_ADMIN 권한이 있으면 접근 가능
      */
     @GetMapping("/stats")
-    @PreAuthorize("hasRole('OWNER') or hasAnyRole('OPERATOR', 'TENANT_ADMIN')")
+    @PreAuthorize("hasRole('DESIGNER') or hasAnyRole('OPERATOR', 'TENANT_ADMIN')")
     public ResponseEntity<ApiResponse<OwnerStatsResponse>> getMyStats(
             @AuthenticationPrincipal UserPrincipal principal
     ) {
