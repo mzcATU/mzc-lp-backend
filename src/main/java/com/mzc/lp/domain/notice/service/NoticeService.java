@@ -5,6 +5,8 @@ import com.mzc.lp.domain.notice.constant.NoticeType;
 import com.mzc.lp.domain.notice.dto.request.CreateNoticeRequest;
 import com.mzc.lp.domain.notice.dto.request.DistributeNoticeRequest;
 import com.mzc.lp.domain.notice.dto.request.UpdateNoticeRequest;
+import com.mzc.lp.domain.notice.dto.response.NoticeDistributionStatsResponse;
+import com.mzc.lp.domain.notice.dto.response.NoticeDistributionSummaryResponse;
 import com.mzc.lp.domain.notice.dto.response.NoticeResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -42,4 +44,11 @@ public interface NoticeService {
     NoticeResponse getNoticeForTenant(Long noticeId, Long tenantId);
 
     void markNoticeAsRead(Long noticeId, Long tenantId);
+
+    // 배포 통계 (SA용)
+    Page<NoticeDistributionStatsResponse> getDistributionStats(Pageable pageable);
+
+    NoticeDistributionStatsResponse getDistributionStatsForNotice(Long noticeId);
+
+    NoticeDistributionSummaryResponse getDistributionSummary();
 }

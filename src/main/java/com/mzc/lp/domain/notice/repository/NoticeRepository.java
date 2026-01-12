@@ -35,4 +35,6 @@ public interface NoticeRepository extends JpaRepository<Notice, Long> {
     Page<Notice> searchByKeywordAndStatus(@Param("keyword") String keyword,
                                           @Param("status") NoticeStatus status,
                                           Pageable pageable);
+
+    long countByStatus(NoticeStatus status);
 }
