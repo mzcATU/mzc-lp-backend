@@ -98,7 +98,7 @@ class OwnerStatsControllerTest extends TenantTestSupport {
     }
 
     private void grantOwnerRole(User user, Long courseId) {
-        UserCourseRole ownerRole = UserCourseRole.createOwner(user, courseId);
+        UserCourseRole ownerRole = UserCourseRole.createCourseDesigner(user, courseId);
         userCourseRoleRepository.save(ownerRole);
     }
 
