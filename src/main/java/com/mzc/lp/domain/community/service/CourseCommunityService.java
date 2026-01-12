@@ -11,6 +11,7 @@ import com.mzc.lp.domain.community.exception.AlreadyLikedException;
 import com.mzc.lp.domain.community.exception.NotEnrolledException;
 import com.mzc.lp.domain.community.exception.NotPostAuthorException;
 import com.mzc.lp.domain.community.exception.PostNotFoundException;
+import com.mzc.lp.domain.community.exception.PrivatePostAccessDeniedException;
 import com.mzc.lp.domain.community.repository.CommunityCommentRepository;
 import com.mzc.lp.domain.community.repository.CommunityPostLikeRepository;
 import com.mzc.lp.domain.community.repository.CommunityPostRepository;
@@ -130,6 +131,11 @@ public class CourseCommunityService {
         CommunityPost post = postRepository.findByIdAndCourseTimeId(postId, courseTimeId)
                 .orElseThrow(() -> new PostNotFoundException(postId));
 
+        // 비밀글 접근 권한 검증: 작성자만 조회 가능
+        if (Boolean.TRUE.equals(post.getIsPrivate()) && !post.getAuthorId().equals(userId)) {
+            throw new PrivatePostAccessDeniedException(postId);
+        }
+
         // 조회수 증가
         postRepository.incrementViewCount(postId);
         post.incrementViewCount();
@@ -157,7 +163,8 @@ public class CourseCommunityService {
                 request.content(),
                 userId,
                 request.tagsAsString(),
-                courseTimeId
+                courseTimeId,
+                request.isPrivate()
         );
 
         CommunityPost savedPost = postRepository.save(post);
@@ -181,7 +188,7 @@ public class CourseCommunityService {
             throw new NotPostAuthorException(postId);
         }
 
-        post.update(request.title(), request.content(), request.category(), request.tagsAsString());
+        post.update(request.title(), request.content(), request.category(), request.tagsAsString(), request.isPrivate());
 
         User author = userRepository.findById(post.getAuthorId()).orElse(null);
         long likeCount = postLikeRepository.countByPostId(postId);
@@ -224,6 +231,11 @@ public class CourseCommunityService {
 
         CommunityPost post = postRepository.findByIdAndCourseTimeId(postId, courseTimeId)
                 .orElseThrow(() -> new PostNotFoundException(postId));
+
+        // 비밀글 접근 권한 검증: 작성자만 좋아요 가능
+        if (Boolean.TRUE.equals(post.getIsPrivate()) && !post.getAuthorId().equals(userId)) {
+            throw new PrivatePostAccessDeniedException(postId);
+        }
 
         if (postLikeRepository.existsByPostIdAndUserId(postId, userId)) {
             throw new AlreadyLikedException("Already liked post: " + postId);

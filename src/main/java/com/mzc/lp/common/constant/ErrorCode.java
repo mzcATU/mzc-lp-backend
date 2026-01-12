@@ -138,6 +138,7 @@ public enum ErrorCode {
     COMMUNITY_NOT_POST_AUTHOR(HttpStatus.FORBIDDEN, "CMT004", "Not authorized to modify this post"),
     COMMUNITY_NOT_COMMENT_AUTHOR(HttpStatus.FORBIDDEN, "CMT005", "Not authorized to modify this comment"),
     COMMUNITY_NOT_ENROLLED(HttpStatus.FORBIDDEN, "CMT006", "Not enrolled in this course"),
+    COMMUNITY_PRIVATE_POST_ACCESS_DENIED(HttpStatus.FORBIDDEN, "CMT007", "Not authorized to access this private post"),
 
     // Notification (NF)
     NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "NF001", "Notification not found"),
