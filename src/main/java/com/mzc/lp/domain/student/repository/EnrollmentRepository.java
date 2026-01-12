@@ -171,7 +171,7 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
             "WHERE e.tenantId = :tenantId")
     Double getCompletionRateByTenantId(@Param("tenantId") Long tenantId);
 
-    // ===== 기간 필터 통계 쿼리 (TO/TA 대시보드) =====
+    // ===== 기간 필터 통계 쿼리 (CO/TA 대시보드) =====
 
     /**
      * 테넌트별 상태별 수강 카운트 (기간 필터 - enrolledAt 기준)

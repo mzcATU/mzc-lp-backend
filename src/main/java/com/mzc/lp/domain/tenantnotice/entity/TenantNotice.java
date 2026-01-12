@@ -13,9 +13,9 @@ import java.time.Instant;
 
 /**
  * 테넌트 공지사항 엔티티
- * - TA → TO: 테넌트 관리자가 운영자에게 보내는 공지
+ * - TA → CO: 테넌트 관리자가 운영자에게 보내는 공지
  * - TA → TU: 테넌트 관리자가 사용자에게 보내는 공지
- * - TO → TU: 운영자가 사용자에게 보내는 공지
+ * - CO → TU: 운영자가 사용자에게 보내는 공지
  */
 @Entity
 @Table(name = "tenant_notices", indexes = {

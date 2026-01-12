@@ -137,7 +137,7 @@ public interface CourseTimeRepository extends JpaRepository<CourseTime, Long>, J
             "AND ct.capacity > 0")
     Double getAverageCapacityUtilization(@Param("tenantId") Long tenantId);
 
-    // ===== 기간 필터 통계 쿼리 (TO 대시보드) =====
+    // ===== 기간 필터 통계 쿼리 (CO 대시보드) =====
 
     /**
      * 테넌트별 상태별 차수 카운트 (기간 필터 - createdAt 기준)

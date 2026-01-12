@@ -30,7 +30,7 @@ public class TenantNoticeServiceImpl implements TenantNoticeService {
     private final TenantNoticeRepository tenantNoticeRepository;
 
     // ============================================
-    // TA/TO 관리용 API
+    // TA/CO 관리용 API
     // ============================================
 
     @Override
@@ -165,7 +165,7 @@ public class TenantNoticeServiceImpl implements TenantNoticeService {
     }
 
     // ============================================
-    // TU/TO 조회용 API
+    // TU/CO 조회용 API
     // ============================================
 
     @Override
