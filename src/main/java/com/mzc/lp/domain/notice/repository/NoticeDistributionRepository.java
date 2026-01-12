@@ -41,4 +41,13 @@ public interface NoticeDistributionRepository extends JpaRepository<NoticeDistri
     @Modifying
     @Query("DELETE FROM NoticeDistribution nd WHERE nd.notice.id = :noticeId")
     void deleteByNoticeId(@Param("noticeId") Long noticeId);
+
+    @Query("SELECT COUNT(nd) FROM NoticeDistribution nd WHERE nd.notice.id = :noticeId AND nd.isRead = true")
+    long countReadByNoticeId(@Param("noticeId") Long noticeId);
+
+    @Query("SELECT nd FROM NoticeDistribution nd JOIN FETCH nd.notice WHERE nd.notice.id = :noticeId")
+    List<NoticeDistribution> findByNoticeIdWithNotice(@Param("noticeId") Long noticeId);
+
+    @Query("SELECT DISTINCT nd.notice.id FROM NoticeDistribution nd WHERE nd.notice.status = 'PUBLISHED'")
+    List<Long> findDistributedNoticeIds();
 }

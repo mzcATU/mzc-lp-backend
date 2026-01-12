@@ -5,6 +5,8 @@ import com.mzc.lp.domain.notice.constant.NoticeType;
 import com.mzc.lp.domain.notice.dto.request.CreateNoticeRequest;
 import com.mzc.lp.domain.notice.dto.request.DistributeNoticeRequest;
 import com.mzc.lp.domain.notice.dto.request.UpdateNoticeRequest;
+import com.mzc.lp.domain.notice.dto.response.NoticeDistributionStatsResponse;
+import com.mzc.lp.domain.notice.dto.response.NoticeDistributionSummaryResponse;
 import com.mzc.lp.domain.notice.dto.response.NoticeResponse;
 import com.mzc.lp.domain.notice.entity.Notice;
 import com.mzc.lp.domain.notice.entity.NoticeDistribution;
@@ -18,7 +20,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.mzc.lp.domain.tenant.entity.Tenant;
+
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -206,5 +213,97 @@ public class NoticeServiceImpl implements NoticeService {
                 .findByNoticeIdAndTenantId(noticeId, tenantId)
                 .orElseThrow(() -> new NoticeNotFoundException(noticeId));
         distribution.markAsRead();
+    }
+
+    @Override
+    public Page<NoticeDistributionStatsResponse> getDistributionStats(Pageable pageable) {
+        // 배포된 적 있는 공지사항 조회 (PUBLISHED 상태)
+        Page<Notice> publishedNotices = noticeRepository.findByStatus(NoticeStatus.PUBLISHED, pageable);
+        int totalTenants = (int) tenantRepository.count();
+
+        // 테넌트 정보 캐시
+        Map<Long, Tenant> tenantMap = tenantRepository.findAll().stream()
+                .collect(Collectors.toMap(Tenant::getId, t -> t));
+
+        return publishedNotices.map(notice -> buildDistributionStats(notice, totalTenants, tenantMap));
+    }
+
+    @Override
+    public NoticeDistributionStatsResponse getDistributionStatsForNotice(Long noticeId) {
+        Notice notice = noticeRepository.findById(noticeId)
+                .orElseThrow(() -> new NoticeNotFoundException(noticeId));
+
+        int totalTenants = (int) tenantRepository.count();
+        Map<Long, Tenant> tenantMap = tenantRepository.findAll().stream()
+                .collect(Collectors.toMap(Tenant::getId, t -> t));
+
+        return buildDistributionStats(notice, totalTenants, tenantMap);
+    }
+
+    @Override
+    public NoticeDistributionSummaryResponse getDistributionSummary() {
+        int totalTenants = (int) tenantRepository.count();
+
+        // PUBLISHED 상태인 공지사항 수
+        long publishedCount = noticeRepository.countByStatus(NoticeStatus.PUBLISHED);
+
+        // 배포된 공지사항 수 (최소 1개 테넌트에 배포됨)
+        List<Long> distributedNoticeIds = noticeDistributionRepository.findDistributedNoticeIds();
+        int totalDistributions = distributedNoticeIds.size();
+
+        // 전체 배포 중 읽음 수 계산
+        int totalReadCount = 0;
+        int totalSentCount = 0;
+
+        for (Long noticeId : distributedNoticeIds) {
+            totalSentCount += (int) noticeDistributionRepository.countByNoticeId(noticeId);
+            totalReadCount += (int) noticeDistributionRepository.countReadByNoticeId(noticeId);
+        }
+
+        double averageReadRate = totalSentCount > 0 ? (double) totalReadCount / totalSentCount * 100 : 0;
+
+        return NoticeDistributionSummaryResponse.of(
+                totalDistributions,
+                (int) publishedCount,  // completedCount (발행 완료)
+                0,  // inProgressCount (예약 기능 없으므로 0)
+                totalTenants,
+                totalReadCount,
+                averageReadRate
+        );
+    }
+
+    private NoticeDistributionStatsResponse buildDistributionStats(Notice notice, int totalTenants, Map<Long, Tenant> tenantMap) {
+        List<NoticeDistribution> distributions = noticeDistributionRepository.findByNoticeId(notice.getId());
+
+        int sentCount = distributions.size();
+        int readCount = (int) distributions.stream().filter(NoticeDistribution::getIsRead).count();
+
+        List<NoticeDistributionStatsResponse.TenantDistributionInfo> tenantInfos = distributions.stream()
+                .map(dist -> {
+                    Tenant tenant = tenantMap.get(dist.getTenantId());
+                    return new NoticeDistributionStatsResponse.TenantDistributionInfo(
+                            dist.getTenantId(),
+                            tenant != null ? tenant.getName() : "Unknown",
+                            tenant != null ? tenant.getCode() : "unknown",
+                            dist.getIsRead(),
+                            dist.getCreatedAt(),
+                            dist.getIsRead() ? dist.getUpdatedAt() : null
+                    );
+                })
+                .toList();
+
+        return NoticeDistributionStatsResponse.of(
+                notice.getId(),
+                notice.getTitle(),
+                notice.getType().name(),
+                notice.getStatus().name(),
+                notice.getIsPinned(),
+                totalTenants,
+                sentCount,
+                readCount,
+                notice.getPublishedAt(),
+                notice.getCreatedAt(),
+                tenantInfos
+        );
     }
 }

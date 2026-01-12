@@ -6,6 +6,8 @@ import com.mzc.lp.domain.notice.constant.NoticeType;
 import com.mzc.lp.domain.notice.dto.request.CreateNoticeRequest;
 import com.mzc.lp.domain.notice.dto.request.DistributeNoticeRequest;
 import com.mzc.lp.domain.notice.dto.request.UpdateNoticeRequest;
+import com.mzc.lp.domain.notice.dto.response.NoticeDistributionStatsResponse;
+import com.mzc.lp.domain.notice.dto.response.NoticeDistributionSummaryResponse;
 import com.mzc.lp.domain.notice.dto.response.NoticeResponse;
 import com.mzc.lp.domain.notice.service.NoticeService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -134,5 +136,34 @@ public class NoticeController {
     ) {
         List<Long> tenantIds = noticeService.getDistributedTenantIds(noticeId);
         return ResponseEntity.ok(ApiResponse.success(tenantIds));
+    }
+
+    // ============================================
+    // 배포 통계 API
+    // ============================================
+
+    @Operation(summary = "배포 통계 목록 조회", description = "발행된 공지사항들의 배포 통계를 조회합니다")
+    @GetMapping("/distributions")
+    public ResponseEntity<ApiResponse<Page<NoticeDistributionStatsResponse>>> getDistributionStats(
+            @PageableDefault(size = 20) Pageable pageable
+    ) {
+        Page<NoticeDistributionStatsResponse> response = noticeService.getDistributionStats(pageable);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @Operation(summary = "배포 통계 요약 조회", description = "전체 배포 통계 요약을 조회합니다")
+    @GetMapping("/distributions/summary")
+    public ResponseEntity<ApiResponse<NoticeDistributionSummaryResponse>> getDistributionSummary() {
+        NoticeDistributionSummaryResponse response = noticeService.getDistributionSummary();
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @Operation(summary = "특정 공지 배포 상세 조회", description = "특정 공지사항의 테넌트별 배포 현황을 조회합니다")
+    @GetMapping("/{noticeId}/distributions")
+    public ResponseEntity<ApiResponse<NoticeDistributionStatsResponse>> getDistributionStatsForNotice(
+            @PathVariable Long noticeId
+    ) {
+        NoticeDistributionStatsResponse response = noticeService.getDistributionStatsForNotice(noticeId);
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 }
