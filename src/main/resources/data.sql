@@ -1,24 +1,11 @@
 -- =============================================
--- [필수] 문자셋 설정 (한글 깨짐 방지)
--- =============================================
-SET NAMES utf8mb4;
-SET CHARACTER SET utf8mb4;
-
--- =============================================
 -- [필수] 외래 키 검사 비활성화 (순서 무관하게 삭제하기 위함)
 -- =============================================
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- =============================================
--- [필수] 테이블 문자셋 변경 (기존 테이블 한글 깨짐 방지)
--- =============================================
-ALTER TABLE tenants CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- =============================================
 -- 1. 테넌트 데이터 (3개 테넌트)
 -- =============================================
--- 기존 테넌트 데이터 삭제 후 재삽입 (문자셋 변경 후 정상 데이터 입력)
-DELETE FROM tenants WHERE id IN (1, 2, 3);
 -- 테넌트 1: 기본 테넌트
 INSERT INTO tenants (id, code, name, type, status, plan, subdomain, created_at, updated_at)
 SELECT 1, 'default', '기본 테넌트', 'B2B', 'ACTIVE', 'ENTERPRISE', 'default', NOW(), NOW()
@@ -1703,3 +1690,561 @@ SELECT (SELECT id FROM roadmaps WHERE title = '예비 창업가 성장 로드맵
        (SELECT id FROM cm_programs WHERE title = 'IR 피칭 전략 과정' AND tenant_id = 3), 2
 WHERE NOT EXISTS (SELECT 1 FROM roadmap_programs WHERE roadmap_id = (SELECT id FROM roadmaps WHERE title = '예비 창업가 성장 로드맵' AND tenant_id = 3)
 AND program_id = (SELECT id FROM cm_programs WHERE title = 'IR 피칭 전략 과정' AND tenant_id = 3));
+
+-- =============================================
+-- 31. 커뮤니티 댓글 데이터 (테넌트별)
+-- =============================================
+-- 테넌트 1 댓글 (개발 관련 게시글)
+INSERT INTO community_comments (tenant_id, post_id, author_id, content, parent_id, created_at, updated_at) VALUES
+-- Spring Boot 시작하기 질문 댓글
+(1, (SELECT id FROM community_posts WHERE title = 'Spring Boot 시작하기 질문' AND tenant_id = 1),
+ (SELECT id FROM users WHERE email = 'user2@default.com'),
+ 'spring-boot-starter-web, spring-boot-starter-data-jpa 부터 시작하시면 좋아요!', NULL, NOW() - INTERVAL 9 DAY, NOW()),
+(1, (SELECT id FROM community_posts WHERE title = 'Spring Boot 시작하기 질문' AND tenant_id = 1),
+ (SELECT id FROM users WHERE email = 'user3@default.com'),
+ 'Lombok도 추가하면 생산성이 올라갑니다.', NULL, NOW() - INTERVAL 8 DAY, NOW()),
+(1, (SELECT id FROM community_posts WHERE title = 'Spring Boot 시작하기 질문' AND tenant_id = 1),
+ (SELECT id FROM users WHERE email = 'user1@default.com'),
+ '답변 감사합니다! 바로 적용해볼게요.', NULL, NOW() - INTERVAL 7 DAY, NOW()),
+
+-- JPA N+1 문제 댓글
+(1, (SELECT id FROM community_posts WHERE title = 'JPA N+1 문제 해결 방법' AND tenant_id = 1),
+ (SELECT id FROM users WHERE email = 'user4@default.com'),
+ '@EntityGraph 어노테이션도 좋은 방법입니다.', NULL, NOW() - INTERVAL 8 DAY, NOW()),
+(1, (SELECT id FROM community_posts WHERE title = 'JPA N+1 문제 해결 방법' AND tenant_id = 1),
+ (SELECT id FROM users WHERE email = 'user5@default.com'),
+ 'Batch Size 설정으로 해결한 경험이 있어요.', NULL, NOW() - INTERVAL 7 DAY, NOW()),
+(1, (SELECT id FROM community_posts WHERE title = 'JPA N+1 문제 해결 방법' AND tenant_id = 1),
+ (SELECT id FROM users WHERE email = 'user6@default.com'),
+ 'QueryDSL 사용하시면 더 세밀하게 제어 가능합니다.', NULL, NOW() - INTERVAL 6 DAY, NOW()),
+
+-- React Hooks 팁 댓글
+(1, (SELECT id FROM community_posts WHERE title = 'React Hooks 사용 팁 공유' AND tenant_id = 1),
+ (SELECT id FROM users WHERE email = 'user7@default.com'),
+ '정말 유용한 정보 감사합니다!', NULL, NOW() - INTERVAL 7 DAY, NOW()),
+(1, (SELECT id FROM community_posts WHERE title = 'React Hooks 사용 팁 공유' AND tenant_id = 1),
+ (SELECT id FROM users WHERE email = 'user8@default.com'),
+ 'useCallback 남용하면 오히려 성능이 떨어질 수 있다고 들었는데 맞나요?', NULL, NOW() - INTERVAL 6 DAY, NOW()),
+(1, (SELECT id FROM community_posts WHERE title = 'React Hooks 사용 팁 공유' AND tenant_id = 1),
+ (SELECT id FROM users WHERE email = 'user3@default.com'),
+ '맞아요, 실제로 리렌더링이 문제가 될 때만 사용하는 게 좋습니다.', NULL, NOW() - INTERVAL 5 DAY, NOW()),
+
+-- SQL 쿼리 최적화 댓글
+(1, (SELECT id FROM community_posts WHERE title = 'SQL 쿼리 최적화 사례' AND tenant_id = 1),
+ (SELECT id FROM users WHERE email = 'user9@default.com'),
+ '인덱스 설계가 중요한 것 같네요.', NULL, NOW() - INTERVAL 4 DAY, NOW()),
+(1, (SELECT id FROM community_posts WHERE title = 'SQL 쿼리 최적화 사례' AND tenant_id = 1),
+ (SELECT id FROM users WHERE email = 'user10@default.com'),
+ 'EXPLAIN ANALYZE 결과도 공유해주실 수 있나요?', NULL, NOW() - INTERVAL 3 DAY, NOW()),
+
+-- Clean Architecture 도입기 댓글
+(1, (SELECT id FROM community_posts WHERE title = 'Clean Architecture 도입기' AND tenant_id = 1),
+ (SELECT id FROM users WHERE email = 'user11@default.com'),
+ '팀 전체가 동의해야 도입 가능하더라구요.', NULL, NOW() - INTERVAL 14 DAY, NOW()),
+(1, (SELECT id FROM community_posts WHERE title = 'Clean Architecture 도입기' AND tenant_id = 1),
+ (SELECT id FROM users WHERE email = 'user12@default.com'),
+ '레이어 분리 기준이 궁금합니다.', NULL, NOW() - INTERVAL 13 DAY, NOW()),
+(1, (SELECT id FROM community_posts WHERE title = 'Clean Architecture 도입기' AND tenant_id = 1),
+ (SELECT id FROM users WHERE email = 'user13@default.com'),
+ '도메인 레이어를 가장 안쪽에 두고, 외부 의존성은 어댑터로 분리했습니다.', NULL, NOW() - INTERVAL 12 DAY, NOW());
+
+-- 테넌트 2 댓글 (기업 교육 관련)
+INSERT INTO community_comments (tenant_id, post_id, author_id, content, parent_id, created_at, updated_at) VALUES
+-- 영업 미팅 준비 팁 댓글
+(2, (SELECT id FROM community_posts WHERE title = '영업 미팅 준비 팁' AND tenant_id = 2),
+ (SELECT id FROM users WHERE email = 'user2@company-a.com'),
+ '체크리스트 덕분에 미팅 성공적으로 마쳤습니다!', NULL, NOW() - INTERVAL 9 DAY, NOW()),
+(2, (SELECT id FROM community_posts WHERE title = '영업 미팅 준비 팁' AND tenant_id = 2),
+ (SELECT id FROM users WHERE email = 'user3@company-a.com'),
+ '고객 회사 뉴스도 미리 확인하면 좋아요.', NULL, NOW() - INTERVAL 8 DAY, NOW()),
+
+-- 신입사원 적응 질문 댓글
+(2, (SELECT id FROM community_posts WHERE title = '신입사원 적응 질문' AND tenant_id = 2),
+ (SELECT id FROM users WHERE email = 'user4@company-a.com'),
+ '먼저 팀원들 이름과 얼굴 외우기부터 하세요!', NULL, NOW() - INTERVAL 7 DAY, NOW()),
+(2, (SELECT id FROM community_posts WHERE title = '신입사원 적응 질문' AND tenant_id = 2),
+ (SELECT id FROM users WHERE email = 'user5@company-a.com'),
+ '회사 시스템 사용법 익히는 게 우선이에요.', NULL, NOW() - INTERVAL 6 DAY, NOW()),
+(2, (SELECT id FROM community_posts WHERE title = '신입사원 적응 질문' AND tenant_id = 2),
+ (SELECT id FROM users WHERE email = 'user6@company-a.com'),
+ '점심시간에 선배들과 이야기 나누면 적응이 빨라요.', NULL, NOW() - INTERVAL 5 DAY, NOW()),
+
+-- 엑셀 단축키 댓글
+(2, (SELECT id FROM community_posts WHERE title = '엑셀 단축키 모음' AND tenant_id = 2),
+ (SELECT id FROM users WHERE email = 'user7@company-a.com'),
+ 'Ctrl+Shift+L 필터 단축키가 제일 많이 쓰여요!', NULL, NOW() - INTERVAL 10 DAY, NOW()),
+(2, (SELECT id FROM community_posts WHERE title = '엑셀 단축키 모음' AND tenant_id = 2),
+ (SELECT id FROM users WHERE email = 'user8@company-a.com'),
+ 'Alt+= 자동합계 단축키 추가해주세요!', NULL, NOW() - INTERVAL 9 DAY, NOW()),
+
+-- 연봉 협상 후기 댓글
+(2, (SELECT id FROM community_posts WHERE title = '연봉 협상 후기' AND tenant_id = 2),
+ (SELECT id FROM users WHERE email = 'user9@company-a.com'),
+ '시장 조사 먼저 하는 게 중요하네요.', NULL, NOW() - INTERVAL 12 DAY, NOW()),
+(2, (SELECT id FROM community_posts WHERE title = '연봉 협상 후기' AND tenant_id = 2),
+ (SELECT id FROM users WHERE email = 'user10@company-a.com'),
+ '자신의 성과를 수치로 정리해가면 좋아요.', NULL, NOW() - INTERVAL 11 DAY, NOW());
+
+-- 테넌트 3 댓글 (창업 관련)
+INSERT INTO community_comments (tenant_id, post_id, author_id, content, parent_id, created_at, updated_at) VALUES
+-- 스타트업 첫 투자 유치 후기 댓글
+(3, (SELECT id FROM community_posts WHERE title = '스타트업 첫 투자 유치 후기' AND tenant_id = 3),
+ (SELECT id FROM users WHERE email = 'user2@company-b.com'),
+ 'IR 자료 템플릿 공유 가능할까요?', NULL, NOW() - INTERVAL 9 DAY, NOW()),
+(3, (SELECT id FROM community_posts WHERE title = '스타트업 첫 투자 유치 후기' AND tenant_id = 3),
+ (SELECT id FROM users WHERE email = 'user3@company-b.com'),
+ '어떤 VC에서 투자 받으셨나요?', NULL, NOW() - INTERVAL 8 DAY, NOW()),
+(3, (SELECT id FROM community_posts WHERE title = '스타트업 첫 투자 유치 후기' AND tenant_id = 3),
+ (SELECT id FROM users WHERE email = 'user1@company-b.com'),
+ '프라이머에서 시드 투자 받았습니다!', NULL, NOW() - INTERVAL 7 DAY, NOW()),
+
+-- PMF 찾기 실패담 댓글
+(3, (SELECT id FROM community_posts WHERE title = 'PMF 찾기 실패담' AND tenant_id = 3),
+ (SELECT id FROM users WHERE email = 'user4@company-b.com'),
+ '실패 경험 공유 감사합니다. 많이 배웠어요.', NULL, NOW() - INTERVAL 6 DAY, NOW()),
+(3, (SELECT id FROM community_posts WHERE title = 'PMF 찾기 실패담' AND tenant_id = 3),
+ (SELECT id FROM users WHERE email = 'user5@company-b.com'),
+ '고객 인터뷰를 더 많이 했어야 했네요.', NULL, NOW() - INTERVAL 5 DAY, NOW()),
+
+-- 피칭 덱 작성 가이드 댓글
+(3, (SELECT id FROM community_posts WHERE title = '피칭 덱 작성 가이드' AND tenant_id = 3),
+ (SELECT id FROM users WHERE email = 'user6@company-b.com'),
+ '10페이지가 적당한 것 같아요.', NULL, NOW() - INTERVAL 11 DAY, NOW()),
+(3, (SELECT id FROM community_posts WHERE title = '피칭 덱 작성 가이드' AND tenant_id = 3),
+ (SELECT id FROM users WHERE email = 'user7@company-b.com'),
+ 'Problem-Solution-Market 순서가 좋더라구요.', NULL, NOW() - INTERVAL 10 DAY, NOW()),
+(3, (SELECT id FROM community_posts WHERE title = '피칭 덱 작성 가이드' AND tenant_id = 3),
+ (SELECT id FROM users WHERE email = 'user8@company-b.com'),
+ '숫자로 보여주는 게 중요합니다!', NULL, NOW() - INTERVAL 9 DAY, NOW()),
+
+-- 스타트업 실패 원인 댓글
+(3, (SELECT id FROM community_posts WHERE title = '스타트업 실패 원인' AND tenant_id = 3),
+ (SELECT id FROM users WHERE email = 'user9@company-b.com'),
+ '정말 솔직한 글이네요. 용기있는 공유 감사합니다.', NULL, NOW() - INTERVAL 2 DAY, NOW()),
+(3, (SELECT id FROM community_posts WHERE title = '스타트업 실패 원인' AND tenant_id = 3),
+ (SELECT id FROM users WHERE email = 'user10@company-b.com'),
+ '저도 비슷한 경험이 있어서 공감됩니다.', NULL, NOW() - INTERVAL 1 DAY, NOW());
+
+-- =============================================
+-- 32. 커뮤니티 게시글 좋아요 데이터 (테넌트별)
+-- =============================================
+-- 테넌트 1 게시글 좋아요
+INSERT INTO community_post_likes (tenant_id, post_id, user_id, created_at, updated_at) VALUES
+(1, (SELECT id FROM community_posts WHERE title = 'React Hooks 사용 팁 공유' AND tenant_id = 1),
+ (SELECT id FROM users WHERE email = 'user1@default.com'), NOW() - INTERVAL 7 DAY, NOW()),
+(1, (SELECT id FROM community_posts WHERE title = 'React Hooks 사용 팁 공유' AND tenant_id = 1),
+ (SELECT id FROM users WHERE email = 'user2@default.com'), NOW() - INTERVAL 6 DAY, NOW()),
+(1, (SELECT id FROM community_posts WHERE title = 'React Hooks 사용 팁 공유' AND tenant_id = 1),
+ (SELECT id FROM users WHERE email = 'user4@default.com'), NOW() - INTERVAL 5 DAY, NOW()),
+(1, (SELECT id FROM community_posts WHERE title = 'React Hooks 사용 팁 공유' AND tenant_id = 1),
+ (SELECT id FROM users WHERE email = 'user5@default.com'), NOW() - INTERVAL 4 DAY, NOW()),
+(1, (SELECT id FROM community_posts WHERE title = 'SQL 쿼리 최적화 사례' AND tenant_id = 1),
+ (SELECT id FROM users WHERE email = 'user1@default.com'), NOW() - INTERVAL 4 DAY, NOW()),
+(1, (SELECT id FROM community_posts WHERE title = 'SQL 쿼리 최적화 사례' AND tenant_id = 1),
+ (SELECT id FROM users WHERE email = 'user3@default.com'), NOW() - INTERVAL 3 DAY, NOW()),
+(1, (SELECT id FROM community_posts WHERE title = 'SQL 쿼리 최적화 사례' AND tenant_id = 1),
+ (SELECT id FROM users WHERE email = 'user6@default.com'), NOW() - INTERVAL 2 DAY, NOW()),
+(1, (SELECT id FROM community_posts WHERE title = 'Clean Architecture 도입기' AND tenant_id = 1),
+ (SELECT id FROM users WHERE email = 'user2@default.com'), NOW() - INTERVAL 14 DAY, NOW()),
+(1, (SELECT id FROM community_posts WHERE title = 'Clean Architecture 도입기' AND tenant_id = 1),
+ (SELECT id FROM users WHERE email = 'user7@default.com'), NOW() - INTERVAL 13 DAY, NOW()),
+(1, (SELECT id FROM community_posts WHERE title = 'Clean Architecture 도입기' AND tenant_id = 1),
+ (SELECT id FROM users WHERE email = 'user8@default.com'), NOW() - INTERVAL 12 DAY, NOW()),
+(1, (SELECT id FROM community_posts WHERE title = 'MSA 도입 실패 경험' AND tenant_id = 1),
+ (SELECT id FROM users WHERE email = 'user1@default.com'), NOW() - INTERVAL 12 DAY, NOW()),
+(1, (SELECT id FROM community_posts WHERE title = 'MSA 도입 실패 경험' AND tenant_id = 1),
+ (SELECT id FROM users WHERE email = 'user4@default.com'), NOW() - INTERVAL 11 DAY, NOW()),
+(1, (SELECT id FROM community_posts WHERE title = 'MSA 도입 실패 경험' AND tenant_id = 1),
+ (SELECT id FROM users WHERE email = 'user9@default.com'), NOW() - INTERVAL 10 DAY, NOW()),
+(1, (SELECT id FROM community_posts WHERE title = '신입 개발자 취업 후기' AND tenant_id = 1),
+ (SELECT id FROM users WHERE email = 'user2@default.com'), NOW() - INTERVAL 19 DAY, NOW()),
+(1, (SELECT id FROM community_posts WHERE title = '신입 개발자 취업 후기' AND tenant_id = 1),
+ (SELECT id FROM users WHERE email = 'user3@default.com'), NOW() - INTERVAL 18 DAY, NOW()),
+(1, (SELECT id FROM community_posts WHERE title = '신입 개발자 취업 후기' AND tenant_id = 1),
+ (SELECT id FROM users WHERE email = 'user5@default.com'), NOW() - INTERVAL 17 DAY, NOW()),
+(1, (SELECT id FROM community_posts WHERE title = '신입 개발자 취업 후기' AND tenant_id = 1),
+ (SELECT id FROM users WHERE email = 'user10@default.com'), NOW() - INTERVAL 16 DAY, NOW());
+
+-- 테넌트 2 게시글 좋아요
+INSERT INTO community_post_likes (tenant_id, post_id, user_id, created_at, updated_at) VALUES
+(2, (SELECT id FROM community_posts WHERE title = '영업 미팅 준비 팁' AND tenant_id = 2),
+ (SELECT id FROM users WHERE email = 'user1@company-a.com'), NOW() - INTERVAL 9 DAY, NOW()),
+(2, (SELECT id FROM community_posts WHERE title = '영업 미팅 준비 팁' AND tenant_id = 2),
+ (SELECT id FROM users WHERE email = 'user2@company-a.com'), NOW() - INTERVAL 8 DAY, NOW()),
+(2, (SELECT id FROM community_posts WHERE title = '보고서 작성 템플릿' AND tenant_id = 2),
+ (SELECT id FROM users WHERE email = 'user3@company-a.com'), NOW() - INTERVAL 5 DAY, NOW()),
+(2, (SELECT id FROM community_posts WHERE title = '보고서 작성 템플릿' AND tenant_id = 2),
+ (SELECT id FROM users WHERE email = 'user4@company-a.com'), NOW() - INTERVAL 4 DAY, NOW()),
+(2, (SELECT id FROM community_posts WHERE title = '보고서 작성 템플릿' AND tenant_id = 2),
+ (SELECT id FROM users WHERE email = 'user5@company-a.com'), NOW() - INTERVAL 3 DAY, NOW()),
+(2, (SELECT id FROM community_posts WHERE title = '엑셀 단축키 모음' AND tenant_id = 2),
+ (SELECT id FROM users WHERE email = 'user1@company-a.com'), NOW() - INTERVAL 10 DAY, NOW()),
+(2, (SELECT id FROM community_posts WHERE title = '엑셀 단축키 모음' AND tenant_id = 2),
+ (SELECT id FROM users WHERE email = 'user6@company-a.com'), NOW() - INTERVAL 9 DAY, NOW()),
+(2, (SELECT id FROM community_posts WHERE title = '엑셀 단축키 모음' AND tenant_id = 2),
+ (SELECT id FROM users WHERE email = 'user7@company-a.com'), NOW() - INTERVAL 8 DAY, NOW()),
+(2, (SELECT id FROM community_posts WHERE title = '사내 정치 생존기' AND tenant_id = 2),
+ (SELECT id FROM users WHERE email = 'user2@company-a.com'), NOW() - INTERVAL 17 DAY, NOW()),
+(2, (SELECT id FROM community_posts WHERE title = '사내 정치 생존기' AND tenant_id = 2),
+ (SELECT id FROM users WHERE email = 'user8@company-a.com'), NOW() - INTERVAL 16 DAY, NOW()),
+(2, (SELECT id FROM community_posts WHERE title = '사내 정치 생존기' AND tenant_id = 2),
+ (SELECT id FROM users WHERE email = 'user9@company-a.com'), NOW() - INTERVAL 15 DAY, NOW());
+
+-- 테넌트 3 게시글 좋아요
+INSERT INTO community_post_likes (tenant_id, post_id, user_id, created_at, updated_at) VALUES
+(3, (SELECT id FROM community_posts WHERE title = '스타트업 첫 투자 유치 후기' AND tenant_id = 3),
+ (SELECT id FROM users WHERE email = 'user2@company-b.com'), NOW() - INTERVAL 9 DAY, NOW()),
+(3, (SELECT id FROM community_posts WHERE title = '스타트업 첫 투자 유치 후기' AND tenant_id = 3),
+ (SELECT id FROM users WHERE email = 'user3@company-b.com'), NOW() - INTERVAL 8 DAY, NOW()),
+(3, (SELECT id FROM community_posts WHERE title = '스타트업 첫 투자 유치 후기' AND tenant_id = 3),
+ (SELECT id FROM users WHERE email = 'user4@company-b.com'), NOW() - INTERVAL 7 DAY, NOW()),
+(3, (SELECT id FROM community_posts WHERE title = 'PMF 찾기 실패담' AND tenant_id = 3),
+ (SELECT id FROM users WHERE email = 'user1@company-b.com'), NOW() - INTERVAL 6 DAY, NOW()),
+(3, (SELECT id FROM community_posts WHERE title = 'PMF 찾기 실패담' AND tenant_id = 3),
+ (SELECT id FROM users WHERE email = 'user5@company-b.com'), NOW() - INTERVAL 5 DAY, NOW()),
+(3, (SELECT id FROM community_posts WHERE title = '스타트업 실패 원인' AND tenant_id = 3),
+ (SELECT id FROM users WHERE email = 'user1@company-b.com'), NOW() - INTERVAL 2 DAY, NOW()),
+(3, (SELECT id FROM community_posts WHERE title = '스타트업 실패 원인' AND tenant_id = 3),
+ (SELECT id FROM users WHERE email = 'user2@company-b.com'), NOW() - INTERVAL 1 DAY, NOW()),
+(3, (SELECT id FROM community_posts WHERE title = '스타트업 실패 원인' AND tenant_id = 3),
+ (SELECT id FROM users WHERE email = 'user6@company-b.com'), NOW() - INTERVAL 1 DAY, NOW()),
+(3, (SELECT id FROM community_posts WHERE title = '시리즈 A 준비 체크리스트' AND tenant_id = 3),
+ (SELECT id FROM users WHERE email = 'user3@company-b.com'), NOW() - INTERVAL 18 DAY, NOW()),
+(3, (SELECT id FROM community_posts WHERE title = '시리즈 A 준비 체크리스트' AND tenant_id = 3),
+ (SELECT id FROM users WHERE email = 'user7@company-b.com'), NOW() - INTERVAL 17 DAY, NOW());
+
+-- =============================================
+-- 33. 커뮤니티 댓글 좋아요 데이터 (테넌트별)
+-- =============================================
+-- 테넌트 1 댓글 좋아요
+INSERT INTO community_comment_likes (tenant_id, comment_id, user_id, created_at, updated_at)
+SELECT 1, c.id, (SELECT id FROM users WHERE email = 'user4@default.com'), NOW() - INTERVAL 6 DAY, NOW()
+FROM community_comments c
+WHERE c.tenant_id = 1 AND c.content LIKE '%spring-boot-starter%' LIMIT 1;
+
+INSERT INTO community_comment_likes (tenant_id, comment_id, user_id, created_at, updated_at)
+SELECT 1, c.id, (SELECT id FROM users WHERE email = 'user5@default.com'), NOW() - INTERVAL 5 DAY, NOW()
+FROM community_comments c
+WHERE c.tenant_id = 1 AND c.content LIKE '%spring-boot-starter%' LIMIT 1;
+
+INSERT INTO community_comment_likes (tenant_id, comment_id, user_id, created_at, updated_at)
+SELECT 1, c.id, (SELECT id FROM users WHERE email = 'user6@default.com'), NOW() - INTERVAL 7 DAY, NOW()
+FROM community_comments c
+WHERE c.tenant_id = 1 AND c.content LIKE '%@EntityGraph%' LIMIT 1;
+
+INSERT INTO community_comment_likes (tenant_id, comment_id, user_id, created_at, updated_at)
+SELECT 1, c.id, (SELECT id FROM users WHERE email = 'user7@default.com'), NOW() - INTERVAL 6 DAY, NOW()
+FROM community_comments c
+WHERE c.tenant_id = 1 AND c.content LIKE '%QueryDSL%' LIMIT 1;
+
+-- 테넌트 2 댓글 좋아요
+INSERT INTO community_comment_likes (tenant_id, comment_id, user_id, created_at, updated_at)
+SELECT 2, c.id, (SELECT id FROM users WHERE email = 'user1@company-a.com'), NOW() - INTERVAL 8 DAY, NOW()
+FROM community_comments c
+WHERE c.tenant_id = 2 AND c.content LIKE '%체크리스트%' LIMIT 1;
+
+INSERT INTO community_comment_likes (tenant_id, comment_id, user_id, created_at, updated_at)
+SELECT 2, c.id, (SELECT id FROM users WHERE email = 'user2@company-a.com'), NOW() - INTERVAL 9 DAY, NOW()
+FROM community_comments c
+WHERE c.tenant_id = 2 AND c.content LIKE '%Ctrl+Shift+L%' LIMIT 1;
+
+-- 테넌트 3 댓글 좋아요
+INSERT INTO community_comment_likes (tenant_id, comment_id, user_id, created_at, updated_at)
+SELECT 3, c.id, (SELECT id FROM users WHERE email = 'user1@company-b.com'), NOW() - INTERVAL 8 DAY, NOW()
+FROM community_comments c
+WHERE c.tenant_id = 3 AND c.content LIKE '%IR 자료%' LIMIT 1;
+
+INSERT INTO community_comment_likes (tenant_id, comment_id, user_id, created_at, updated_at)
+SELECT 3, c.id, (SELECT id FROM users WHERE email = 'user4@company-b.com'), NOW() - INTERVAL 7 DAY, NOW()
+FROM community_comments c
+WHERE c.tenant_id = 3 AND c.content LIKE '%프라이머%' LIMIT 1;
+
+-- =============================================
+-- 34. 추가 찜 데이터 (테넌트 2, 3)
+-- =============================================
+-- 테넌트 2 찜
+INSERT INTO cm_wishlist_items (tenant_id, user_id, course_time_id, created_at, updated_at) VALUES
+(2, (SELECT id FROM users WHERE email = 'user11@company-a.com'),
+ (SELECT id FROM course_times WHERE title = '팀 리더십 기초 1차' AND tenant_id = 2),
+ NOW() - INTERVAL 5 DAY, NOW()),
+(2, (SELECT id FROM users WHERE email = 'user12@company-a.com'),
+ (SELECT id FROM course_times WHERE title = '팀 리더십 기초 1차' AND tenant_id = 2),
+ NOW() - INTERVAL 4 DAY, NOW()),
+(2, (SELECT id FROM users WHERE email = 'user13@company-a.com'),
+ (SELECT id FROM course_times WHERE title = '영업 기초 이론 1차' AND tenant_id = 2),
+ NOW() - INTERVAL 3 DAY, NOW()),
+(2, (SELECT id FROM users WHERE email = 'user14@company-a.com'),
+ (SELECT id FROM course_times WHERE title = '정보보안 기초 2026년' AND tenant_id = 2),
+ NOW() - INTERVAL 2 DAY, NOW()),
+(2, (SELECT id FROM users WHERE email = 'user15@company-a.com'),
+ (SELECT id FROM course_times WHERE title = '신입사원 OJT 2026년 1분기' AND tenant_id = 2),
+ NOW() - INTERVAL 1 DAY, NOW());
+
+-- 테넌트 3 찜
+INSERT INTO cm_wishlist_items (tenant_id, user_id, course_time_id, created_at, updated_at) VALUES
+(3, (SELECT id FROM users WHERE email = 'user11@company-b.com'),
+ (SELECT id FROM course_times WHERE title = '스타트업 101 1차' AND tenant_id = 3),
+ NOW() - INTERVAL 5 DAY, NOW()),
+(3, (SELECT id FROM users WHERE email = 'user12@company-b.com'),
+ (SELECT id FROM course_times WHERE title = '디지털 마케팅 기초 1차' AND tenant_id = 3),
+ NOW() - INTERVAL 4 DAY, NOW()),
+(3, (SELECT id FROM users WHERE email = 'user13@company-b.com'),
+ (SELECT id FROM course_times WHERE title = '프로덕트 매니지먼트 1차' AND tenant_id = 3),
+ NOW() - INTERVAL 3 DAY, NOW()),
+(3, (SELECT id FROM users WHERE email = 'user14@company-b.com'),
+ (SELECT id FROM course_times WHERE title = '그로스해킹 기초 1차' AND tenant_id = 3),
+ NOW() - INTERVAL 2 DAY, NOW()),
+(3, (SELECT id FROM users WHERE email = 'user15@company-b.com'),
+ (SELECT id FROM course_times WHERE title = '스타트업 101 1차' AND tenant_id = 3),
+ NOW() - INTERVAL 1 DAY, NOW());
+
+-- =============================================
+-- 35. 추가 장바구니 데이터 (테넌트 2, 3)
+-- =============================================
+-- 테넌트 2 장바구니
+INSERT INTO cart_items (tenant_id, user_id, course_time_id, added_at, created_at, updated_at) VALUES
+(2, (SELECT id FROM users WHERE email = 'user16@company-a.com'),
+ (SELECT id FROM course_times WHERE title = '팀 리더십 기초 1차' AND tenant_id = 2),
+ NOW() - INTERVAL 3 DAY, NOW() - INTERVAL 3 DAY, NOW()),
+(2, (SELECT id FROM users WHERE email = 'user17@company-a.com'),
+ (SELECT id FROM course_times WHERE title = '팀 리더십 기초 1차' AND tenant_id = 2),
+ NOW() - INTERVAL 2 DAY, NOW() - INTERVAL 2 DAY, NOW()),
+(2, (SELECT id FROM users WHERE email = 'user18@company-a.com'),
+ (SELECT id FROM course_times WHERE title = '영업 기초 이론 1차' AND tenant_id = 2),
+ NOW() - INTERVAL 1 DAY, NOW() - INTERVAL 1 DAY, NOW()),
+(2, (SELECT id FROM users WHERE email = 'user19@company-a.com'),
+ (SELECT id FROM course_times WHERE title = '정보보안 기초 2026년' AND tenant_id = 2),
+ NOW() - INTERVAL 4 DAY, NOW() - INTERVAL 4 DAY, NOW()),
+(2, (SELECT id FROM users WHERE email = 'user20@company-a.com'),
+ (SELECT id FROM course_times WHERE title = '신입사원 OJT 2026년 1분기' AND tenant_id = 2),
+ NOW() - INTERVAL 5 DAY, NOW() - INTERVAL 5 DAY, NOW());
+
+-- 테넌트 3 장바구니
+INSERT INTO cart_items (tenant_id, user_id, course_time_id, added_at, created_at, updated_at) VALUES
+(3, (SELECT id FROM users WHERE email = 'user16@company-b.com'),
+ (SELECT id FROM course_times WHERE title = '디지털 마케팅 기초 1차' AND tenant_id = 3),
+ NOW() - INTERVAL 3 DAY, NOW() - INTERVAL 3 DAY, NOW()),
+(3, (SELECT id FROM users WHERE email = 'user17@company-b.com'),
+ (SELECT id FROM course_times WHERE title = '프로덕트 매니지먼트 1차' AND tenant_id = 3),
+ NOW() - INTERVAL 2 DAY, NOW() - INTERVAL 2 DAY, NOW()),
+(3, (SELECT id FROM users WHERE email = 'user18@company-b.com'),
+ (SELECT id FROM course_times WHERE title = '그로스해킹 기초 1차' AND tenant_id = 3),
+ NOW() - INTERVAL 1 DAY, NOW() - INTERVAL 1 DAY, NOW()),
+(3, (SELECT id FROM users WHERE email = 'user19@company-b.com'),
+ (SELECT id FROM course_times WHERE title = '스타트업 101 1차' AND tenant_id = 3),
+ NOW() - INTERVAL 4 DAY, NOW() - INTERVAL 4 DAY, NOW()),
+(3, (SELECT id FROM users WHERE email = 'user20@company-b.com'),
+ (SELECT id FROM course_times WHERE title = '디지털 마케팅 기초 1차' AND tenant_id = 3),
+ NOW() - INTERVAL 5 DAY, NOW() - INTERVAL 5 DAY, NOW());
+
+-- =============================================
+-- 36. 추가 리뷰/수강평 데이터 (다양한 차수)
+-- =============================================
+-- 테넌트 1: React & TypeScript 실전 1차 리뷰
+INSERT INTO cm_course_reviews (tenant_id, course_time_id, user_id, rating, content, completion_rate, created_at, updated_at, version) VALUES
+(1, (SELECT id FROM course_times WHERE title = 'React & TypeScript 실전 1차' AND tenant_id = 1), (SELECT id FROM users WHERE email = 'user21@default.com'), 5, 'TypeScript와 React 조합의 장점을 제대로 배웠습니다.', 100, NOW() - INTERVAL 5 DAY, NOW(), 0),
+(1, (SELECT id FROM course_times WHERE title = 'React & TypeScript 실전 1차' AND tenant_id = 1), (SELECT id FROM users WHERE email = 'user22@default.com'), 4, '실전 예제가 많아서 좋았어요.', 85, NOW() - INTERVAL 4 DAY, NOW(), 0),
+(1, (SELECT id FROM course_times WHERE title = 'React & TypeScript 실전 1차' AND tenant_id = 1), (SELECT id FROM users WHERE email = 'user23@default.com'), 5, '타입 안정성의 중요성을 깨달았습니다.', 90, NOW() - INTERVAL 3 DAY, NOW(), 0),
+(1, (SELECT id FROM course_times WHERE title = 'React & TypeScript 실전 1차' AND tenant_id = 1), (SELECT id FROM users WHERE email = 'user24@default.com'), 4, 'Hooks와 TypeScript 조합이 어렵지만 익숙해지니 좋네요.', 75, NOW() - INTERVAL 2 DAY, NOW(), 0),
+(1, (SELECT id FROM course_times WHERE title = 'React & TypeScript 실전 1차' AND tenant_id = 1), (SELECT id FROM users WHERE email = 'user25@default.com'), 5, '프론트엔드 개발자 필수 강의!', 95, NOW() - INTERVAL 1 DAY, NOW(), 0);
+
+-- 테넌트 2: 팀 리더십 기초 1차 리뷰
+INSERT INTO cm_course_reviews (tenant_id, course_time_id, user_id, rating, content, completion_rate, created_at, updated_at, version) VALUES
+(2, (SELECT id FROM course_times WHERE title = '팀 리더십 기초 1차' AND tenant_id = 2), (SELECT id FROM users WHERE email = 'user11@company-a.com'), 5, '리더십의 기본을 배울 수 있었습니다.', 100, NOW() - INTERVAL 5 DAY, NOW(), 0),
+(2, (SELECT id FROM course_times WHERE title = '팀 리더십 기초 1차' AND tenant_id = 2), (SELECT id FROM users WHERE email = 'user12@company-a.com'), 4, '팀원 동기부여 방법이 유익했어요.', 80, NOW() - INTERVAL 4 DAY, NOW(), 0),
+(2, (SELECT id FROM course_times WHERE title = '팀 리더십 기초 1차' AND tenant_id = 2), (SELECT id FROM users WHERE email = 'user13@company-a.com'), 5, '실제 사례 기반의 강의라서 좋았습니다.', 90, NOW() - INTERVAL 3 DAY, NOW(), 0),
+(2, (SELECT id FROM course_times WHERE title = '팀 리더십 기초 1차' AND tenant_id = 2), (SELECT id FROM users WHERE email = 'user14@company-a.com'), 4, '코칭 기술을 배울 수 있어서 좋았어요.', 70, NOW() - INTERVAL 2 DAY, NOW(), 0),
+(2, (SELECT id FROM course_times WHERE title = '팀 리더십 기초 1차' AND tenant_id = 2), (SELECT id FROM users WHERE email = 'user15@company-a.com'), 5, '팀장 준비하는 분들께 추천합니다!', 85, NOW() - INTERVAL 1 DAY, NOW(), 0);
+
+-- 테넌트 3: 디지털 마케팅 기초 1차 리뷰
+INSERT INTO cm_course_reviews (tenant_id, course_time_id, user_id, rating, content, completion_rate, created_at, updated_at, version) VALUES
+(3, (SELECT id FROM course_times WHERE title = '디지털 마케팅 기초 1차' AND tenant_id = 3), (SELECT id FROM users WHERE email = 'user11@company-b.com'), 5, '마케팅 입문자에게 최고의 강의입니다.', 100, NOW() - INTERVAL 5 DAY, NOW(), 0),
+(3, (SELECT id FROM course_times WHERE title = '디지털 마케팅 기초 1차' AND tenant_id = 3), (SELECT id FROM users WHERE email = 'user12@company-b.com'), 4, 'SNS 마케팅 파트가 특히 좋았어요.', 85, NOW() - INTERVAL 4 DAY, NOW(), 0),
+(3, (SELECT id FROM course_times WHERE title = '디지털 마케팅 기초 1차' AND tenant_id = 3), (SELECT id FROM users WHERE email = 'user13@company-b.com'), 5, '실전에 바로 적용할 수 있는 내용이 많아요.', 90, NOW() - INTERVAL 3 DAY, NOW(), 0),
+(3, (SELECT id FROM course_times WHERE title = '디지털 마케팅 기초 1차' AND tenant_id = 3), (SELECT id FROM users WHERE email = 'user14@company-b.com'), 4, 'SEO 기초를 이해하게 되었습니다.', 75, NOW() - INTERVAL 2 DAY, NOW(), 0),
+(3, (SELECT id FROM course_times WHERE title = '디지털 마케팅 기초 1차' AND tenant_id = 3), (SELECT id FROM users WHERE email = 'user15@company-b.com'), 5, '스타트업 마케터 필수 강의!', 95, NOW() - INTERVAL 1 DAY, NOW(), 0);
+
+-- 테넌트 3: 프로덕트 매니지먼트 1차 리뷰
+INSERT INTO cm_course_reviews (tenant_id, course_time_id, user_id, rating, content, completion_rate, created_at, updated_at, version) VALUES
+(3, (SELECT id FROM course_times WHERE title = '프로덕트 매니지먼트 1차' AND tenant_id = 3), (SELECT id FROM users WHERE email = 'user16@company-b.com'), 5, 'PM 역할에 대해 명확히 이해하게 되었습니다.', 100, NOW() - INTERVAL 10 DAY, NOW(), 0),
+(3, (SELECT id FROM course_times WHERE title = '프로덕트 매니지먼트 1차' AND tenant_id = 3), (SELECT id FROM users WHERE email = 'user17@company-b.com'), 5, '사용자 리서치 방법론이 유익했어요.', 95, NOW() - INTERVAL 9 DAY, NOW(), 0),
+(3, (SELECT id FROM course_times WHERE title = '프로덕트 매니지먼트 1차' AND tenant_id = 3), (SELECT id FROM users WHERE email = 'user18@company-b.com'), 4, 'PRD 작성법을 배울 수 있어서 좋았습니다.', 80, NOW() - INTERVAL 8 DAY, NOW(), 0),
+(3, (SELECT id FROM course_times WHERE title = '프로덕트 매니지먼트 1차' AND tenant_id = 3), (SELECT id FROM users WHERE email = 'user19@company-b.com'), 5, 'A/B 테스트 설계 방법이 실용적이었어요.', 90, NOW() - INTERVAL 7 DAY, NOW(), 0),
+(3, (SELECT id FROM course_times WHERE title = '프로덕트 매니지먼트 1차' AND tenant_id = 3), (SELECT id FROM users WHERE email = 'user20@company-b.com'), 4, '데이터 기반 의사결정의 중요성을 배웠습니다.', 85, NOW() - INTERVAL 6 DAY, NOW(), 0);
+
+-- =============================================
+-- 37. 콘텐츠(Content) 상세 데이터 (테넌트 1, 2, 3)
+-- =============================================
+
+-- ============================================
+-- 테넌트 1: VIDEO 콘텐츠
+-- ============================================
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, resolution, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 1001, 1, 0, 'ACTIVE', 1, 1, 'React 소개 영상', 'react-intro.mp4', 'react-intro-uuid.mp4', 'VIDEO', 52428800, 1200, '1920x1080', '/content/videos/react-intro-uuid.mp4', '/content/thumbnails/react-intro.jpg', 'React의 기본 개념과 특징을 소개합니다.', 'React,JavaScript,Frontend', true, '개발', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 1001);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, resolution, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 1002, 1, 0, 'ACTIVE', 1, 1, '개발환경 구성 가이드', 'dev-env-setup.mp4', 'dev-env-setup-uuid.mp4', 'VIDEO', 94371840, 1800, '1920x1080', '/content/videos/dev-env-setup-uuid.mp4', '/content/thumbnails/dev-env-setup.jpg', 'Node.js, npm, create-react-app 설치 및 설정 가이드', 'Node.js,npm,환경설정', true, '개발', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 1002);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, resolution, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 1003, 1, 0, 'ACTIVE', 1, 1, '함수형 컴포넌트 강의', 'func-component.mp4', 'func-component-uuid.mp4', 'VIDEO', 125829120, 2400, '1920x1080', '/content/videos/func-component-uuid.mp4', '/content/thumbnails/func-component.jpg', 'React 함수형 컴포넌트 작성법 상세 강의', 'React,Component,함수형', true, '개발', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 1003);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, resolution, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 1004, 1, 0, 'ACTIVE', 1, 1, 'Props와 State 이해하기', 'props-state.mp4', 'props-state-uuid.mp4', 'VIDEO', 110100480, 2100, '1920x1080', '/content/videos/props-state-uuid.mp4', '/content/thumbnails/props-state.jpg', 'Props와 State의 차이와 활용법', 'React,Props,State', true, '개발', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 1004);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, resolution, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 1005, 1, 0, 'ACTIVE', 1, 1, 'Spring Security 설정', 'spring-security.mp4', 'spring-security-uuid.mp4', 'VIDEO', 141557760, 2700, '1920x1080', '/content/videos/spring-security-uuid.mp4', '/content/thumbnails/spring-security.jpg', 'SecurityConfig 작성 및 기본 설정 강의', 'Spring,Security,Backend', true, '개발', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 1005);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, resolution, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 1006, 1, 0, 'ACTIVE', 1, 1, 'JWT 인증 구현하기', 'jwt-auth.mp4', 'jwt-auth-uuid.mp4', 'VIDEO', 157286400, 3000, '1920x1080', '/content/videos/jwt-auth-uuid.mp4', '/content/thumbnails/jwt-auth.jpg', 'JWT를 활용한 Stateless 인증 구현', 'JWT,Spring,Security', true, '개발', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 1006);
+
+-- AWS 강의 콘텐츠
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, resolution, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 1007, 1, 0, 'ACTIVE', 1, 1, 'AWS EC2 시작하기', 'aws-ec2.mp4', 'aws-ec2-uuid.mp4', 'VIDEO', 136314880, 2600, '1920x1080', '/content/videos/aws-ec2-uuid.mp4', '/content/thumbnails/aws-ec2.jpg', 'EC2 인스턴스 생성 및 설정', 'AWS,EC2,Cloud', true, '클라우드', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 1007);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, resolution, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 1008, 1, 0, 'ACTIVE', 1, 1, 'S3 버킷 활용법', 's3-bucket.mp4', 's3-bucket-uuid.mp4', 'VIDEO', 115343360, 2200, '1920x1080', '/content/videos/s3-bucket-uuid.mp4', '/content/thumbnails/s3-bucket.jpg', 'S3 버킷 생성 및 파일 업로드', 'AWS,S3,Storage', true, '클라우드', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 1008);
+
+-- Python 데이터 분석 콘텐츠
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, resolution, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 1009, 1, 0, 'ACTIVE', 1, 1, 'Pandas 기초', 'pandas-basic.mp4', 'pandas-basic-uuid.mp4', 'VIDEO', 120586240, 2300, '1920x1080', '/content/videos/pandas-basic-uuid.mp4', '/content/thumbnails/pandas-basic.jpg', 'Pandas DataFrame 기초 강의', 'Python,Pandas,Data', true, '데이터', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 1009);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, resolution, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 1010, 1, 0, 'ACTIVE', 1, 1, 'Matplotlib 시각화', 'matplotlib.mp4', 'matplotlib-uuid.mp4', 'VIDEO', 131072000, 2500, '1920x1080', '/content/videos/matplotlib-uuid.mp4', '/content/thumbnails/matplotlib.jpg', '데이터 시각화 기초', 'Python,Matplotlib,시각화', true, '데이터', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 1010);
+
+-- ============================================
+-- 테넌트 1: DOCUMENT 콘텐츠
+-- ============================================
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, page_count, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 1011, 1, 0, 'ACTIVE', 1, 1, 'React 핵심 요약 PDF', 'react-summary.pdf', 'react-summary-uuid.pdf', 'DOCUMENT', 2097152, 25, '/content/documents/react-summary-uuid.pdf', '/content/thumbnails/react-summary.jpg', 'React 핵심 개념 요약 문서', 'React,Summary,PDF', true, '개발', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 1011);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, page_count, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 1012, 1, 0, 'ACTIVE', 1, 1, 'Spring Boot 가이드', 'spring-guide.pdf', 'spring-guide-uuid.pdf', 'DOCUMENT', 3145728, 42, '/content/documents/spring-guide-uuid.pdf', '/content/thumbnails/spring-guide.jpg', 'Spring Boot 실무 가이드북', 'Spring,Guide,PDF', true, '개발', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 1012);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, page_count, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 1013, 1, 0, 'ACTIVE', 1, 1, 'AWS 아키텍처 다이어그램', 'aws-architecture.pptx', 'aws-architecture-uuid.pptx', 'DOCUMENT', 5242880, 35, '/content/documents/aws-architecture-uuid.pptx', '/content/thumbnails/aws-architecture.jpg', 'AWS 서비스 아키텍처 설계 자료', 'AWS,Architecture,PPT', true, '클라우드', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 1013);
+
+-- ============================================
+-- 테넌트 1: EXTERNAL_LINK 콘텐츠
+-- ============================================
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, content_type, external_url, duration, description, tags, downloadable, category, created_at, updated_at)
+SELECT 1014, 1, 0, 'ACTIVE', 1, 1, 'React 공식 문서', 'EXTERNAL_LINK', 'https://react.dev', NULL, 'React 공식 문서 링크', 'React,Documentation', false, '개발', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 1014);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, content_type, external_url, duration, description, tags, downloadable, category, created_at, updated_at)
+SELECT 1015, 1, 0, 'ACTIVE', 1, 1, 'Spring 공식 문서', 'EXTERNAL_LINK', 'https://spring.io/projects/spring-boot', NULL, 'Spring Boot 공식 문서', 'Spring,Documentation', false, '개발', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 1015);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, content_type, external_url, duration, description, tags, downloadable, category, created_at, updated_at)
+SELECT 1016, 1, 0, 'ACTIVE', 1, 1, 'AWS 공식 문서', 'EXTERNAL_LINK', 'https://docs.aws.amazon.com', NULL, 'AWS 공식 문서', 'AWS,Documentation', false, '클라우드', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 1016);
+
+-- ============================================
+-- 테넌트 1: IMAGE 콘텐츠
+-- ============================================
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, resolution, file_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 1017, 1, 0, 'ACTIVE', 1, 1, 'React 아키텍처 다이어그램', 'react-diagram.png', 'react-diagram-uuid.png', 'IMAGE', 524288, '1920x1080', '/content/images/react-diagram-uuid.png', 'React 컴포넌트 구조 다이어그램', 'React,Diagram,Architecture', true, '개발', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 1017);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, resolution, file_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 1018, 1, 0, 'ACTIVE', 1, 1, 'AWS 서비스 인포그래픽', 'aws-infographic.jpg', 'aws-infographic-uuid.jpg', 'IMAGE', 1048576, '2560x1440', '/content/images/aws-infographic-uuid.jpg', 'AWS 주요 서비스 인포그래픽', 'AWS,Infographic,Cloud', true, '클라우드', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 1018);
+
+-- ============================================
+-- 테넌트 1: AUDIO 콘텐츠
+-- ============================================
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, file_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 1019, 1, 0, 'ACTIVE', 1, 1, '개발자 성장 팟캐스트 EP.1', 'podcast-ep1.mp3', 'podcast-ep1-uuid.mp3', 'AUDIO', 31457280, 1800, '/content/audio/podcast-ep1-uuid.mp3', '주니어 개발자 성장기 팟캐스트', 'Podcast,Developer,Career', true, '일반', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 1019);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, file_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 1020, 1, 0, 'ACTIVE', 1, 1, '클라우드 트렌드 팟캐스트', 'cloud-podcast.mp3', 'cloud-podcast-uuid.mp3', 'AUDIO', 26214400, 1500, '/content/audio/cloud-podcast-uuid.mp3', '2025년 클라우드 트렌드 분석', 'Podcast,Cloud,Trend', true, '클라우드', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 1020);
+
+-- ============================================
+-- 테넌트 2: VIDEO 콘텐츠 (A사 교육센터)
+-- ============================================
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, resolution, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 2001, 2, 0, 'ACTIVE', (SELECT id FROM users WHERE email = 'designer1@company-a.com'), 1, '영업 기초 이론', 'sales-basic.mp4', 'sales-basic-uuid.mp4', 'VIDEO', 52428800, 1200, '1920x1080', '/content/videos/sales-basic-uuid.mp4', '/content/thumbnails/sales-basic.jpg', '영업의 기본 개념과 프로세스를 소개합니다.', '영업,Sales,기초', true, '영업교육', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 2001);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, resolution, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 2002, 2, 0, 'ACTIVE', (SELECT id FROM users WHERE email = 'designer1@company-a.com'), 1, '고객 상담 기법', 'customer-consulting.mp4', 'customer-consulting-uuid.mp4', 'VIDEO', 94371840, 1800, '1920x1080', '/content/videos/customer-consulting-uuid.mp4', '/content/thumbnails/customer-consulting.jpg', '효과적인 고객 상담 및 니즈 파악 기법', '상담,고객,커뮤니케이션', true, '영업교육', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 2002);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, resolution, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 2003, 2, 0, 'ACTIVE', (SELECT id FROM users WHERE email = 'designer1@company-a.com'), 1, '리더십 기초', 'leadership-basic.mp4', 'leadership-basic-uuid.mp4', 'VIDEO', 125829120, 2400, '1920x1080', '/content/videos/leadership-basic-uuid.mp4', '/content/thumbnails/leadership-basic.jpg', '리더십의 핵심 원리와 실천 방법', '리더십,Leadership,관리', true, '리더십', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 2003);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, resolution, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 2004, 2, 0, 'ACTIVE', (SELECT id FROM users WHERE email = 'designer1@company-a.com'), 1, '팀 빌딩 워크샵', 'team-building.mp4', 'team-building-uuid.mp4', 'VIDEO', 110100480, 2100, '1920x1080', '/content/videos/team-building-uuid.mp4', '/content/thumbnails/team-building.jpg', '효과적인 팀 구성과 협업 방법', '팀빌딩,협업,조직문화', true, '리더십', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 2004);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, resolution, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 2005, 2, 0, 'ACTIVE', (SELECT id FROM users WHERE email = 'designer2@company-a.com'), 1, '정보보안 기초', 'security-basic.mp4', 'security-basic-uuid.mp4', 'VIDEO', 141557760, 2700, '1920x1080', '/content/videos/security-basic-uuid.mp4', '/content/thumbnails/security-basic.jpg', '기업 정보보안의 기본 개념과 실천', '보안,Security,컴플라이언스', true, '컴플라이언스', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 2005);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, resolution, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 2006, 2, 0, 'ACTIVE', (SELECT id FROM users WHERE email = 'designer2@company-a.com'), 1, '신입사원 온보딩', 'onboarding.mp4', 'onboarding-uuid.mp4', 'VIDEO', 157286400, 3000, '1920x1080', '/content/videos/onboarding-uuid.mp4', '/content/thumbnails/onboarding.jpg', '신입사원을 위한 회사 소개 및 업무 가이드', '온보딩,신입,OJT', true, '신입교육', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 2006);
+
+-- 테넌트 2: DOCUMENT 콘텐츠
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, page_count, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 2011, 2, 0, 'ACTIVE', (SELECT id FROM users WHERE email = 'designer1@company-a.com'), 1, '영업 매뉴얼', 'sales-manual.pdf', 'sales-manual-uuid.pdf', 'DOCUMENT', 2097152, 50, '/content/documents/sales-manual-uuid.pdf', '/content/thumbnails/sales-manual.jpg', '영업 프로세스 및 가이드라인', '영업,매뉴얼,가이드', true, '영업교육', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 2011);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, page_count, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 2012, 2, 0, 'ACTIVE', (SELECT id FROM users WHERE email = 'designer2@company-a.com'), 1, '보안 정책 문서', 'security-policy.pdf', 'security-policy-uuid.pdf', 'DOCUMENT', 1048576, 30, '/content/documents/security-policy-uuid.pdf', '/content/thumbnails/security-policy.jpg', '회사 정보보안 정책 및 규정', '보안,정책,규정', true, '컴플라이언스', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 2012);
+
+-- ============================================
+-- 테넌트 3: VIDEO 콘텐츠 (B사 아카데미)
+-- ============================================
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, resolution, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 3001, 3, 0, 'ACTIVE', (SELECT id FROM users WHERE email = 'designer1@company-b.com'), 1, '스타트업 101', 'startup-101.mp4', 'startup-101-uuid.mp4', 'VIDEO', 52428800, 1200, '1920x1080', '/content/videos/startup-101-uuid.mp4', '/content/thumbnails/startup-101.jpg', '스타트업 창업의 기본 개념과 프로세스', '스타트업,창업,기초', true, '스타트업기초', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 3001);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, resolution, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 3002, 3, 0, 'ACTIVE', (SELECT id FROM users WHERE email = 'designer1@company-b.com'), 1, '디지털 마케팅 기초', 'digital-marketing.mp4', 'digital-marketing-uuid.mp4', 'VIDEO', 94371840, 1800, '1920x1080', '/content/videos/digital-marketing-uuid.mp4', '/content/thumbnails/digital-marketing.jpg', 'SEO, SEM, SNS 마케팅 기초', '마케팅,디지털,SNS', true, '마케팅', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 3002);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, resolution, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 3003, 3, 0, 'ACTIVE', (SELECT id FROM users WHERE email = 'designer1@company-b.com'), 1, '프로덕트 매니지먼트', 'product-management.mp4', 'product-management-uuid.mp4', 'VIDEO', 125829120, 2400, '1920x1080', '/content/videos/product-management-uuid.mp4', '/content/thumbnails/product-management.jpg', 'PM의 역할과 프로덕트 개발 프로세스', 'PM,프로덕트,기획', true, '프로덕트', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 3003);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, resolution, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 3004, 3, 0, 'ACTIVE', (SELECT id FROM users WHERE email = 'designer1@company-b.com'), 1, '그로스해킹 전략', 'growth-hacking.mp4', 'growth-hacking-uuid.mp4', 'VIDEO', 110100480, 2100, '1920x1080', '/content/videos/growth-hacking-uuid.mp4', '/content/thumbnails/growth-hacking.jpg', '스타트업을 위한 그로스해킹 전략', '그로스,해킹,성장', true, '그로스해킹', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 3004);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, resolution, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 3005, 3, 0, 'ACTIVE', (SELECT id FROM users WHERE email = 'designer2@company-b.com'), 1, '투자유치 전략', 'funding-strategy.mp4', 'funding-strategy-uuid.mp4', 'VIDEO', 141557760, 2700, '1920x1080', '/content/videos/funding-strategy-uuid.mp4', '/content/thumbnails/funding-strategy.jpg', 'VC 투자유치를 위한 준비와 전략', '투자,VC,펀딩', true, '투자유치', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 3005);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, duration, resolution, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 3006, 3, 0, 'ACTIVE', (SELECT id FROM users WHERE email = 'designer2@company-b.com'), 1, '피칭 마스터클래스', 'pitching-master.mp4', 'pitching-master-uuid.mp4', 'VIDEO', 157286400, 3000, '1920x1080', '/content/videos/pitching-master-uuid.mp4', '/content/thumbnails/pitching-master.jpg', '성공적인 피칭을 위한 스토리텔링', '피칭,발표,스토리텔링', true, '투자유치', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 3006);
+
+-- 테넌트 3: DOCUMENT 콘텐츠
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, page_count, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 3011, 3, 0, 'ACTIVE', (SELECT id FROM users WHERE email = 'designer1@company-b.com'), 1, '사업계획서 템플릿', 'business-plan-template.pdf', 'business-plan-template-uuid.pdf', 'DOCUMENT', 2097152, 25, '/content/documents/business-plan-template-uuid.pdf', '/content/thumbnails/business-plan.jpg', '스타트업 사업계획서 작성 템플릿', '사업계획서,템플릿,창업', true, '스타트업기초', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 3011);
+
+INSERT INTO content (id, tenant_id, version, status, created_by, current_version, original_file_name, uploaded_file_name, stored_file_name, content_type, file_size, page_count, file_path, thumbnail_path, description, tags, downloadable, category, created_at, updated_at)
+SELECT 3012, 3, 0, 'ACTIVE', (SELECT id FROM users WHERE email = 'designer2@company-b.com'), 1, '투자유치 체크리스트', 'funding-checklist.pdf', 'funding-checklist-uuid.pdf', 'DOCUMENT', 1048576, 15, '/content/documents/funding-checklist-uuid.pdf', '/content/thumbnails/funding-checklist.jpg', '시리즈 A 투자유치 준비 체크리스트', '투자,체크리스트,준비', true, '투자유치', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM content WHERE id = 3012);
+
+-- @Version 필드 NULL 수정
+UPDATE content SET version = 0 WHERE version IS NULL;
+UPDATE content SET current_version = 1 WHERE current_version IS NULL;
