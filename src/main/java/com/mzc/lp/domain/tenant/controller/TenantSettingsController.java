@@ -4,6 +4,7 @@ import com.mzc.lp.common.context.TenantContext;
 import com.mzc.lp.common.dto.ApiResponse;
 import com.mzc.lp.domain.tenant.dto.request.NavigationItemRequest;
 import com.mzc.lp.domain.tenant.dto.request.UpdateDesignSettingsRequest;
+import com.mzc.lp.domain.tenant.dto.request.UpdateExtendedBrandingRequest;
 import com.mzc.lp.domain.tenant.dto.request.UpdateLayoutSettingsRequest;
 import com.mzc.lp.domain.tenant.dto.request.UpdateTenantFeaturesRequest;
 import com.mzc.lp.domain.tenant.dto.request.UpdateTenantSettingsRequest;
@@ -102,6 +103,17 @@ public class TenantSettingsController {
                 null, null, null, null, null, null, null
         );
         TenantSettingsResponse response = tenantSettingsService.updateSettings(tenantId, brandingRequest);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @Operation(summary = "확장 브랜딩 설정 업데이트", description = "배너, 랜딩페이지, 사이드바 등 확장 브랜딩 설정을 업데이트합니다")
+    @PutMapping("/branding/extended")
+    @PreAuthorize("hasRole('TENANT_ADMIN')")
+    public ResponseEntity<ApiResponse<TenantSettingsResponse>> updateExtendedBrandingSettings(
+            @Valid @RequestBody UpdateExtendedBrandingRequest request
+    ) {
+        Long tenantId = TenantContext.getCurrentTenantId();
+        TenantSettingsResponse response = tenantSettingsService.updateExtendedBrandingSettings(tenantId, request);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

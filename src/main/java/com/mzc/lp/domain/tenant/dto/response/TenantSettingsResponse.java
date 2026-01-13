@@ -29,6 +29,13 @@ public record TenantSettingsResponse(
         Map<String, Object> footerSettings,
         Map<String, Object> contentSettings,
 
+        // 확장 브랜딩 설정
+        String companyName,
+        Map<String, Object> bannerSettings,
+        Map<String, Object> landingPageSettings,
+        Map<String, Object> sidebarTUSettings,
+        Map<String, Object> sidebarCOSettings,
+
         // 일반 설정
         String defaultLanguage,
         String timezone,
@@ -70,6 +77,11 @@ public record TenantSettingsResponse(
                 settings.getSidebarSettings(),
                 settings.getFooterSettings(),
                 settings.getContentSettings(),
+                settings.getCompanyName(),
+                settings.getBannerSettings(),
+                settings.getLandingPageSettings(),
+                settings.getSidebarTUSettings(),
+                settings.getSidebarCOSettings(),
                 settings.getDefaultLanguage(),
                 settings.getTimezone(),
                 settings.getAllowSelfRegistration(),

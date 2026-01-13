@@ -2,6 +2,7 @@ package com.mzc.lp.domain.tenant.service;
 
 import com.mzc.lp.domain.tenant.dto.request.NavigationItemRequest;
 import com.mzc.lp.domain.tenant.dto.request.UpdateDesignSettingsRequest;
+import com.mzc.lp.domain.tenant.dto.request.UpdateExtendedBrandingRequest;
 import com.mzc.lp.domain.tenant.dto.request.UpdateLayoutSettingsRequest;
 import com.mzc.lp.domain.tenant.dto.request.UpdateTenantFeaturesRequest;
 import com.mzc.lp.domain.tenant.dto.request.UpdateTenantSettingsRequest;
@@ -48,6 +49,14 @@ public interface TenantSettingsService {
      * @return 업데이트된 설정
      */
     TenantSettingsResponse updateLayoutSettings(Long tenantId, UpdateLayoutSettingsRequest request);
+
+    /**
+     * 확장 브랜딩 설정 업데이트 (배너, 랜딩페이지, 사이드바 등)
+     * @param tenantId 테넌트 ID
+     * @param request 확장 브랜딩 설정 요청
+     * @return 업데이트된 설정
+     */
+    TenantSettingsResponse updateExtendedBrandingSettings(Long tenantId, UpdateExtendedBrandingRequest request);
 
     /**
      * 테넌트 설정 초기화 (기본값으로 생성)
