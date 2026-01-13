@@ -4,6 +4,7 @@ import com.mzc.lp.domain.content.constant.ContentStatus;
 import com.mzc.lp.domain.content.constant.ContentType;
 import com.mzc.lp.domain.content.dto.request.CreateExternalLinkRequest;
 import com.mzc.lp.domain.content.dto.request.UpdateContentRequest;
+import com.mzc.lp.domain.content.dto.response.BulkUploadResponse;
 import com.mzc.lp.domain.content.dto.response.ContentListResponse;
 import com.mzc.lp.domain.content.dto.response.ContentResponse;
 import com.mzc.lp.domain.learning.constant.CompletionCriteria;
@@ -33,6 +34,14 @@ public interface ContentService {
      * 외부 링크 등록
      */
     ContentResponse createExternalLink(CreateExternalLinkRequest request, Long tenantId, Long userId);
+
+    /**
+     * 다중 파일 일괄 업로드
+     * @param files 업로드할 파일 배열 (최대 10개)
+     */
+    BulkUploadResponse bulkUploadFiles(MultipartFile[] files, Long folderId,
+                                       CompletionCriteria completionCriteria, Boolean downloadable,
+                                       Long tenantId, Long userId);
 
     /**
      * 콘텐츠 목록 조회
