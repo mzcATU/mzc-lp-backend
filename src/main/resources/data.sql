@@ -911,10 +911,10 @@ SELECT 1, (SELECT id FROM users WHERE email = 'creator@default.com'), NULL, 'DES
 -- OWNER 역할 (courseId = programId, 프로그램 승인 시 자동 부여)
 INSERT INTO user_course_roles (tenant_id, user_id, course_id, role, revenue_share_percent, created_at, updated_at)
 SELECT 1, (SELECT id FROM users WHERE email = 'creator@default.com'),
- (SELECT id FROM cm_programs WHERE title = 'Spring Boot 기초 과정' AND tenant_id = 1), 'OWNER', 70, NOW(), NOW();
+ (SELECT id FROM cm_programs WHERE title = 'Spring Boot 기초 과정' AND tenant_id = 1), 'DESIGNER', 70, NOW(), NOW();
 INSERT INTO user_course_roles (tenant_id, user_id, course_id, role, revenue_share_percent, created_at, updated_at)
 SELECT 1, (SELECT id FROM users WHERE email = 'creator@default.com'),
- (SELECT id FROM cm_programs WHERE title = 'React & TypeScript 실전' AND tenant_id = 1), 'OWNER', 70, NOW(), NOW();
+ (SELECT id FROM cm_programs WHERE title = 'React & TypeScript 실전' AND tenant_id = 1), 'DESIGNER', 70, NOW(), NOW();
 
 -- designer3@default.com: USER + DESIGNER (프로그램 아직 미승인)
 -- DESIGNER 역할만 (courseId = null, 테넌트 레벨)
