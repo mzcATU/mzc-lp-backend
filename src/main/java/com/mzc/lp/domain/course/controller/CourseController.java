@@ -117,7 +117,9 @@ public class CourseController {
     /**
      * 강의 발행
      * POST /api/courses/{courseId}/publish
+     * @deprecated Use {@link #readyCourse(Long, UserPrincipal)} instead
      */
+    @Deprecated
     @PostMapping("/{courseId:\\d+}/publish")
     @PreAuthorize("hasAnyRole('DESIGNER', 'OPERATOR', 'TENANT_ADMIN')")
     public ResponseEntity<ApiResponse<CourseResponse>> publishCourse(
@@ -131,7 +133,9 @@ public class CourseController {
     /**
      * 강의 발행 취소
      * POST /api/courses/{courseId}/unpublish
+     * @deprecated Use {@link #unreadyCourse(Long, UserPrincipal)} instead
      */
+    @Deprecated
     @PostMapping("/{courseId:\\d+}/unpublish")
     @PreAuthorize("hasAnyRole('DESIGNER', 'OPERATOR', 'TENANT_ADMIN')")
     public ResponseEntity<ApiResponse<CourseResponse>> unpublishCourse(
@@ -139,6 +143,48 @@ public class CourseController {
             @AuthenticationPrincipal UserPrincipal principal
     ) {
         CourseResponse response = courseService.unpublishCourse(courseId);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    /**
+     * 강의 작성완료 (DRAFT -> READY)
+     * POST /api/courses/{courseId}/ready
+     */
+    @PostMapping("/{courseId:\\d+}/ready")
+    @PreAuthorize("hasAnyRole('DESIGNER', 'OPERATOR', 'TENANT_ADMIN')")
+    public ResponseEntity<ApiResponse<CourseResponse>> readyCourse(
+            @PathVariable @Positive Long courseId,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        CourseResponse response = courseService.readyCourse(courseId);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    /**
+     * 강의 작성중으로 변경 (READY -> DRAFT)
+     * POST /api/courses/{courseId}/unready
+     */
+    @PostMapping("/{courseId:\\d+}/unready")
+    @PreAuthorize("hasAnyRole('DESIGNER', 'OPERATOR', 'TENANT_ADMIN')")
+    public ResponseEntity<ApiResponse<CourseResponse>> unreadyCourse(
+            @PathVariable @Positive Long courseId,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        CourseResponse response = courseService.unreadyCourse(courseId);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    /**
+     * 강의 등록 (READY -> REGISTERED)
+     * POST /api/courses/{courseId}/register
+     */
+    @PostMapping("/{courseId:\\d+}/register")
+    @PreAuthorize("hasAnyRole('OPERATOR', 'TENANT_ADMIN')")
+    public ResponseEntity<ApiResponse<CourseResponse>> registerCourse(
+            @PathVariable @Positive Long courseId,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        CourseResponse response = courseService.registerCourse(courseId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 }
