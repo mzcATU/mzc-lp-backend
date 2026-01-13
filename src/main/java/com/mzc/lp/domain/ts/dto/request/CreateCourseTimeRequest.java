@@ -15,21 +15,18 @@ public record CreateCourseTimeRequest(
         Long courseId,
 
         /**
-         * @deprecated courseId를 사용하세요. Program 승인 워크플로우가 제거되었습니다.
+         * @deprecated since 2.0, courseId를 사용하세요. Program 승인 워크플로우가 제거되었습니다.
          */
-        @Deprecated(since = "2.0", forRemoval = true)
         Long programId,
 
         /**
-         * @deprecated Course를 직접 참조하세요.
+         * @deprecated since 1.0, Course를 직접 참조하세요.
          */
-        @Deprecated(since = "1.0", forRemoval = true)
         Long cmCourseId,
 
         /**
-         * @deprecated Snapshot을 직접 참조하세요.
+         * @deprecated since 1.0, Snapshot을 직접 참조하세요.
          */
-        @Deprecated(since = "1.0", forRemoval = true)
         Long cmCourseVersionId,
 
         @NotBlank(message = "제목은 필수입니다")
