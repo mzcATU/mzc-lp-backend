@@ -10,7 +10,6 @@ import com.mzc.lp.domain.content.dto.response.ContentListResponse;
 import com.mzc.lp.domain.content.dto.response.ContentResponse;
 import com.mzc.lp.domain.content.entity.Content;
 import com.mzc.lp.domain.content.event.ContentCreatedEvent;
-import com.mzc.lp.domain.content.exception.ContentDownloadNotAllowedException;
 import com.mzc.lp.domain.content.exception.ContentInUseException;
 import com.mzc.lp.domain.content.exception.ContentNotFoundException;
 import com.mzc.lp.domain.content.exception.FileStorageException;
@@ -281,11 +280,6 @@ public class ContentServiceImpl implements ContentService {
     @Override
     public ContentDownloadInfo getFileForDownload(Long contentId, Long tenantId) {
         Content content = findContentOrThrow(contentId, tenantId);
-
-        // 다운로드 허용 여부 체크
-        if (content.getDownloadable() != null && !content.getDownloadable()) {
-            throw new ContentDownloadNotAllowedException(contentId);
-        }
 
         if (content.getFilePath() == null) {
             throw new FileStorageException(ErrorCode.FILE_NOT_FOUND,
