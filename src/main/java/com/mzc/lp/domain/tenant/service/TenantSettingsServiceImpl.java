@@ -469,7 +469,8 @@ public class TenantSettingsServiceImpl implements TenantSettingsService {
                 request.userCourseCreationEnabled(),
                 request.cartEnabled(),
                 request.wishlistEnabled(),
-                request.instructorTabEnabled()
+                request.instructorTabEnabled(),
+                request.paidModeEnabled()
         );
 
         return TenantFeaturesResponse.from(settings);

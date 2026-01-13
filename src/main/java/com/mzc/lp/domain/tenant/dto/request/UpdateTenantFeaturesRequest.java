@@ -8,6 +8,7 @@ public record UpdateTenantFeaturesRequest(
         Boolean userCourseCreationEnabled,
         Boolean cartEnabled,
         Boolean wishlistEnabled,
-        Boolean instructorTabEnabled
+        Boolean instructorTabEnabled,
+        Boolean paidModeEnabled // 유료 모드 (false면 무료 모드 - 가격 숨김)
 ) {
 }

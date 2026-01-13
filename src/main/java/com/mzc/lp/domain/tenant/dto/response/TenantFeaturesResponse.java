@@ -10,7 +10,8 @@ public record TenantFeaturesResponse(
         Boolean userCourseCreationEnabled,
         Boolean cartEnabled,
         Boolean wishlistEnabled,
-        Boolean instructorTabEnabled
+        Boolean instructorTabEnabled,
+        Boolean paidModeEnabled // 유료 모드 (false면 무료 모드 - 가격 숨김)
 ) {
     public static TenantFeaturesResponse from(TenantSettings settings) {
         return new TenantFeaturesResponse(
@@ -18,7 +19,8 @@ public record TenantFeaturesResponse(
                 settings.getUserCourseCreationEnabled(),
                 settings.getCartEnabled(),
                 settings.getWishlistEnabled(),
-                settings.getInstructorTabEnabled()
+                settings.getInstructorTabEnabled(),
+                settings.getPaidModeEnabled()
         );
     }
 
@@ -31,7 +33,8 @@ public record TenantFeaturesResponse(
                 false,  // userCourseCreationEnabled
                 true,   // cartEnabled
                 true,   // wishlistEnabled
-                true    // instructorTabEnabled
+                true,   // instructorTabEnabled
+                true    // paidModeEnabled (기본값: 유료 모드)
         );
     }
 }
