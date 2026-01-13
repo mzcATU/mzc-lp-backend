@@ -294,6 +294,7 @@ class CourseTimeServiceTest extends TenantTestSupport {
             // given
             LocalDate today = LocalDate.now();
             CreateCourseTimeRequest request = new CreateCourseTimeRequest(
+                    null, // courseId
                     1L,  // programId
                     null,
                     null,
@@ -329,6 +330,7 @@ class CourseTimeServiceTest extends TenantTestSupport {
             // given
             LocalDate today = LocalDate.now();
             CreateCourseTimeRequest request = new CreateCourseTimeRequest(
+                    null, // courseId
                     1L,  // programId
                     null,
                     null,
@@ -364,6 +366,7 @@ class CourseTimeServiceTest extends TenantTestSupport {
             // given
             LocalDate today = LocalDate.now();
             CreateCourseTimeRequest request = new CreateCourseTimeRequest(
+                    null, // courseId
                     1L,  // programId
                     null,
                     null,

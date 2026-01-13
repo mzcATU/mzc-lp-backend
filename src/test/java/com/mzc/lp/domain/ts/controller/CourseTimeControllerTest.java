@@ -120,6 +120,7 @@ class CourseTimeControllerTest extends TenantTestSupport {
 
     private CreateCourseTimeRequest createValidRequest() {
         return new CreateCourseTimeRequest(
+                null, // courseId
                 testProgram.getId(),  // programId
                 null,
                 null,
@@ -142,6 +143,7 @@ class CourseTimeControllerTest extends TenantTestSupport {
 
     private CreateCourseTimeRequest createOfflineRequest() {
         return new CreateCourseTimeRequest(
+                null, // courseId
                 testProgram.getId(),  // programId
                 null,
                 null,
@@ -244,6 +246,7 @@ class CourseTimeControllerTest extends TenantTestSupport {
             createOperatorUser();
             String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
             CreateCourseTimeRequest request = new CreateCourseTimeRequest(
+                    null, // courseId
                     testProgram.getId(),  // programId
                     null, null, "오프라인 교육",
                     DeliveryType.OFFLINE,
@@ -273,6 +276,7 @@ class CourseTimeControllerTest extends TenantTestSupport {
             createOperatorUser();
             String accessToken = loginAndGetAccessToken("operator@example.com", "Password123!");
             CreateCourseTimeRequest request = new CreateCourseTimeRequest(
+                    null, // courseId
                     testProgram.getId(),  // programId
                     null, null, "날짜 오류 테스트",
                     DeliveryType.ONLINE,
