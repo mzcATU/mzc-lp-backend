@@ -58,17 +58,25 @@ public interface CourseService {
     Page<CourseResponse> getMyCourses(Long creatorId, Pageable pageable);
 
     /**
-     * 강의 발행
-     * @param courseId 강의 ID
-     * @return 발행된 강의 정보
-     * @throws com.mzc.lp.domain.course.exception.CourseIncompleteException 완성되지 않은 강의인 경우
+     * 강의를 READY 상태로 전환
      */
-    CourseResponse publishCourse(Long courseId);
+    CourseResponse readyCourse(Long courseId);
 
     /**
-     * 강의 발행 취소
-     * @param courseId 강의 ID
-     * @return 발행 취소된 강의 정보
+     * 강의를 DRAFT 상태로 전환
      */
+    CourseResponse unreadyCourse(Long courseId);
+
+    /**
+     * 강의를 REGISTERED 상태로 등록 (되돌릴 수 없음)
+     */
+    CourseResponse registerCourse(Long courseId);
+
+    /** @deprecated Use {@link #readyCourse(Long)} instead */
+    @Deprecated
+    CourseResponse publishCourse(Long courseId);
+
+    /** @deprecated Use {@link #unreadyCourse(Long)} instead */
+    @Deprecated
     CourseResponse unpublishCourse(Long courseId);
 }

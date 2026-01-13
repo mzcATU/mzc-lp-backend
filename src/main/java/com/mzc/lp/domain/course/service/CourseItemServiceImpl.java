@@ -12,6 +12,7 @@ import com.mzc.lp.domain.course.entity.Course;
 import com.mzc.lp.domain.course.entity.CourseItem;
 import com.mzc.lp.domain.course.exception.CourseItemNotFoundException;
 import com.mzc.lp.domain.course.exception.CourseNotFoundException;
+import com.mzc.lp.domain.course.exception.CourseNotModifiableException;
 import com.mzc.lp.domain.course.exception.InvalidParentException;
 import com.mzc.lp.domain.course.exception.MaxDepthExceededException;
 import com.mzc.lp.domain.course.repository.CourseItemRepository;
@@ -46,6 +47,7 @@ public class CourseItemServiceImpl implements CourseItemService {
         log.info("Creating item: courseId={}, itemName={}, contentId={}", courseId, request.itemName(), request.contentId());
 
         Course course = findCourseById(courseId);
+        validateCourseModifiable(course);
         CourseItem parent = findParentIfExists(request.parentId());
 
         validateParentBelongsToCourse(parent, courseId);
@@ -103,6 +105,7 @@ public class CourseItemServiceImpl implements CourseItemService {
         log.info("Creating folder: courseId={}, folderName={}", courseId, request.folderName());
 
         Course course = findCourseById(courseId);
+        validateCourseModifiable(course);
         CourseItem parent = findParentIfExists(request.parentId());
 
         validateParentBelongsToCourse(parent, courseId);
@@ -156,7 +159,8 @@ public class CourseItemServiceImpl implements CourseItemService {
         log.info("Moving item: courseId={}, itemId={}, targetParentId={}",
                 courseId, request.itemId(), request.targetParentId());
 
-        validateCourseExists(courseId);
+        Course course = findCourseById(courseId);
+        validateCourseModifiable(course);
 
         CourseItem item = findItemById(request.itemId());
         validateItemBelongsToCourse(item, courseId);
@@ -187,7 +191,8 @@ public class CourseItemServiceImpl implements CourseItemService {
         log.info("Updating item name: courseId={}, itemId={}, newName={}",
                 courseId, itemId, request.itemName());
 
-        validateCourseExists(courseId);
+        Course course = findCourseById(courseId);
+        validateCourseModifiable(course);
 
         CourseItem item = findItemById(itemId);
         validateItemBelongsToCourse(item, courseId);
@@ -204,7 +209,8 @@ public class CourseItemServiceImpl implements CourseItemService {
         log.info("Updating learning object: courseId={}, itemId={}, loId={}",
                 courseId, itemId, request.learningObjectId());
 
-        validateCourseExists(courseId);
+        Course course = findCourseById(courseId);
+        validateCourseModifiable(course);
 
         CourseItem item = findItemById(itemId);
         validateItemBelongsToCourse(item, courseId);
@@ -224,7 +230,8 @@ public class CourseItemServiceImpl implements CourseItemService {
     public void deleteItem(Long courseId, Long itemId) {
         log.info("Deleting item: courseId={}, itemId={}", courseId, itemId);
 
-        validateCourseExists(courseId);
+        Course course = findCourseById(courseId);
+        validateCourseModifiable(course);
 
         CourseItem item = findItemById(itemId);
         validateItemBelongsToCourse(item, courseId);
@@ -238,7 +245,8 @@ public class CourseItemServiceImpl implements CourseItemService {
     public CourseItemResponse updateDisplayInfo(Long courseId, Long itemId, UpdateDisplayInfoRequest request) {
         log.info("Updating display info: courseId={}, itemId={}", courseId, itemId);
 
-        validateCourseExists(courseId);
+        Course course = findCourseById(courseId);
+        validateCourseModifiable(course);
 
         CourseItem item = findItemById(itemId);
         validateItemBelongsToCourse(item, courseId);
@@ -258,6 +266,12 @@ public class CourseItemServiceImpl implements CourseItemService {
     private Course findCourseById(Long courseId) {
         return courseRepository.findByIdAndTenantId(courseId, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new CourseNotFoundException(courseId));
+    }
+
+    private void validateCourseModifiable(Course course) {
+        if (!course.isModifiable()) {
+            throw new CourseNotModifiableException(course.getId(), course.getStatus());
+        }
     }
 
     private void validateCourseExists(Long courseId) {

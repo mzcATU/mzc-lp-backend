@@ -9,7 +9,9 @@ import com.mzc.lp.domain.course.dto.response.CourseResponse;
 import com.mzc.lp.domain.course.entity.Course;
 import com.mzc.lp.domain.course.exception.CourseIncompleteException;
 import com.mzc.lp.domain.course.exception.CourseNotFoundException;
+import com.mzc.lp.domain.course.exception.CourseNotModifiableException;
 import com.mzc.lp.domain.course.exception.CourseOwnershipException;
+import com.mzc.lp.domain.course.exception.InvalidCourseStatusTransitionException;
 import com.mzc.lp.domain.course.repository.CourseRepository;
 import com.mzc.lp.domain.course.repository.CourseReviewRepository;
 import com.mzc.lp.common.context.TenantContext;
@@ -119,6 +121,11 @@ public class CourseServiceImpl implements CourseService {
         Course course = courseRepository.findByIdAndTenantId(courseId, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new CourseNotFoundException(courseId));
 
+        // 수정 가능 상태 검증
+        if (!course.isModifiable()) {
+            throw new CourseNotModifiableException(courseId, course.getStatus());
+        }
+
         course.update(
                 request.title(),
                 request.description(),
@@ -132,12 +139,9 @@ public class CourseServiceImpl implements CourseService {
                 request.tags()
         );
 
-        // status 업데이트 (PUBLISHED로 변경 시 isComplete 검증)
+        // status 업데이트
         if (request.status() != null) {
-            if (request.status() == CourseStatus.PUBLISHED) {
-                validateCompleteness(course);
-            }
-            course.updateStatus(request.status());
+            handleStatusTransition(course, request.status());
         }
 
         log.info("Course updated: id={}", courseId);
@@ -194,32 +198,88 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     @Transactional
+    @Deprecated
     public CourseResponse publishCourse(Long courseId) {
-        log.info("Publishing course: courseId={}", courseId);
+        log.warn("Deprecated publishCourse() called. Use readyCourse() instead.");
+        return readyCourse(courseId);
+    }
 
+    @Override
+    @Transactional
+    @Deprecated
+    public CourseResponse unpublishCourse(Long courseId) {
+        log.warn("Deprecated unpublishCourse() called. Use unreadyCourse() instead.");
+        return unreadyCourse(courseId);
+    }
+
+    @Override
+    @Transactional
+    public CourseResponse readyCourse(Long courseId) {
+        log.info("Setting course to READY: courseId={}", courseId);
         Long tenantId = TenantContext.getCurrentTenantId();
         Course course = courseRepository.findByIdWithItems(courseId, tenantId)
                 .orElseThrow(() -> new CourseNotFoundException(courseId));
 
+        if (!course.isModifiable()) {
+            throw new CourseNotModifiableException(courseId, course.getStatus());
+        }
         validateCompleteness(course);
-        course.publish();
+        course.markAsReady();
 
-        log.info("Course published: id={}", courseId);
+        log.info("Course set to READY: id={}", courseId);
         return CourseResponse.from(course, course.getItems().size());
     }
 
     @Override
     @Transactional
-    public CourseResponse unpublishCourse(Long courseId) {
-        log.info("Unpublishing course: courseId={}", courseId);
-
+    public CourseResponse unreadyCourse(Long courseId) {
+        log.info("Setting course to DRAFT: courseId={}", courseId);
         Course course = courseRepository.findByIdAndTenantId(courseId, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new CourseNotFoundException(courseId));
 
-        course.unpublish();
+        if (!course.isModifiable()) {
+            throw new CourseNotModifiableException(courseId, course.getStatus());
+        }
+        course.markAsDraft();
 
-        log.info("Course unpublished: id={}", courseId);
+        log.info("Course set to DRAFT: id={}", courseId);
         return CourseResponse.from(course);
+    }
+
+    @Override
+    @Transactional
+    public CourseResponse registerCourse(Long courseId) {
+        log.info("Registering course: courseId={}", courseId);
+        Long tenantId = TenantContext.getCurrentTenantId();
+        Course course = courseRepository.findByIdWithItems(courseId, tenantId)
+                .orElseThrow(() -> new CourseNotFoundException(courseId));
+
+        if (course.getStatus() != CourseStatus.READY) {
+            throw new InvalidCourseStatusTransitionException(course.getStatus(), CourseStatus.REGISTERED);
+        }
+        course.register();
+
+        log.info("Course registered: id={}", courseId);
+        return CourseResponse.from(course, course.getItems().size());
+    }
+
+    private void handleStatusTransition(Course course, CourseStatus targetStatus) {
+        CourseStatus currentStatus = course.getStatus();
+        if (currentStatus == targetStatus) return;
+
+        switch (targetStatus) {
+            case DRAFT -> course.markAsDraft();
+            case READY -> {
+                validateCompleteness(course);
+                course.markAsReady();
+            }
+            case REGISTERED -> {
+                if (currentStatus != CourseStatus.READY) {
+                    throw new InvalidCourseStatusTransitionException(currentStatus, targetStatus);
+                }
+                course.register();
+            }
+        }
     }
 
     private void validateCompleteness(Course course) {

@@ -43,6 +43,8 @@ public enum ErrorCode {
     CM_ANNOUNCEMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "CM015", "Announcement not found"),
     CM_NOT_ANNOUNCEMENT_AUTHOR(HttpStatus.FORBIDDEN, "CM016", "Not authorized to modify this announcement"),
     CM_COURSE_INCOMPLETE(HttpStatus.BAD_REQUEST, "CM017", "Course is incomplete and cannot be published"),
+    CM_COURSE_NOT_MODIFIABLE(HttpStatus.BAD_REQUEST, "CM018", "Course is not modifiable in current status"),
+    CM_INVALID_COURSE_STATUS_TRANSITION(HttpStatus.BAD_REQUEST, "CM019", "Invalid course status transition"),
 
     // Content (CMS)
     CONTENT_NOT_FOUND(HttpStatus.NOT_FOUND, "CT001", "Content not found"),
