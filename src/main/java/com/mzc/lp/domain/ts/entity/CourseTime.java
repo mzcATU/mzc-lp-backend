@@ -1,7 +1,9 @@
 package com.mzc.lp.domain.ts.entity;
 
 import com.mzc.lp.common.entity.TenantEntity;
+import com.mzc.lp.domain.course.entity.Course;
 import com.mzc.lp.domain.program.entity.Program;
+import com.mzc.lp.domain.snapshot.entity.CourseSnapshot;
 import com.mzc.lp.domain.ts.constant.CourseTimeStatus;
 import com.mzc.lp.domain.ts.constant.DeliveryType;
 import com.mzc.lp.domain.ts.constant.EnrollmentMethod;
@@ -17,7 +19,8 @@ import java.time.LocalDate;
 @Entity
 @Table(name = "course_times", indexes = {
         @Index(name = "idx_course_times_status", columnList = "tenant_id, status"),
-        @Index(name = "idx_course_times_course", columnList = "tenant_id, cm_course_id"),
+        @Index(name = "idx_course_times_course", columnList = "tenant_id, course_id"),
+        @Index(name = "idx_course_times_snapshot", columnList = "tenant_id, snapshot_id"),
         @Index(name = "idx_course_times_program", columnList = "tenant_id, program_id")
 })
 @Getter
@@ -28,20 +31,33 @@ public class CourseTime extends TenantEntity {
     @Version
     private Long version;
 
-    // Program 연결 (승인된 프로그램과 연결)
+    // Course 직접 연결 (등록된 강의)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "course_id")
+    private Course course;
+
+    // Snapshot 직접 연결 (차수별 독립 스냅샷)
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "snapshot_id")
+    private CourseSnapshot snapshot;
+
+    /**
+     * @deprecated Course를 직접 참조하세요. Program 승인 워크플로우가 제거되었습니다.
+     */
+    @Deprecated(since = "2.0", forRemoval = true)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "program_id")
     private Program program;
 
     /**
-     * @deprecated CM 연결은 더 이상 사용되지 않습니다. Program을 통해 Snapshot으로 연결하세요.
+     * @deprecated Course를 직접 참조하세요.
      */
     @Deprecated(since = "1.0", forRemoval = true)
     @Column(name = "cm_course_id")
     private Long cmCourseId;
 
     /**
-     * @deprecated CM 연결은 더 이상 사용되지 않습니다. Program을 통해 Snapshot으로 연결하세요.
+     * @deprecated Snapshot을 직접 참조하세요.
      */
     @Deprecated(since = "1.0", forRemoval = true)
     @Column(name = "cm_course_version_id")
@@ -192,16 +208,29 @@ public class CourseTime extends TenantEntity {
     // 비즈니스 메서드
 
     /**
-     * 승인된 Program과 연결
+     * Course와 Snapshot 연결 (차수 생성 시 사용)
+     * @param course 등록된(REGISTERED) Course
+     * @param snapshot 차수용으로 생성된 Snapshot
      */
+    public void linkCourseAndSnapshot(Course course, CourseSnapshot snapshot) {
+        this.course = course;
+        this.snapshot = snapshot;
+    }
+
+    /**
+     * @deprecated Course를 직접 참조하세요. linkCourseAndSnapshot() 사용 권장
+     */
+    @Deprecated(since = "2.0", forRemoval = true)
+    @SuppressWarnings("removal")
     public void linkProgram(Program program) {
         this.program = program;
     }
 
     /**
-     * @deprecated Program을 통해 Snapshot으로 연결하세요
+     * @deprecated Snapshot을 직접 참조하세요
      */
     @Deprecated(since = "1.0", forRemoval = true)
+    @SuppressWarnings("removal")
     public void linkCourse(Long cmCourseId, Long cmCourseVersionId) {
         this.cmCourseId = cmCourseId;
         this.cmCourseVersionId = cmCourseVersionId;

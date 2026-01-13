@@ -8,12 +8,27 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public record CreateCourseTimeRequest(
-        @NotNull(message = "프로그램 ID는 필수입니다")
+        /**
+         * Course ID (REGISTERED 상태의 강의)
+         * courseId가 제공되면 Course 기반으로 차수 생성 및 Snapshot 자동 생성
+         */
+        Long courseId,
+
+        /**
+         * @deprecated courseId를 사용하세요. Program 승인 워크플로우가 제거되었습니다.
+         */
+        @Deprecated(since = "2.0", forRemoval = true)
         Long programId,
 
+        /**
+         * @deprecated Course를 직접 참조하세요.
+         */
         @Deprecated(since = "1.0", forRemoval = true)
         Long cmCourseId,
 
+        /**
+         * @deprecated Snapshot을 직접 참조하세요.
+         */
         @Deprecated(since = "1.0", forRemoval = true)
         Long cmCourseVersionId,
 
