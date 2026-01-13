@@ -100,6 +100,14 @@ public interface UserRepository extends JpaRepository<User, Long>, UserRepositor
      */
     void deleteByTenantId(Long tenantId);
 
+    /**
+     * 테넌트별 활성 사용자 ID 목록 조회 (알림 발송용)
+     */
+    @Query("SELECT u.id FROM User u " +
+            "WHERE u.tenantId = :tenantId " +
+            "AND u.status = 'ACTIVE'")
+    List<Long> findActiveUserIdsByTenantId(@Param("tenantId") Long tenantId);
+
     // ===== 기간 필터 통계 쿼리 (SA 대시보드) - 전체 사용자 =====
 
     /**

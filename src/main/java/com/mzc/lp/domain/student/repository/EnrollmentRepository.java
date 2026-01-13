@@ -324,4 +324,13 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
     Double getCompletionRateByCourseTimeIds(
             @Param("courseTimeIds") List<Long> courseTimeIds,
             @Param("tenantId") Long tenantId);
+
+    /**
+     * 차수별 수강생 userId 목록 조회 (알림 발송용)
+     * DROPPED 상태 제외
+     */
+    @Query("SELECT e.userId FROM Enrollment e " +
+            "WHERE e.courseTimeId = :courseTimeId " +
+            "AND e.status != 'DROPPED'")
+    List<Long> findUserIdsByCourseTimeId(@Param("courseTimeId") Long courseTimeId);
 }

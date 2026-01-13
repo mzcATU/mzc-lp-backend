@@ -1,5 +1,8 @@
 package com.mzc.lp.domain.ts.scheduler;
 
+import com.mzc.lp.domain.notification.constant.NotificationType;
+import com.mzc.lp.domain.notification.service.NotificationService;
+import com.mzc.lp.domain.student.repository.EnrollmentRepository;
 import com.mzc.lp.domain.ts.constant.CourseTimeStatus;
 import com.mzc.lp.domain.ts.entity.CourseTime;
 import com.mzc.lp.domain.ts.repository.CourseTimeRepository;
@@ -18,6 +21,8 @@ import java.util.List;
 public class CourseTimeScheduler {
 
     private final CourseTimeRepository courseTimeRepository;
+    private final EnrollmentRepository enrollmentRepository;
+    private final NotificationService notificationService;
 
     /**
      * RECRUITING → ONGOING 상태 전환 배치
@@ -47,6 +52,9 @@ public class CourseTimeScheduler {
                 successCount++;
                 log.info("[Batch] Course time started: id={}, title={}",
                         courseTime.getId(), courseTime.getTitle());
+
+                // COURSE 알림 발송: 강의 시작 알림
+                sendCourseStartNotifications(courseTime);
             } catch (Exception e) {
                 failCount++;
                 log.error("[Batch] Failed to start course time: id={}, error={}",
@@ -56,6 +64,44 @@ public class CourseTimeScheduler {
 
         log.info("[Batch] Start course times completed: total={}, success={}, fail={}",
                 courseTimesToStart.size(), successCount, failCount);
+    }
+
+    /**
+     * 강의 시작 알림 발송 (COURSE 타입)
+     * 해당 차수에 등록된 모든 수강생에게 알림 발송
+     */
+    private void sendCourseStartNotifications(CourseTime courseTime) {
+        try {
+            List<Long> userIds = enrollmentRepository.findUserIdsByCourseTimeId(courseTime.getId());
+            log.info("[Batch] Sending course start notification to {} users for courseTime: {}",
+                    userIds.size(), courseTime.getId());
+
+            String title = "강의 시작 안내";
+            String message = String.format("[%s] 강의가 시작되었습니다.", courseTime.getTitle());
+            String link = "/my-courses/" + courseTime.getId();
+
+            for (Long userId : userIds) {
+                try {
+                    notificationService.createNotification(
+                            userId,
+                            NotificationType.COURSE,
+                            title,
+                            message,
+                            link,
+                            courseTime.getId(),
+                            "COURSE_TIME",
+                            null,
+                            null
+                    );
+                } catch (Exception e) {
+                    log.warn("[Batch] Failed to send course start notification to user {}: {}",
+                            userId, e.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            log.error("[Batch] Failed to send course start notifications for courseTime {}: {}",
+                    courseTime.getId(), e.getMessage());
+        }
     }
 
     /**
@@ -86,6 +132,9 @@ public class CourseTimeScheduler {
                 successCount++;
                 log.info("[Batch] Course time closed: id={}, title={}",
                         courseTime.getId(), courseTime.getTitle());
+
+                // COURSE 알림 발송: 강의 종료 알림
+                sendCourseEndNotifications(courseTime);
             } catch (Exception e) {
                 failCount++;
                 log.error("[Batch] Failed to close course time: id={}, error={}",
@@ -95,5 +144,43 @@ public class CourseTimeScheduler {
 
         log.info("[Batch] Close course times completed: total={}, success={}, fail={}",
                 courseTimesToClose.size(), successCount, failCount);
+    }
+
+    /**
+     * 강의 종료 알림 발송 (COURSE 타입)
+     * 해당 차수에 등록된 모든 수강생에게 알림 발송
+     */
+    private void sendCourseEndNotifications(CourseTime courseTime) {
+        try {
+            List<Long> userIds = enrollmentRepository.findUserIdsByCourseTimeId(courseTime.getId());
+            log.info("[Batch] Sending course end notification to {} users for courseTime: {}",
+                    userIds.size(), courseTime.getId());
+
+            String title = "강의 종료 안내";
+            String message = String.format("[%s] 강의가 종료되었습니다.", courseTime.getTitle());
+            String link = "/my-courses/" + courseTime.getId();
+
+            for (Long userId : userIds) {
+                try {
+                    notificationService.createNotification(
+                            userId,
+                            NotificationType.COURSE,
+                            title,
+                            message,
+                            link,
+                            courseTime.getId(),
+                            "COURSE_TIME",
+                            null,
+                            null
+                    );
+                } catch (Exception e) {
+                    log.warn("[Batch] Failed to send course end notification to user {}: {}",
+                            userId, e.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            log.error("[Batch] Failed to send course end notifications for courseTime {}: {}",
+                    courseTime.getId(), e.getMessage());
+        }
     }
 }

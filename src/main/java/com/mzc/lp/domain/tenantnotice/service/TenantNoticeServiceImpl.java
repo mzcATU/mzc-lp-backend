@@ -2,6 +2,8 @@ package com.mzc.lp.domain.tenantnotice.service;
 
 import com.mzc.lp.common.constant.ErrorCode;
 import com.mzc.lp.common.exception.BusinessException;
+import com.mzc.lp.domain.notification.constant.NotificationType;
+import com.mzc.lp.domain.notification.service.NotificationService;
 import com.mzc.lp.domain.tenantnotice.constant.NoticeTargetAudience;
 import com.mzc.lp.domain.tenantnotice.constant.TenantNoticeStatus;
 import com.mzc.lp.domain.tenantnotice.dto.request.CreateTenantNoticeRequest;
@@ -9,6 +11,7 @@ import com.mzc.lp.domain.tenantnotice.dto.request.UpdateTenantNoticeRequest;
 import com.mzc.lp.domain.tenantnotice.dto.response.TenantNoticeResponse;
 import com.mzc.lp.domain.tenantnotice.entity.TenantNotice;
 import com.mzc.lp.domain.tenantnotice.repository.TenantNoticeRepository;
+import com.mzc.lp.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -17,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.List;
 
 /**
  * 테넌트 공지사항 서비스 구현체
@@ -28,6 +32,8 @@ import java.time.Instant;
 public class TenantNoticeServiceImpl implements TenantNoticeService {
 
     private final TenantNoticeRepository tenantNoticeRepository;
+    private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     // ============================================
     // TA/CO 관리용 API
@@ -117,7 +123,46 @@ public class TenantNoticeServiceImpl implements TenantNoticeService {
         notice.publish();
         log.info("Published tenant notice: {}", noticeId);
 
+        // SYSTEM 알림 발송: 공지사항 등록 시 해당 테넌트 사용자 전체 알림
+        sendNoticePublishedNotifications(tenantId, notice);
+
         return TenantNoticeResponse.from(notice);
+    }
+
+    /**
+     * 공지사항 발행 알림 발송 (SYSTEM 타입)
+     * 해당 테넌트의 모든 활성 사용자에게 알림 발송
+     */
+    private void sendNoticePublishedNotifications(Long tenantId, TenantNotice notice) {
+        try {
+            List<Long> userIds = userRepository.findActiveUserIdsByTenantId(tenantId);
+            log.info("Sending notice notification to {} users for tenant: {}", userIds.size(), tenantId);
+
+            String title = "새 공지사항";
+            String message = notice.getTitle();
+            String link = "/notices/" + notice.getId();
+
+            for (Long userId : userIds) {
+                try {
+                    notificationService.createNotification(
+                            userId,
+                            NotificationType.SYSTEM,
+                            title,
+                            message,
+                            link,
+                            notice.getId(),
+                            "TENANT_NOTICE",
+                            null,  // actorId (시스템 발송)
+                            null   // actorName
+                    );
+                } catch (Exception e) {
+                    log.warn("Failed to send notice notification to user {}: {}", userId, e.getMessage());
+                }
+            }
+            log.info("Notice notifications sent to {} users", userIds.size());
+        } catch (Exception e) {
+            log.error("Failed to send notice notifications: {}", e.getMessage());
+        }
     }
 
     @Override

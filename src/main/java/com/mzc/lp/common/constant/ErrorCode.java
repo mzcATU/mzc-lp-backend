@@ -181,7 +181,17 @@ public enum ErrorCode {
 
     // Tenant Notice (TN)
     TENANT_NOTICE_NOT_FOUND(HttpStatus.NOT_FOUND, "TNN001", "Tenant notice not found"),
-    TENANT_NOTICE_ALREADY_PUBLISHED(HttpStatus.BAD_REQUEST, "TNN002", "Tenant notice is already published");
+    TENANT_NOTICE_ALREADY_PUBLISHED(HttpStatus.BAD_REQUEST, "TNN002", "Tenant notice is already published"),
+
+    // Assignment (ASN)
+    ASSIGNMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "ASN001", "Assignment not found"),
+    ASSIGNMENT_ALREADY_PUBLISHED(HttpStatus.BAD_REQUEST, "ASN002", "Assignment is already published"),
+    ASSIGNMENT_NOT_SUBMITTABLE(HttpStatus.BAD_REQUEST, "ASN003", "Assignment is not submittable"),
+    ASSIGNMENT_DEADLINE_PASSED(HttpStatus.BAD_REQUEST, "ASN004", "Assignment deadline has passed"),
+    SUBMISSION_NOT_FOUND(HttpStatus.NOT_FOUND, "ASN005", "Submission not found"),
+    SUBMISSION_ALREADY_EXISTS(HttpStatus.CONFLICT, "ASN006", "Submission already exists"),
+    SUBMISSION_NOT_GRADABLE(HttpStatus.BAD_REQUEST, "ASN007", "Submission is not gradable"),
+    UNAUTHORIZED_STUDENT_ASSIGNMENT_ACCESS(HttpStatus.FORBIDDEN, "ASN008", "Not authorized to access this assignment");
 
     private final HttpStatus status;
     private final String code;
