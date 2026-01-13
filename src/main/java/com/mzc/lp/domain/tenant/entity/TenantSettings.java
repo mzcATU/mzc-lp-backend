@@ -173,6 +173,9 @@ public class TenantSettings extends BaseTimeEntity {
     @Column(nullable = false)
     private Boolean instructorTabEnabled = true;
 
+    @Column(nullable = false)
+    private Boolean paidModeEnabled = true; // 유료 모드 (false면 무료 모드 - 가격 숨김)
+
     // 정적 팩토리 메서드
     public static TenantSettings createDefault(Tenant tenant) {
         TenantSettings settings = new TenantSettings();
@@ -272,12 +275,13 @@ public class TenantSettings extends BaseTimeEntity {
     // 테넌트 기능 On/Off 설정 업데이트
     public void updateTenantFeatures(Boolean communityEnabled, Boolean userCourseCreationEnabled,
                                      Boolean cartEnabled, Boolean wishlistEnabled,
-                                     Boolean instructorTabEnabled) {
+                                     Boolean instructorTabEnabled, Boolean paidModeEnabled) {
         if (communityEnabled != null) this.communityEnabled = communityEnabled;
         if (userCourseCreationEnabled != null) this.userCourseCreationEnabled = userCourseCreationEnabled;
         if (cartEnabled != null) this.cartEnabled = cartEnabled;
         if (wishlistEnabled != null) this.wishlistEnabled = wishlistEnabled;
         if (instructorTabEnabled != null) this.instructorTabEnabled = instructorTabEnabled;
+        if (paidModeEnabled != null) this.paidModeEnabled = paidModeEnabled;
     }
 
     // 확장 브랜딩 설정 업데이트
