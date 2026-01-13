@@ -45,6 +45,7 @@ public enum ErrorCode {
     CM_COURSE_INCOMPLETE(HttpStatus.BAD_REQUEST, "CM017", "Course is incomplete and cannot be published"),
     CM_COURSE_NOT_MODIFIABLE(HttpStatus.BAD_REQUEST, "CM018", "Course is not modifiable in current status"),
     CM_INVALID_COURSE_STATUS_TRANSITION(HttpStatus.BAD_REQUEST, "CM019", "Invalid course status transition"),
+    CM_COURSE_NOT_REGISTERED(HttpStatus.BAD_REQUEST, "CM020", "Course must be in REGISTERED status to create course time"),
 
     // Content (CMS)
     CONTENT_NOT_FOUND(HttpStatus.NOT_FOUND, "CT001", "Content not found"),

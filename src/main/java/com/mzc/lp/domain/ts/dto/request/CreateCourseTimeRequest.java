@@ -7,8 +7,15 @@ import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+@SuppressWarnings("removal")
 public record CreateCourseTimeRequest(
-        @NotNull(message = "프로그램 ID는 필수입니다")
+        /**
+         * Course ID (REGISTERED 상태의 강의)
+         * courseId가 제공되면 Course 기반으로 차수 생성 및 Snapshot 자동 생성
+         */
+        Long courseId,
+
+        @Deprecated(since = "2.0", forRemoval = true)
         Long programId,
 
         @Deprecated(since = "1.0", forRemoval = true)
