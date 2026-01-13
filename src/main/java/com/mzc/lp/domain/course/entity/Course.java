@@ -159,24 +159,92 @@ public class Course extends TenantEntity {
     }
 
     // ===== Status 관련 비즈니스 메서드 =====
-    public void publish() {
-        this.status = CourseStatus.PUBLISHED;
+
+    /**
+     * DRAFT 또는 READY -> READY 상태로 전환
+     * @throws IllegalStateException REGISTERED 상태에서는 변경 불가
+     */
+    public void markAsReady() {
+        validateModifiable();
+        this.status = CourseStatus.READY;
     }
 
-    public void unpublish() {
+    /**
+     * DRAFT 또는 READY -> DRAFT 상태로 전환
+     * @throws IllegalStateException REGISTERED 상태에서는 변경 불가
+     */
+    public void markAsDraft() {
+        validateModifiable();
         this.status = CourseStatus.DRAFT;
     }
 
-    public void updateStatus(CourseStatus status) {
-        this.status = status;
+    /**
+     * READY -> REGISTERED (단방향, 되돌릴 수 없음)
+     * @throws IllegalStateException READY가 아닌 상태에서는 호출 불가
+     */
+    public void register() {
+        if (this.status != CourseStatus.READY) {
+            throw new IllegalStateException(
+                    String.format("READY 상태의 강의만 등록할 수 있습니다. 현재 상태: %s", this.status.getDescription()));
+        }
+        this.status = CourseStatus.REGISTERED;
+    }
+
+    // ===== 상태 확인 헬퍼 메서드 =====
+
+    public boolean isModifiable() {
+        return this.status.isModifiable();
+    }
+
+    public boolean canCreateCourseTime() {
+        return this.status.canCreateCourseTime();
     }
 
     public boolean isDraft() {
         return this.status == CourseStatus.DRAFT;
     }
 
+    public boolean isReady() {
+        return this.status == CourseStatus.READY;
+    }
+
+    public boolean isRegistered() {
+        return this.status == CourseStatus.REGISTERED;
+    }
+
+    // ===== Private 상태 검증 메서드 =====
+
+    private void validateModifiable() {
+        if (!isModifiable()) {
+            throw new IllegalStateException(
+                    String.format("현재 상태(%s)에서는 강의를 수정할 수 없습니다.", this.status.getDescription()));
+        }
+    }
+
+    // ===== Deprecated 메서드 (하위 호환성) =====
+
+    /** @deprecated Use {@link #markAsReady()} instead */
+    @Deprecated
+    public void publish() {
+        markAsReady();
+    }
+
+    /** @deprecated Use {@link #markAsDraft()} instead */
+    @Deprecated
+    public void unpublish() {
+        markAsDraft();
+    }
+
+    /** @deprecated 상태 변경은 markAsReady(), markAsDraft(), register() 메서드를 사용하세요 */
+    @Deprecated
+    public void updateStatus(CourseStatus status) {
+        this.status = status;
+    }
+
+    /** @deprecated Use {@link #isReady()} or {@link #isRegistered()} instead */
+    @Deprecated
     public boolean isPublished() {
-        return this.status == CourseStatus.PUBLISHED;
+        return this.status == CourseStatus.READY || this.status == CourseStatus.REGISTERED;
     }
 
     // ===== 연관관계 편의 메서드 =====
