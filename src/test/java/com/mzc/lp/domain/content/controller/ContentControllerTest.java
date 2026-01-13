@@ -1010,8 +1010,8 @@ class ContentControllerTest extends TenantTestSupport {
         }
 
         @Test
-        @DisplayName("실패 - downloadable=false인 콘텐츠 다운로드 거부")
-        void download_fail_downloadableDisabled() throws Exception {
+        @DisplayName("성공 - downloadable=false여도 다운로드 허용")
+        void download_success_evenIfDownloadableDisabled() throws Exception {
             // given
             createDesignerUser();
             String accessToken = loginAndGetAccessToken("designer@example.com", "Password123!");
@@ -1031,12 +1031,11 @@ class ContentControllerTest extends TenantTestSupport {
             Long contentId = objectMapper.readTree(uploadResult.getResponse().getContentAsString())
                     .get("data").get("id").asLong();
 
-            // when & then - 다운로드 시도
+            // when & then - downloadable=false여도 다운로드 성공
             mockMvc.perform(get("/api/contents/{contentId}/download", contentId)
                             .header("Authorization", "Bearer " + accessToken))
                     .andDo(print())
-                    .andExpect(status().isForbidden())
-                    .andExpect(jsonPath("$.error.code").value("CT011"));
+                    .andExpect(status().isOk());
         }
 
         @Test
