@@ -6,6 +6,7 @@ import com.mzc.lp.domain.content.constant.ContentType;
 import com.mzc.lp.domain.content.constant.VersionChangeType;
 import com.mzc.lp.domain.content.dto.request.CreateExternalLinkRequest;
 import com.mzc.lp.domain.content.dto.request.UpdateContentRequest;
+import com.mzc.lp.domain.content.dto.response.BulkUploadResponse;
 import com.mzc.lp.domain.content.dto.response.ContentListResponse;
 import com.mzc.lp.domain.content.dto.response.ContentResponse;
 import com.mzc.lp.domain.content.entity.Content;
@@ -142,6 +143,45 @@ public class ContentServiceImpl implements ContentService {
         eventPublisher.publishEvent(new ContentCreatedEvent(this, savedContent, request.folderId()));
 
         return ContentResponse.from(savedContent);
+    }
+
+    private static final int MAX_BULK_FILES = 10;
+
+    @Override
+    @Transactional
+    public BulkUploadResponse bulkUploadFiles(MultipartFile[] files, Long folderId,
+                                               CompletionCriteria completionCriteria, Boolean downloadable,
+                                               Long tenantId, Long userId) {
+        if (files == null || files.length == 0) {
+            throw new FileStorageException(ErrorCode.FILE_UPLOAD_FAILED, "No files provided");
+        }
+        if (files.length > MAX_BULK_FILES) {
+            throw new FileStorageException(ErrorCode.FILE_UPLOAD_FAILED,
+                    "Maximum " + MAX_BULK_FILES + " files allowed per request");
+        }
+
+        List<ContentResponse> successItems = new ArrayList<>();
+        List<BulkUploadResponse.FailedItem> failedItems = new ArrayList<>();
+
+        for (MultipartFile file : files) {
+            if (file.isEmpty()) {
+                continue;
+            }
+            try {
+                ContentResponse response = uploadFile(file, folderId, null, null, null, null,
+                        completionCriteria, null, downloadable, tenantId, userId);
+                successItems.add(response);
+            } catch (Exception e) {
+                log.warn("Failed to upload file: {}", file.getOriginalFilename(), e);
+                failedItems.add(new BulkUploadResponse.FailedItem(
+                        file.getOriginalFilename(),
+                        e.getMessage()
+                ));
+            }
+        }
+
+        log.info("Bulk upload completed: success={}, failed={}", successItems.size(), failedItems.size());
+        return BulkUploadResponse.of(successItems, failedItems);
     }
 
     @Override

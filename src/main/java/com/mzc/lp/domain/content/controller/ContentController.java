@@ -7,6 +7,7 @@ import com.mzc.lp.domain.content.constant.ContentStatus;
 import com.mzc.lp.domain.content.constant.ContentType;
 import com.mzc.lp.domain.content.dto.request.CreateExternalLinkRequest;
 import com.mzc.lp.domain.content.dto.request.UpdateContentRequest;
+import com.mzc.lp.domain.content.dto.response.BulkUploadResponse;
 import com.mzc.lp.domain.content.dto.response.ContentListResponse;
 import com.mzc.lp.domain.content.dto.response.ContentResponse;
 import com.mzc.lp.domain.content.service.ContentService;
@@ -67,6 +68,22 @@ public class ContentController {
         Long tenantId = TenantContext.getCurrentTenantId();
         Long userId = principal.id();
         ContentResponse response = contentService.createExternalLink(request, tenantId, userId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
+    }
+
+    @PostMapping("/bulk-upload")
+    @PreAuthorize("hasAnyRole('DESIGNER', 'OPERATOR', 'TENANT_ADMIN')")
+    public ResponseEntity<ApiResponse<BulkUploadResponse>> bulkUploadFiles(
+            @RequestParam("files") MultipartFile[] files,
+            @RequestParam(value = "folderId", required = false) Long folderId,
+            @RequestParam(value = "completionCriteria", required = false) CompletionCriteria completionCriteria,
+            @RequestParam(value = "downloadable", required = false) Boolean downloadable,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        Long tenantId = TenantContext.getCurrentTenantId();
+        Long userId = principal.id();
+        BulkUploadResponse response = contentService.bulkUploadFiles(
+                files, folderId, completionCriteria, downloadable, tenantId, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
     }
 
