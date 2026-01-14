@@ -17,3 +17,4 @@ application-prod.yml
 *.log
 /uploads/
 src/main/resources/data.sql
+tmpclaude-*

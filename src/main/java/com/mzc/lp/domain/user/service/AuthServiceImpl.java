@@ -69,8 +69,8 @@ public class AuthServiceImpl implements AuthService {
     public TokenResponse login(LoginRequest request) {
         log.info("Login attempt: email={}", request.email());
 
-        // 사용자 조회 (테넌트 필터 우회 - Native Query)
-        User user = userRepository.findByEmailForLogin(request.email())
+        // 사용자 조회 (userRoles 함께 로딩 - 다중 역할 지원)
+        User user = userRepository.findByEmailWithRoles(request.email())
                 .orElseThrow(() -> {
                     log.warn("Login failed: user not found for email={}", request.email());
                     return new InvalidCredentialsException();
@@ -132,8 +132,8 @@ public class AuthServiceImpl implements AuthService {
             throw new InvalidTokenException();
         }
 
-        // 사용자 조회
-        User user = userRepository.findById(storedToken.getUserId())
+        // 사용자 조회 (userRoles 함께 로딩 - 다중 역할 지원)
+        User user = userRepository.findByIdWithRoles(storedToken.getUserId())
                 .orElseThrow(UserNotFoundException::new);
 
         // 기존 Refresh Token 무효화
