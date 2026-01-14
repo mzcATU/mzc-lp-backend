@@ -8,7 +8,7 @@ import com.mzc.lp.domain.cart.entity.CartItem;
 import com.mzc.lp.domain.cart.exception.AlreadyInCartException;
 import com.mzc.lp.domain.cart.exception.CartItemNotFoundException;
 import com.mzc.lp.domain.cart.repository.CartRepository;
-import com.mzc.lp.domain.program.entity.Program;
+import com.mzc.lp.domain.course.entity.Course;
 import com.mzc.lp.domain.ts.entity.CourseTime;
 import com.mzc.lp.domain.ts.exception.CourseTimeNotFoundException;
 import com.mzc.lp.domain.ts.repository.CourseTimeRepository;
@@ -52,9 +52,9 @@ public class CartService {
         CartItem cartItem = CartItem.create(userId, courseTimeId);
         CartItem savedItem = cartRepository.save(cartItem);
 
-        Program program = courseTime.getProgram();
+        Course course = courseTime.getCourse();
         log.info("CourseTime added to cart: userId={}, courseTimeId={}, cartItemId={}", userId, courseTimeId, savedItem.getId());
-        return CartItemResponse.from(savedItem, courseTime, program);
+        return CartItemResponse.from(savedItem, courseTime, course);
     }
 
     /**
@@ -109,8 +109,8 @@ public class CartService {
                     if (courseTime == null) {
                         return null;
                     }
-                    Program program = courseTime.getProgram();
-                    return CartItemResponse.from(item, courseTime, program);
+                    Course course = courseTime.getCourse();
+                    return CartItemResponse.from(item, courseTime, course);
                 })
                 .filter(response -> response != null)
                 .toList();

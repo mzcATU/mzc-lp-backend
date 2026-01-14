@@ -3,9 +3,9 @@ package com.mzc.lp.domain.dashboard.service;
 import com.mzc.lp.common.context.TenantContext;
 import com.mzc.lp.common.dto.stats.DailyEnrollmentStatsProjection;
 import com.mzc.lp.common.dto.stats.StatusCountProjection;
+import com.mzc.lp.domain.course.repository.CourseRepository;
 import com.mzc.lp.domain.dashboard.constant.DashboardPeriod;
 import com.mzc.lp.domain.dashboard.dto.response.AdminKpiResponse;
-import com.mzc.lp.domain.program.repository.ProgramRepository;
 import com.mzc.lp.domain.student.repository.EnrollmentRepository;
 import com.mzc.lp.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +26,7 @@ import java.util.List;
 public class AdminDashboardServiceImpl implements AdminDashboardService {
 
     private final UserRepository userRepository;
-    private final ProgramRepository programRepository;
+    private final CourseRepository courseRepository;
     private final EnrollmentRepository enrollmentRepository;
 
     private static final int DEFAULT_DAILY_TREND_DAYS = 30;
@@ -44,9 +44,9 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         long totalUsers = getTotalUsers(tenantId, startDate, endDate);
         long newUsersInPeriod = getNewUsersInPeriod(tenantId, period);
 
-        // 프로그램 통계
-        List<StatusCountProjection> programStatusProjections = getProgramStatusProjections(tenantId, startDate, endDate);
-        long totalPrograms = getTotalPrograms(tenantId, startDate, endDate);
+        // 강의 통계 (Program 대신 Course 사용)
+        List<StatusCountProjection> programStatusProjections = Collections.emptyList(); // Course에는 상태가 없음
+        long totalPrograms = getTotalCourses(tenantId);
 
         // 수강 통계
         long totalEnrollments = getTotalEnrollments(tenantId, startDate, endDate);
@@ -57,7 +57,7 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         // 일별 추이
         List<DailyEnrollmentStatsProjection> dailyStats = getDailyStats(tenantId, period);
 
-        log.debug("관리자 KPI 대시보드 조회 - 테넌트 ID: {}, 기간: {}, 전체 사용자: {}, 기간 내 신규: {}, 전체 프로그램: {}, 전체 수강: {}",
+        log.debug("관리자 KPI 대시보드 조회 - 테넌트 ID: {}, 기간: {}, 전체 사용자: {}, 기간 내 신규: {}, 전체 강의: {}, 전체 수강: {}",
                 tenantId, period != null ? period.getCode() : "전체",
                 totalUsers, newUsersInPeriod, totalPrograms, totalEnrollments);
 
@@ -100,18 +100,8 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         return userRepository.countNewUsersSince(tenantId, since);
     }
 
-    private List<StatusCountProjection> getProgramStatusProjections(Long tenantId, Instant startDate, Instant endDate) {
-        if (startDate != null && endDate != null) {
-            return programRepository.countByTenantIdGroupByStatusWithPeriod(tenantId, startDate, endDate);
-        }
-        return programRepository.countByTenantIdGroupByStatus(tenantId);
-    }
-
-    private long getTotalPrograms(Long tenantId, Instant startDate, Instant endDate) {
-        if (startDate != null && endDate != null) {
-            return programRepository.countByTenantIdWithPeriod(tenantId, startDate, endDate);
-        }
-        return programRepository.countByTenantId(tenantId);
+    private long getTotalCourses(Long tenantId) {
+        return courseRepository.countByTenantId(tenantId);
     }
 
     private long getTotalEnrollments(Long tenantId, Instant startDate, Instant endDate) {

@@ -19,7 +19,7 @@ import com.mzc.lp.domain.student.exception.EnrollmentPeriodClosedException;
 import com.mzc.lp.domain.student.exception.UnauthorizedEnrollmentAccessException;
 import com.mzc.lp.domain.iis.constant.AssignmentStatus;
 import com.mzc.lp.domain.iis.repository.InstructorAssignmentRepository;
-import com.mzc.lp.domain.program.entity.Program;
+import com.mzc.lp.domain.course.entity.Course;
 import com.mzc.lp.domain.student.repository.EnrollmentRepository;
 import com.mzc.lp.domain.ts.entity.CourseTime;
 import com.mzc.lp.domain.ts.exception.CourseTimeNotFoundException;
@@ -211,17 +211,17 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
     /**
      * 차수 접근 권한 검증
-     * - 프로그램 소유자(createdBy)인 경우 허용
+     * - 강의 소유자(createdBy)인 경우 허용
      * - 해당 차수에 배정된 강사인 경우 허용
      */
     private void validateCourseTimeAccess(Long courseTimeId, Long userId, Long tenantId) {
         CourseTime courseTime = courseTimeRepository.findByIdAndTenantId(courseTimeId, tenantId)
                 .orElseThrow(() -> new CourseTimeNotFoundException(courseTimeId));
 
-        // 1. 프로그램 소유자 확인 (Program.createdBy == userId)
-        Program program = courseTime.getProgram();
-        if (program != null && program.getCreatedBy().equals(userId)) {
-            log.debug("User {} is the owner of program {}", userId, program.getId());
+        // 1. 강의 소유자 확인 (Course.createdBy == userId)
+        Course course = courseTime.getCourse();
+        if (course != null && course.getCreatedBy() != null && course.getCreatedBy().equals(userId)) {
+            log.debug("User {} is the owner of course {}", userId, course.getId());
             return;
         }
 

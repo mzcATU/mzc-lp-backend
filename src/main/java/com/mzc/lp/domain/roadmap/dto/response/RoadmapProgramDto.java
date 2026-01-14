@@ -1,8 +1,14 @@
 package com.mzc.lp.domain.roadmap.dto.response;
 
-import com.mzc.lp.domain.program.entity.Program;
 import com.mzc.lp.domain.roadmap.entity.RoadmapProgram;
 
+/**
+ * 로드맵 프로그램 DTO
+ *
+ * @deprecated 로드맵 기능은 Phase 3에서 일시적으로 비활성화됨.
+ *             Program 엔티티 제거로 인해 향후 Course 기반으로 재설계 필요.
+ */
+@Deprecated
 public record RoadmapProgramDto(
         Long id,
         String title,
@@ -10,24 +16,18 @@ public record RoadmapProgramDto(
         String duration,
         Integer order
 ) {
+    /**
+     * @deprecated 로드맵 기능 비활성화됨
+     */
+    @Deprecated
     public static RoadmapProgramDto from(RoadmapProgram roadmapProgram) {
-        Program program = roadmapProgram.getProgram();
-
-        // duration 계산 (estimatedHours를 "N시간" 형식으로 변환)
-        String duration = program.getEstimatedHours() != null
-            ? program.getEstimatedHours() + "시간"
-            : "";
-
-        // category는 program의 type을 사용 (또는 별도 카테고리 필드가 있다면 그것 사용)
-        String category = program.getType() != null
-            ? program.getType().name()
-            : "";
-
+        // Program 엔티티 제거로 인해 더미 데이터 반환
+        // 향후 Course 기반으로 재설계 시 수정 필요
         return new RoadmapProgramDto(
-                program.getId(),
-                program.getTitle(),
-                category,
-                duration,
+                roadmapProgram.getProgramId(),
+                "비활성화된 프로그램",
+                "",
+                "",
                 roadmapProgram.getOrderIndex()
         );
     }

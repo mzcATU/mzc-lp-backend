@@ -1,9 +1,8 @@
 package com.mzc.lp.domain.tu.service;
 
 import com.mzc.lp.common.context.TenantContext;
-import com.mzc.lp.domain.program.constant.ProgramStatus;
-import com.mzc.lp.domain.program.entity.Program;
-import com.mzc.lp.domain.program.repository.ProgramRepository;
+import com.mzc.lp.domain.course.entity.Course;
+import com.mzc.lp.domain.course.repository.CourseRepository;
 import com.mzc.lp.domain.tu.dto.response.CourseExploreItemResponse;
 import com.mzc.lp.domain.tu.dto.response.CourseExploreResponse;
 import com.mzc.lp.domain.user.entity.User;
@@ -25,12 +24,11 @@ import java.util.Random;
 @Transactional(readOnly = true)
 public class TuCourseExploreService {
 
-    private final ProgramRepository programRepository;
+    private final CourseRepository courseRepository;
     private final UserRepository userRepository;
 
     /**
      * TU용 강의 목록 조회
-     * APPROVED 상태인 Program만 조회
      */
     public CourseExploreResponse getCourses(
             String search,
@@ -45,18 +43,15 @@ public class TuCourseExploreService {
         Sort sort = resolveSort(sortBy);
         Pageable pageable = PageRequest.of(page, pageSize, sort);
 
-        // APPROVED 상태 프로그램만 조회
-        Page<Program> programPage = programRepository.findByTenantIdAndStatus(
-                tenantId, ProgramStatus.APPROVED, pageable
-        );
+        Page<Course> coursePage = courseRepository.findByTenantId(tenantId, pageable);
 
-        List<CourseExploreItemResponse> courses = programPage.getContent().stream()
+        List<CourseExploreItemResponse> courses = coursePage.getContent().stream()
                 .map(this::toCourseExploreItem)
                 .toList();
 
         return CourseExploreResponse.of(
                 courses,
-                programPage.getTotalElements(),
+                coursePage.getTotalElements(),
                 page,
                 pageSize
         );
@@ -69,11 +64,9 @@ public class TuCourseExploreService {
         Long tenantId = TenantContext.getCurrentTenantId();
         Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "createdAt"));
 
-        Page<Program> programPage = programRepository.findByTenantIdAndStatus(
-                tenantId, ProgramStatus.APPROVED, pageable
-        );
+        Page<Course> coursePage = courseRepository.findByTenantId(tenantId, pageable);
 
-        List<CourseExploreItemResponse> courses = programPage.getContent().stream()
+        List<CourseExploreItemResponse> courses = coursePage.getContent().stream()
                 .map(this::toCourseExploreItem)
                 .toList();
 
@@ -87,11 +80,9 @@ public class TuCourseExploreService {
         Long tenantId = TenantContext.getCurrentTenantId();
         Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "createdAt"));
 
-        Page<Program> programPage = programRepository.findByTenantIdAndStatus(
-                tenantId, ProgramStatus.APPROVED, pageable
-        );
+        Page<Course> coursePage = courseRepository.findByTenantId(tenantId, pageable);
 
-        List<CourseExploreItemResponse> courses = programPage.getContent().stream()
+        List<CourseExploreItemResponse> courses = coursePage.getContent().stream()
                 .map(this::toCourseExploreItem)
                 .toList();
 
@@ -105,17 +96,17 @@ public class TuCourseExploreService {
         return getPopularCourses(limit);
     }
 
-    private CourseExploreItemResponse toCourseExploreItem(Program program) {
+    private CourseExploreItemResponse toCourseExploreItem(Course course) {
         // 생성자 정보 조회
         String instructorName = "강사 미정";
-        if (program.getCreatedBy() != null) {
-            instructorName = userRepository.findById(program.getCreatedBy())
+        if (course.getCreatedBy() != null) {
+            instructorName = userRepository.findById(course.getCreatedBy())
                     .map(User::getName)
                     .orElse("강사 미정");
         }
 
         // 더미 데이터 (추후 실제 데이터로 교체)
-        Random random = new Random(program.getId()); // ID 기반 시드로 일관된 값 생성
+        Random random = new Random(course.getId()); // ID 기반 시드로 일관된 값 생성
         BigDecimal originalPrice = BigDecimal.valueOf(50000 + random.nextInt(100000));
         BigDecimal price = originalPrice.multiply(BigDecimal.valueOf(0.7 + random.nextDouble() * 0.3));
         int studentCount = random.nextInt(5000);
@@ -124,7 +115,7 @@ public class TuCourseExploreService {
         boolean isBestseller = studentCount > 3000;
 
         return CourseExploreItemResponse.from(
-                program,
+                course,
                 instructorName,
                 price.setScale(0, java.math.RoundingMode.DOWN),
                 originalPrice.setScale(0, java.math.RoundingMode.DOWN),

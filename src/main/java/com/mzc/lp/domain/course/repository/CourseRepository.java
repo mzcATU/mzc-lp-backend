@@ -34,4 +34,7 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
 
     @Query(value = "SELECT COUNT(*) FROM cm_courses WHERE tenant_id = :tenantId", nativeQuery = true)
     long countByTenantId(@Param("tenantId") Long tenantId);
+
+    @Query("SELECT c.id FROM Course c WHERE c.createdBy = :createdBy AND c.tenantId = :tenantId")
+    List<Long> findIdsByCreatedByAndTenantId(@Param("createdBy") Long createdBy, @Param("tenantId") Long tenantId);
 }

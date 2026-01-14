@@ -1,5 +1,6 @@
 package com.mzc.lp.domain.roadmap.controller;
 
+import com.mzc.lp.common.constant.ErrorCode;
 import com.mzc.lp.common.dto.ApiResponse;
 import com.mzc.lp.common.security.UserPrincipal;
 import com.mzc.lp.domain.roadmap.constant.RoadmapStatus;
@@ -25,7 +26,11 @@ import org.springframework.web.bind.annotation.*;
 
 /**
  * 로드맵 Controller
+ *
+ * @deprecated 로드맵 기능은 Phase 3에서 일시적으로 비활성화됨.
+ *             Program 엔티티 제거로 인해 향후 Course 기반으로 재설계 필요.
  */
+@Deprecated
 @RestController
 @RequiredArgsConstructor
 @Validated
@@ -33,6 +38,8 @@ import org.springframework.web.bind.annotation.*;
 public class RoadmapController {
 
     private final RoadmapService roadmapService;
+
+    private static final String DISABLED_MESSAGE = "로드맵 기능은 현재 비활성화되어 있습니다. 향후 업데이트에서 재활성화될 예정입니다.";
 
     /**
      * 로드맵 생성
@@ -44,9 +51,8 @@ public class RoadmapController {
             @Valid @RequestBody CreateRoadmapRequest request,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        RoadmapResponse response = roadmapService.createRoadmap(request, principal.id());
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(response));
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(ApiResponse.error(ErrorCode.ROADMAP_FEATURE_DISABLED, DISABLED_MESSAGE));
     }
 
     /**
@@ -61,17 +67,8 @@ public class RoadmapController {
             @PageableDefault(size = 20) Pageable pageable,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        RoadmapStatus roadmapStatus = status != null
-                ? RoadmapStatus.valueOf(status.toUpperCase())
-                : null;
-
-        Page<RoadmapResponse> response = roadmapService.getMyRoadmaps(
-                principal.id(),
-                roadmapStatus,
-                sortBy,
-                pageable
-        );
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(ApiResponse.error(ErrorCode.ROADMAP_FEATURE_DISABLED, DISABLED_MESSAGE));
     }
 
     /**
@@ -83,8 +80,8 @@ public class RoadmapController {
             @PathVariable @Positive Long id,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        RoadmapDetailResponse response = roadmapService.getRoadmap(id, principal.id());
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(ApiResponse.error(ErrorCode.ROADMAP_FEATURE_DISABLED, DISABLED_MESSAGE));
     }
 
     /**
@@ -98,8 +95,8 @@ public class RoadmapController {
             @Valid @RequestBody UpdateRoadmapRequest request,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        RoadmapResponse response = roadmapService.updateRoadmap(id, request, principal.id());
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(ApiResponse.error(ErrorCode.ROADMAP_FEATURE_DISABLED, DISABLED_MESSAGE));
     }
 
     /**
@@ -113,8 +110,8 @@ public class RoadmapController {
             @Valid @RequestBody SaveDraftRequest request,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        RoadmapResponse response = roadmapService.saveDraft(id, request, principal.id());
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(ApiResponse.error(ErrorCode.ROADMAP_FEATURE_DISABLED, DISABLED_MESSAGE));
     }
 
     /**
@@ -123,12 +120,12 @@ public class RoadmapController {
      */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('DESIGNER')")
-    public ResponseEntity<Void> deleteRoadmap(
+    public ResponseEntity<ApiResponse<Void>> deleteRoadmap(
             @PathVariable @Positive Long id,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        roadmapService.deleteRoadmap(id, principal.id());
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(ApiResponse.error(ErrorCode.ROADMAP_FEATURE_DISABLED, DISABLED_MESSAGE));
     }
 
     /**
@@ -141,9 +138,8 @@ public class RoadmapController {
             @PathVariable @Positive Long id,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        RoadmapResponse response = roadmapService.duplicateRoadmap(id, principal.id());
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(response));
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(ApiResponse.error(ErrorCode.ROADMAP_FEATURE_DISABLED, DISABLED_MESSAGE));
     }
 
     /**
@@ -155,7 +151,7 @@ public class RoadmapController {
     public ResponseEntity<ApiResponse<RoadmapStatisticsResponse>> getStatistics(
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        RoadmapStatisticsResponse response = roadmapService.getStatistics(principal.id());
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(ApiResponse.error(ErrorCode.ROADMAP_FEATURE_DISABLED, DISABLED_MESSAGE));
     }
 }

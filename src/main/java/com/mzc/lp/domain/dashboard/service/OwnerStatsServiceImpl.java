@@ -1,10 +1,9 @@
 package com.mzc.lp.domain.dashboard.service;
 
 import com.mzc.lp.common.context.TenantContext;
-import com.mzc.lp.common.dto.stats.ProgramStatsProjection;
 import com.mzc.lp.common.dto.stats.StatusCountProjection;
+import com.mzc.lp.domain.course.repository.CourseRepository;
 import com.mzc.lp.domain.dashboard.dto.response.OwnerStatsResponse;
-import com.mzc.lp.domain.program.repository.ProgramRepository;
 import com.mzc.lp.domain.student.repository.EnrollmentRepository;
 import com.mzc.lp.domain.ts.repository.CourseTimeRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +20,7 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class OwnerStatsServiceImpl implements OwnerStatsService {
 
-    private final ProgramRepository programRepository;
+    private final CourseRepository courseRepository;
     private final CourseTimeRepository courseTimeRepository;
     private final EnrollmentRepository enrollmentRepository;
 
@@ -29,19 +28,19 @@ public class OwnerStatsServiceImpl implements OwnerStatsService {
     public OwnerStatsResponse getMyStats(Long userId) {
         Long tenantId = TenantContext.getCurrentTenantId();
 
-        // 소유 프로그램 ID 목록 조회
-        List<Long> programIds = programRepository.findIdsByCreatedByAndTenantId(userId, tenantId);
+        // 소유 강의 ID 목록 조회
+        List<Long> courseIds = courseRepository.findIdsByCreatedByAndTenantId(userId, tenantId);
 
-        if (programIds.isEmpty()) {
-            log.debug("내 강의 통계 조회 - 사용자 ID: {}, 소유 프로그램 없음", userId);
+        if (courseIds.isEmpty()) {
+            log.debug("내 강의 통계 조회 - 사용자 ID: {}, 소유 강의 없음", userId);
             return createEmptyResponse();
         }
 
         // 차수 ID 목록 조회
-        List<Long> courseTimeIds = courseTimeRepository.findIdsByProgramIdInAndTenantId(programIds, tenantId);
+        List<Long> courseTimeIds = courseTimeRepository.findIdsByCourseIdInAndTenantId(courseIds, tenantId);
 
         // 전체 개요
-        long totalPrograms = programIds.size();
+        long totalCourses = courseIds.size();
         long totalCourseTimes = courseTimeIds.size();
         long totalStudents = courseTimeIds.isEmpty() ? 0L :
                 enrollmentRepository.countByCourseTimeIdInAndTenantId(courseTimeIds, tenantId);
@@ -54,30 +53,18 @@ public class OwnerStatsServiceImpl implements OwnerStatsService {
         Double completionRate = courseTimeIds.isEmpty() ? null :
                 enrollmentRepository.getCompletionRateByCourseTimeIds(courseTimeIds, tenantId);
 
-        // 프로그램별 통계
-        List<ProgramStatsProjection> programStatsProjections =
-                programRepository.findProgramStatsByOwner(userId, tenantId);
-        List<OwnerStatsResponse.ProgramStat> programStats = programStatsProjections.stream()
-                .map(p -> OwnerStatsResponse.ProgramStat.of(
-                        p.getProgramId(),
-                        p.getTitle(),
-                        p.getCourseTimeCount(),
-                        p.getTotalStudents(),
-                        p.getCompletionRate()
-                ))
-                .toList();
+        log.debug("내 강의 통계 조회 - 사용자 ID: {}, 전체 강의: {}, 전체 차수: {}, 전체 수강생: {}",
+                userId, totalCourses, totalCourseTimes, totalStudents);
 
-        log.debug("내 강의 통계 조회 - 사용자 ID: {}, 전체 프로그램: {}, 전체 차수: {}, 전체 수강생: {}",
-                userId, totalPrograms, totalCourseTimes, totalStudents);
-
+        // Note: 강의별 상세 통계는 추후 구현 필요 (OWNER 역할 제거 후 재검토)
         return OwnerStatsResponse.of(
-                totalPrograms,
+                totalCourses,
                 totalCourseTimes,
                 totalStudents,
                 totalEnrollments,
                 enrollmentStatusProjections,
                 completionRate,
-                programStats
+                Collections.emptyList()  // courseStats는 빈 목록으로 반환 (추후 구현 예정)
         );
     }
 

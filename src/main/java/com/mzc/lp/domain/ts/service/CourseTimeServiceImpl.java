@@ -34,10 +34,6 @@ import com.mzc.lp.domain.ts.exception.LocationRequiredException;
 import com.mzc.lp.domain.ts.exception.MainInstructorRequiredException;
 import com.mzc.lp.domain.ts.exception.UnauthorizedCourseTimeAccessException;
 import com.mzc.lp.domain.ts.repository.CourseTimeRepository;
-import com.mzc.lp.domain.program.entity.Program;
-import com.mzc.lp.domain.program.repository.ProgramRepository;
-import com.mzc.lp.domain.program.exception.ProgramNotFoundException;
-import com.mzc.lp.domain.program.exception.ProgramNotApprovedException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -57,7 +53,6 @@ public class CourseTimeServiceImpl implements CourseTimeService {
 
     private final CourseTimeRepository courseTimeRepository;
     private final InstructorAssignmentService instructorAssignmentService;
-    private final ProgramRepository programRepository;
     private final UserCourseRoleRepository userCourseRoleRepository;
     private final CourseRepository courseRepository;
     private final CourseSnapshotRepository snapshotRepository;
@@ -71,27 +66,7 @@ public class CourseTimeServiceImpl implements CourseTimeService {
 
     @Override
     @Transactional
-    @SuppressWarnings("removal")
     public CourseTimeDetailResponse createCourseTime(CreateCourseTimeRequest request, Long createdBy) {
-        // courseId가 제공되면 새로운 Course 기반 플로우 사용
-        if (request.courseId() != null) {
-            return createCourseTimeFromCourse(request, createdBy);
-        }
-
-        // programId가 제공되면 기존 플로우 사용 (deprecated)
-        if (request.programId() != null) {
-            return createCourseTimeFromProgram(request, createdBy);
-        }
-
-        throw new IllegalArgumentException("courseId 또는 programId 중 하나는 필수입니다");
-    }
-
-    /**
-     * Course 기반 차수 생성 (신규 플로우)
-     * - REGISTERED 상태의 Course에서만 생성 가능
-     * - Snapshot 자동 생성 및 연결
-     */
-    private CourseTimeDetailResponse createCourseTimeFromCourse(CreateCourseTimeRequest request, Long createdBy) {
         log.info("Creating course time from course: title={}, courseId={}", request.title(), request.courseId());
 
         // Course 조회 및 검증
@@ -140,67 +115,8 @@ public class CourseTimeServiceImpl implements CourseTimeService {
                 savedCourseTime.getId(), request.courseId(), snapshot.getId());
 
         // DESIGNER를 MAIN 강사로 자동 배정
-        List<InstructorAssignmentResponse> instructors = assignCourseDesignerAsMainInstructorFromCourse(
+        List<InstructorAssignmentResponse> instructors = assignCourseDesignerAsMainInstructor(
                 savedCourseTime, course, createdBy);
-
-        return CourseTimeDetailResponse.from(savedCourseTime, instructors);
-    }
-
-    /**
-     * Program 기반 차수 생성 (기존 플로우 - deprecated)
-     * @deprecated courseId를 사용한 Course 기반 생성을 사용하세요
-     */
-    @Deprecated(since = "2.0", forRemoval = true)
-    @SuppressWarnings("removal")
-    private CourseTimeDetailResponse createCourseTimeFromProgram(CreateCourseTimeRequest request, Long createdBy) {
-        log.warn("Using deprecated program-based course time creation. Use courseId instead.");
-        log.info("Creating course time: title={}, programId={}", request.title(), request.programId());
-
-        // Program 조회 및 검증
-        Program program = programRepository.findByIdAndTenantId(request.programId(), TenantContext.getCurrentTenantId())
-                .orElseThrow(() -> new ProgramNotFoundException(request.programId()));
-
-        // 승인된 Program만 차수 생성 가능
-        if (!program.canCreateTime()) {
-            throw new ProgramNotApprovedException(request.programId());
-        }
-
-        // 비즈니스 규칙 검증
-        validateDateRange(request);
-        validateLocationInfo(request);
-        validateEnrollmentMethod(request);
-
-        CourseTime courseTime = CourseTime.create(
-                request.title(),
-                request.deliveryType(),
-                request.enrollStartDate(),
-                request.enrollEndDate(),
-                request.classStartDate(),
-                request.classEndDate(),
-                request.capacity(),
-                request.maxWaitingCount(),
-                request.enrollmentMethod(),
-                request.minProgressForCompletion(),
-                request.price(),
-                request.isFree(),
-                request.locationInfo(),
-                request.allowLateEnrollment() != null ? request.allowLateEnrollment() : false,
-                createdBy
-        );
-
-        // Program 연결
-        courseTime.linkProgram(program);
-
-        // CM 연결 (deprecated - 하위 호환성)
-        if (request.cmCourseId() != null) {
-            courseTime.linkCourse(request.cmCourseId(), request.cmCourseVersionId());
-        }
-
-        CourseTime savedCourseTime = courseTimeRepository.save(courseTime);
-        log.info("Course time created: id={}, programId={}", savedCourseTime.getId(), request.programId());
-
-        // B2C: Program DESIGNER를 MAIN 강사로 자동 배정
-        List<InstructorAssignmentResponse> instructors = assignCourseDesignerAsMainInstructor(savedCourseTime, program, createdBy);
 
         return CourseTimeDetailResponse.from(savedCourseTime, instructors);
     }
@@ -240,18 +156,18 @@ public class CourseTimeServiceImpl implements CourseTimeService {
     }
 
     @Override
-    public Page<CourseTimeResponse> getCourseTimes(CourseTimeStatus status, Long cmCourseId, Pageable pageable) {
-        log.debug("Getting course times: status={}, cmCourseId={}", status, cmCourseId);
+    public Page<CourseTimeResponse> getCourseTimes(CourseTimeStatus status, Long courseId, Pageable pageable) {
+        log.debug("Getting course times: status={}, courseId={}", status, courseId);
 
         Long tenantId = TenantContext.getCurrentTenantId();
         Page<CourseTime> courseTimePage;
 
-        if (cmCourseId != null && status != null) {
-            courseTimePage = courseTimeRepository.findByCmCourseIdAndTenantIdAndStatus(
-                    cmCourseId, tenantId, status, pageable);
-        } else if (cmCourseId != null) {
-            courseTimePage = courseTimeRepository.findByCmCourseIdAndTenantId(
-                    cmCourseId, tenantId, pageable);
+        if (courseId != null && status != null) {
+            courseTimePage = courseTimeRepository.findByCourseIdAndTenantIdAndStatus(
+                    courseId, tenantId, status, pageable);
+        } else if (courseId != null) {
+            courseTimePage = courseTimeRepository.findByCourseIdAndTenantId(
+                    courseId, tenantId, pageable);
         } else if (status != null) {
             courseTimePage = courseTimeRepository.findByTenantIdAndStatus(
                     tenantId, status, pageable);
@@ -378,14 +294,14 @@ public class CourseTimeServiceImpl implements CourseTimeService {
         CourseTime courseTime = courseTimeRepository.findByIdAndTenantId(id, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new CourseTimeNotFoundException(id));
 
-        // Program 연결 여부 검증
-        if (courseTime.getProgram() == null) {
-            throw new ProgramNotFoundException();
+        // Course 연결 여부 검증
+        if (courseTime.getCourse() == null) {
+            throw new CourseNotFoundException();
         }
 
-        // Program 승인 상태 검증
-        if (!courseTime.getProgram().isApproved()) {
-            throw new ProgramNotApprovedException(courseTime.getProgram().getId());
+        // Course REGISTERED 상태 검증
+        if (!courseTime.getCourse().canCreateCourseTime()) {
+            throw new CourseNotRegisteredException(courseTime.getCourse().getId(), courseTime.getCourse().getStatus().name());
         }
 
         // 장소 정보 필수 검증 (OFFLINE/BLENDED)
@@ -531,34 +447,9 @@ public class CourseTimeServiceImpl implements CourseTimeService {
     }
 
     /**
-     * B2C: Program DESIGNER(강의 설계자)를 차수의 MAIN 강사로 자동 배정
+     * DESIGNER(강의 설계자)를 차수의 MAIN 강사로 자동 배정
      */
-    private List<InstructorAssignmentResponse> assignCourseDesignerAsMainInstructor(CourseTime courseTime, Program program, Long operatorId) {
-        // Program의 DESIGNER(강의 설계자) 조회
-        List<UserCourseRole> designers = userCourseRoleRepository.findByCourseIdAndRole(program.getId(), CourseRole.DESIGNER);
-
-        if (designers.isEmpty()) {
-            log.warn("No CourseRole.DESIGNER found for program: programId={}", program.getId());
-            return List.of();
-        }
-
-        // 첫 번째 DESIGNER를 MAIN 강사로 배정
-        UserCourseRole designerRole = designers.get(0);
-        Long designerId = designerRole.getUser().getId();
-
-        AssignInstructorRequest assignRequest = new AssignInstructorRequest(designerId, InstructorRole.MAIN, false);
-        InstructorAssignmentResponse assignment = instructorAssignmentService.assignInstructor(
-                courseTime.getId(), assignRequest, operatorId);
-
-        log.info("DESIGNER assigned as MAIN instructor: courseTimeId={}, userId={}", courseTime.getId(), designerId);
-
-        return List.of(assignment);
-    }
-
-    /**
-     * Course 기반: DESIGNER(강의 설계자)를 차수의 MAIN 강사로 자동 배정
-     */
-    private List<InstructorAssignmentResponse> assignCourseDesignerAsMainInstructorFromCourse(
+    private List<InstructorAssignmentResponse> assignCourseDesignerAsMainInstructor(
             CourseTime courseTime, Course course, Long operatorId) {
         // Course의 DESIGNER(강의 설계자) 조회
         List<UserCourseRole> designers = userCourseRoleRepository.findByCourseIdAndRole(course.getId(), CourseRole.DESIGNER);
@@ -576,7 +467,7 @@ public class CourseTimeServiceImpl implements CourseTimeService {
         InstructorAssignmentResponse assignment = instructorAssignmentService.assignInstructor(
                 courseTime.getId(), assignRequest, operatorId);
 
-        log.info("DESIGNER assigned as MAIN instructor from course: courseTimeId={}, userId={}", courseTime.getId(), designerId);
+        log.info("DESIGNER assigned as MAIN instructor: courseTimeId={}, userId={}", courseTime.getId(), designerId);
 
         return List.of(assignment);
     }

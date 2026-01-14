@@ -2,7 +2,6 @@ package com.mzc.lp.domain.dashboard.dto.response;
 
 import com.mzc.lp.common.dto.stats.DailyEnrollmentStatsProjection;
 import com.mzc.lp.common.dto.stats.StatusCountProjection;
-import com.mzc.lp.domain.program.constant.ProgramStatus;
 import com.mzc.lp.domain.student.constant.EnrollmentStatus;
 import com.mzc.lp.domain.user.constant.UserStatus;
 
@@ -18,7 +17,7 @@ import java.util.stream.Collectors;
  */
 public record AdminKpiResponse(
         UserStats userStats,
-        ProgramStats programStats,
+        CourseStats courseStats,
         EnrollmentStats enrollmentStats,
         List<DailyTrend> dailyTrend
 ) {
@@ -56,34 +55,17 @@ public record AdminKpiResponse(
     }
 
     /**
-     * 프로그램 통계
+     * 강의 통계
      */
-    public record ProgramStats(
-            Long draft,
-            Long pending,
-            Long approved,
-            Long rejected,
-            Long closed,
+    public record CourseStats(
             Long total
     ) {
-        public static ProgramStats of(
+        public static CourseStats of(
                 List<StatusCountProjection> statusProjections,
                 Long total
         ) {
-            Map<String, Long> statusMap = statusProjections.stream()
-                    .collect(Collectors.toMap(
-                            StatusCountProjection::getStatus,
-                            StatusCountProjection::getCount
-                    ));
-
-            return new ProgramStats(
-                    statusMap.getOrDefault(ProgramStatus.DRAFT.name(), 0L),
-                    statusMap.getOrDefault(ProgramStatus.PENDING.name(), 0L),
-                    statusMap.getOrDefault(ProgramStatus.APPROVED.name(), 0L),
-                    statusMap.getOrDefault(ProgramStatus.REJECTED.name(), 0L),
-                    statusMap.getOrDefault(ProgramStatus.CLOSED.name(), 0L),
-                    total != null ? total : 0L
-            );
+            // Course는 상태 없이 전체 개수만 추적
+            return new CourseStats(total != null ? total : 0L);
         }
     }
 
@@ -164,8 +146,8 @@ public record AdminKpiResponse(
             List<StatusCountProjection> userStatusProjections,
             Long totalUsers,
             Long newUsersInPeriod,
-            List<StatusCountProjection> programStatusProjections,
-            Long totalPrograms,
+            List<StatusCountProjection> courseStatusProjections,
+            Long totalCourses,
             Long totalEnrollments,
             List<StatusCountProjection> enrollmentStatusProjections,
             Double completionRate,
@@ -173,7 +155,7 @@ public record AdminKpiResponse(
     ) {
         return new AdminKpiResponse(
                 UserStats.of(userStatusProjections, totalUsers, newUsersInPeriod),
-                ProgramStats.of(programStatusProjections, totalPrograms),
+                CourseStats.of(courseStatusProjections, totalCourses),
                 EnrollmentStats.of(totalEnrollments, enrollmentStatusProjections, completionRate),
                 DailyTrend.fromList(dailyStats)
         );

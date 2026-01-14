@@ -30,7 +30,7 @@ import com.mzc.lp.domain.iis.repository.AssignmentHistoryRepository;
 import com.mzc.lp.domain.iis.repository.InstructorAssignmentRepository;
 import com.mzc.lp.domain.student.dto.response.CourseTimeEnrollmentStatsResponse;
 import com.mzc.lp.domain.student.service.EnrollmentStatsService;
-import com.mzc.lp.domain.program.entity.Program;
+import com.mzc.lp.domain.course.entity.Course;
 import com.mzc.lp.domain.ts.entity.CourseTime;
 import com.mzc.lp.domain.ts.repository.CourseTimeRepository;
 import com.mzc.lp.domain.user.entity.User;
@@ -181,9 +181,9 @@ public class InstructorAssignmentServiceImpl implements InstructorAssignmentServ
         return assignmentPage.map(assignment -> {
             User user = userMap.get(assignment.getUserKey());
             CourseTime courseTime = courseTimeMap.get(assignment.getTimeKey());
-            Program program = courseTime != null ? courseTime.getProgram() : null;
+            Course course = courseTime != null ? courseTime.getCourse() : null;
 
-            return InstructorAssignmentListResponse.from(assignment, user, courseTime, program);
+            return InstructorAssignmentListResponse.from(assignment, user, courseTime, course);
         });
     }
 

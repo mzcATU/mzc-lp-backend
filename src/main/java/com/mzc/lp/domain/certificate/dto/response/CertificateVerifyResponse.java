@@ -9,7 +9,6 @@ public record CertificateVerifyResponse(
         boolean valid,
         String certificateNumber,
         String userName,
-        String programTitle,
         String courseTimeTitle,
         Instant completedAt,
         Instant issuedAt,
@@ -26,7 +25,6 @@ public record CertificateVerifyResponse(
                 isValid,
                 certificate.getCertificateNumber(),
                 maskName(certificate.getUserName()),
-                certificate.getProgramTitle(),
                 certificate.getCourseTimeTitle(),
                 certificate.getCompletedAt(),
                 certificate.getIssuedAt(),
@@ -64,7 +62,6 @@ public record CertificateVerifyResponse(
         return new CertificateVerifyResponse(
                 false,
                 certificateNumber,
-                null,
                 null,
                 null,
                 null,

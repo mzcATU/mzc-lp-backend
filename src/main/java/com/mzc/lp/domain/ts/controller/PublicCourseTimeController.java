@@ -32,7 +32,7 @@ public class PublicCourseTimeController {
      *
      * @param status       상태 필터 (다중 선택 가능, 기본: RECRUITING, ONGOING)
      * @param deliveryType 운영 방식 필터
-     * @param programId    프로그램 ID 필터
+     * @param courseId     강의 ID 필터
      * @param isFree       무료/유료 필터
      * @param keyword      제목 검색 키워드
      * @param categoryId   카테고리 ID 필터
@@ -43,14 +43,14 @@ public class PublicCourseTimeController {
     public ResponseEntity<ApiResponse<Page<CourseTimeCatalogResponse>>> getPublicCourseTimes(
             @RequestParam(required = false) List<CourseTimeStatus> status,
             @RequestParam(required = false) DeliveryType deliveryType,
-            @RequestParam(required = false) Long programId,
+            @RequestParam(required = false) Long courseId,
             @RequestParam(required = false) Boolean isFree,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Long categoryId,
             @PageableDefault(size = 20) Pageable pageable
     ) {
         Page<CourseTimeCatalogResponse> response = publicCourseTimeService.getPublicCourseTimes(
-                status, deliveryType, programId, isFree, keyword, categoryId, pageable
+                status, deliveryType, courseId, isFree, keyword, categoryId, pageable
         );
         return ResponseEntity.ok(ApiResponse.success(response));
     }

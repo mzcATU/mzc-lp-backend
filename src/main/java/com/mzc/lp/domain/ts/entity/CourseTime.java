@@ -2,7 +2,6 @@ package com.mzc.lp.domain.ts.entity;
 
 import com.mzc.lp.common.entity.TenantEntity;
 import com.mzc.lp.domain.course.entity.Course;
-import com.mzc.lp.domain.program.entity.Program;
 import com.mzc.lp.domain.snapshot.entity.CourseSnapshot;
 import com.mzc.lp.domain.ts.constant.CourseTimeStatus;
 import com.mzc.lp.domain.ts.constant.DeliveryType;
@@ -20,8 +19,7 @@ import java.time.LocalDate;
 @Table(name = "course_times", indexes = {
         @Index(name = "idx_course_times_status", columnList = "tenant_id, status"),
         @Index(name = "idx_course_times_course", columnList = "tenant_id, course_id"),
-        @Index(name = "idx_course_times_snapshot", columnList = "tenant_id, snapshot_id"),
-        @Index(name = "idx_course_times_program", columnList = "tenant_id, program_id")
+        @Index(name = "idx_course_times_snapshot", columnList = "tenant_id, snapshot_id")
 })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -40,28 +38,6 @@ public class CourseTime extends TenantEntity {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "snapshot_id")
     private CourseSnapshot snapshot;
-
-    /**
-     * @deprecated Course를 직접 참조하세요. Program 승인 워크플로우가 제거되었습니다.
-     */
-    @Deprecated(since = "2.0", forRemoval = true)
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "program_id")
-    private Program program;
-
-    /**
-     * @deprecated CM 연결은 더 이상 사용되지 않습니다. Program을 통해 Snapshot으로 연결하세요.
-     */
-    @Deprecated(since = "1.0", forRemoval = true)
-    @Column(name = "cm_course_id")
-    private Long cmCourseId;
-
-    /**
-     * @deprecated CM 연결은 더 이상 사용되지 않습니다. Program을 통해 Snapshot으로 연결하세요.
-     */
-    @Deprecated(since = "1.0", forRemoval = true)
-    @Column(name = "cm_course_version_id")
-    private Long cmCourseVersionId;
 
     @Column(nullable = false, length = 200)
     private String title;
@@ -127,7 +103,6 @@ public class CourseTime extends TenantEntity {
     private Long createdBy;
 
     // 정적 팩토리 메서드
-    @SuppressWarnings("removal")
     public static CourseTime cloneFrom(
             CourseTime source,
             String newTitle,
@@ -139,7 +114,7 @@ public class CourseTime extends TenantEntity {
     ) {
         CourseTime courseTime = new CourseTime();
         // 복제 대상 필드
-        courseTime.program = source.program;
+        courseTime.course = source.course;
         courseTime.deliveryType = source.deliveryType;
         courseTime.capacity = source.capacity;
         courseTime.maxWaitingCount = source.maxWaitingCount;
@@ -149,8 +124,6 @@ public class CourseTime extends TenantEntity {
         courseTime.free = source.free;
         courseTime.locationInfo = source.locationInfo;
         courseTime.allowLateEnrollment = source.allowLateEnrollment;
-        courseTime.cmCourseId = source.cmCourseId;
-        courseTime.cmCourseVersionId = source.cmCourseVersionId;
 
         // 새로 지정하는 필드
         courseTime.title = newTitle;
@@ -208,28 +181,11 @@ public class CourseTime extends TenantEntity {
     // 비즈니스 메서드
 
     /**
-     * Course와 Snapshot 직접 연결 (신규 플로우)
+     * Course와 Snapshot 직접 연결
      */
     public void linkCourseAndSnapshot(Course course, CourseSnapshot snapshot) {
         this.course = course;
         this.snapshot = snapshot;
-    }
-
-    /**
-     * @deprecated Course를 직접 참조하세요. Program 승인 워크플로우가 제거되었습니다.
-     */
-    @Deprecated(since = "2.0", forRemoval = true)
-    public void linkProgram(Program program) {
-        this.program = program;
-    }
-
-    /**
-     * @deprecated Course를 직접 참조하세요.
-     */
-    @Deprecated(since = "1.0", forRemoval = true)
-    public void linkCourse(Long cmCourseId, Long cmCourseVersionId) {
-        this.cmCourseId = cmCourseId;
-        this.cmCourseVersionId = cmCourseVersionId;
     }
 
     public void updateTitle(String title) {

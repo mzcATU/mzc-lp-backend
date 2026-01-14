@@ -62,14 +62,14 @@ public class PublicCourseTimeServiceImpl implements PublicCourseTimeService {
     public Page<CourseTimeCatalogResponse> getPublicCourseTimes(
             List<CourseTimeStatus> statuses,
             DeliveryType deliveryType,
-            Long programId,
+            Long courseId,
             Boolean isFree,
             String keyword,
             Long categoryId,
             Pageable pageable
     ) {
-        log.debug("Getting public course times: statuses={}, deliveryType={}, programId={}, isFree={}, keyword={}, categoryId={}",
-                statuses, deliveryType, programId, isFree, keyword, categoryId);
+        log.debug("Getting public course times: statuses={}, deliveryType={}, courseId={}, isFree={}, keyword={}, categoryId={}",
+                statuses, deliveryType, courseId, isFree, keyword, categoryId);
 
         Long tenantId = TenantContext.getCurrentTenantId();
 
@@ -83,7 +83,7 @@ public class PublicCourseTimeServiceImpl implements PublicCourseTimeService {
                 tenantId,
                 effectiveStatuses,
                 deliveryType,
-                programId,
+                courseId,
                 isFree,
                 keyword,
                 categoryId
@@ -194,14 +194,14 @@ public class PublicCourseTimeServiceImpl implements PublicCourseTimeService {
     }
 
     /**
-     * CourseTime에 연결된 Program의 Snapshot에서 커리큘럼 조회
+     * CourseTime의 Snapshot에서 커리큘럼 조회
      */
     private List<CurriculumItemResponse> getCurriculum(CourseTime courseTime) {
-        if (courseTime.getProgram() == null || courseTime.getProgram().getSnapshot() == null) {
+        if (courseTime.getSnapshot() == null) {
             return List.of();
         }
 
-        Long snapshotId = courseTime.getProgram().getSnapshot().getId();
+        Long snapshotId = courseTime.getSnapshot().getId();
         Long tenantId = TenantContext.getCurrentTenantId();
 
         // 루트 아이템만 조회 (children은 엔티티에서 자동 로딩)
@@ -231,15 +231,13 @@ public class PublicCourseTimeServiceImpl implements PublicCourseTimeService {
     }
 
     /**
-     * CourseTime에서 카테고리 ID 추출 (Program → Snapshot → Course)
+     * CourseTime에서 카테고리 ID 추출 (Course에서 직접)
      */
     private Long extractCategoryId(CourseTime courseTime) {
-        if (courseTime.getProgram() == null
-                || courseTime.getProgram().getSnapshot() == null
-                || courseTime.getProgram().getSnapshot().getSourceCourse() == null) {
+        Course course = courseTime.getCourse();
+        if (course == null) {
             return null;
         }
-        Course course = courseTime.getProgram().getSnapshot().getSourceCourse();
         return course.getCategoryId();
     }
 }

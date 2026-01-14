@@ -3,8 +3,8 @@ package com.mzc.lp.domain.dashboard.service;
 import com.mzc.lp.common.dto.stats.DailyEnrollmentStatsProjection;
 import com.mzc.lp.common.dto.stats.StatusCountProjection;
 import com.mzc.lp.common.support.TenantTestSupport;
+import com.mzc.lp.domain.course.repository.CourseRepository;
 import com.mzc.lp.domain.dashboard.dto.response.AdminKpiResponse;
-import com.mzc.lp.domain.program.repository.ProgramRepository;
 import com.mzc.lp.domain.student.repository.EnrollmentRepository;
 import com.mzc.lp.domain.user.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -36,7 +36,7 @@ class AdminDashboardServiceTest extends TenantTestSupport {
     private UserRepository userRepository;
 
     @Mock
-    private ProgramRepository programRepository;
+    private CourseRepository courseRepository;
 
     @Mock
     private EnrollmentRepository enrollmentRepository;
@@ -64,16 +64,8 @@ class AdminDashboardServiceTest extends TenantTestSupport {
             given(userRepository.countNewUsersSince(eq(TENANT_ID), any(Instant.class)))
                     .willReturn(15L);
 
-            // 프로그램 통계 Mock
-            given(programRepository.countByTenantIdGroupByStatus(TENANT_ID))
-                    .willReturn(List.of(
-                            createStatusCountProjection("DRAFT", 3L),
-                            createStatusCountProjection("PENDING", 2L),
-                            createStatusCountProjection("APPROVED", 10L),
-                            createStatusCountProjection("REJECTED", 1L),
-                            createStatusCountProjection("CLOSED", 5L)
-                    ));
-            given(programRepository.countByTenantId(TENANT_ID))
+            // 강의 통계 Mock (Program → Course)
+            given(courseRepository.countByTenantId(TENANT_ID))
                     .willReturn(21L);
 
             // 수강 통계 Mock
@@ -110,13 +102,8 @@ class AdminDashboardServiceTest extends TenantTestSupport {
             assertThat(response.userStats().total()).isEqualTo(135L);
             assertThat(response.userStats().newInPeriod()).isEqualTo(15L);
 
-            // ProgramStats 검증
-            assertThat(response.programStats().draft()).isEqualTo(3L);
-            assertThat(response.programStats().pending()).isEqualTo(2L);
-            assertThat(response.programStats().approved()).isEqualTo(10L);
-            assertThat(response.programStats().rejected()).isEqualTo(1L);
-            assertThat(response.programStats().closed()).isEqualTo(5L);
-            assertThat(response.programStats().total()).isEqualTo(21L);
+            // CourseStats 검증 (Program → Course)
+            assertThat(response.courseStats().total()).isEqualTo(21L);
 
             // EnrollmentStats 검증
             assertThat(response.enrollmentStats().totalEnrollments()).isEqualTo(500L);
@@ -142,9 +129,7 @@ class AdminDashboardServiceTest extends TenantTestSupport {
                     .willReturn(0L);
             given(userRepository.countNewUsersSince(eq(TENANT_ID), any(Instant.class)))
                     .willReturn(0L);
-            given(programRepository.countByTenantIdGroupByStatus(TENANT_ID))
-                    .willReturn(Collections.emptyList());
-            given(programRepository.countByTenantId(TENANT_ID))
+            given(courseRepository.countByTenantId(TENANT_ID))
                     .willReturn(0L);
             given(enrollmentRepository.countByTenantId(TENANT_ID))
                     .willReturn(0L);
@@ -169,13 +154,8 @@ class AdminDashboardServiceTest extends TenantTestSupport {
             assertThat(response.userStats().total()).isEqualTo(0L);
             assertThat(response.userStats().newInPeriod()).isEqualTo(0L);
 
-            // ProgramStats 검증 - 모두 0
-            assertThat(response.programStats().draft()).isEqualTo(0L);
-            assertThat(response.programStats().pending()).isEqualTo(0L);
-            assertThat(response.programStats().approved()).isEqualTo(0L);
-            assertThat(response.programStats().rejected()).isEqualTo(0L);
-            assertThat(response.programStats().closed()).isEqualTo(0L);
-            assertThat(response.programStats().total()).isEqualTo(0L);
+            // CourseStats 검증 - 0
+            assertThat(response.courseStats().total()).isEqualTo(0L);
 
             // EnrollmentStats 검증 - 모두 0
             assertThat(response.enrollmentStats().totalEnrollments()).isEqualTo(0L);
@@ -199,11 +179,7 @@ class AdminDashboardServiceTest extends TenantTestSupport {
                     .willReturn(50L);
             given(userRepository.countNewUsersSince(eq(TENANT_ID), any(Instant.class)))
                     .willReturn(5L);
-            given(programRepository.countByTenantIdGroupByStatus(TENANT_ID))
-                    .willReturn(List.of(
-                            createStatusCountProjection("APPROVED", 10L)
-                    ));
-            given(programRepository.countByTenantId(TENANT_ID))
+            given(courseRepository.countByTenantId(TENANT_ID))
                     .willReturn(10L);
             given(enrollmentRepository.countByTenantId(TENANT_ID))
                     .willReturn(100L);
@@ -231,12 +207,8 @@ class AdminDashboardServiceTest extends TenantTestSupport {
             assertThat(response.userStats().suspended()).isEqualTo(0L);
             assertThat(response.userStats().withdrawn()).isEqualTo(0L);
 
-            // ProgramStats - 없는 상태는 0
-            assertThat(response.programStats().draft()).isEqualTo(0L);
-            assertThat(response.programStats().pending()).isEqualTo(0L);
-            assertThat(response.programStats().approved()).isEqualTo(10L);
-            assertThat(response.programStats().rejected()).isEqualTo(0L);
-            assertThat(response.programStats().closed()).isEqualTo(0L);
+            // CourseStats
+            assertThat(response.courseStats().total()).isEqualTo(10L);
 
             // EnrollmentStats - 없는 상태는 0
             assertThat(response.enrollmentStats().byStatus().dropped()).isEqualTo(0L);
