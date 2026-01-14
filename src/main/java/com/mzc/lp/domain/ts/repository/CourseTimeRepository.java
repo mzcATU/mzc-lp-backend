@@ -220,21 +220,21 @@ public interface CourseTimeRepository extends JpaRepository<CourseTime, Long>, J
             @Param("endDate") Instant endDate);
 
     /**
-     * 과정(cmCourseId)별 상태별 차수 카운트
+     * 강의(Course)별 상태별 차수 카운트
      */
     @Query("SELECT ct.status AS status, COUNT(ct) AS count " +
             "FROM CourseTime ct " +
-            "WHERE ct.cmCourseId = :cmCourseId " +
+            "WHERE ct.course.id = :courseId " +
             "AND ct.tenantId = :tenantId " +
             "GROUP BY ct.status")
-    List<StatusCountProjection> countByCmCourseIdGroupByStatus(
-            @Param("cmCourseId") Long cmCourseId,
+    List<StatusCountProjection> countByCourseIdGroupByStatus(
+            @Param("courseId") Long courseId,
             @Param("tenantId") Long tenantId);
 
     /**
-     * 과정(cmCourseId)별 전체 차수 카운트
+     * 강의(Course)별 전체 차수 카운트
      */
-    long countByCmCourseIdAndTenantId(Long cmCourseId, Long tenantId);
+    long countByCourseIdAndTenantId(Long courseId, Long tenantId);
 
     /**
      * 강사 미배정 차수 카운트 (RECRUITING 또는 ONGOING 상태)

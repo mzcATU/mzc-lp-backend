@@ -36,12 +36,4 @@ public interface RoadmapProgramRepository extends JpaRepository<RoadmapProgram, 
     @Query("SELECT COUNT(rp) FROM RoadmapProgram rp WHERE rp.roadmap.id = :roadmapId")
     int countByRoadmapId(@Param("roadmapId") Long roadmapId);
 
-    /**
-     * 로드맵 ID 목록에 해당하는 모든 프로그램 조회 (Batch)
-     */
-    @Query("SELECT rp FROM RoadmapProgram rp " +
-           "JOIN FETCH rp.program p " +
-           "WHERE rp.roadmap.id IN :roadmapIds " +
-           "ORDER BY rp.roadmap.id, rp.orderIndex")
-    List<RoadmapProgram> findByRoadmapIdInWithProgram(@Param("roadmapIds") List<Long> roadmapIds);
 }
