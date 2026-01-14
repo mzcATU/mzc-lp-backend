@@ -38,9 +38,13 @@ import com.mzc.lp.domain.employee.repository.EmployeeRepository;
 import com.mzc.lp.domain.tenant.entity.Tenant;
 import com.mzc.lp.domain.tenant.repository.TenantRepository;
 
+import com.mzc.lp.domain.user.dto.request.UpdateUserRolesRequest;
+import com.mzc.lp.domain.user.dto.response.UserRolesResponse;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -519,6 +523,58 @@ public class UserServiceImpl implements UserService {
         log.info("File bulk user creation completed: created={}, failed={}, autoLinked={}",
                 createdUsers.size(), failedUsers.size(), autoLinkedUsers.size());
         return BulkCreateUsersResponse.of(userRows.size(), createdUsers, failedUsers, autoLinkedUsers);
+    }
+
+    // ========== User Roles API (1:N 역할 관리) ==========
+
+    @Override
+    @Transactional
+    public UserRolesResponse updateUserRoles(Long userId, UpdateUserRolesRequest request) {
+        log.info("Updating user roles: userId={}, roles={}", userId, request.roles());
+        // userRoles를 함께 로딩해서 기존 역할과 비교 가능하게 함
+        User user = userRepository.findByIdWithRoles(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
+
+        user.setRoles(request.roles());
+        log.info("User roles updated: userId={}, newRoles={}", userId, user.getRoles());
+
+        return UserRolesResponse.from(user);
+    }
+
+    @Override
+    @Transactional
+    public UserRolesResponse addUserRole(Long userId, TenantRole role) {
+        log.info("Adding user role: userId={}, role={}", userId, role);
+        User user = userRepository.findByIdWithRoles(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
+
+        user.addRole(role);
+        log.info("User role added: userId={}, allRoles={}", userId, user.getRoles());
+
+        return UserRolesResponse.from(user);
+    }
+
+    @Override
+    @Transactional
+    public UserRolesResponse removeUserRole(Long userId, TenantRole role) {
+        log.info("Removing user role: userId={}, role={}", userId, role);
+        User user = userRepository.findByIdWithRoles(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
+
+        user.removeRole(role);
+        log.info("User role removed: userId={}, remainingRoles={}", userId, user.getRoles());
+
+        return UserRolesResponse.from(user);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Set<TenantRole> getUserRoles(Long userId) {
+        log.debug("Getting user roles: userId={}", userId);
+        User user = userRepository.findByIdWithRoles(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
+
+        return user.getRoles();
     }
 
     // ========== Private Helper Methods ==========

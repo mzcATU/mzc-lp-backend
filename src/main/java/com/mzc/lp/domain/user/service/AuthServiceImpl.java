@@ -1,6 +1,7 @@
 package com.mzc.lp.domain.user.service;
 
 import com.mzc.lp.common.security.JwtProvider;
+import com.mzc.lp.domain.user.constant.TenantRole;
 import com.mzc.lp.domain.user.dto.request.LoginRequest;
 import com.mzc.lp.domain.user.dto.request.RefreshTokenRequest;
 import com.mzc.lp.domain.user.dto.request.RegisterRequest;
@@ -17,10 +18,14 @@ import com.mzc.lp.domain.user.repository.RefreshTokenRepository;
 import com.mzc.lp.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -72,6 +77,9 @@ public class AuthServiceImpl implements AuthService {
                     return new InvalidCredentialsException();
                 });
 
+        // userRoles 초기화 (Lazy Loading)
+        Hibernate.initialize(user.getUserRoles());
+
         log.info("User found: userId={}, tenantId={}, role={}", user.getId(), user.getTenantId(), user.getRole());
 
         // 비밀번호 검증
@@ -85,11 +93,15 @@ public class AuthServiceImpl implements AuthService {
             throw new InvalidCredentialsException();
         }
 
-        // 토큰 생성 (tenantId 포함)
+        // 토큰 생성 (tenantId, 다중 역할 포함)
+        Set<String> roleNames = user.getRoles().stream()
+                .map(TenantRole::name)
+                .collect(Collectors.toSet());
         String accessToken = jwtProvider.createAccessToken(
                 user.getId(),
                 user.getEmail(),
                 user.getRole().name(),
+                roleNames,
                 user.getTenantId()
         );
         String refreshToken = jwtProvider.createRefreshToken(user.getId());
@@ -128,14 +140,21 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findById(storedToken.getUserId())
                 .orElseThrow(UserNotFoundException::new);
 
+        // userRoles 초기화 (Lazy Loading)
+        Hibernate.initialize(user.getUserRoles());
+
         // 기존 Refresh Token 무효화
         storedToken.revoke();
 
-        // 새 토큰 생성 (tenantId 포함)
+        // 새 토큰 생성 (tenantId, 다중 역할 포함)
+        Set<String> roleNames = user.getRoles().stream()
+                .map(TenantRole::name)
+                .collect(Collectors.toSet());
         String newAccessToken = jwtProvider.createAccessToken(
                 user.getId(),
                 user.getEmail(),
                 user.getRole().name(),
+                roleNames,
                 user.getTenantId()
         );
         String newRefreshToken = jwtProvider.createRefreshToken(user.getId());

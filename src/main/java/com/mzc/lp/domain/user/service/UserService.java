@@ -10,12 +10,14 @@ import com.mzc.lp.domain.user.dto.request.ChangeRoleRequest;
 import com.mzc.lp.domain.user.dto.request.ChangeStatusRequest;
 import com.mzc.lp.domain.user.dto.request.UpdateProfileRequest;
 import com.mzc.lp.domain.user.dto.request.UpdateUserRequest;
+import com.mzc.lp.domain.user.dto.request.UpdateUserRolesRequest;
 import com.mzc.lp.domain.user.dto.request.WithdrawRequest;
 import com.mzc.lp.domain.user.dto.response.BulkCreateUsersResponse;
 import com.mzc.lp.domain.user.dto.response.CourseRoleResponse;
 import com.mzc.lp.domain.user.dto.response.UserDetailResponse;
 import com.mzc.lp.domain.user.dto.response.UserListResponse;
 import com.mzc.lp.domain.user.dto.response.UserRoleResponse;
+import com.mzc.lp.domain.user.dto.response.UserRolesResponse;
 import com.mzc.lp.domain.user.dto.response.UserStatusResponse;
 import com.mzc.lp.domain.user.dto.response.ProfileImageResponse;
 import org.springframework.data.domain.Page;
@@ -23,6 +25,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Set;
 
 public interface UserService {
 
@@ -49,6 +52,15 @@ public interface UserService {
     UserRoleResponse changeUserRole(Long userId, ChangeRoleRequest request);
 
     UserStatusResponse changeUserStatus(Long userId, ChangeStatusRequest request);
+
+    // 역할 관리 API (1:N)
+    UserRolesResponse updateUserRoles(Long userId, UpdateUserRolesRequest request);
+
+    UserRolesResponse addUserRole(Long userId, TenantRole role);
+
+    UserRolesResponse removeUserRole(Long userId, TenantRole role);
+
+    Set<TenantRole> getUserRoles(Long userId);
 
     // CourseRole API
     CourseRoleResponse requestDesignerRole(Long userId);

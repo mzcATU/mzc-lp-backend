@@ -10,8 +10,8 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
-import java.util.Date;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -49,6 +49,13 @@ public class JwtProvider {
      * tenantId를 포함한 AccessToken 생성 (CMS/LO 모듈용)
      */
     public String createAccessToken(Long userId, String email, String role, Long tenantId) {
+        return createAccessToken(userId, email, role, Set.of(role), tenantId);
+    }
+
+    /**
+     * 다중 역할을 포함한 AccessToken 생성
+     */
+    public String createAccessToken(Long userId, String email, String role, Set<String> roles, Long tenantId) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + accessTokenExpiry);
 
@@ -56,6 +63,7 @@ public class JwtProvider {
                 .subject(String.valueOf(userId))
                 .claim("email", email)
                 .claim("role", role)
+                .claim("roles", new ArrayList<>(roles))  // 다중 역할
                 .claim("tenantId", tenantId)
                 .issuedAt(now)
                 .expiration(expiry)
@@ -133,6 +141,21 @@ public class JwtProvider {
 
     public String getRole(String token) {
         return getClaims(token).get("role", String.class);
+    }
+
+    /**
+     * 다중 역할 조회
+     */
+    @SuppressWarnings("unchecked")
+    public Set<String> getRoles(String token) {
+        Claims claims = getClaims(token);
+        List<String> rolesList = claims.get("roles", List.class);
+        if (rolesList != null) {
+            return new HashSet<>(rolesList);
+        }
+        // 하위 호환성: roles가 없으면 role 하나만 반환
+        String role = claims.get("role", String.class);
+        return role != null ? Set.of(role) : Set.of();
     }
 
     /**

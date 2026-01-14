@@ -22,6 +22,19 @@ public interface UserRepository extends JpaRepository<User, Long>, UserRepositor
     @Query(value = "SELECT * FROM users WHERE email = :email LIMIT 1", nativeQuery = true)
     Optional<User> findByEmailForLogin(@Param("email") String email);
 
+    /**
+     * 로그인용 이메일 조회 - userRoles를 함께 로딩 (다중 역할 지원)
+     * JPQL LEFT JOIN FETCH로 userRoles 즉시 로딩
+     */
+    @Query("SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.userRoles WHERE u.email = :email")
+    Optional<User> findByEmailWithRoles(@Param("email") String email);
+
+    /**
+     * ID로 사용자 조회 - userRoles를 함께 로딩 (토큰 갱신용)
+     */
+    @Query("SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.userRoles WHERE u.id = :id")
+    Optional<User> findByIdWithRoles(@Param("id") Long id);
+
     boolean existsByEmail(String email);
     boolean existsByTenantIdAndEmail(Long tenantId, String email);
 
