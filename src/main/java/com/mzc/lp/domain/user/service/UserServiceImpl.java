@@ -40,6 +40,7 @@ import com.mzc.lp.domain.tenant.repository.TenantRepository;
 
 import com.mzc.lp.domain.user.dto.request.UpdateUserRolesRequest;
 import com.mzc.lp.domain.user.dto.response.UserRolesResponse;
+import com.mzc.lp.domain.notification.event.NotificationEventPublisher;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -69,6 +70,7 @@ public class UserServiceImpl implements UserService {
     private final UserExcelParser userExcelParser;
     private final EmployeeRepository employeeRepository;
     private final TenantRepository tenantRepository;
+    private final NotificationEventPublisher notificationEventPublisher;
 
     @Override
     public UserDetailResponse getMe(Long userId) {
@@ -361,6 +363,13 @@ public class UserServiceImpl implements UserService {
                             savedUser.getEmail(),
                             savedUser.getName()
                     ));
+
+                    // 회원가입 환영 알림 발송
+                    notificationEventPublisher.publishWelcome(
+                            tenantId,
+                            savedUser.getId(),
+                            savedUser.getName()
+                    );
                 } catch (Exception e) {
                     log.warn("Failed to create user: email={}, error={}", email, e.getMessage());
                     failedUsers.add(new BulkCreateUsersResponse.FailedUserInfo(email, e.getMessage()));
@@ -491,6 +500,13 @@ public class UserServiceImpl implements UserService {
                             employeeLinked,
                             employeeId
                     ));
+
+                    // 회원가입 환영 알림 발송
+                    notificationEventPublisher.publishWelcome(
+                            tenantId,
+                            savedUser.getId(),
+                            savedUser.getName()
+                    );
 
                     // 자동 연동된 임직원 정보 추가
                     if (employeeLinked) {
