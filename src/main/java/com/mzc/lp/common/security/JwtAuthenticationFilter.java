@@ -111,6 +111,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 Long userId = jwtProvider.getUserId(token);
                 String email = jwtProvider.getEmail(token);
                 String role = jwtProvider.getRole(token);
+                Set<String> roles = jwtProvider.getRoles(token);  // 다중 역할
 
                 // tenantId는 토큰에서 가져오거나, 없으면 DB에서 조회
                 Long tenantId = jwtProvider.getTenantId(token);
@@ -127,11 +128,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         .map(ucr -> ucr.getRole().name())
                         .collect(Collectors.toSet());
 
-                UserPrincipal principal = new UserPrincipal(userId, tenantId, email, role, courseRoles);
+                UserPrincipal principal = new UserPrincipal(userId, tenantId, email, role, roles, courseRoles);
 
-                // 시스템 역할 + CourseRole 모두 authorities에 추가
+                // 다중 시스템 역할 + CourseRole 모두 authorities에 추가
                 List<SimpleGrantedAuthority> authorities = new ArrayList<>();
-                authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
+                roles.forEach(r ->
+                        authorities.add(new SimpleGrantedAuthority("ROLE_" + r))
+                );
                 courseRoles.forEach(courseRole ->
                         authorities.add(new SimpleGrantedAuthority("ROLE_" + courseRole))
                 );
@@ -146,7 +149,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     com.mzc.lp.common.context.TenantContext.setTenantId(tenantId);
                 }
 
-                log.debug("Authenticated user: {}, tenantId: {}, courseRoles: {}", email, tenantId, courseRoles);
+                log.debug("Authenticated user: {}, tenantId: {}, roles: {}, courseRoles: {}", email, tenantId, roles, courseRoles);
             } else {
                 // 유효하지 않은 토큰 (만료 제외) - 401 반환
                 log.debug("Invalid token, returning 401");
