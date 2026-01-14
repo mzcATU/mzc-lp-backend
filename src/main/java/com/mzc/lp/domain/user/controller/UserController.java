@@ -12,17 +12,20 @@ import com.mzc.lp.domain.user.dto.request.ChangeRoleRequest;
 import com.mzc.lp.domain.user.dto.request.ChangeStatusRequest;
 import com.mzc.lp.domain.user.dto.request.UpdateProfileRequest;
 import com.mzc.lp.domain.user.dto.request.UpdateUserRequest;
+import com.mzc.lp.domain.user.dto.request.UpdateUserRolesRequest;
 import com.mzc.lp.domain.user.dto.request.WithdrawRequest;
 import com.mzc.lp.domain.user.dto.response.BulkCreateUsersResponse;
 import com.mzc.lp.domain.user.dto.response.CourseRoleResponse;
 import com.mzc.lp.domain.user.dto.response.UserDetailResponse;
 import com.mzc.lp.domain.user.dto.response.UserListResponse;
 import com.mzc.lp.domain.user.dto.response.UserRoleResponse;
+import com.mzc.lp.domain.user.dto.response.UserRolesResponse;
 import com.mzc.lp.domain.user.dto.response.UserStatusResponse;
 import com.mzc.lp.domain.user.dto.response.ProfileImageResponse;
 import com.mzc.lp.domain.user.service.UserService;
 
 import java.util.List;
+import java.util.Set;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -142,6 +145,46 @@ public class UserController {
     ) {
         UserRoleResponse response = userService.changeUserRole(userId, request);
         return ResponseEntity.ok(ApiResponse.success(response));
+    }
+// ========== User Roles API (1:N 역할 관리) ==========
+
+    @PutMapping("/{userId}/roles")
+    @PreAuthorize("hasRole('TENANT_ADMIN')")
+    public ResponseEntity<ApiResponse<UserRolesResponse>> updateUserRoles(
+            @PathVariable Long userId,
+            @Valid @RequestBody UpdateUserRolesRequest request
+    ) {
+        UserRolesResponse response = userService.updateUserRoles(userId, request);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @PostMapping("/{userId}/roles/{role}")
+    @PreAuthorize("hasRole('TENANT_ADMIN')")
+    public ResponseEntity<ApiResponse<UserRolesResponse>> addUserRole(
+            @PathVariable Long userId,
+            @PathVariable TenantRole role
+    ) {
+        UserRolesResponse response = userService.addUserRole(userId, role);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @DeleteMapping("/{userId}/roles/{role}")
+    @PreAuthorize("hasRole('TENANT_ADMIN')")
+    public ResponseEntity<ApiResponse<UserRolesResponse>> removeUserRole(
+            @PathVariable Long userId,
+            @PathVariable TenantRole role
+    ) {
+        UserRolesResponse response = userService.removeUserRole(userId, role);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @GetMapping("/{userId}/roles")
+    @PreAuthorize("hasAnyRole('OPERATOR', 'TENANT_ADMIN')")
+    public ResponseEntity<ApiResponse<Set<TenantRole>>> getUserRoles(
+            @PathVariable Long userId
+    ) {
+        Set<TenantRole> roles = userService.getUserRoles(userId);
+        return ResponseEntity.ok(ApiResponse.success(roles));
     }
 
     @PutMapping("/{userId}/status")

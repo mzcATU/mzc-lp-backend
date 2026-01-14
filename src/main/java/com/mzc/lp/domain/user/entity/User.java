@@ -8,6 +8,10 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 @Entity
 @Table(name = "users", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"tenant_id", "email"})
@@ -38,7 +42,10 @@ public class User extends TenantEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private TenantRole role;
+    private TenantRole role;  // 기본 역할 (하위 호환성 유지)
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private Set<UserRole> userRoles = new HashSet<>();
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -82,6 +89,81 @@ public class User extends TenantEntity {
 
     public void updateRole(TenantRole role) {
         this.role = role;
+    }
+
+    /**
+     * 역할 추가 (1:N)
+     */
+    public void addRole(TenantRole role) {
+        // 이미 해당 역할이 있는지 확인
+        boolean hasRole = this.userRoles.stream()
+                .anyMatch(ur -> ur.getRole() == role);
+        if (!hasRole) {
+            UserRole userRole = UserRole.create(this, role);
+            this.userRoles.add(userRole);
+        }
+        // 기본 역할도 업데이트 (가장 높은 권한으로)
+        updatePrimaryRole();
+    }
+
+    /**
+     * 역할 제거 (1:N)
+     */
+    public void removeRole(TenantRole role) {
+        this.userRoles.removeIf(ur -> ur.getRole() == role);
+        // 기본 역할도 업데이트
+        updatePrimaryRole();
+    }
+
+    /**
+     * 역할 전체 설정 (기존 역할 교체)
+     */
+    public void setRoles(Set<TenantRole> roles) {
+        this.userRoles.clear();
+        for (TenantRole r : roles) {
+            UserRole userRole = UserRole.create(this, r);
+            this.userRoles.add(userRole);
+        }
+        updatePrimaryRole();
+    }
+
+    /**
+     * 모든 역할 조회
+     */
+    public Set<TenantRole> getRoles() {
+        if (userRoles.isEmpty()) {
+            // 하위 호환성: userRoles가 비어있으면 기본 role 반환
+            return Set.of(this.role);
+        }
+        return userRoles.stream()
+                .map(UserRole::getRole)
+                .collect(Collectors.toSet());
+    }
+
+    /**
+     * 특정 역할 보유 여부 확인
+     */
+    public boolean hasRole(TenantRole role) {
+        if (userRoles.isEmpty()) {
+            return this.role == role;
+        }
+        return userRoles.stream()
+                .anyMatch(ur -> ur.getRole() == role);
+    }
+
+    /**
+     * 기본 역할 업데이트 (가장 높은 권한으로 설정)
+     */
+    private void updatePrimaryRole() {
+        if (userRoles.isEmpty()) {
+            return;
+        }
+        // 우선순위: SYSTEM_ADMIN > TENANT_ADMIN > OPERATOR > DESIGNER > INSTRUCTOR > USER
+        TenantRole highestRole = userRoles.stream()
+                .map(UserRole::getRole)
+                .min((r1, r2) -> r1.ordinal() - r2.ordinal())
+                .orElse(TenantRole.USER);
+        this.role = highestRole;
     }
 
     public void suspend() {
