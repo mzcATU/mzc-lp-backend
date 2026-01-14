@@ -531,11 +531,12 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserRolesResponse updateUserRoles(Long userId, UpdateUserRolesRequest request) {
         log.info("Updating user roles: userId={}, roles={}", userId, request.roles());
-        User user = userRepository.findById(userId)
+        // userRoles를 함께 로딩해서 기존 역할과 비교 가능하게 함
+        User user = userRepository.findByIdWithRoles(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
 
         user.setRoles(request.roles());
-        log.info("User roles updated: userId={}, roles={}", userId, request.roles());
+        log.info("User roles updated: userId={}, newRoles={}", userId, user.getRoles());
 
         return UserRolesResponse.from(user);
     }
@@ -544,11 +545,11 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserRolesResponse addUserRole(Long userId, TenantRole role) {
         log.info("Adding user role: userId={}, role={}", userId, role);
-        User user = userRepository.findById(userId)
+        User user = userRepository.findByIdWithRoles(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
 
         user.addRole(role);
-        log.info("User role added: userId={}, role={}", userId, role);
+        log.info("User role added: userId={}, allRoles={}", userId, user.getRoles());
 
         return UserRolesResponse.from(user);
     }
@@ -557,19 +558,20 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserRolesResponse removeUserRole(Long userId, TenantRole role) {
         log.info("Removing user role: userId={}, role={}", userId, role);
-        User user = userRepository.findById(userId)
+        User user = userRepository.findByIdWithRoles(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
 
         user.removeRole(role);
-        log.info("User role removed: userId={}, role={}", userId, role);
+        log.info("User role removed: userId={}, remainingRoles={}", userId, user.getRoles());
 
         return UserRolesResponse.from(user);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Set<TenantRole> getUserRoles(Long userId) {
         log.debug("Getting user roles: userId={}", userId);
-        User user = userRepository.findById(userId)
+        User user = userRepository.findByIdWithRoles(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
 
         return user.getRoles();

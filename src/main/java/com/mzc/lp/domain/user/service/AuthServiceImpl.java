@@ -18,6 +18,7 @@ import com.mzc.lp.domain.user.repository.RefreshTokenRepository;
 import com.mzc.lp.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -69,12 +70,15 @@ public class AuthServiceImpl implements AuthService {
     public TokenResponse login(LoginRequest request) {
         log.info("Login attempt: email={}", request.email());
 
-        // 사용자 조회 (userRoles 함께 로딩 - 다중 역할 지원)
-        User user = userRepository.findByEmailWithRoles(request.email())
+        // 사용자 조회 (테넌트 필터 우회 - Native Query)
+        User user = userRepository.findByEmailForLogin(request.email())
                 .orElseThrow(() -> {
                     log.warn("Login failed: user not found for email={}", request.email());
                     return new InvalidCredentialsException();
                 });
+
+        // userRoles 초기화 (Lazy Loading)
+        Hibernate.initialize(user.getUserRoles());
 
         log.info("User found: userId={}, tenantId={}, role={}", user.getId(), user.getTenantId(), user.getRole());
 
@@ -132,9 +136,12 @@ public class AuthServiceImpl implements AuthService {
             throw new InvalidTokenException();
         }
 
-        // 사용자 조회 (userRoles 함께 로딩 - 다중 역할 지원)
-        User user = userRepository.findByIdWithRoles(storedToken.getUserId())
+        // 사용자 조회
+        User user = userRepository.findById(storedToken.getUserId())
                 .orElseThrow(UserNotFoundException::new);
+
+        // userRoles 초기화 (Lazy Loading)
+        Hibernate.initialize(user.getUserRoles());
 
         // 기존 Refresh Token 무효화
         storedToken.revoke();
