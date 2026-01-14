@@ -12,17 +12,20 @@ import com.mzc.lp.domain.course.exception.CourseNotFoundException;
 import com.mzc.lp.domain.course.exception.CourseNotModifiableException;
 import com.mzc.lp.domain.course.exception.InvalidCourseStatusTransitionException;
 import com.mzc.lp.domain.course.repository.CourseRepository;
+import com.mzc.lp.domain.ts.repository.CourseTimeRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
+@Transactional
 @DisplayName("Course 상태 전환 서비스 테스트")
 class CourseStatusServiceTest extends TenantTestSupport {
 
@@ -32,8 +35,13 @@ class CourseStatusServiceTest extends TenantTestSupport {
     @Autowired
     private CourseRepository courseRepository;
 
+    @Autowired
+    private CourseTimeRepository courseTimeRepository;
+
     @BeforeEach
     void setUp() {
+        // FK 순서: CourseTime → Course
+        courseTimeRepository.deleteAll();
         courseRepository.deleteAll();
     }
 
