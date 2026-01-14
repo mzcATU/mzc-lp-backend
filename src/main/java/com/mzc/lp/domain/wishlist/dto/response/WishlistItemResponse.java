@@ -1,6 +1,6 @@
 package com.mzc.lp.domain.wishlist.dto.response;
 
-import com.mzc.lp.domain.program.entity.Program;
+import com.mzc.lp.domain.course.entity.Course;
 import com.mzc.lp.domain.ts.entity.CourseTime;
 import com.mzc.lp.domain.wishlist.entity.WishlistItem;
 import lombok.Builder;
@@ -30,14 +30,14 @@ public class WishlistItemResponse {
                 .build();
     }
 
-    public static WishlistItemResponse of(WishlistItem item, CourseTime courseTime, Program program) {
+    public static WishlistItemResponse of(WishlistItem item, CourseTime courseTime, Course course) {
         return WishlistItemResponse.builder()
                 .id(item.getId())
                 .courseTimeId(item.getCourseTimeId())
                 .courseTimeTitle(courseTime.getTitle())
-                .thumbnailUrl(program != null ? program.getThumbnailUrl() : null)
-                .level(program != null && program.getLevel() != null ? program.getLevel().name() : null)
-                .estimatedHours(program != null ? program.getEstimatedHours() : null)
+                .thumbnailUrl(course != null ? course.getThumbnailUrl() : null)
+                .level(course != null && course.getLevel() != null ? course.getLevel().name() : null)
+                .estimatedHours(course != null ? course.getEstimatedHours() : null)
                 .isFree(courseTime.isFree())
                 .price(courseTime.getPrice() != null ? courseTime.getPrice().toString() : null)
                 .addedAt(item.getCreatedAt())

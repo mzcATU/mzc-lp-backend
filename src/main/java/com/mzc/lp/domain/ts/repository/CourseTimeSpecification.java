@@ -38,12 +38,12 @@ public class CourseTimeSpecification {
         };
     }
 
-    public static Specification<CourseTime> withProgramId(Long programId) {
+    public static Specification<CourseTime> withCourseId(Long courseId) {
         return (root, query, cb) -> {
-            if (programId == null) {
+            if (courseId == null) {
                 return cb.conjunction();
             }
-            return cb.equal(root.get("program").get("id"), programId);
+            return cb.equal(root.get("course").get("id"), courseId);
         };
     }
 
@@ -71,11 +71,8 @@ public class CourseTimeSpecification {
             if (categoryId == null) {
                 return cb.conjunction();
             }
-            // CourseTime → Program → Snapshot → SourceCourse.categoryId
-            return cb.equal(
-                    root.get("program").get("snapshot").get("sourceCourse").get("categoryId"),
-                    categoryId
-            );
+            // CourseTime → Course.categoryId
+            return cb.equal(root.get("course").get("categoryId"), categoryId);
         };
     }
 
@@ -86,7 +83,7 @@ public class CourseTimeSpecification {
             Long tenantId,
             List<CourseTimeStatus> statuses,
             DeliveryType deliveryType,
-            Long programId,
+            Long courseId,
             Boolean isFree,
             String keyword,
             Long categoryId
@@ -94,7 +91,7 @@ public class CourseTimeSpecification {
         return Specification.where(withTenantId(tenantId))
                 .and(withStatusIn(statuses))
                 .and(withDeliveryType(deliveryType))
-                .and(withProgramId(programId))
+                .and(withCourseId(courseId))
                 .and(withIsFree(isFree))
                 .and(withKeyword(keyword))
                 .and(withCategoryId(categoryId));

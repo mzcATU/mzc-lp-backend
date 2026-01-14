@@ -15,19 +15,19 @@ import java.util.stream.Collectors;
 public record OwnerStatsResponse(
         Overview overview,
         EnrollmentStats enrollmentStats,
-        List<ProgramStat> programStats
+        List<CourseStat> courseStats
 ) {
     /**
      * 전체 개요
      */
     public record Overview(
-            Long totalPrograms,
+            Long totalCourses,
             Long totalCourseTimes,
             Long totalStudents
     ) {
-        public static Overview of(Long totalPrograms, Long totalCourseTimes, Long totalStudents) {
+        public static Overview of(Long totalCourses, Long totalCourseTimes, Long totalStudents) {
             return new Overview(
-                    totalPrograms != null ? totalPrograms : 0L,
+                    totalCourses != null ? totalCourses : 0L,
                     totalCourseTimes != null ? totalCourseTimes : 0L,
                     totalStudents != null ? totalStudents : 0L
             );
@@ -85,17 +85,17 @@ public record OwnerStatsResponse(
     }
 
     /**
-     * 프로그램별 통계
+     * 강의별 통계
      */
-    public record ProgramStat(
-            Long programId,
+    public record CourseStat(
+            Long courseId,
             String title,
             Long courseTimeCount,
             Long totalStudents,
             BigDecimal completionRate
     ) {
-        public static ProgramStat of(
-                Long programId,
+        public static CourseStat of(
+                Long courseId,
                 String title,
                 Long courseTimeCount,
                 Long totalStudents,
@@ -105,8 +105,8 @@ public record OwnerStatsResponse(
                     ? BigDecimal.valueOf(completionRate).setScale(1, RoundingMode.HALF_UP)
                     : BigDecimal.ZERO;
 
-            return new ProgramStat(
-                    programId,
+            return new CourseStat(
+                    courseId,
                     title,
                     courseTimeCount != null ? courseTimeCount : 0L,
                     totalStudents != null ? totalStudents : 0L,
@@ -116,18 +116,18 @@ public record OwnerStatsResponse(
     }
 
     public static OwnerStatsResponse of(
-            Long totalPrograms,
+            Long totalCourses,
             Long totalCourseTimes,
             Long totalStudents,
             Long totalEnrollments,
             List<StatusCountProjection> enrollmentStatusProjections,
             Double completionRate,
-            List<ProgramStat> programStats
+            List<CourseStat> courseStats
     ) {
         return new OwnerStatsResponse(
-                Overview.of(totalPrograms, totalCourseTimes, totalStudents),
+                Overview.of(totalCourses, totalCourseTimes, totalStudents),
                 EnrollmentStats.of(totalEnrollments, enrollmentStatusProjections, completionRate),
-                programStats
+                courseStats
         );
     }
 }

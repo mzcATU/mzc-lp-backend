@@ -1,6 +1,6 @@
 package com.mzc.lp.domain.wishlist.service;
 
-import com.mzc.lp.domain.program.entity.Program;
+import com.mzc.lp.domain.course.entity.Course;
 import com.mzc.lp.domain.ts.entity.CourseTime;
 import com.mzc.lp.domain.ts.exception.CourseTimeNotFoundException;
 import com.mzc.lp.domain.ts.repository.CourseTimeRepository;
@@ -56,8 +56,8 @@ public class WishlistService {
             WishlistItem savedItem = wishlistRepository.save(item);
             wishlistRepository.flush(); // 즉시 DB에 반영하여 제약조건 위반 확인
 
-            Program program = courseTime.getProgram();
-            return WishlistItemResponse.of(savedItem, courseTime, program);
+            Course course = courseTime.getCourse();
+            return WishlistItemResponse.of(savedItem, courseTime, course);
         } catch (DataIntegrityViolationException e) {
             // 동시성 이슈로 인한 중복 찜 시도
             log.debug("Concurrent wishlist add attempt detected for courseTime {} by user {}", courseTimeId, userId);
@@ -93,8 +93,8 @@ public class WishlistService {
         return wishlistItems.map(item -> {
             CourseTime courseTime = courseTimeMap.get(item.getCourseTimeId());
             if (courseTime != null) {
-                Program program = courseTime.getProgram();
-                return WishlistItemResponse.of(item, courseTime, program);
+                Course course = courseTime.getCourse();
+                return WishlistItemResponse.of(item, courseTime, course);
             }
             return WishlistItemResponse.from(item);
         });

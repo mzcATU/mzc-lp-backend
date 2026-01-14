@@ -27,7 +27,7 @@ public record CourseTimeCatalogResponse(
         Integer availableSeats,
         BigDecimal price,
         boolean isFree,
-        ProgramSummaryResponse program,
+        CourseSummaryResponse course,
         List<InstructorSummaryResponse> instructors
 ) {
     private static final LocalDate ON_DEMAND_DATE = LocalDate.of(9999, 12, 31);
@@ -65,7 +65,7 @@ public record CourseTimeCatalogResponse(
                 availableSeats,
                 courseTime.getPrice(),
                 courseTime.isFree(),
-                ProgramSummaryResponse.forListWithCategory(courseTime.getProgram(), category),
+                CourseSummaryResponse.forListWithCategory(courseTime.getCourse(), category),
                 instructors != null ? instructors : List.of()
         );
     }

@@ -157,9 +157,7 @@ public class CertificatePdfServiceImpl implements CertificatePdfService {
 
     private void drawBody(PDPageContentStream contentStream, PDType0Font regularFont,
                           PDType0Font boldFont, Certificate certificate) throws IOException {
-        String courseName = certificate.getProgramTitle() != null
-                ? certificate.getProgramTitle()
-                : certificate.getCourseTimeTitle();
+        String courseName = certificate.getCourseTimeTitle();
 
         // "위 사람은"
         contentStream.beginText();

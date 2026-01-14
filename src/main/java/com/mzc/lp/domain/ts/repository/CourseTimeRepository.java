@@ -35,8 +35,6 @@ public interface CourseTimeRepository extends JpaRepository<CourseTime, Long>, J
 
     Page<CourseTime> findByTenantIdAndStatus(Long tenantId, CourseTimeStatus status, Pageable pageable);
 
-    List<CourseTime> findByCmCourseIdAndTenantId(Long cmCourseId, Long tenantId);
-
     @Query("SELECT ct FROM CourseTime ct WHERE ct.tenantId = :tenantId AND ct.status IN :statuses")
     Page<CourseTime> findByTenantIdAndStatusIn(
             @Param("tenantId") Long tenantId,
@@ -44,24 +42,21 @@ public interface CourseTimeRepository extends JpaRepository<CourseTime, Long>, J
             Pageable pageable
     );
 
-    @Query("SELECT ct FROM CourseTime ct WHERE ct.cmCourseId = :cmCourseId AND ct.tenantId = :tenantId AND ct.status IN :statuses")
-    List<CourseTime> findByCmCourseIdAndTenantIdAndStatusIn(
-            @Param("cmCourseId") Long cmCourseId,
+    // Course 기반 조회
+    @Query("SELECT ct FROM CourseTime ct WHERE ct.course.id = :courseId AND ct.tenantId = :tenantId")
+    Page<CourseTime> findByCourseIdAndTenantId(
+            @Param("courseId") Long courseId,
             @Param("tenantId") Long tenantId,
-            @Param("statuses") List<CourseTimeStatus> statuses
+            Pageable pageable
     );
 
-    Page<CourseTime> findByCmCourseIdAndTenantId(Long cmCourseId, Long tenantId, Pageable pageable);
-
-    @Query("SELECT ct FROM CourseTime ct WHERE ct.cmCourseId = :cmCourseId AND ct.tenantId = :tenantId AND ct.status = :status")
-    Page<CourseTime> findByCmCourseIdAndTenantIdAndStatus(
-            @Param("cmCourseId") Long cmCourseId,
+    @Query("SELECT ct FROM CourseTime ct WHERE ct.course.id = :courseId AND ct.tenantId = :tenantId AND ct.status = :status")
+    Page<CourseTime> findByCourseIdAndTenantIdAndStatus(
+            @Param("courseId") Long courseId,
             @Param("tenantId") Long tenantId,
             @Param("status") CourseTimeStatus status,
             Pageable pageable
     );
-
-    boolean existsByCmCourseIdAndTenantIdAndStatus(Long cmCourseId, Long tenantId, CourseTimeStatus status);
 
     // ===== 배치 Job용 쿼리 =====
 
@@ -264,12 +259,12 @@ public interface CourseTimeRepository extends JpaRepository<CourseTime, Long>, J
     // ===== 내 강의 통계 쿼리 =====
 
     /**
-     * 프로그램 ID 목록에 속한 차수 ID 목록 조회
+     * Course ID 목록에 속한 차수 ID 목록 조회
      */
     @Query("SELECT ct.id FROM CourseTime ct " +
-            "WHERE ct.program.id IN :programIds " +
+            "WHERE ct.course.id IN :courseIds " +
             "AND ct.tenantId = :tenantId")
-    List<Long> findIdsByProgramIdInAndTenantId(
-            @Param("programIds") List<Long> programIds,
+    List<Long> findIdsByCourseIdInAndTenantId(
+            @Param("courseIds") List<Long> courseIds,
             @Param("tenantId") Long tenantId);
 }

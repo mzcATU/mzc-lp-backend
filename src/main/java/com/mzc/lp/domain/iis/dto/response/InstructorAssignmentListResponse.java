@@ -1,9 +1,9 @@
 package com.mzc.lp.domain.iis.dto.response;
 
+import com.mzc.lp.domain.course.entity.Course;
 import com.mzc.lp.domain.iis.constant.AssignmentStatus;
 import com.mzc.lp.domain.iis.constant.InstructorRole;
 import com.mzc.lp.domain.iis.entity.InstructorAssignment;
-import com.mzc.lp.domain.program.entity.Program;
 import com.mzc.lp.domain.ts.entity.CourseTime;
 import com.mzc.lp.domain.user.entity.User;
 
@@ -14,7 +14,7 @@ public record InstructorAssignmentListResponse(
         Long id,
         InstructorInfo instructor,
         CourseTimeInfo courseTime,
-        ProgramInfo program,
+        CourseInfo course,
         InstructorRole role,
         AssignmentStatus status,
         Instant assignedAt,
@@ -56,17 +56,17 @@ public record InstructorAssignmentListResponse(
         }
     }
 
-    public record ProgramInfo(
+    public record CourseInfo(
             Long id,
             String title
     ) {
-        public static ProgramInfo from(Program program) {
-            if (program == null) {
+        public static CourseInfo from(Course course) {
+            if (course == null) {
                 return null;
             }
-            return new ProgramInfo(
-                    program.getId(),
-                    program.getTitle()
+            return new CourseInfo(
+                    course.getId(),
+                    course.getTitle()
             );
         }
     }
@@ -75,13 +75,13 @@ public record InstructorAssignmentListResponse(
             InstructorAssignment entity,
             User user,
             CourseTime courseTime,
-            Program program
+            Course course
     ) {
         return new InstructorAssignmentListResponse(
                 entity.getId(),
                 InstructorInfo.from(user),
                 CourseTimeInfo.from(courseTime),
-                ProgramInfo.from(program),
+                CourseInfo.from(course),
                 entity.getRole(),
                 entity.getStatus(),
                 entity.getAssignedAt(),

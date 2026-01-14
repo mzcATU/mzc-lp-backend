@@ -9,7 +9,6 @@ import com.mzc.lp.domain.dashboard.constant.DashboardPeriod;
 import com.mzc.lp.domain.dashboard.dto.response.OperatorTasksResponse;
 import com.mzc.lp.domain.iis.constant.AssignmentStatus;
 import com.mzc.lp.domain.iis.constant.InstructorRole;
-import com.mzc.lp.domain.program.repository.ProgramRepository;
 import com.mzc.lp.domain.student.repository.EnrollmentRepository;
 import com.mzc.lp.domain.ts.constant.CourseTimeStatus;
 import com.mzc.lp.domain.ts.repository.CourseTimeRepository;
@@ -30,7 +29,6 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class OperatorDashboardServiceImpl implements OperatorDashboardService {
 
-    private final ProgramRepository programRepository;
     private final CourseTimeRepository courseTimeRepository;
     private final EnrollmentRepository enrollmentRepository;
 
@@ -44,8 +42,8 @@ public class OperatorDashboardServiceImpl implements OperatorDashboardService {
         Instant startDate = period != null ? period.getStartInstant() : null;
         Instant endDate = period != null ? period.getEndInstant() : null;
 
-        // 대기 중인 작업
-        long programsPendingApproval = getProgramsPendingApproval(tenantId, startDate, endDate);
+        // 대기 중인 작업 (프로그램 승인 대기는 제거됨)
+        long programsPendingApproval = 0; // Program 제거로 인해 항상 0 반환
         long courseTimesNeedingInstructor = getCourseTimesNeedingInstructor(tenantId, startDate, endDate);
 
         // 차수 통계
@@ -88,13 +86,6 @@ public class OperatorDashboardServiceImpl implements OperatorDashboardService {
                 averageCapacityUtilization,
                 dailyEnrollments
         );
-    }
-
-    private long getProgramsPendingApproval(Long tenantId, Instant startDate, Instant endDate) {
-        if (startDate != null && endDate != null) {
-            return programRepository.countPendingProgramsWithPeriod(tenantId, startDate, endDate);
-        }
-        return programRepository.countPendingPrograms(tenantId);
     }
 
     private long getCourseTimesNeedingInstructor(Long tenantId, Instant startDate, Instant endDate) {

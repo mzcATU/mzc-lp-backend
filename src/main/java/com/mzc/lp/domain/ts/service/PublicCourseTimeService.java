@@ -19,7 +19,7 @@ public interface PublicCourseTimeService {
      *
      * @param statuses     상태 필터 (기본: RECRUITING, ONGOING)
      * @param deliveryType 운영 방식 필터
-     * @param programId    프로그램 ID 필터
+     * @param courseId     강의 ID 필터
      * @param isFree       무료/유료 필터
      * @param keyword      제목 검색 키워드
      * @param categoryId   카테고리 ID 필터
@@ -29,7 +29,7 @@ public interface PublicCourseTimeService {
     Page<CourseTimeCatalogResponse> getPublicCourseTimes(
             List<CourseTimeStatus> statuses,
             DeliveryType deliveryType,
-            Long programId,
+            Long courseId,
             Boolean isFree,
             String keyword,
             Long categoryId,

@@ -11,16 +11,12 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 
-@SuppressWarnings("removal")
 public record CourseTimeDetailResponse(
         Long id,
-        @Deprecated(since = "1.0", forRemoval = true)
-        Long cmCourseId,
-        @Deprecated(since = "1.0", forRemoval = true)
-        Long cmCourseVersionId,
-        Long programId,
-        String programTitle,
-        String programDescription,
+        Long courseId,
+        String courseTitle,
+        String courseDescription,
+        Long snapshotId,
         String title,
         DeliveryType deliveryType,
         CourseTimeStatus status,
@@ -50,11 +46,10 @@ public record CourseTimeDetailResponse(
     public static CourseTimeDetailResponse from(CourseTime entity, List<InstructorAssignmentResponse> instructors) {
         return new CourseTimeDetailResponse(
                 entity.getId(),
-                entity.getCmCourseId(),
-                entity.getCmCourseVersionId(),
-                entity.getProgram() != null ? entity.getProgram().getId() : null,
-                entity.getProgram() != null ? entity.getProgram().getTitle() : null,
-                entity.getProgram() != null ? entity.getProgram().getDescription() : null,
+                entity.getCourse() != null ? entity.getCourse().getId() : null,
+                entity.getCourse() != null ? entity.getCourse().getTitle() : null,
+                entity.getCourse() != null ? entity.getCourse().getDescription() : null,
+                entity.getSnapshot() != null ? entity.getSnapshot().getId() : null,
                 entity.getTitle(),
                 entity.getDeliveryType(),
                 entity.getStatus(),

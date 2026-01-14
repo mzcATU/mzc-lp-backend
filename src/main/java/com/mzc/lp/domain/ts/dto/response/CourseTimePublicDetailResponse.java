@@ -31,7 +31,7 @@ public record CourseTimePublicDetailResponse(
         boolean allowLateEnrollment,
         Integer minProgressForCompletion,
         String locationInfo,
-        ProgramSummaryResponse program,
+        CourseSummaryResponse course,
         List<CurriculumItemResponse> curriculum,
         List<InstructorSummaryResponse> instructors
 ) {
@@ -67,7 +67,7 @@ public record CourseTimePublicDetailResponse(
                 courseTime.isAllowLateEnrollment(),
                 courseTime.getMinProgressForCompletion(),
                 courseTime.getLocationInfo(),
-                ProgramSummaryResponse.from(courseTime.getProgram()),
+                CourseSummaryResponse.from(courseTime.getCourse()),
                 curriculum != null ? curriculum : List.of(),
                 instructors != null ? instructors : List.of()
         );

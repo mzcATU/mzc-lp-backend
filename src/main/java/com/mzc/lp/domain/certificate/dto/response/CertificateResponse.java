@@ -8,7 +8,6 @@ import java.time.Instant;
 public record CertificateResponse(
         Long id,
         String certificateNumber,
-        String programTitle,
         String courseTimeTitle,
         String userName,
         Instant completedAt,
@@ -19,7 +18,6 @@ public record CertificateResponse(
         return new CertificateResponse(
                 certificate.getId(),
                 certificate.getCertificateNumber(),
-                certificate.getProgramTitle(),
                 certificate.getCourseTimeTitle(),
                 certificate.getUserName(),
                 certificate.getCompletedAt(),
