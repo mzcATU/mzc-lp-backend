@@ -119,10 +119,21 @@ public class User extends TenantEntity {
      * 역할 전체 설정 (기존 역할 교체)
      */
     public void setRoles(Set<TenantRole> roles) {
-        this.userRoles.clear();
+        // 제거할 역할 찾기 (기존에 있지만 새 목록에 없는 것)
+        Set<UserRole> toRemove = this.userRoles.stream()
+                .filter(ur -> !roles.contains(ur.getRole()))
+                .collect(Collectors.toSet());
+        this.userRoles.removeAll(toRemove);
+
+        // 추가할 역할 찾기 (새 목록에 있지만 기존에 없는 것)
+        Set<TenantRole> existingRoles = this.userRoles.stream()
+                .map(UserRole::getRole)
+                .collect(Collectors.toSet());
         for (TenantRole r : roles) {
-            UserRole userRole = UserRole.create(this, r);
-            this.userRoles.add(userRole);
+            if (!existingRoles.contains(r)) {
+                UserRole userRole = UserRole.create(this, r);
+                this.userRoles.add(userRole);
+            }
         }
         updatePrimaryRole();
     }
