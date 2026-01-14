@@ -7,22 +7,13 @@ import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-@SuppressWarnings("removal")
 public record CreateCourseTimeRequest(
         /**
          * Course ID (REGISTERED 상태의 강의)
-         * courseId가 제공되면 Course 기반으로 차수 생성 및 Snapshot 자동 생성
+         * Course 기반으로 차수 생성 및 Snapshot 자동 생성
          */
+        @NotNull(message = "Course ID는 필수입니다")
         Long courseId,
-
-        @Deprecated(since = "2.0", forRemoval = true)
-        Long programId,
-
-        @Deprecated(since = "1.0", forRemoval = true)
-        Long cmCourseId,
-
-        @Deprecated(since = "1.0", forRemoval = true)
-        Long cmCourseVersionId,
 
         @NotBlank(message = "제목은 필수입니다")
         @Size(max = 200, message = "제목은 200자 이하여야 합니다")

@@ -78,8 +78,6 @@ public class CertificateServiceImpl implements CertificateService {
                 enrollmentId,
                 courseTime.getId(),
                 courseTime.getTitle(),
-                courseTime.getProgram() != null ? courseTime.getProgram().getId() : null,
-                courseTime.getProgram() != null ? courseTime.getProgram().getTitle() : null,
                 enrollment.getCompletedAt()
         );
 
@@ -137,8 +135,6 @@ public class CertificateServiceImpl implements CertificateService {
                 enrollmentId,
                 courseTime.getId(),
                 courseTime.getTitle(),
-                courseTime.getProgram() != null ? courseTime.getProgram().getId() : null,
-                courseTime.getProgram() != null ? courseTime.getProgram().getTitle() : null,
                 enrollment.getCompletedAt()
         );
 

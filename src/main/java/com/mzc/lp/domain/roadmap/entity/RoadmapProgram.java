@@ -1,7 +1,6 @@
 package com.mzc.lp.domain.roadmap.entity;
 
 import com.mzc.lp.common.entity.BaseEntity;
-import com.mzc.lp.domain.program.entity.Program;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -10,7 +9,11 @@ import lombok.NoArgsConstructor;
 /**
  * 로드맵-프로그램 연결 엔티티
  * 로드맵에 포함된 프로그램과 순서 정보를 관리
+ *
+ * @deprecated 로드맵 기능은 Phase 3에서 일시적으로 비활성화됨.
+ *             Program 엔티티 제거로 인해 향후 Course 기반으로 재설계 필요.
  */
+@Deprecated
 @Entity
 @Table(
     name = "roadmap_programs",
@@ -33,9 +36,12 @@ public class RoadmapProgram extends BaseEntity {
     @JoinColumn(name = "roadmap_id", nullable = false)
     private Roadmap roadmap;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "program_id", nullable = false)
-    private Program program;
+    /**
+     * @deprecated Program 엔티티 제거됨. 향후 Course ID로 대체 예정.
+     */
+    @Deprecated
+    @Column(name = "program_id", nullable = false)
+    private Long programId;
 
     @Column(name = "order_index", nullable = false)
     private Integer orderIndex;
@@ -44,11 +50,14 @@ public class RoadmapProgram extends BaseEntity {
 
     /**
      * 로드맵-프로그램 연결 생성
+     *
+     * @deprecated 로드맵 기능 비활성화됨
      */
-    public static RoadmapProgram create(Roadmap roadmap, Program program, Integer orderIndex) {
+    @Deprecated
+    public static RoadmapProgram create(Roadmap roadmap, Long programId, Integer orderIndex) {
         RoadmapProgram roadmapProgram = new RoadmapProgram();
         roadmapProgram.roadmap = roadmap;
-        roadmapProgram.program = program;
+        roadmapProgram.programId = programId;
         roadmapProgram.orderIndex = orderIndex;
         return roadmapProgram;
     }

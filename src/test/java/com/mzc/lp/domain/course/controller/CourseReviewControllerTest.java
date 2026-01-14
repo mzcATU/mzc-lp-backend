@@ -120,7 +120,7 @@ class CourseReviewControllerTest extends TenantTestSupport {
                 false,
                 testUser.getId()
         );
-        testCourseTime.linkCourse(testCourse.getId(), 1L);
+        testCourseTime.linkCourseAndSnapshot(testCourse, null);
         testCourseTime = courseTimeRepository.save(testCourseTime);
     }
 

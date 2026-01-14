@@ -54,12 +54,6 @@ public class Certificate extends TenantEntity {
     @Column(name = "course_time_title", nullable = false, length = 200)
     private String courseTimeTitle;
 
-    @Column(name = "program_id")
-    private Long programId;
-
-    @Column(name = "program_title", length = 255)
-    private String programTitle;
-
     @Column(name = "completed_at", nullable = false)
     private Instant completedAt;
 
@@ -104,8 +98,6 @@ public class Certificate extends TenantEntity {
             Long enrollmentId,
             Long courseTimeId,
             String courseTimeTitle,
-            Long programId,
-            String programTitle,
             Instant completedAt
     ) {
         Certificate certificate = new Certificate();
@@ -115,8 +107,6 @@ public class Certificate extends TenantEntity {
         certificate.enrollmentId = enrollmentId;
         certificate.courseTimeId = courseTimeId;
         certificate.courseTimeTitle = courseTimeTitle;
-        certificate.programId = programId;
-        certificate.programTitle = programTitle;
         certificate.completedAt = completedAt;
         certificate.issuedAt = Instant.now();
         certificate.status = CertificateStatus.ISSUED;
@@ -131,8 +121,6 @@ public class Certificate extends TenantEntity {
             Long enrollmentId,
             Long courseTimeId,
             String courseTimeTitle,
-            Long programId,
-            String programTitle,
             Instant completedAt
     ) {
         Certificate certificate = new Certificate();
@@ -143,8 +131,6 @@ public class Certificate extends TenantEntity {
         certificate.enrollmentId = enrollmentId;
         certificate.courseTimeId = courseTimeId;
         certificate.courseTimeTitle = courseTimeTitle;
-        certificate.programId = programId;
-        certificate.programTitle = programTitle;
         certificate.completedAt = completedAt;
         certificate.issuedAt = Instant.now();
         certificate.status = CertificateStatus.ISSUED;
@@ -176,8 +162,6 @@ public class Certificate extends TenantEntity {
         certificate.enrollmentId = original.enrollmentId;
         certificate.courseTimeId = original.courseTimeId;
         certificate.courseTimeTitle = original.courseTimeTitle;
-        certificate.programId = original.programId;
-        certificate.programTitle = original.programTitle;
         certificate.completedAt = original.completedAt;
         certificate.issuedAt = Instant.now();
         certificate.status = CertificateStatus.ISSUED;

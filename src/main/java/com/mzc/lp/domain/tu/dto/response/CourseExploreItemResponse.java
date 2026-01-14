@@ -1,8 +1,10 @@
 package com.mzc.lp.domain.tu.dto.response;
 
-import com.mzc.lp.domain.program.entity.Program;
+import com.mzc.lp.domain.course.entity.Course;
 
 import java.math.BigDecimal;
+import java.time.Duration;
+import java.time.Instant;
 
 /**
  * TU 강의 탐색용 응답 DTO
@@ -25,37 +27,36 @@ public record CourseExploreItemResponse(
         boolean isBestseller
 ) {
     /**
-     * Program 엔티티로부터 CourseExploreItemResponse 생성
-     * instructor, rating, reviewCount 등은 현재 DB에 없으므로 기본값 사용
+     * Course 엔티티로부터 CourseExploreItemResponse 생성
      */
-    public static CourseExploreItemResponse from(Program program, String instructorName, int studentCount) {
+    public static CourseExploreItemResponse from(Course course, String instructorName, int studentCount) {
         BigDecimal price = BigDecimal.valueOf(89000); // 기본 가격 (CourseTime에서 가져와야 함)
         BigDecimal originalPrice = BigDecimal.valueOf(120000);
 
         return new CourseExploreItemResponse(
-                program.getId(),
-                program.getTitle(),
+                course.getId(),
+                course.getTitle(),
                 instructorName != null ? instructorName : "강사 미정",
                 originalPrice,
                 price,
-                program.getThumbnailUrl() != null ? program.getThumbnailUrl() : "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=400&h=250&fit=crop",
+                course.getThumbnailUrl() != null ? course.getThumbnailUrl() : "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=400&h=250&fit=crop",
                 calculateDiscount(originalPrice, price),
                 4.5, // 기본 평점
                 0,   // 기본 리뷰 수
                 studentCount,
-                program.getEstimatedHours() != null ? program.getEstimatedHours() : 10,
+                course.getEstimatedHours() != null ? course.getEstimatedHours() : 10,
                 "dev", // 기본 카테고리
-                program.getLevel() != null ? program.getLevel().name().toLowerCase() : "beginner",
-                isNewProgram(program),
+                course.getLevel() != null ? course.getLevel().name().toLowerCase() : "beginner",
+                isNewCourse(course),
                 false
         );
     }
 
     /**
-     * Program + CourseTime 정보를 조합하여 생성
+     * Course + CourseTime 정보를 조합하여 생성
      */
     public static CourseExploreItemResponse from(
-            Program program,
+            Course course,
             String instructorName,
             BigDecimal price,
             BigDecimal originalPrice,
@@ -65,20 +66,20 @@ public record CourseExploreItemResponse(
             boolean isBestseller
     ) {
         return new CourseExploreItemResponse(
-                program.getId(),
-                program.getTitle(),
+                course.getId(),
+                course.getTitle(),
                 instructorName != null ? instructorName : "강사 미정",
                 originalPrice,
                 price,
-                program.getThumbnailUrl() != null ? program.getThumbnailUrl() : "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=400&h=250&fit=crop",
+                course.getThumbnailUrl() != null ? course.getThumbnailUrl() : "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=400&h=250&fit=crop",
                 calculateDiscount(originalPrice, price),
                 rating,
                 reviewCount,
                 studentCount,
-                program.getEstimatedHours() != null ? program.getEstimatedHours() : 10,
+                course.getEstimatedHours() != null ? course.getEstimatedHours() : 10,
                 "dev",
-                program.getLevel() != null ? program.getLevel().name().toLowerCase() : "beginner",
-                isNewProgram(program),
+                course.getLevel() != null ? course.getLevel().name().toLowerCase() : "beginner",
+                isNewCourse(course),
                 isBestseller
         );
     }
@@ -93,13 +94,11 @@ public record CourseExploreItemResponse(
                 .intValue();
     }
 
-    private static boolean isNewProgram(Program program) {
-        if (program.getCreatedAt() == null) {
+    private static boolean isNewCourse(Course course) {
+        if (course.getCreatedAt() == null) {
             return false;
         }
-        // 30일 이내 생성된 프로그램은 NEW
-        return program.getCreatedAt().isAfter(
-                java.time.Instant.now().minus(java.time.Duration.ofDays(30))
-        );
+        // 30일 이내 생성된 강의는 NEW
+        return course.getCreatedAt().isAfter(Instant.now().minus(Duration.ofDays(30)));
     }
 }

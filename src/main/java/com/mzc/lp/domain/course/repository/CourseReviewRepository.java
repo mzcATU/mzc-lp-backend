@@ -29,6 +29,6 @@ public interface CourseReviewRepository extends JpaRepository<CourseReview, Long
 
     @Query("SELECT COUNT(r), AVG(r.rating) FROM CourseReview r " +
             "JOIN com.mzc.lp.domain.ts.entity.CourseTime ct ON r.courseTimeId = ct.id " +
-            "WHERE ct.cmCourseId = :courseId AND r.tenantId = :tenantId")
+            "WHERE ct.course.id = :courseId AND r.tenantId = :tenantId")
     Object[] findReviewStatsForCourse(@Param("courseId") Long courseId, @Param("tenantId") Long tenantId);
 }

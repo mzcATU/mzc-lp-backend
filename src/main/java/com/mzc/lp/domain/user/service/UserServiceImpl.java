@@ -75,7 +75,7 @@ public class UserServiceImpl implements UserService {
         log.debug("Getting user info: userId={}", userId);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
-        List<CourseRoleResponse> courseRoles = getCourseRolesWithProgramTitle(userId);
+        List<CourseRoleResponse> courseRoles = getCourseRolesWithCourseTitle(userId);
 
         // 테넌트 정보 조회 (subdomain, customDomain)
         String tenantSubdomain = null;
@@ -104,7 +104,7 @@ public class UserServiceImpl implements UserService {
         String department = request.department() != null ? request.department() : user.getDepartment();
         String position = request.position() != null ? request.position() : user.getPosition();
         user.updateProfile(name, phone, profileImageUrl, department, position);
-        List<CourseRoleResponse> courseRoles = getCourseRolesWithProgramTitle(userId);
+        List<CourseRoleResponse> courseRoles = getCourseRolesWithCourseTitle(userId);
         return UserDetailResponse.from(user, courseRoles);
     }
 
@@ -167,7 +167,7 @@ public class UserServiceImpl implements UserService {
         log.debug("Getting user detail: userId={}", userId);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
-        List<CourseRoleResponse> courseRoles = getCourseRolesWithProgramTitle(userId);
+        List<CourseRoleResponse> courseRoles = getCourseRolesWithCourseTitle(userId);
         return UserDetailResponse.from(user, courseRoles);
     }
     @Override
@@ -199,7 +199,7 @@ public class UserServiceImpl implements UserService {
         }
 
         log.info("User updated by admin: userId={}", userId);
-        List<CourseRoleResponse> courseRoles = getCourseRolesWithProgramTitle(userId);
+        List<CourseRoleResponse> courseRoles = getCourseRolesWithCourseTitle(userId);
         return UserDetailResponse.from(user, courseRoles);
     }
 
@@ -580,14 +580,14 @@ public class UserServiceImpl implements UserService {
     // ========== Private Helper Methods ==========
 
     /**
-     * 사용자의 CourseRole 목록을 Program title과 함께 조회
+     * 사용자의 CourseRole 목록을 Course title과 함께 조회
      */
-    private List<CourseRoleResponse> getCourseRolesWithProgramTitle(Long userId) {
-        return userCourseRoleRepository.findByUserIdWithProgramTitle(userId).stream()
+    private List<CourseRoleResponse> getCourseRolesWithCourseTitle(Long userId) {
+        return userCourseRoleRepository.findByUserIdWithCourseTitle(userId).stream()
                 .map(row -> {
                     UserCourseRole ucr = (UserCourseRole) row[0];
-                    String programTitle = (String) row[1];
-                    return CourseRoleResponse.from(ucr, programTitle);
+                    String courseTitle = (String) row[1];
+                    return CourseRoleResponse.from(ucr, courseTitle);
                 })
                 .toList();
     }

@@ -157,16 +157,16 @@ public class ItemProgressServiceImpl implements ItemProgressService {
             return;
         }
 
-        // 1. Enrollment → CourseTime → Program → Snapshot 순서로 snapshotId 조회
+        // 1. Enrollment → CourseTime → Snapshot 순서로 snapshotId 조회
         CourseTime courseTime = courseTimeRepository.findByIdAndTenantId(enrollment.getCourseTimeId(), tenantId)
                 .orElse(null);
 
-        if (courseTime == null || courseTime.getProgram() == null || courseTime.getProgram().getSnapshot() == null) {
+        if (courseTime == null || courseTime.getSnapshot() == null) {
             log.warn("Cannot calculate progress: missing snapshot for enrollmentId={}", enrollmentId);
             return;
         }
 
-        Long snapshotId = courseTime.getProgram().getSnapshot().getId();
+        Long snapshotId = courseTime.getSnapshot().getId();
 
         // 2. 스냅샷의 전체 학습 아이템 수 조회 (폴더 제외, LearningObject가 있는 아이템만)
         List<SnapshotItem> snapshotItems = snapshotItemRepository.findItemsOnlyBySnapshotId(snapshotId, tenantId);

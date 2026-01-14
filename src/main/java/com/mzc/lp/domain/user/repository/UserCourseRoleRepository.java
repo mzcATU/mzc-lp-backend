@@ -14,13 +14,13 @@ public interface UserCourseRoleRepository extends JpaRepository<UserCourseRole, 
     List<UserCourseRole> findByUserId(Long userId);
 
     /**
-     * 사용자의 CourseRole 목록을 Program title과 함께 조회
-     * courseId는 실제로 Program ID를 저장하므로 Program 테이블과 조인
+     * 사용자의 CourseRole 목록을 Course title과 함께 조회
+     * courseId는 Course ID를 저장하므로 Course 테이블과 조인
      */
-    @Query("SELECT ucr, p.title FROM UserCourseRole ucr " +
-           "LEFT JOIN Program p ON ucr.courseId = p.id " +
+    @Query("SELECT ucr, c.title FROM UserCourseRole ucr " +
+           "LEFT JOIN Course c ON ucr.courseId = c.id " +
            "WHERE ucr.user.id = :userId")
-    List<Object[]> findByUserIdWithProgramTitle(@Param("userId") Long userId);
+    List<Object[]> findByUserIdWithCourseTitle(@Param("userId") Long userId);
 
     Optional<UserCourseRole> findByUserIdAndCourseIdIsNullAndRole(Long userId, CourseRole role);
 

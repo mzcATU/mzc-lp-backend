@@ -42,7 +42,7 @@ public class CourseTimeAnnouncementController {
     ) {
         // 차수에서 코스 ID 조회
         Long courseId = courseTimeRepository.findById(timeId)
-                .map(ct -> ct.getCmCourseId())
+                .map(ct -> ct.getCourse() != null ? ct.getCourse().getId() : null)
                 .orElse(null);
 
         AnnouncementResponse response = announcementService.createAnnouncementForCourseTime(

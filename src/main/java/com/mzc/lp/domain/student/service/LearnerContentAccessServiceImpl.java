@@ -38,15 +38,14 @@ public class LearnerContentAccessServiceImpl implements LearnerContentAccessServ
      * 사용자가 해당 콘텐츠에 접근 권한이 있는지 확인
      * 접근 조건: 사용자가 수강 중인 강의(CourseTime)의 스냅샷에 해당 콘텐츠가 포함되어 있어야 함
      *
-     * 조회 경로: Enrollment -> CourseTime -> Program -> Snapshot -> SnapshotItem -> SnapshotLearningObject(contentId)
+     * 조회 경로: Enrollment -> CourseTime -> Snapshot -> SnapshotItem -> SnapshotLearningObject(contentId)
      */
     private boolean checkUserAccessToContent(Long userId, Long contentId, Long tenantId) {
         String jpql = """
             SELECT COUNT(e) > 0
             FROM Enrollment e
             JOIN CourseTime ct ON e.courseTimeId = ct.id AND ct.tenantId = :tenantId
-            JOIN Program p ON ct.program.id = p.id AND p.tenantId = :tenantId
-            JOIN CourseSnapshot cs ON p.snapshot.id = cs.id AND cs.tenantId = :tenantId
+            JOIN CourseSnapshot cs ON ct.snapshot.id = cs.id AND cs.tenantId = :tenantId
             JOIN SnapshotItem si ON si.snapshot.id = cs.id AND si.tenantId = :tenantId
             JOIN SnapshotLearningObject slo ON si.snapshotLearningObject.id = slo.id AND slo.tenantId = :tenantId
             WHERE e.userId = :userId
