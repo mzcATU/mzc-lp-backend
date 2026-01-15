@@ -11,6 +11,7 @@ import com.mzc.lp.domain.tenantnotice.dto.request.UpdateTenantNoticeRequest;
 import com.mzc.lp.domain.tenantnotice.dto.response.TenantNoticeResponse;
 import com.mzc.lp.domain.tenantnotice.entity.TenantNotice;
 import com.mzc.lp.domain.tenantnotice.repository.TenantNoticeRepository;
+import com.mzc.lp.domain.user.constant.TenantRole;
 import com.mzc.lp.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -131,12 +132,45 @@ public class TenantNoticeServiceImpl implements TenantNoticeService {
 
     /**
      * 공지사항 발행 알림 발송 (SYSTEM 타입)
-     * 해당 테넌트의 모든 활성 사용자에게 알림 발송
+     * targetAudience에 따라 대상 사용자에게 알림 발송
+     * - ALL: 전체 활성 사용자
+     * - OPERATOR: OPERATOR 역할 사용자만 (TA → CO)
+     * - USER: USER 역할 사용자만 (TA/CO → TU)
+     * - DESIGNER: DESIGNER 역할 사용자만 (TA → DESIGNER)
+     * - INSTRUCTOR: INSTRUCTOR 역할 사용자만 (TA → INSTRUCTOR)
      */
     private void sendNoticePublishedNotifications(Long tenantId, TenantNotice notice) {
         try {
-            List<Long> userIds = userRepository.findActiveUserIdsByTenantId(tenantId);
-            log.info("Sending notice notification to {} users for tenant: {}", userIds.size(), tenantId);
+            NoticeTargetAudience targetAudience = notice.getTargetAudience();
+            List<Long> userIds;
+
+            switch (targetAudience) {
+                case ALL:
+                    // 모든 활성 사용자
+                    userIds = userRepository.findActiveUserIdsByTenantId(tenantId);
+                    break;
+                case OPERATOR:
+                    // OPERATOR 역할 사용자만 (CO)
+                    userIds = userRepository.findActiveUserIdsByTenantIdAndRole(tenantId, TenantRole.OPERATOR);
+                    break;
+                case USER:
+                    // USER 역할 사용자만 (TU)
+                    userIds = userRepository.findActiveUserIdsByTenantIdAndRole(tenantId, TenantRole.USER);
+                    break;
+                case DESIGNER:
+                    // DESIGNER 역할 사용자만
+                    userIds = userRepository.findActiveUserIdsByTenantIdAndRole(tenantId, TenantRole.DESIGNER);
+                    break;
+                case INSTRUCTOR:
+                    // INSTRUCTOR 역할 사용자만
+                    userIds = userRepository.findActiveUserIdsByTenantIdAndRole(tenantId, TenantRole.INSTRUCTOR);
+                    break;
+                default:
+                    userIds = userRepository.findActiveUserIdsByTenantId(tenantId);
+            }
+
+            log.info("Sending notice notification to {} users for tenant: {} (targetAudience: {})",
+                    userIds.size(), tenantId, targetAudience);
 
             String title = "새 공지사항";
             String message = notice.getTitle();

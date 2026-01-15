@@ -121,6 +121,28 @@ public interface UserRepository extends JpaRepository<User, Long>, UserRepositor
             "AND u.status = 'ACTIVE'")
     List<Long> findActiveUserIdsByTenantId(@Param("tenantId") Long tenantId);
 
+    /**
+     * 테넌트별 특정 역할의 활성 사용자 ID 목록 조회 (공지 알림 발송용)
+     */
+    @Query("SELECT u.id FROM User u " +
+            "WHERE u.tenantId = :tenantId " +
+            "AND u.status = 'ACTIVE' " +
+            "AND u.role = :role")
+    List<Long> findActiveUserIdsByTenantIdAndRole(
+            @Param("tenantId") Long tenantId,
+            @Param("role") com.mzc.lp.domain.user.constant.TenantRole role);
+
+    /**
+     * 테넌트별 여러 역할의 활성 사용자 ID 목록 조회 (공지 알림 발송용)
+     */
+    @Query("SELECT u.id FROM User u " +
+            "WHERE u.tenantId = :tenantId " +
+            "AND u.status = 'ACTIVE' " +
+            "AND u.role IN :roles")
+    List<Long> findActiveUserIdsByTenantIdAndRoles(
+            @Param("tenantId") Long tenantId,
+            @Param("roles") java.util.Collection<com.mzc.lp.domain.user.constant.TenantRole> roles);
+
     // ===== 기간 필터 통계 쿼리 (SA 대시보드) - 전체 사용자 =====
 
     /**
