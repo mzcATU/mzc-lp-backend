@@ -50,10 +50,11 @@ public interface TenantNoticeRepository extends JpaRepository<TenantNotice, Long
 
     /**
      * TU/CO용: 발행된 + 만료되지 않은 공지 조회
+     * targetAudience가 해당 역할이거나 ALL인 공지 모두 조회
      */
     @Query("SELECT n FROM TenantNotice n WHERE n.tenantId = :tenantId " +
             "AND n.status = 'PUBLISHED' " +
-            "AND n.targetAudience = :targetAudience " +
+            "AND (n.targetAudience = :targetAudience OR n.targetAudience = 'ALL') " +
             "AND (n.expiredAt IS NULL OR n.expiredAt > :now) " +
             "ORDER BY n.isPinned DESC, n.publishedAt DESC")
     Page<TenantNotice> findVisibleNotices(
@@ -64,10 +65,11 @@ public interface TenantNoticeRepository extends JpaRepository<TenantNotice, Long
 
     /**
      * TU/CO용: 발행된 + 만료되지 않은 공지 목록 (페이징 없이)
+     * targetAudience가 해당 역할이거나 ALL인 공지 모두 조회
      */
     @Query("SELECT n FROM TenantNotice n WHERE n.tenantId = :tenantId " +
             "AND n.status = 'PUBLISHED' " +
-            "AND n.targetAudience = :targetAudience " +
+            "AND (n.targetAudience = :targetAudience OR n.targetAudience = 'ALL') " +
             "AND (n.expiredAt IS NULL OR n.expiredAt > :now) " +
             "ORDER BY n.isPinned DESC, n.publishedAt DESC")
     List<TenantNotice> findVisibleNoticesList(
@@ -105,13 +107,45 @@ public interface TenantNoticeRepository extends JpaRepository<TenantNotice, Long
 
     /**
      * 테넌트의 발행된 공지 수 카운트 (만료되지 않은 것)
+     * targetAudience가 해당 역할이거나 ALL인 공지 모두 카운트
      */
     @Query("SELECT COUNT(n) FROM TenantNotice n WHERE n.tenantId = :tenantId " +
             "AND n.status = 'PUBLISHED' " +
-            "AND n.targetAudience = :targetAudience " +
+            "AND (n.targetAudience = :targetAudience OR n.targetAudience = 'ALL') " +
             "AND (n.expiredAt IS NULL OR n.expiredAt > :now)")
     long countVisibleNotices(
             @Param("tenantId") Long tenantId,
             @Param("targetAudience") NoticeTargetAudience targetAudience,
+            @Param("now") Instant now);
+
+    // ============================================
+    // 다중 역할 지원 쿼리 (Multiple Target Audiences)
+    // ============================================
+
+    /**
+     * TU/CO용: 다중 역할에 해당하는 발행된 공지 조회 (페이징)
+     * targetAudience가 사용자의 모든 역할 중 하나와 일치하는 공지 조회
+     */
+    @Query("SELECT n FROM TenantNotice n WHERE n.tenantId = :tenantId " +
+            "AND n.status = 'PUBLISHED' " +
+            "AND n.targetAudience IN :targetAudiences " +
+            "AND (n.expiredAt IS NULL OR n.expiredAt > :now) " +
+            "ORDER BY n.isPinned DESC, n.publishedAt DESC")
+    Page<TenantNotice> findVisibleNoticesForMultipleAudiences(
+            @Param("tenantId") Long tenantId,
+            @Param("targetAudiences") java.util.Set<NoticeTargetAudience> targetAudiences,
+            @Param("now") Instant now,
+            Pageable pageable);
+
+    /**
+     * TU/CO용: 다중 역할에 해당하는 발행된 공지 수 카운트
+     */
+    @Query("SELECT COUNT(n) FROM TenantNotice n WHERE n.tenantId = :tenantId " +
+            "AND n.status = 'PUBLISHED' " +
+            "AND n.targetAudience IN :targetAudiences " +
+            "AND (n.expiredAt IS NULL OR n.expiredAt > :now)")
+    long countVisibleNoticesForMultipleAudiences(
+            @Param("tenantId") Long tenantId,
+            @Param("targetAudiences") java.util.Set<NoticeTargetAudience> targetAudiences,
             @Param("now") Instant now);
 }

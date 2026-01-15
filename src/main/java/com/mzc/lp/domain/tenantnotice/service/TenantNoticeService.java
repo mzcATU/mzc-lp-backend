@@ -8,6 +8,8 @@ import com.mzc.lp.domain.tenantnotice.dto.response.TenantNoticeResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.Set;
+
 /**
  * 테넌트 공지사항 서비스 인터페이스
  */
@@ -75,4 +77,24 @@ public interface TenantNoticeService {
      * 발행된 공지 수 조회
      */
     long countVisibleNotices(Long tenantId, NoticeTargetAudience targetAudience);
+
+    // ============================================
+    // TU/CO 다중 역할 지원 API
+    // ============================================
+
+    /**
+     * 발행된 공지사항 목록 조회 (다중 역할 지원)
+     * 사용자의 모든 역할에 해당하는 공지 조회
+     */
+    Page<TenantNoticeResponse> getVisibleNoticesForMultipleAudiences(Long tenantId, Set<NoticeTargetAudience> targetAudiences, Pageable pageable);
+
+    /**
+     * 발행된 공지사항 상세 조회 (다중 역할 지원, 조회수 증가)
+     */
+    TenantNoticeResponse getVisibleNoticeForMultipleAudiences(Long tenantId, Long noticeId, Set<NoticeTargetAudience> targetAudiences);
+
+    /**
+     * 발행된 공지 수 조회 (다중 역할 지원)
+     */
+    long countVisibleNoticesForMultipleAudiences(Long tenantId, Set<NoticeTargetAudience> targetAudiences);
 }

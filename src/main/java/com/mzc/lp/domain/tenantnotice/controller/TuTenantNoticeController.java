@@ -16,9 +16,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * 테넌트 공지사항 조회 컨트롤러 (TU/CO용)
  * 테넌트 사용자/운영자가 자신에게 발행된 공지사항을 조회
+ * 다중 역할 지원: 사용자의 모든 역할에 해당하는 공지 + ALL 대상 공지 조회
  */
 @Tag(name = "Tenant Notices (TU)", description = "테넌트 공지사항 조회 API")
 @RestController
@@ -28,16 +32,16 @@ public class TuTenantNoticeController {
 
     private final TenantNoticeService tenantNoticeService;
 
-    @Operation(summary = "발행된 공지사항 목록 조회", description = "현재 사용자에게 발행된 공지사항 목록을 조회합니다")
+    @Operation(summary = "발행된 공지사항 목록 조회", description = "현재 사용자에게 발행된 공지사항 목록을 조회합니다 (다중 역할 지원)")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<TenantNoticeResponse>>> getVisibleNotices(
             @AuthenticationPrincipal UserPrincipal principal,
             @PageableDefault(size = 20) Pageable pageable
     ) {
         Long tenantId = TenantContext.getCurrentTenantId();
-        NoticeTargetAudience targetAudience = getTargetAudienceByRole(principal);
-        Page<TenantNoticeResponse> response = tenantNoticeService.getVisibleNotices(
-                tenantId, targetAudience, pageable
+        Set<NoticeTargetAudience> targetAudiences = getTargetAudiencesByRoles(principal);
+        Page<TenantNoticeResponse> response = tenantNoticeService.getVisibleNoticesForMultipleAudiences(
+                tenantId, targetAudiences, pageable
         );
         return ResponseEntity.ok(ApiResponse.success(response));
     }
@@ -49,9 +53,9 @@ public class TuTenantNoticeController {
             @AuthenticationPrincipal UserPrincipal principal
     ) {
         Long tenantId = TenantContext.getCurrentTenantId();
-        NoticeTargetAudience targetAudience = getTargetAudienceByRole(principal);
-        TenantNoticeResponse response = tenantNoticeService.getVisibleNotice(
-                tenantId, noticeId, targetAudience
+        Set<NoticeTargetAudience> targetAudiences = getTargetAudiencesByRoles(principal);
+        TenantNoticeResponse response = tenantNoticeService.getVisibleNoticeForMultipleAudiences(
+                tenantId, noticeId, targetAudiences
         );
         return ResponseEntity.ok(ApiResponse.success(response));
     }
@@ -62,20 +66,65 @@ public class TuTenantNoticeController {
             @AuthenticationPrincipal UserPrincipal principal
     ) {
         Long tenantId = TenantContext.getCurrentTenantId();
-        NoticeTargetAudience targetAudience = getTargetAudienceByRole(principal);
-        long count = tenantNoticeService.countVisibleNotices(tenantId, targetAudience);
+        Set<NoticeTargetAudience> targetAudiences = getTargetAudiencesByRoles(principal);
+        long count = tenantNoticeService.countVisibleNoticesForMultipleAudiences(tenantId, targetAudiences);
         return ResponseEntity.ok(ApiResponse.success(count));
     }
 
     /**
-     * 사용자 역할에 따른 대상 분류
-     * - OPERATOR: 운영자 대상 공지 조회
-     * - 그 외: 사용자 대상 공지 조회
+     * 사용자의 모든 역할에 해당하는 공지 대상 Set 반환 (다중 역할 지원)
+     * - roles: 테넌트 역할 (OPERATOR, USER 등)
+     * - courseRoles: 강의 역할 (DESIGNER, INSTRUCTOR)
+     * - 항상 ALL도 포함 (모든 사용자에게 보내는 공지)
      */
-    private NoticeTargetAudience getTargetAudienceByRole(UserPrincipal principal) {
-        if ("OPERATOR".equals(principal.role())) {
-            return NoticeTargetAudience.OPERATOR;
+    private Set<NoticeTargetAudience> getTargetAudiencesByRoles(UserPrincipal principal) {
+        Set<NoticeTargetAudience> audiences = new HashSet<>();
+
+        // 항상 ALL 대상 공지는 볼 수 있음
+        audiences.add(NoticeTargetAudience.ALL);
+
+        // 테넌트 역할 기반 대상 추가
+        if (principal.roles() != null) {
+            for (String role : principal.roles()) {
+                switch (role) {
+                    case "OPERATOR" -> audiences.add(NoticeTargetAudience.OPERATOR);
+                    case "USER" -> audiences.add(NoticeTargetAudience.USER);
+                    case "TENANT_ADMIN" -> {
+                        // TA는 모든 공지를 볼 수 있음
+                        audiences.add(NoticeTargetAudience.OPERATOR);
+                        audiences.add(NoticeTargetAudience.USER);
+                        audiences.add(NoticeTargetAudience.DESIGNER);
+                        audiences.add(NoticeTargetAudience.INSTRUCTOR);
+                    }
+                }
+            }
         }
-        return NoticeTargetAudience.USER;
+
+        // 강의 역할 기반 대상 추가 (DESIGNER, INSTRUCTOR)
+        if (principal.courseRoles() != null) {
+            for (String courseRole : principal.courseRoles()) {
+                switch (courseRole) {
+                    case "DESIGNER" -> audiences.add(NoticeTargetAudience.DESIGNER);
+                    case "INSTRUCTOR" -> audiences.add(NoticeTargetAudience.INSTRUCTOR);
+                }
+            }
+        }
+
+        // 기본 역할도 확인 (하위 호환성)
+        if (principal.role() != null) {
+            switch (principal.role()) {
+                case "OPERATOR" -> audiences.add(NoticeTargetAudience.OPERATOR);
+                case "USER" -> audiences.add(NoticeTargetAudience.USER);
+                case "DESIGNER" -> audiences.add(NoticeTargetAudience.DESIGNER);
+                case "INSTRUCTOR" -> audiences.add(NoticeTargetAudience.INSTRUCTOR);
+            }
+        }
+
+        // 최소한 USER는 포함 (일반 사용자)
+        if (audiences.size() == 1) { // ALL만 있는 경우
+            audiences.add(NoticeTargetAudience.USER);
+        }
+
+        return audiences;
     }
 }
