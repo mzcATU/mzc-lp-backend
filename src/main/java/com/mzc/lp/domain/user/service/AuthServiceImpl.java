@@ -1,6 +1,7 @@
 package com.mzc.lp.domain.user.service;
 
 import com.mzc.lp.common.security.JwtProvider;
+import com.mzc.lp.domain.notification.event.NotificationEventPublisher;
 import com.mzc.lp.domain.user.constant.TenantRole;
 import com.mzc.lp.domain.user.dto.request.LoginRequest;
 import com.mzc.lp.domain.user.dto.request.RefreshTokenRequest;
@@ -37,6 +38,7 @@ public class AuthServiceImpl implements AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
+    private final NotificationEventPublisher notificationEventPublisher;
 
     @Value("${jwt.access-expiration}")
     private long accessTokenExpiry;
@@ -61,6 +63,13 @@ public class AuthServiceImpl implements AuthService {
         // 저장
         User savedUser = userRepository.save(user);
         log.info("User registered: userId={}", savedUser.getId());
+
+        // 회원가입 환영 알림 발송
+        notificationEventPublisher.publishWelcome(
+                savedUser.getTenantId(),
+                savedUser.getId(),
+                savedUser.getName()
+        );
 
         return UserResponse.from(savedUser);
     }
