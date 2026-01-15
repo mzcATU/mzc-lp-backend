@@ -179,9 +179,20 @@ public class NotificationTemplateServiceImpl implements NotificationTemplateServ
         Optional<NotificationTemplate> templateOpt = templateRepository
                 .findByTenantIdAndTriggerTypeAndIsActiveTrue(tenantId, trigger);
 
+        // 템플릿이 없으면 기본 템플릿 자동 생성
         if (templateOpt.isEmpty()) {
-            log.debug("No active template found for trigger: {} in tenant: {}", trigger, tenantId);
-            return;
+            // 해당 트리거의 템플릿이 아예 없는지 확인
+            if (!templateRepository.existsByTenantIdAndTriggerType(tenantId, trigger)) {
+                log.info("No template found for trigger: {} in tenant: {}. Creating default template.", trigger, tenantId);
+                NotificationTemplate defaultTemplate = NotificationTemplate.createDefault(trigger);
+                templateRepository.save(defaultTemplate);
+                templateOpt = Optional.of(defaultTemplate);
+                log.info("Created default template for trigger: {} in tenant: {}", trigger, tenantId);
+            } else {
+                // 템플릿은 있지만 비활성화 상태
+                log.debug("Template exists but is deactivated for trigger: {} in tenant: {}", trigger, tenantId);
+                return;
+            }
         }
 
         NotificationTemplate template = templateOpt.get();

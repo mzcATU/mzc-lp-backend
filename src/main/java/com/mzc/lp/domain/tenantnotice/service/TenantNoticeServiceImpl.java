@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 
 /**
  * 테넌트 공지사항 서비스 구현체
@@ -132,12 +133,12 @@ public class TenantNoticeServiceImpl implements TenantNoticeService {
 
     /**
      * 공지사항 발행 알림 발송 (SYSTEM 타입)
-     * targetAudience에 따라 대상 사용자에게 알림 발송
+     * targetAudience에 따라 대상 사용자에게 알림 발송 (다중 역할 지원)
      * - ALL: 전체 활성 사용자
-     * - OPERATOR: OPERATOR 역할 사용자만 (TA → CO)
-     * - USER: USER 역할 사용자만 (TA/CO → TU)
-     * - DESIGNER: DESIGNER 역할 사용자만 (TA → DESIGNER)
-     * - INSTRUCTOR: INSTRUCTOR 역할 사용자만 (TA → INSTRUCTOR)
+     * - OPERATOR: OPERATOR 역할을 가진 사용자 (기본 역할 또는 추가 역할)
+     * - USER: USER 역할을 가진 사용자
+     * - DESIGNER: DESIGNER 역할을 가진 사용자
+     * - INSTRUCTOR: INSTRUCTOR 역할을 가진 사용자
      */
     private void sendNoticePublishedNotifications(Long tenantId, TenantNotice notice) {
         try {
@@ -150,20 +151,20 @@ public class TenantNoticeServiceImpl implements TenantNoticeService {
                     userIds = userRepository.findActiveUserIdsByTenantId(tenantId);
                     break;
                 case OPERATOR:
-                    // OPERATOR 역할 사용자만 (CO)
-                    userIds = userRepository.findActiveUserIdsByTenantIdAndRole(tenantId, TenantRole.OPERATOR);
+                    // OPERATOR 역할을 가진 사용자 (다중 역할 지원)
+                    userIds = userRepository.findActiveUserIdsByTenantIdHavingRole(tenantId, TenantRole.OPERATOR);
                     break;
                 case USER:
-                    // USER 역할 사용자만 (TU)
-                    userIds = userRepository.findActiveUserIdsByTenantIdAndRole(tenantId, TenantRole.USER);
+                    // USER 역할을 가진 사용자 (다중 역할 지원)
+                    userIds = userRepository.findActiveUserIdsByTenantIdHavingRole(tenantId, TenantRole.USER);
                     break;
                 case DESIGNER:
-                    // DESIGNER 역할 사용자만
-                    userIds = userRepository.findActiveUserIdsByTenantIdAndRole(tenantId, TenantRole.DESIGNER);
+                    // DESIGNER 역할을 가진 사용자 (다중 역할 지원)
+                    userIds = userRepository.findActiveUserIdsByTenantIdHavingRole(tenantId, TenantRole.DESIGNER);
                     break;
                 case INSTRUCTOR:
-                    // INSTRUCTOR 역할 사용자만
-                    userIds = userRepository.findActiveUserIdsByTenantIdAndRole(tenantId, TenantRole.INSTRUCTOR);
+                    // INSTRUCTOR 역할을 가진 사용자 (다중 역할 지원)
+                    userIds = userRepository.findActiveUserIdsByTenantIdHavingRole(tenantId, TenantRole.INSTRUCTOR);
                     break;
                 default:
                     userIds = userRepository.findActiveUserIdsByTenantId(tenantId);
@@ -174,7 +175,7 @@ public class TenantNoticeServiceImpl implements TenantNoticeService {
 
             String title = "새 공지사항";
             String message = notice.getTitle();
-            String link = "/notices/" + notice.getId();
+            String link = "/tu/b2c/notifications?tab=SYSTEM";  // 알림 페이지 공지사항 탭으로 이동
 
             for (Long userId : userIds) {
                 try {
@@ -277,6 +278,42 @@ public class TenantNoticeServiceImpl implements TenantNoticeService {
     @Override
     public long countVisibleNotices(Long tenantId, NoticeTargetAudience targetAudience) {
         return tenantNoticeRepository.countVisibleNotices(tenantId, targetAudience, Instant.now());
+    }
+
+    // ============================================
+    // TU/CO 다중 역할 지원 API
+    // ============================================
+
+    @Override
+    public Page<TenantNoticeResponse> getVisibleNoticesForMultipleAudiences(Long tenantId, Set<NoticeTargetAudience> targetAudiences, Pageable pageable) {
+        return tenantNoticeRepository.findVisibleNoticesForMultipleAudiences(tenantId, targetAudiences, Instant.now(), pageable)
+                .map(TenantNoticeResponse::from);
+    }
+
+    @Override
+    @Transactional
+    public TenantNoticeResponse getVisibleNoticeForMultipleAudiences(Long tenantId, Long noticeId, Set<NoticeTargetAudience> targetAudiences) {
+        TenantNotice notice = findNoticeByIdAndTenantId(noticeId, tenantId);
+
+        // 발행 상태 확인
+        if (!notice.isVisible()) {
+            throw new BusinessException(ErrorCode.TENANT_NOTICE_NOT_FOUND);
+        }
+
+        // 대상 확인: 사용자의 역할 목록에 공지 대상이 포함되어 있는지 확인
+        if (!targetAudiences.contains(notice.getTargetAudience())) {
+            throw new BusinessException(ErrorCode.TENANT_NOTICE_NOT_FOUND);
+        }
+
+        // 조회수 증가
+        notice.incrementViewCount();
+
+        return TenantNoticeResponse.from(notice);
+    }
+
+    @Override
+    public long countVisibleNoticesForMultipleAudiences(Long tenantId, Set<NoticeTargetAudience> targetAudiences) {
+        return tenantNoticeRepository.countVisibleNoticesForMultipleAudiences(tenantId, targetAudiences, Instant.now());
     }
 
     // ============================================
