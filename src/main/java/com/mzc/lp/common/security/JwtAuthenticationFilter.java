@@ -68,7 +68,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 path.equals("/api/tenant/settings/layout/public") ||
                 path.equals("/api/tenant/settings/navigation/public") ||
                 (path.startsWith("/api/courses") && !path.equals("/api/courses/my")) ||
-                path.startsWith("/api/community/posts") ||
+                (path.startsWith("/api/community/posts") && !path.equals("/api/community/posts/my") && !path.equals("/api/community/posts/commented")) ||
                 path.equals("/api/community/categories") ||
                 path.startsWith("/api/public/course-times") ||
                 path.startsWith("/api/banners/public")) {

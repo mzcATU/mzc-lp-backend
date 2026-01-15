@@ -193,11 +193,14 @@ public class Content extends TenantEntity {
 
     // 비즈니스 메서드 - 파일 교체 (콘텐츠 이름은 유지, 파일 정보만 교체)
     public void replaceFile(String uploadedFileName, String storedFileName,
-                           Long fileSize, String filePath) {
+                           Long fileSize, String filePath, ContentType contentType) {
         this.uploadedFileName = uploadedFileName;
         this.storedFileName = storedFileName;
         this.fileSize = fileSize;
         this.filePath = filePath;
+        if (contentType != null) {
+            this.contentType = contentType;
+        }
     }
 
     // 비즈니스 메서드 - 버전 복원 (모든 정보 복원)
