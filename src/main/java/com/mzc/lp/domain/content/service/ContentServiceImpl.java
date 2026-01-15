@@ -257,12 +257,19 @@ public class ContentServiceImpl implements ContentService {
         String storedFileName = fileStorageService.generateStoredFileName(originalFileName);
         String newFilePath = fileStorageService.storeFile(file);
 
-        // 파일 교체
-        content.replaceFile(originalFileName, storedFileName, file.getSize(), newFilePath);
+        // 새 파일의 확장자로 contentType 감지
+        String extension = originalFileName.contains(".")
+                ? originalFileName.substring(originalFileName.lastIndexOf(".") + 1)
+                : "";
+        ContentType newContentType = ContentType.fromExtension(extension);
+
+        // 파일 교체 (contentType도 함께 업데이트)
+        content.replaceFile(originalFileName, storedFileName, file.getSize(), newFilePath, newContentType);
         content.incrementVersion();
 
-        // 썸네일 재생성
-        generateAndSetThumbnail(content, newFilePath, content.getContentType());
+        // 썸네일 재생성 (새로운 contentType으로)
+        ContentType effectiveContentType = newContentType != null ? newContentType : content.getContentType();
+        generateAndSetThumbnail(content, newFilePath, effectiveContentType);
 
         // 버전 기록 (변경 후 상태 저장)
         contentVersionService.createVersion(content, VersionChangeType.FILE_REPLACE,
