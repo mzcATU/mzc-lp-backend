@@ -1,10 +1,13 @@
 package com.mzc.lp.domain.user.dto.response;
 
+import com.mzc.lp.domain.user.constant.TenantRole;
 import com.mzc.lp.domain.user.entity.User;
 
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public record UserDetailResponse(
         Long userId,
@@ -15,6 +18,7 @@ public record UserDetailResponse(
         String department,
         String position,
         String role,
+        Set<String> roles,  // 다중 역할 (1:N)
         String status,
         Long tenantId,
         String tenantSubdomain,
@@ -62,6 +66,7 @@ public record UserDetailResponse(
                 user.getDepartment(),
                 user.getPosition(),
                 user.getRole().name(),
+                user.getRoles().stream().map(TenantRole::name).collect(Collectors.toSet()),
                 user.getStatus().name(),
                 user.getTenantId(),
                 null,
@@ -83,6 +88,7 @@ public record UserDetailResponse(
                 user.getDepartment(),
                 user.getPosition(),
                 user.getRole().name(),
+                user.getRoles().stream().map(TenantRole::name).collect(Collectors.toSet()),
                 user.getStatus().name(),
                 user.getTenantId(),
                 null,
@@ -104,6 +110,7 @@ public record UserDetailResponse(
                 user.getDepartment(),
                 user.getPosition(),
                 user.getRole().name(),
+                user.getRoles().stream().map(TenantRole::name).collect(Collectors.toSet()),
                 user.getStatus().name(),
                 user.getTenantId(),
                 tenantSubdomain,
