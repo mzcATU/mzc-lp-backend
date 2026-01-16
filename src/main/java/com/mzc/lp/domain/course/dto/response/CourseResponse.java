@@ -19,13 +19,17 @@ public record CourseResponse(
         CourseStatus status,
         Integer estimatedHours,
         Long categoryId,
+        String categoryName,
         LocalDate startDate,
         LocalDate endDate,
         List<String> tags,
         Instant createdAt,
         Instant updatedAt,
         boolean isComplete,
-        int itemCount
+        int itemCount,
+        int timeCount,
+        Long creatorId,
+        String creatorName
 ) {
     /**
      * 완성도 판단 기준:
@@ -42,10 +46,19 @@ public record CourseResponse(
     }
 
     public static CourseResponse from(Course course) {
-        return from(course, 0);
+        return from(course, 0, null, null, 0);
     }
 
     public static CourseResponse from(Course course, int itemCount) {
+        return from(course, itemCount, null, null, 0);
+    }
+
+    public static CourseResponse from(Course course, int itemCount, String creatorName) {
+        return from(course, itemCount, creatorName, null, 0);
+    }
+
+    public static CourseResponse from(Course course, int itemCount, String creatorName,
+                                       String categoryName, int timeCount) {
         return new CourseResponse(
                 course.getId(),
                 course.getTitle(),
@@ -56,13 +69,17 @@ public record CourseResponse(
                 course.getStatus(),
                 course.getEstimatedHours(),
                 course.getCategoryId(),
+                categoryName,
                 course.getStartDate(),
                 course.getEndDate(),
                 course.getTags(),
                 course.getCreatedAt(),
                 course.getUpdatedAt(),
                 checkCompleteness(course, itemCount),
-                itemCount
+                itemCount,
+                timeCount,
+                course.getCreatedBy(),
+                creatorName
         );
     }
 }

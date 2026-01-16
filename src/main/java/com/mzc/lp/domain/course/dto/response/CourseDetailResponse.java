@@ -28,7 +28,9 @@ public record CourseDetailResponse(
         Double averageRating,
         long reviewCount,
         Instant createdAt,
-        Instant updatedAt
+        Instant updatedAt,
+        Long creatorId,
+        String creatorName
 ) {
     /**
      * 완성도 판단 기준:
@@ -46,15 +48,20 @@ public record CourseDetailResponse(
 
     public static CourseDetailResponse from(Course course, List<CourseItemResponse> items) {
         int count = items != null ? items.size() : 0;
-        return from(course, items, count, null, 0L);
+        return from(course, items, count, null, 0L, null);
     }
 
     public static CourseDetailResponse from(Course course, List<CourseItemResponse> items, int itemCount) {
-        return from(course, items, itemCount, null, 0L);
+        return from(course, items, itemCount, null, 0L, null);
     }
 
     public static CourseDetailResponse from(Course course, List<CourseItemResponse> items, int itemCount,
                                              Double averageRating, long reviewCount) {
+        return from(course, items, itemCount, averageRating, reviewCount, null);
+    }
+
+    public static CourseDetailResponse from(Course course, List<CourseItemResponse> items, int itemCount,
+                                             Double averageRating, long reviewCount, String creatorName) {
         return new CourseDetailResponse(
                 course.getId(),
                 course.getTitle(),
@@ -74,7 +81,9 @@ public record CourseDetailResponse(
                 averageRating != null ? Math.round(averageRating * 10.0) / 10.0 : 0.0,
                 reviewCount,
                 course.getCreatedAt(),
-                course.getUpdatedAt()
+                course.getUpdatedAt(),
+                course.getCreatedBy(),
+                creatorName
         );
     }
 }
