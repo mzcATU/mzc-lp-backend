@@ -179,7 +179,7 @@ public class CourseController {
      * POST /api/courses/{courseId}/register
      */
     @PostMapping("/{courseId:\\d+}/register")
-    @PreAuthorize("hasAnyRole('OPERATOR', 'TENANT_ADMIN')")
+    @PreAuthorize("hasAnyRole('DESIGNER', 'OPERATOR', 'TENANT_ADMIN')")
     public ResponseEntity<ApiResponse<CourseResponse>> registerCourse(
             @PathVariable @Positive Long courseId,
             @AuthenticationPrincipal UserPrincipal principal
