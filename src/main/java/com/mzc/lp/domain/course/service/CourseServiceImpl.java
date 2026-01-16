@@ -117,8 +117,8 @@ public class CourseServiceImpl implements CourseService {
         return courses.map(course -> CourseResponse.from(
                 course,
                 0,
-                creatorNameMap.get(course.getCreatedBy()),
-                categoryNameMap.get(course.getCategoryId()),
+                course.getCreatedBy() != null ? creatorNameMap.get(course.getCreatedBy()) : null,
+                course.getCategoryId() != null ? categoryNameMap.get(course.getCategoryId()) : null,
                 timeCountMap.getOrDefault(course.getId(), 0)
         ));
     }
