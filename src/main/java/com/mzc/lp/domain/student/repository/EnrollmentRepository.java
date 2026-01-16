@@ -333,4 +333,13 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
             "WHERE e.courseTimeId = :courseTimeId " +
             "AND e.status != 'DROPPED'")
     List<Long> findUserIdsByCourseTimeId(@Param("courseTimeId") Long courseTimeId);
+
+    /**
+     * 차수별 수강 목록 조회 (알림 발송용 - enrollmentId 필요)
+     * DROPPED 상태 제외
+     */
+    @Query("SELECT e FROM Enrollment e " +
+            "WHERE e.courseTimeId = :courseTimeId " +
+            "AND e.status != 'DROPPED'")
+    List<Enrollment> findAllByCourseTimeId(@Param("courseTimeId") Long courseTimeId);
 }

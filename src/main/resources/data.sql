@@ -55,6 +55,39 @@ CREATE TABLE cart_items (
     INDEX idx_cart_added_at (added_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- program_id → course_id 스키마 변경으로 인해 테이블 재생성
+DROP TABLE IF EXISTS course_times;
+CREATE TABLE course_times (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    tenant_id BIGINT NOT NULL,
+    version BIGINT,
+    course_id BIGINT,
+    snapshot_id BIGINT,
+    title VARCHAR(200) NOT NULL,
+    delivery_type VARCHAR(20) NOT NULL,
+    status VARCHAR(20) NOT NULL,
+    enroll_start_date DATE NOT NULL,
+    enroll_end_date DATE NOT NULL,
+    class_start_date DATE NOT NULL,
+    class_end_date DATE NOT NULL,
+    capacity INT,
+    max_waiting_count INT,
+    current_enrollment INT NOT NULL DEFAULT 0,
+    enrollment_method VARCHAR(20) NOT NULL,
+    min_progress_for_completion INT NOT NULL,
+    price DECIMAL(10,2) NOT NULL,
+    is_free BOOLEAN NOT NULL DEFAULT FALSE,
+    location_info JSON,
+    allow_late_enrollment BOOLEAN NOT NULL DEFAULT FALSE,
+    created_by BIGINT,
+    created_at DATETIME(6),
+    updated_at DATETIME(6),
+    PRIMARY KEY (id),
+    INDEX idx_course_times_status (tenant_id, status),
+    INDEX idx_course_times_course (tenant_id, course_id),
+    INDEX idx_course_times_snapshot (tenant_id, snapshot_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- 테넌트 1, 2, 3 모두 삭제
 DELETE FROM cm_course_reviews WHERE tenant_id IN (1, 2, 3);
 DELETE FROM community_posts WHERE tenant_id IN (1, 2, 3);
@@ -63,8 +96,8 @@ DELETE FROM roadmaps WHERE tenant_id IN (1, 2, 3);
 DELETE FROM sis_enrollments WHERE tenant_id IN (1, 2, 3);
 DELETE FROM iis_instructor_assignments WHERE tenant_id IN (1, 2, 3);
 DELETE FROM user_course_roles WHERE tenant_id IN (1, 2, 3);
-DELETE FROM course_times WHERE tenant_id IN (1, 2, 3);
-DELETE FROM cm_programs WHERE tenant_id IN (1, 2, 3);
+-- DELETE FROM course_times는 DROP TABLE로 대체됨
+-- DELETE FROM cm_programs는 테이블이 제거되어 삭제됨
 DELETE FROM cm_snapshot_relations WHERE tenant_id IN (1, 2, 3);
 DELETE FROM cm_snapshot_items WHERE tenant_id IN (1, 2, 3);
 DELETE FROM cm_snapshot_los WHERE tenant_id IN (1, 2, 3);
@@ -80,7 +113,7 @@ DELETE FROM users WHERE tenant_id IN (1, 2, 3);
 -- 3. 사용자 데이터 INSERT
 -- 비밀번호: 1q2w3e4r! (BCrypt 암호화)
 -- =============================================
-
+ 
 -- ===== 시스템 관리자 (전체 1명) =====
 INSERT INTO users (tenant_id, email, password, name, phone, role, status, created_at, updated_at) VALUES
 (1, 'sysadmin@mzc.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '시스템관리자', '010-0000-0001', 'SYSTEM_ADMIN', 'ACTIVE', NOW(), NOW());
@@ -708,8 +741,10 @@ SELECT 1, (SELECT id FROM cm_snapshots WHERE snapshot_name = 'Java 프로그래�
 WHERE NOT EXISTS (SELECT 1 FROM cm_snapshot_relations WHERE tenant_id = 1 AND from_item_id = (SELECT id FROM cm_snapshot_items WHERE item_name = 'Java 기본 문법' AND tenant_id = 1 LIMIT 1));
 
 -- =============================================
--- 10. 프로그램 데이터 INSERT (스냅샷 연결)
+-- 10. 프로그램 데이터 INSERT (스냅샷 연결) - cm_programs 테이블 제거로 비활성화
 -- =============================================
+-- cm_programs 테이블이 제거되어 아래 INSERT 문은 비활성화됨
+/*
 INSERT INTO cm_programs (tenant_id, title, description, level, type, estimated_hours, snapshot_id, status, created_by, submitted_at, approved_by, approved_at, rejection_reason, rejected_at, created_at, updated_at, version) VALUES
 -- APPROVED 상태 (스냅샷 연결됨)
 (1, 'Spring Boot 기초 과정', 'Spring Boot 프레임워크의 기본 개념과 실습을 다루는 입문 과정입니다.', 'BEGINNER', 'ONLINE', 20,
@@ -755,12 +790,13 @@ INSERT INTO cm_programs (tenant_id, title, description, level, type, estimated_h
 (1, 'MSA 설계 패턴', '마이크로서비스 아키텍처 설계 원칙과 패턴을 다룹니다.', 'ADVANCED', 'BLENDED', 35,
  NULL,
  'DRAFT', (SELECT id FROM users WHERE email = 'designer2@default.com'), NULL, NULL, NULL, NULL, NULL, NOW() - INTERVAL 2 HOUR, NOW(), 0);
+*/
 
 -- =============================================
 -- 11. 차수 데이터 INSERT (Current Date: 2026-01-06)
 -- =============================================
 INSERT INTO course_times (
-    tenant_id, program_id, title, delivery_type, status,
+    tenant_id, course_id, title, delivery_type, status,
     enroll_start_date, enroll_end_date, class_start_date, class_end_date,
     capacity, max_waiting_count, current_enrollment, enrollment_method,
     min_progress_for_completion, price, is_free, allow_late_enrollment,
@@ -769,70 +805,70 @@ INSERT INTO course_times (
 
 -- 1. DRAFT (작성 중)
 -- 로직: 모집 시작일이 미래(2026년 2월)여야 함
-(1, (SELECT id FROM cm_programs WHERE title = 'Spring Boot 기초 과정' AND tenant_id = 1 LIMIT 1),
+(1, (SELECT id FROM cm_courses WHERE title = 'Spring Boot 기초 과정' AND tenant_id = 1 LIMIT 1),
  'Spring Boot 기초 1차', 'ONLINE', 'DRAFT',
  '2026-02-01', '2026-02-15', '2026-02-20', '2026-03-20',
  30, 5, 0, 'FIRST_COME', 80, 0.00, true, false, (SELECT id FROM users WHERE email = 'operator1@default.com'), NOW(), NOW(), 0),
 
-(1, (SELECT id FROM cm_programs WHERE title = 'AWS 클라우드 아키텍처' AND tenant_id = 1 LIMIT 1),
+(1, (SELECT id FROM cm_courses WHERE title = 'AWS 클라우드 아키텍처' AND tenant_id = 1 LIMIT 1),
  'AWS 클라우드 아키텍처 1차', 'BLENDED', 'DRAFT',
  '2026-03-01', '2026-03-15', '2026-03-20', '2026-05-20',
  20, 3, 0, 'APPROVAL', 70, 150000.00, false, false, (SELECT id FROM users WHERE email = 'operator1@default.com'), NOW(), NOW(), 0),
 
 -- 2. RECRUITING (모집 중)
 -- 로직: 현재(1/6)가 enroll_start와 enroll_end 사이에 있어야 함
-(1, (SELECT id FROM cm_programs WHERE title = 'Spring Boot 기초 과정' AND tenant_id = 1 LIMIT 1),
+(1, (SELECT id FROM cm_courses WHERE title = 'Spring Boot 기초 과정' AND tenant_id = 1 LIMIT 1),
  'Spring Boot 기초 2차', 'ONLINE', 'RECRUITING',
  '2026-01-01', '2026-01-15', '2026-01-20', '2026-02-20',
  25, 5, 12, 'FIRST_COME', 80, 0.00, true, true, (SELECT id FROM users WHERE email = 'operator1@default.com'), NOW(), NOW(), 0),
 
-(1, (SELECT id FROM cm_programs WHERE title = 'React & TypeScript 실전' AND tenant_id = 1 LIMIT 1),
+(1, (SELECT id FROM cm_courses WHERE title = 'React & TypeScript 실전' AND tenant_id = 1 LIMIT 1),
  'React & TypeScript 실전 1차', 'LIVE', 'RECRUITING',
  '2025-12-20', '2026-01-10', '2026-01-15', '2026-02-28',
  40, 10, 28, 'FIRST_COME', 75, 200000.00, false, true, (SELECT id FROM users WHERE email = 'operator1@default.com'), NOW(), NOW(), 0),
 
-(1, (SELECT id FROM cm_programs WHERE title = 'AWS 클라우드 아키텍처' AND tenant_id = 1 LIMIT 1),
+(1, (SELECT id FROM cm_courses WHERE title = 'AWS 클라우드 아키텍처' AND tenant_id = 1 LIMIT 1),
  'AWS 클라우드 아키텍처 2차', 'OFFLINE', 'RECRUITING',
  '2026-01-02', '2026-01-20', '2026-02-01', '2026-03-01',
  15, 0, 15, 'APPROVAL', 70, 180000.00, false, false, (SELECT id FROM users WHERE email = 'operator2@default.com'), NOW(), NOW(), 0),
 
 -- 3. ONGOING (진행 중)
 -- 로직: 현재(1/6)가 class_start와 class_end 사이에 있어야 함 (모집은 이미 끝남)
-(1, (SELECT id FROM cm_programs WHERE title = 'Spring Boot 기초 과정' AND tenant_id = 1 LIMIT 1),
+(1, (SELECT id FROM cm_courses WHERE title = 'Spring Boot 기초 과정' AND tenant_id = 1 LIMIT 1),
  'Spring Boot 기초 3차', 'ONLINE', 'ONGOING',
  '2025-11-01', '2025-11-30', '2025-12-01', '2026-01-31',
  30, 5, 30, 'FIRST_COME', 80, 0.00, true, true, (SELECT id FROM users WHERE email = 'operator1@default.com'), NOW(), NOW(), 0),
 
-(1, (SELECT id FROM cm_programs WHERE title = 'Java 프로그래밍 마스터' AND tenant_id = 1 LIMIT 1),
+(1, (SELECT id FROM cm_courses WHERE title = 'Java 프로그래밍 마스터' AND tenant_id = 1 LIMIT 1),
  'Java 프로그래밍 마스터 1차', 'ONLINE', 'ONGOING',
  '2025-11-15', '2025-12-15', '2025-12-20', '2026-02-20',
  50, 10, 45, 'FIRST_COME', 85, 100000.00, false, false, (SELECT id FROM users WHERE email = 'operator1@default.com'), NOW(), NOW(), 0),
 
-(1, (SELECT id FROM cm_programs WHERE title = 'Kubernetes 운영 실무' AND tenant_id = 1 LIMIT 1),
+(1, (SELECT id FROM cm_courses WHERE title = 'Kubernetes 운영 실무' AND tenant_id = 1 LIMIT 1),
  'Kubernetes 운영 실무 1차', 'BLENDED', 'ONGOING',
  '2025-10-01', '2025-10-31', '2025-11-01', '2026-01-10',
  20, 5, 18, 'APPROVAL', 90, 300000.00, false, true, (SELECT id FROM users WHERE email = 'operator2@default.com'), NOW(), NOW(), 0),
 
 -- 4. CLOSED (종료)
 -- 로직: class_end가 과거(2025년 말)여야 함
-(1, (SELECT id FROM cm_programs WHERE title = 'Spring Boot 기초 과정' AND tenant_id = 1 LIMIT 1),
+(1, (SELECT id FROM cm_courses WHERE title = 'Spring Boot 기초 과정' AND tenant_id = 1 LIMIT 1),
  'Spring Boot 기초 4차', 'ONLINE', 'CLOSED',
  '2025-09-01', '2025-09-15', '2025-09-20', '2025-10-20',
  30, 5, 28, 'FIRST_COME', 80, 0.00, true, false, (SELECT id FROM users WHERE email = 'operator1@default.com'), NOW(), NOW(), 0),
 
-(1, (SELECT id FROM cm_programs WHERE title = 'SQL 완전 정복' AND tenant_id = 1 LIMIT 1),
+(1, (SELECT id FROM cm_courses WHERE title = 'SQL 완전 정복' AND tenant_id = 1 LIMIT 1),
  'SQL 완전 정복 1차', 'ONLINE', 'CLOSED',
  '2025-11-01', '2025-11-15', '2025-11-20', '2025-12-31',
  100, 20, 87, 'FIRST_COME', 70, 50000.00, false, true, (SELECT id FROM users WHERE email = 'operator2@default.com'), NOW(), NOW(), 0),
 
 -- 5. ARCHIVED (보관)
 -- 로직: class_end가 먼 과거(2025년 상반기)여야 함
-(1, (SELECT id FROM cm_programs WHERE title = 'Spring Boot 기초 과정' AND tenant_id = 1 LIMIT 1),
+(1, (SELECT id FROM cm_courses WHERE title = 'Spring Boot 기초 과정' AND tenant_id = 1 LIMIT 1),
  'Spring Boot 기초 0차 (파일럿)', 'ONLINE', 'ARCHIVED',
  '2025-01-01', '2025-01-15', '2025-01-20', '2025-02-20',
  10, 0, 10, 'INVITE_ONLY', 80, 0.00, true, false, (SELECT id FROM users WHERE email = 'operator1@default.com'), NOW(), NOW(), 0),
 
-(1, (SELECT id FROM cm_programs WHERE title = 'Java 프로그래밍 마스터' AND tenant_id = 1 LIMIT 1),
+(1, (SELECT id FROM cm_courses WHERE title = 'Java 프로그래밍 마스터' AND tenant_id = 1 LIMIT 1),
  'Java 프로그래밍 마스터 0차', 'OFFLINE', 'ARCHIVED',
  '2025-03-01', '2025-03-15', '2025-03-20', '2025-05-20',
  20, 5, 18, 'APPROVAL', 85, 80000.00, false, false, (SELECT id FROM users WHERE email = 'operator2@default.com'), NOW(), NOW(), 0);
@@ -911,10 +947,10 @@ SELECT 1, (SELECT id FROM users WHERE email = 'creator@default.com'), NULL, 'DES
 -- DESIGNER 역할 (courseId = programId, 프로그램별 설계자)
 INSERT INTO user_course_roles (tenant_id, user_id, course_id, role, revenue_share_percent, created_at, updated_at)
 SELECT 1, (SELECT id FROM users WHERE email = 'creator@default.com'),
- (SELECT id FROM cm_programs WHERE title = 'Spring Boot 기초 과정' AND tenant_id = 1), 'DESIGNER', 70, NOW(), NOW();
+ (SELECT id FROM cm_courses WHERE title = 'Spring Boot 기초 과정' AND tenant_id = 1), 'DESIGNER', 70, NOW(), NOW();
 INSERT INTO user_course_roles (tenant_id, user_id, course_id, role, revenue_share_percent, created_at, updated_at)
 SELECT 1, (SELECT id FROM users WHERE email = 'creator@default.com'),
- (SELECT id FROM cm_programs WHERE title = 'React & TypeScript 실전' AND tenant_id = 1), 'DESIGNER', 70, NOW(), NOW();
+ (SELECT id FROM cm_courses WHERE title = 'React & TypeScript 실전' AND tenant_id = 1), 'DESIGNER', 70, NOW(), NOW();
 
 -- designer3@default.com: USER + DESIGNER (프로그램 아직 미승인)
 -- DESIGNER 역할만 (courseId = null, 테넌트 레벨)
@@ -1025,13 +1061,16 @@ SELECT 1, 1, '[테스트] 백엔드 개발자 성장 로드맵 (DRAFT)',
 WHERE NOT EXISTS (SELECT 1 FROM roadmaps WHERE id = 1);
 
 -- Roadmap 1에 프로그램 연결 (Spring Boot 기초 과정, AWS 클라우드 아키텍처)
+-- [DISABLED] Program 엔티티 제거로 인해 주석 처리
+/*
 INSERT INTO roadmap_programs (roadmap_id, program_id, order_index)
-SELECT 1, (SELECT id FROM cm_programs WHERE title = 'Spring Boot 기초 과정' AND tenant_id = 1), 0
-WHERE NOT EXISTS (SELECT 1 FROM roadmap_programs WHERE roadmap_id = 1 AND program_id = (SELECT id FROM cm_programs WHERE title = 'Spring Boot 기초 과정' AND tenant_id = 1));
+SELECT 1, (SELECT id FROM cm_courses WHERE title = 'Spring Boot 기초 과정' AND tenant_id = 1), 0
+WHERE NOT EXISTS (SELECT 1 FROM roadmap_programs WHERE roadmap_id = 1 AND program_id = (SELECT id FROM cm_courses WHERE title = 'Spring Boot 기초 과정' AND tenant_id = 1));
 
 INSERT INTO roadmap_programs (roadmap_id, program_id, order_index)
-SELECT 1, (SELECT id FROM cm_programs WHERE title = 'AWS 클라우드 아키텍처' AND tenant_id = 1), 1
-WHERE NOT EXISTS (SELECT 1 FROM roadmap_programs WHERE roadmap_id = 1 AND program_id = (SELECT id FROM cm_programs WHERE title = 'AWS 클라우드 아키텍처' AND tenant_id = 1));
+SELECT 1, (SELECT id FROM cm_courses WHERE title = 'AWS 클라우드 아키텍처' AND tenant_id = 1), 1
+WHERE NOT EXISTS (SELECT 1 FROM roadmap_programs WHERE roadmap_id = 1 AND program_id = (SELECT id FROM cm_courses WHERE title = 'AWS 클라우드 아키텍처' AND tenant_id = 1));
+*/
 
 -- Roadmap 2: PUBLISHED 상태 (수강생 0명)
 -- → 프로그램 삭제, 순서 변경 허용
@@ -1042,13 +1081,16 @@ SELECT 2, 1, '[테스트] 프론트엔드 마스터 로드맵 (공개 - 수강�
 WHERE NOT EXISTS (SELECT 1 FROM roadmaps WHERE id = 2);
 
 -- Roadmap 2에 프로그램 연결 (Spring Boot 기초 과정, Java 프로그래밍 마스터)
+-- [DISABLED] Program 엔티티 제거로 인해 주석 처리
+/*
 INSERT INTO roadmap_programs (roadmap_id, program_id, order_index)
-SELECT 2, (SELECT id FROM cm_programs WHERE title = 'Spring Boot 기초 과정' AND tenant_id = 1), 0
-WHERE NOT EXISTS (SELECT 1 FROM roadmap_programs WHERE roadmap_id = 2 AND program_id = (SELECT id FROM cm_programs WHERE title = 'Spring Boot 기초 과정' AND tenant_id = 1));
+SELECT 2, (SELECT id FROM cm_courses WHERE title = 'Spring Boot 기초 과정' AND tenant_id = 1), 0
+WHERE NOT EXISTS (SELECT 1 FROM roadmap_programs WHERE roadmap_id = 2 AND program_id = (SELECT id FROM cm_courses WHERE title = 'Spring Boot 기초 과정' AND tenant_id = 1));
 
 INSERT INTO roadmap_programs (roadmap_id, program_id, order_index)
-SELECT 2, (SELECT id FROM cm_programs WHERE title = 'Java 프로그래밍 마스터' AND tenant_id = 1), 1
-WHERE NOT EXISTS (SELECT 1 FROM roadmap_programs WHERE roadmap_id = 2 AND program_id = (SELECT id FROM cm_programs WHERE title = 'Java 프로그래밍 마스터' AND tenant_id = 1));
+SELECT 2, (SELECT id FROM cm_courses WHERE title = 'Java 프로그래밍 마스터' AND tenant_id = 1), 1
+WHERE NOT EXISTS (SELECT 1 FROM roadmap_programs WHERE roadmap_id = 2 AND program_id = (SELECT id FROM cm_courses WHERE title = 'Java 프로그래밍 마스터' AND tenant_id = 1));
+*/
 
 -- Roadmap 3: PUBLISHED 상태 (수강생 3명)
 -- → 프로그램 삭제, 순서 변경 차단 (핵심 테스트 대상)
@@ -1060,17 +1102,20 @@ SELECT 3, 1, '[테스트] 풀스택 개발자 로드맵 (공개 - 수강생 있�
 WHERE NOT EXISTS (SELECT 1 FROM roadmaps WHERE id = 3);
 
 -- Roadmap 3에 프로그램 연결 (Spring Boot 기초 과정, AWS 클라우드 아키텍처, SQL 완전 정복)
+-- [DISABLED] Program 엔티티 제거로 인해 주석 처리
+/*
 INSERT INTO roadmap_programs (roadmap_id, program_id, order_index)
-SELECT 3, (SELECT id FROM cm_programs WHERE title = 'Spring Boot 기초 과정' AND tenant_id = 1), 0
-WHERE NOT EXISTS (SELECT 1 FROM roadmap_programs WHERE roadmap_id = 3 AND program_id = (SELECT id FROM cm_programs WHERE title = 'Spring Boot 기초 과정' AND tenant_id = 1));
+SELECT 3, (SELECT id FROM cm_courses WHERE title = 'Spring Boot 기초 과정' AND tenant_id = 1), 0
+WHERE NOT EXISTS (SELECT 1 FROM roadmap_programs WHERE roadmap_id = 3 AND program_id = (SELECT id FROM cm_courses WHERE title = 'Spring Boot 기초 과정' AND tenant_id = 1));
 
 INSERT INTO roadmap_programs (roadmap_id, program_id, order_index)
-SELECT 3, (SELECT id FROM cm_programs WHERE title = 'AWS 클라우드 아키텍처' AND tenant_id = 1), 1
-WHERE NOT EXISTS (SELECT 1 FROM roadmap_programs WHERE roadmap_id = 3 AND program_id = (SELECT id FROM cm_programs WHERE title = 'AWS 클라우드 아키텍처' AND tenant_id = 1));
+SELECT 3, (SELECT id FROM cm_courses WHERE title = 'AWS 클라우드 아키텍처' AND tenant_id = 1), 1
+WHERE NOT EXISTS (SELECT 1 FROM roadmap_programs WHERE roadmap_id = 3 AND program_id = (SELECT id FROM cm_courses WHERE title = 'AWS 클라우드 아키텍처' AND tenant_id = 1));
 
 INSERT INTO roadmap_programs (roadmap_id, program_id, order_index)
-SELECT 3, (SELECT id FROM cm_programs WHERE title = 'SQL 완전 정복' AND tenant_id = 1), 2
-WHERE NOT EXISTS (SELECT 1 FROM roadmap_programs WHERE roadmap_id = 3 AND program_id = (SELECT id FROM cm_programs WHERE title = 'SQL 완전 정복' AND tenant_id = 1));
+SELECT 3, (SELECT id FROM cm_courses WHERE title = 'SQL 완전 정복' AND tenant_id = 1), 2
+WHERE NOT EXISTS (SELECT 1 FROM roadmap_programs WHERE roadmap_id = 3 AND program_id = (SELECT id FROM cm_courses WHERE title = 'SQL 완전 정복' AND tenant_id = 1));
+*/
 
 -- =============================================
 -- 15. 테넌트 2 (A사 교육센터) 카테고리 데이터
@@ -1279,8 +1324,9 @@ INSERT INTO cm_snapshots (tenant_id, source_course_id, snapshot_name, descriptio
  (SELECT id FROM users WHERE email = 'designer1@company-b.com'), NOW() - INTERVAL 23 DAY, NOW());
 
 -- =============================================
--- 21. 테넌트 2 프로그램 데이터 (APPROVED 상태)
+-- 21. 테넌트 2 프로그램 데이터 (APPROVED 상태) - cm_programs 테이블 제거로 비활성화
 -- =============================================
+/*
 INSERT INTO cm_programs (tenant_id, title, description, level, type, estimated_hours, snapshot_id, status, created_by, submitted_at, approved_by, approved_at, rejection_reason, rejected_at, created_at, updated_at, version) VALUES
 (2, '영업 기초 이론 과정', 'B2B 영업의 기본 개념과 프로세스를 학습합니다.', 'BEGINNER', 'ONLINE', 10,
  (SELECT id FROM cm_snapshots WHERE snapshot_name = '영업 기초 이론 v1' AND tenant_id = 2),
@@ -1300,10 +1346,12 @@ INSERT INTO cm_programs (tenant_id, title, description, level, type, estimated_h
 (2, '개인정보보호법 과정', '개인정보 처리 및 보호 의무 교육입니다.', 'BEGINNER', 'ONLINE', 4,
  (SELECT id FROM cm_snapshots WHERE snapshot_name = '개인정보보호법 v1' AND tenant_id = 2),
  'APPROVED', (SELECT id FROM users WHERE email = 'designer2@company-a.com'), NOW() - INTERVAL 38 DAY, (SELECT id FROM users WHERE email = 'operator1@company-a.com'), NOW() - INTERVAL 36 DAY, NULL, NULL, NOW() - INTERVAL 43 DAY, NOW(), 0);
+*/
 
 -- =============================================
--- 22. 테넌트 3 프로그램 데이터 (APPROVED 상태)
+-- 22. 테넌트 3 프로그램 데이터 (APPROVED 상태) - cm_programs 테이블 제거로 비활성화
 -- =============================================
+/*
 INSERT INTO cm_programs (tenant_id, title, description, level, type, estimated_hours, snapshot_id, status, created_by, submitted_at, approved_by, approved_at, rejection_reason, rejected_at, created_at, updated_at, version) VALUES
 (3, '스타트업 101 과정', '스타트업 창업의 기본을 배웁니다.', 'BEGINNER', 'ONLINE', 8,
  (SELECT id FROM cm_snapshots WHERE snapshot_name = '스타트업 101 v1' AND tenant_id = 3),
@@ -1323,49 +1371,50 @@ INSERT INTO cm_programs (tenant_id, title, description, level, type, estimated_h
 (3, '린 스타트업 방법론 과정', '빠른 실험과 검증 기반 성장 방법을 배웁니다.', 'INTERMEDIATE', 'ONLINE', 12,
  (SELECT id FROM cm_snapshots WHERE snapshot_name = '린 스타트업 방법론 v1' AND tenant_id = 3),
  'APPROVED', (SELECT id FROM users WHERE email = 'designer1@company-b.com'), NOW() - INTERVAL 18 DAY, (SELECT id FROM users WHERE email = 'operator1@company-b.com'), NOW() - INTERVAL 16 DAY, NULL, NULL, NOW() - INTERVAL 23 DAY, NOW(), 0);
+*/
 
 -- =============================================
 -- 23. 테넌트 2 차수 데이터
 -- =============================================
 INSERT INTO course_times (
-    tenant_id, program_id, title, delivery_type, status,
+    tenant_id, course_id, title, delivery_type, status,
     enroll_start_date, enroll_end_date, class_start_date, class_end_date,
     capacity, max_waiting_count, current_enrollment, enrollment_method,
     min_progress_for_completion, price, is_free, allow_late_enrollment,
     created_by, created_at, updated_at, version
 ) VALUES
 -- 영업 기초 이론
-(2, (SELECT id FROM cm_programs WHERE title = '영업 기초 이론 과정' AND tenant_id = 2),
+(2, (SELECT id FROM cm_courses WHERE title = '영업 기초 이론 과정' AND tenant_id = 2),
  '영업 기초 이론 1차', 'ONLINE', 'ONGOING',
  '2025-12-01', '2025-12-20', '2025-12-25', '2026-01-25',
  50, 10, 35, 'FIRST_COME', 80, 0.00, true, true,
  (SELECT id FROM users WHERE email = 'operator1@company-a.com'), NOW(), NOW(), 0),
 -- 팀 리더십 기초
-(2, (SELECT id FROM cm_programs WHERE title = '팀 리더십 기초 과정' AND tenant_id = 2),
+(2, (SELECT id FROM cm_courses WHERE title = '팀 리더십 기초 과정' AND tenant_id = 2),
  '팀 리더십 기초 1차', 'ONLINE', 'RECRUITING',
  '2026-01-01', '2026-01-15', '2026-01-20', '2026-02-20',
  30, 5, 18, 'APPROVAL', 85, 50000.00, false, false,
  (SELECT id FROM users WHERE email = 'operator1@company-a.com'), NOW(), NOW(), 0),
 -- 신입사원 OJT
-(2, (SELECT id FROM cm_programs WHERE title = '신입사원 OJT 과정' AND tenant_id = 2),
+(2, (SELECT id FROM cm_courses WHERE title = '신입사원 OJT 과정' AND tenant_id = 2),
  '신입사원 OJT 2026년 1분기', 'BLENDED', 'ONGOING',
  '2025-12-15', '2025-12-31', '2026-01-02', '2026-02-28',
  20, 0, 20, 'INVITE_ONLY', 90, 0.00, true, false,
  (SELECT id FROM users WHERE email = 'operator1@company-a.com'), NOW(), NOW(), 0),
 -- 정보보안 기초
-(2, (SELECT id FROM cm_programs WHERE title = '정보보안 기초 과정' AND tenant_id = 2),
+(2, (SELECT id FROM cm_courses WHERE title = '정보보안 기초 과정' AND tenant_id = 2),
  '정보보안 기초 2026년', 'ONLINE', 'ONGOING',
  '2026-01-01', '2026-12-31', '2026-01-01', '2026-12-31',
  500, 0, 120, 'FIRST_COME', 100, 0.00, true, true,
  (SELECT id FROM users WHERE email = 'operator1@company-a.com'), NOW(), NOW(), 0),
 -- 협상 스킬 마스터
-(2, (SELECT id FROM cm_programs WHERE title = '협상 스킬 마스터 과정' AND tenant_id = 2),
+(2, (SELECT id FROM cm_courses WHERE title = '협상 스킬 마스터 과정' AND tenant_id = 2),
  '협상 스킬 마스터 1차', 'ONLINE', 'CLOSED',
  '2025-10-01', '2025-10-15', '2025-10-20', '2025-12-20',
  25, 5, 22, 'FIRST_COME', 80, 80000.00, false, false,
  (SELECT id FROM users WHERE email = 'operator1@company-a.com'), NOW(), NOW(), 0),
 -- 개인정보보호법
-(2, (SELECT id FROM cm_programs WHERE title = '개인정보보호법 과정' AND tenant_id = 2),
+(2, (SELECT id FROM cm_courses WHERE title = '개인정보보호법 과정' AND tenant_id = 2),
  '개인정보보호법 2026년', 'ONLINE', 'ONGOING',
  '2026-01-01', '2026-12-31', '2026-01-01', '2026-12-31',
  500, 0, 95, 'FIRST_COME', 100, 0.00, true, true,
@@ -1375,44 +1424,44 @@ INSERT INTO course_times (
 -- 24. 테넌트 3 차수 데이터
 -- =============================================
 INSERT INTO course_times (
-    tenant_id, program_id, title, delivery_type, status,
+    tenant_id, course_id, title, delivery_type, status,
     enroll_start_date, enroll_end_date, class_start_date, class_end_date,
     capacity, max_waiting_count, current_enrollment, enrollment_method,
     min_progress_for_completion, price, is_free, allow_late_enrollment,
     created_by, created_at, updated_at, version
 ) VALUES
 -- 스타트업 101
-(3, (SELECT id FROM cm_programs WHERE title = '스타트업 101 과정' AND tenant_id = 3),
+(3, (SELECT id FROM cm_courses WHERE title = '스타트업 101 과정' AND tenant_id = 3),
  '스타트업 101 1차', 'ONLINE', 'ONGOING',
  '2025-12-01', '2025-12-20', '2025-12-25', '2026-01-25',
  100, 20, 67, 'FIRST_COME', 70, 0.00, true, true,
  (SELECT id FROM users WHERE email = 'operator1@company-b.com'), NOW(), NOW(), 0),
 -- 디지털 마케팅 기초
-(3, (SELECT id FROM cm_programs WHERE title = '디지털 마케팅 기초 과정' AND tenant_id = 3),
+(3, (SELECT id FROM cm_courses WHERE title = '디지털 마케팅 기초 과정' AND tenant_id = 3),
  '디지털 마케팅 기초 1차', 'ONLINE', 'RECRUITING',
  '2026-01-01', '2026-01-20', '2026-01-25', '2026-03-25',
  50, 10, 32, 'FIRST_COME', 75, 30000.00, false, true,
  (SELECT id FROM users WHERE email = 'operator1@company-b.com'), NOW(), NOW(), 0),
 -- 프로덕트 매니지먼트
-(3, (SELECT id FROM cm_programs WHERE title = '프로덕트 매니지먼트 과정' AND tenant_id = 3),
+(3, (SELECT id FROM cm_courses WHERE title = '프로덕트 매니지먼트 과정' AND tenant_id = 3),
  '프로덕트 매니지먼트 1차', 'ONLINE', 'ONGOING',
  '2025-11-15', '2025-12-15', '2025-12-20', '2026-02-20',
  40, 5, 38, 'APPROVAL', 80, 100000.00, false, false,
  (SELECT id FROM users WHERE email = 'operator1@company-b.com'), NOW(), NOW(), 0),
 -- 그로스해킹 기초
-(3, (SELECT id FROM cm_programs WHERE title = '그로스해킹 기초 과정' AND tenant_id = 3),
+(3, (SELECT id FROM cm_courses WHERE title = '그로스해킹 기초 과정' AND tenant_id = 3),
  '그로스해킹 기초 1차', 'ONLINE', 'RECRUITING',
  '2026-01-05', '2026-01-25', '2026-02-01', '2026-03-01',
  60, 10, 25, 'FIRST_COME', 75, 50000.00, false, true,
  (SELECT id FROM users WHERE email = 'operator1@company-b.com'), NOW(), NOW(), 0),
 -- IR 피칭 전략
-(3, (SELECT id FROM cm_programs WHERE title = 'IR 피칭 전략 과정' AND tenant_id = 3),
+(3, (SELECT id FROM cm_courses WHERE title = 'IR 피칭 전략 과정' AND tenant_id = 3),
  'IR 피칭 전략 1차', 'ONLINE', 'CLOSED',
  '2025-09-01', '2025-09-20', '2025-10-01', '2025-11-30',
  30, 5, 28, 'APPROVAL', 85, 150000.00, false, false,
  (SELECT id FROM users WHERE email = 'operator1@company-b.com'), NOW(), NOW(), 0),
 -- 린 스타트업 방법론
-(3, (SELECT id FROM cm_programs WHERE title = '린 스타트업 방법론 과정' AND tenant_id = 3),
+(3, (SELECT id FROM cm_courses WHERE title = '린 스타트업 방법론 과정' AND tenant_id = 3),
  '린 스타트업 방법론 1차', 'ONLINE', 'ONGOING',
  '2025-12-10', '2025-12-25', '2026-01-01', '2026-02-15',
  45, 8, 42, 'FIRST_COME', 80, 70000.00, false, true,
@@ -1648,23 +1697,26 @@ SELECT 2, '신입사원 필수 교육 로드맵',
        (SELECT id FROM users WHERE email = 'admin@company-a.com'), 'PUBLISHED', 20, NOW() - INTERVAL 30 DAY, NOW()
 WHERE NOT EXISTS (SELECT 1 FROM roadmaps WHERE title = '신입사원 필수 교육 로드맵' AND tenant_id = 2);
 
+-- [DISABLED] Program 엔티티 제거로 인해 주석 처리
+/*
 INSERT INTO roadmap_programs (roadmap_id, program_id, order_index)
 SELECT (SELECT id FROM roadmaps WHERE title = '신입사원 필수 교육 로드맵' AND tenant_id = 2),
-       (SELECT id FROM cm_programs WHERE title = '신입사원 OJT 과정' AND tenant_id = 2), 0
+       (SELECT id FROM cm_courses WHERE title = '신입사원 OJT 과정' AND tenant_id = 2), 0
 WHERE NOT EXISTS (SELECT 1 FROM roadmap_programs WHERE roadmap_id = (SELECT id FROM roadmaps WHERE title = '신입사원 필수 교육 로드맵' AND tenant_id = 2)
-AND program_id = (SELECT id FROM cm_programs WHERE title = '신입사원 OJT 과정' AND tenant_id = 2));
+AND program_id = (SELECT id FROM cm_courses WHERE title = '신입사원 OJT 과정' AND tenant_id = 2));
 
 INSERT INTO roadmap_programs (roadmap_id, program_id, order_index)
 SELECT (SELECT id FROM roadmaps WHERE title = '신입사원 필수 교육 로드맵' AND tenant_id = 2),
-       (SELECT id FROM cm_programs WHERE title = '정보보안 기초 과정' AND tenant_id = 2), 1
+       (SELECT id FROM cm_courses WHERE title = '정보보안 기초 과정' AND tenant_id = 2), 1
 WHERE NOT EXISTS (SELECT 1 FROM roadmap_programs WHERE roadmap_id = (SELECT id FROM roadmaps WHERE title = '신입사원 필수 교육 로드맵' AND tenant_id = 2)
-AND program_id = (SELECT id FROM cm_programs WHERE title = '정보보안 기초 과정' AND tenant_id = 2));
+AND program_id = (SELECT id FROM cm_courses WHERE title = '정보보안 기초 과정' AND tenant_id = 2));
 
 INSERT INTO roadmap_programs (roadmap_id, program_id, order_index)
 SELECT (SELECT id FROM roadmaps WHERE title = '신입사원 필수 교육 로드맵' AND tenant_id = 2),
-       (SELECT id FROM cm_programs WHERE title = '개인정보보호법 과정' AND tenant_id = 2), 2
+       (SELECT id FROM cm_courses WHERE title = '개인정보보호법 과정' AND tenant_id = 2), 2
 WHERE NOT EXISTS (SELECT 1 FROM roadmap_programs WHERE roadmap_id = (SELECT id FROM roadmaps WHERE title = '신입사원 필수 교육 로드맵' AND tenant_id = 2)
-AND program_id = (SELECT id FROM cm_programs WHERE title = '개인정보보호법 과정' AND tenant_id = 2));
+AND program_id = (SELECT id FROM cm_courses WHERE title = '개인정보보호법 과정' AND tenant_id = 2));
+*/
 
 -- 테넌트 3 로드맵: 창업가 성장 로드맵
 INSERT INTO roadmaps (tenant_id, title, description, author_id, status, enrolled_students, created_at, updated_at)
@@ -1673,23 +1725,26 @@ SELECT 3, '예비 창업가 성장 로드맵',
        (SELECT id FROM users WHERE email = 'admin@company-b.com'), 'PUBLISHED', 15, NOW() - INTERVAL 25 DAY, NOW()
 WHERE NOT EXISTS (SELECT 1 FROM roadmaps WHERE title = '예비 창업가 성장 로드맵' AND tenant_id = 3);
 
+-- [DISABLED] Program 엔티티 제거로 인해 주석 처리
+/*
 INSERT INTO roadmap_programs (roadmap_id, program_id, order_index)
 SELECT (SELECT id FROM roadmaps WHERE title = '예비 창업가 성장 로드맵' AND tenant_id = 3),
-       (SELECT id FROM cm_programs WHERE title = '스타트업 101 과정' AND tenant_id = 3), 0
+       (SELECT id FROM cm_courses WHERE title = '스타트업 101 과정' AND tenant_id = 3), 0
 WHERE NOT EXISTS (SELECT 1 FROM roadmap_programs WHERE roadmap_id = (SELECT id FROM roadmaps WHERE title = '예비 창업가 성장 로드맵' AND tenant_id = 3)
-AND program_id = (SELECT id FROM cm_programs WHERE title = '스타트업 101 과정' AND tenant_id = 3));
+AND program_id = (SELECT id FROM cm_courses WHERE title = '스타트업 101 과정' AND tenant_id = 3));
 
 INSERT INTO roadmap_programs (roadmap_id, program_id, order_index)
 SELECT (SELECT id FROM roadmaps WHERE title = '예비 창업가 성장 로드맵' AND tenant_id = 3),
-       (SELECT id FROM cm_programs WHERE title = '린 스타트업 방법론 과정' AND tenant_id = 3), 1
+       (SELECT id FROM cm_courses WHERE title = '린 스타트업 방법론 과정' AND tenant_id = 3), 1
 WHERE NOT EXISTS (SELECT 1 FROM roadmap_programs WHERE roadmap_id = (SELECT id FROM roadmaps WHERE title = '예비 창업가 성장 로드맵' AND tenant_id = 3)
-AND program_id = (SELECT id FROM cm_programs WHERE title = '린 스타트업 방법론 과정' AND tenant_id = 3));
+AND program_id = (SELECT id FROM cm_courses WHERE title = '린 스타트업 방법론 과정' AND tenant_id = 3));
 
 INSERT INTO roadmap_programs (roadmap_id, program_id, order_index)
 SELECT (SELECT id FROM roadmaps WHERE title = '예비 창업가 성장 로드맵' AND tenant_id = 3),
-       (SELECT id FROM cm_programs WHERE title = 'IR 피칭 전략 과정' AND tenant_id = 3), 2
+       (SELECT id FROM cm_courses WHERE title = 'IR 피칭 전략 과정' AND tenant_id = 3), 2
 WHERE NOT EXISTS (SELECT 1 FROM roadmap_programs WHERE roadmap_id = (SELECT id FROM roadmaps WHERE title = '예비 창업가 성장 로드맵' AND tenant_id = 3)
-AND program_id = (SELECT id FROM cm_programs WHERE title = 'IR 피칭 전략 과정' AND tenant_id = 3));
+AND program_id = (SELECT id FROM cm_courses WHERE title = 'IR 피칭 전략 과정' AND tenant_id = 3));
+*/
 
 -- =============================================
 -- 31. 커뮤니티 댓글 데이터 (테넌트별)

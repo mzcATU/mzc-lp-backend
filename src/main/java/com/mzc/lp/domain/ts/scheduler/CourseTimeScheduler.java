@@ -2,6 +2,7 @@ package com.mzc.lp.domain.ts.scheduler;
 
 import com.mzc.lp.domain.notification.constant.NotificationType;
 import com.mzc.lp.domain.notification.service.NotificationService;
+import com.mzc.lp.domain.student.entity.Enrollment;
 import com.mzc.lp.domain.student.repository.EnrollmentRepository;
 import com.mzc.lp.domain.ts.constant.CourseTimeStatus;
 import com.mzc.lp.domain.ts.entity.CourseTime;
@@ -72,30 +73,30 @@ public class CourseTimeScheduler {
      */
     private void sendCourseStartNotifications(CourseTime courseTime) {
         try {
-            List<Long> userIds = enrollmentRepository.findUserIdsByCourseTimeId(courseTime.getId());
+            List<Enrollment> enrollments = enrollmentRepository.findAllByCourseTimeId(courseTime.getId());
             log.info("[Batch] Sending course start notification to {} users for courseTime: {}",
-                    userIds.size(), courseTime.getId());
+                    enrollments.size(), courseTime.getId());
 
             String title = "강의 시작 안내";
             String message = String.format("[%s] 강의가 시작되었습니다.", courseTime.getTitle());
-            String link = "/my-courses/" + courseTime.getId();
 
-            for (Long userId : userIds) {
+            for (Enrollment enrollment : enrollments) {
                 try {
+                    String link = "/my-courses/" + enrollment.getId();
                     notificationService.createNotification(
-                            userId,
+                            enrollment.getUserId(),
                             NotificationType.COURSE,
                             title,
                             message,
                             link,
-                            courseTime.getId(),
-                            "COURSE_TIME",
+                            enrollment.getId(),
+                            "ENROLLMENT",
                             null,
                             null
                     );
                 } catch (Exception e) {
                     log.warn("[Batch] Failed to send course start notification to user {}: {}",
-                            userId, e.getMessage());
+                            enrollment.getUserId(), e.getMessage());
                 }
             }
         } catch (Exception e) {
@@ -152,30 +153,30 @@ public class CourseTimeScheduler {
      */
     private void sendCourseEndNotifications(CourseTime courseTime) {
         try {
-            List<Long> userIds = enrollmentRepository.findUserIdsByCourseTimeId(courseTime.getId());
+            List<Enrollment> enrollments = enrollmentRepository.findAllByCourseTimeId(courseTime.getId());
             log.info("[Batch] Sending course end notification to {} users for courseTime: {}",
-                    userIds.size(), courseTime.getId());
+                    enrollments.size(), courseTime.getId());
 
             String title = "강의 종료 안내";
             String message = String.format("[%s] 강의가 종료되었습니다.", courseTime.getTitle());
-            String link = "/my-courses/" + courseTime.getId();
 
-            for (Long userId : userIds) {
+            for (Enrollment enrollment : enrollments) {
                 try {
+                    String link = "/my-courses/" + enrollment.getId();
                     notificationService.createNotification(
-                            userId,
+                            enrollment.getUserId(),
                             NotificationType.COURSE,
                             title,
                             message,
                             link,
-                            courseTime.getId(),
-                            "COURSE_TIME",
+                            enrollment.getId(),
+                            "ENROLLMENT",
                             null,
                             null
                     );
                 } catch (Exception e) {
                     log.warn("[Batch] Failed to send course end notification to user {}: {}",
-                            userId, e.getMessage());
+                            enrollment.getUserId(), e.getMessage());
                 }
             }
         } catch (Exception e) {
