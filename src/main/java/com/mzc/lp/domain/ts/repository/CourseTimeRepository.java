@@ -267,4 +267,15 @@ public interface CourseTimeRepository extends JpaRepository<CourseTime, Long>, J
     List<Long> findIdsByCourseIdInAndTenantId(
             @Param("courseIds") List<Long> courseIds,
             @Param("tenantId") Long tenantId);
+
+    /**
+     * Course ID 목록별 차수 카운트 일괄 조회
+     */
+    @Query("SELECT ct.course.id, COUNT(ct) FROM CourseTime ct " +
+            "WHERE ct.course.id IN :courseIds " +
+            "AND ct.tenantId = :tenantId " +
+            "GROUP BY ct.course.id")
+    List<Object[]> countByCourseIds(
+            @Param("courseIds") List<Long> courseIds,
+            @Param("tenantId") Long tenantId);
 }

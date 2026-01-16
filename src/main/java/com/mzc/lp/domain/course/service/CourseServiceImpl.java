@@ -14,6 +14,9 @@ import com.mzc.lp.domain.course.exception.CourseOwnershipException;
 import com.mzc.lp.domain.course.exception.InvalidCourseStatusTransitionException;
 import com.mzc.lp.domain.course.repository.CourseRepository;
 import com.mzc.lp.domain.course.repository.CourseReviewRepository;
+import com.mzc.lp.domain.category.entity.Category;
+import com.mzc.lp.domain.category.repository.CategoryRepository;
+import com.mzc.lp.domain.ts.repository.CourseTimeRepository;
 import com.mzc.lp.domain.user.entity.User;
 import com.mzc.lp.domain.user.repository.UserRepository;
 import com.mzc.lp.common.context.TenantContext;
@@ -37,6 +40,8 @@ public class CourseServiceImpl implements CourseService {
     private final CourseRepository courseRepository;
     private final CourseReviewRepository reviewRepository;
     private final UserRepository userRepository;
+    private final CategoryRepository categoryRepository;
+    private final CourseTimeRepository courseTimeRepository;
 
     @Override
     @Transactional
@@ -82,6 +87,8 @@ public class CourseServiceImpl implements CourseService {
             courses = courseRepository.findByTenantId(TenantContext.getCurrentTenantId(), pageable);
         }
 
+        Long tenantId = TenantContext.getCurrentTenantId();
+
         // creatorId 목록 추출 및 User 일괄 조회 (N+1 방지)
         List<Long> creatorIds = courses.getContent().stream()
                 .map(Course::getCreatedBy)
@@ -91,10 +98,28 @@ public class CourseServiceImpl implements CourseService {
 
         Map<Long, String> creatorNameMap = getCreatorNameMap(creatorIds);
 
+        // categoryId 목록 추출 및 Category 일괄 조회 (N+1 방지)
+        List<Long> categoryIds = courses.getContent().stream()
+                .map(Course::getCategoryId)
+                .filter(id -> id != null)
+                .distinct()
+                .toList();
+
+        Map<Long, String> categoryNameMap = getCategoryNameMap(categoryIds);
+
+        // courseId 목록 추출 및 timeCount 일괄 조회 (N+1 방지)
+        List<Long> courseIds = courses.getContent().stream()
+                .map(Course::getId)
+                .toList();
+
+        Map<Long, Integer> timeCountMap = getTimeCountMap(courseIds, tenantId);
+
         return courses.map(course -> CourseResponse.from(
                 course,
                 0,
-                creatorNameMap.get(course.getCreatedBy())
+                creatorNameMap.get(course.getCreatedBy()),
+                categoryNameMap.get(course.getCategoryId()),
+                timeCountMap.getOrDefault(course.getId(), 0)
         ));
     }
 
@@ -228,6 +253,28 @@ public class CourseServiceImpl implements CourseService {
                 .collect(Collectors.toMap(
                         User::getId,
                         User::getName
+                ));
+    }
+
+    private Map<Long, String> getCategoryNameMap(List<Long> categoryIds) {
+        if (categoryIds.isEmpty()) {
+            return Map.of();
+        }
+        return categoryRepository.findAllById(categoryIds).stream()
+                .collect(Collectors.toMap(
+                        Category::getId,
+                        Category::getName
+                ));
+    }
+
+    private Map<Long, Integer> getTimeCountMap(List<Long> courseIds, Long tenantId) {
+        if (courseIds.isEmpty()) {
+            return Map.of();
+        }
+        return courseTimeRepository.countByCourseIds(courseIds, tenantId).stream()
+                .collect(Collectors.toMap(
+                        row -> (Long) row[0],
+                        row -> ((Number) row[1]).intValue()
                 ));
     }
 
