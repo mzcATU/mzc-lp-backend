@@ -100,7 +100,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
                 savedEnrollment.getId(), userId, courseTimeId);
 
         // 수강신청 완료 알림 발송 (템플릿 기반)
-        sendEnrollmentCompleteNotification(tenantId, userId, courseTime);
+        sendEnrollmentCompleteNotification(tenantId, savedEnrollment, courseTime);
 
         return EnrollmentDetailResponse.from(savedEnrollment);
     }
@@ -143,7 +143,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
                 enrollments.add(EnrollmentResponse.from(savedEnrollment));
 
                 // 수강신청 완료 알림 발송 (템플릿 기반)
-                sendEnrollmentCompleteNotification(tenantId, userId, courseTime);
+                sendEnrollmentCompleteNotification(tenantId, savedEnrollment, courseTime);
             } catch (Exception e) {
                 log.warn("Failed to force enroll user: userId={}, error={}", userId, e.getMessage());
                 failures.add(new ForceEnrollResultResponse.FailureDetail(userId, e.getMessage()));
@@ -159,22 +159,22 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     /**
      * 수강신청 완료 알림 발송 (템플릿 기반)
      */
-    private void sendEnrollmentCompleteNotification(Long tenantId, Long userId, CourseTime courseTime) {
+    private void sendEnrollmentCompleteNotification(Long tenantId, Enrollment enrollment, CourseTime courseTime) {
         try {
-            User user = userRepository.findById(userId).orElse(null);
+            User user = userRepository.findById(enrollment.getUserId()).orElse(null);
             String userName = user != null ? user.getName() : "회원";
             String courseName = courseTime.getTitle();
 
             notificationEventPublisher.publishEnrollmentComplete(
                     tenantId,
-                    userId,
+                    enrollment.getUserId(),
                     userName,
                     courseName,
-                    courseTime.getId()
+                    enrollment.getId()
             );
-            log.debug("Enrollment complete notification event published for user: {}", userId);
+            log.debug("Enrollment complete notification event published for user: {}", enrollment.getUserId());
         } catch (Exception e) {
-            log.warn("Failed to publish enrollment notification for user {}: {}", userId, e.getMessage());
+            log.warn("Failed to publish enrollment notification for user {}: {}", enrollment.getUserId(), e.getMessage());
         }
     }
 
@@ -191,14 +191,13 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
             CourseTime courseTime = courseTimeRepository.findById(enrollment.getCourseTimeId()).orElse(null);
             String courseName = courseTime != null ? courseTime.getTitle() : "과정";
-            Long courseTimeId = courseTime != null ? courseTime.getId() : enrollment.getCourseTimeId();
 
             notificationEventPublisher.publishCourseComplete(
                     tenantId,
                     userId,
                     userName,
                     courseName,
-                    courseTimeId
+                    enrollment.getId()
             );
             log.debug("Course complete notification event published for user: {}", userId);
         } catch (Exception e) {

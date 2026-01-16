@@ -63,30 +63,30 @@ public class NotificationEventPublisher {
     /**
      * 수강신청 완료 알림
      */
-    public void publishEnrollmentComplete(Long tenantId, Long userId, String userName, String courseName, Long courseTimeId) {
+    public void publishEnrollmentComplete(Long tenantId, Long userId, String userName, String courseName, Long enrollmentId) {
         publish(
                 NotificationTrigger.ENROLLMENT_COMPLETE,
                 tenantId,
                 userId,
                 Map.of("userName", userName, "courseName", courseName),
-                "/my-courses/" + courseTimeId,
-                courseTimeId,
-                "COURSE_TIME"
+                "/my-courses/" + enrollmentId,
+                enrollmentId,
+                "ENROLLMENT"
         );
     }
 
     /**
      * 과정 완료 축하 알림
      */
-    public void publishCourseComplete(Long tenantId, Long userId, String userName, String courseName, Long courseTimeId) {
+    public void publishCourseComplete(Long tenantId, Long userId, String userName, String courseName, Long enrollmentId) {
         publish(
                 NotificationTrigger.COURSE_COMPLETE,
                 tenantId,
                 userId,
                 Map.of("userName", userName, "courseName", courseName),
-                "/my-courses/" + courseTimeId,
-                courseTimeId,
-                "COURSE_TIME"
+                "/my-courses/" + enrollmentId,
+                enrollmentId,
+                "ENROLLMENT"
         );
     }
 }
