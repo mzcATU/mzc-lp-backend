@@ -180,8 +180,8 @@ public class TenantSettings extends BaseTimeEntity {
     public static TenantSettings createDefault(Tenant tenant) {
         TenantSettings settings = new TenantSettings();
         settings.tenant = tenant;
-        settings.primaryColor = "#3B82F6";
-        settings.secondaryColor = "#1E40AF";
+        settings.primaryColor = "#4C2D9A";
+        settings.secondaryColor = "#3D2478";
         settings.accentColor = "#10B981";
         settings.headingFont = "Pretendard";
         settings.bodyFont = "Pretendard";
