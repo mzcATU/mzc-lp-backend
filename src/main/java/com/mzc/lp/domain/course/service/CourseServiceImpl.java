@@ -14,6 +14,8 @@ import com.mzc.lp.domain.course.exception.CourseOwnershipException;
 import com.mzc.lp.domain.course.exception.InvalidCourseStatusTransitionException;
 import com.mzc.lp.domain.course.repository.CourseRepository;
 import com.mzc.lp.domain.course.repository.CourseReviewRepository;
+import com.mzc.lp.domain.user.entity.User;
+import com.mzc.lp.domain.user.repository.UserRepository;
 import com.mzc.lp.common.context.TenantContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +36,7 @@ public class CourseServiceImpl implements CourseService {
 
     private final CourseRepository courseRepository;
     private final CourseReviewRepository reviewRepository;
+    private final UserRepository userRepository;
 
     @Override
     @Transactional
@@ -79,7 +82,20 @@ public class CourseServiceImpl implements CourseService {
             courses = courseRepository.findByTenantId(TenantContext.getCurrentTenantId(), pageable);
         }
 
-        return courses.map(CourseResponse::from);
+        // creatorId 목록 추출 및 User 일괄 조회 (N+1 방지)
+        List<Long> creatorIds = courses.getContent().stream()
+                .map(Course::getCreatedBy)
+                .filter(id -> id != null)
+                .distinct()
+                .toList();
+
+        Map<Long, String> creatorNameMap = getCreatorNameMap(creatorIds);
+
+        return courses.map(course -> CourseResponse.from(
+                course,
+                0,
+                creatorNameMap.get(course.getCreatedBy())
+        ));
     }
 
     @Override
@@ -110,7 +126,15 @@ public class CourseServiceImpl implements CourseService {
             }
         }
 
-        return CourseDetailResponse.from(course, items, items.size(), averageRating, reviewCount);
+        // 생성자 이름 조회
+        String creatorName = null;
+        if (course.getCreatedBy() != null) {
+            creatorName = userRepository.findById(course.getCreatedBy())
+                    .map(User::getName)
+                    .orElse(null);
+        }
+
+        return CourseDetailResponse.from(course, items, items.size(), averageRating, reviewCount, creatorName);
     }
 
     @Override
@@ -193,6 +217,17 @@ public class CourseServiceImpl implements CourseService {
                 .collect(Collectors.toMap(
                         row -> (Long) row[0],
                         row -> ((Number) row[1]).intValue()
+                ));
+    }
+
+    private Map<Long, String> getCreatorNameMap(List<Long> creatorIds) {
+        if (creatorIds.isEmpty()) {
+            return Map.of();
+        }
+        return userRepository.findAllById(creatorIds).stream()
+                .collect(Collectors.toMap(
+                        User::getId,
+                        User::getName
                 ));
     }
 

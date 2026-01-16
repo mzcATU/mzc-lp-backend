@@ -25,7 +25,9 @@ public record CourseResponse(
         Instant createdAt,
         Instant updatedAt,
         boolean isComplete,
-        int itemCount
+        int itemCount,
+        Long creatorId,
+        String creatorName
 ) {
     /**
      * 완성도 판단 기준:
@@ -42,10 +44,14 @@ public record CourseResponse(
     }
 
     public static CourseResponse from(Course course) {
-        return from(course, 0);
+        return from(course, 0, null);
     }
 
     public static CourseResponse from(Course course, int itemCount) {
+        return from(course, itemCount, null);
+    }
+
+    public static CourseResponse from(Course course, int itemCount, String creatorName) {
         return new CourseResponse(
                 course.getId(),
                 course.getTitle(),
@@ -62,7 +68,9 @@ public record CourseResponse(
                 course.getCreatedAt(),
                 course.getUpdatedAt(),
                 checkCompleteness(course, itemCount),
-                itemCount
+                itemCount,
+                course.getCreatedBy(),
+                creatorName
         );
     }
 }

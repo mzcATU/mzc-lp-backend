@@ -3,7 +3,8 @@
     "allow": [
       "Bash(./gradlew test:*)",
       "Bash(taskkill //F //PID 175528)",
-      "Bash(./gradlew bootRun)"
+      "Bash(./gradlew bootRun)",
+      "Bash(git add:*)"
     ]
   }
 }
