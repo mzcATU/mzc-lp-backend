@@ -73,17 +73,20 @@ public class NotificationTemplateServiceImpl implements NotificationTemplateServ
     public List<NotificationTemplateResponse> getTemplates(NotificationCategory category) {
         Long tenantId = TenantContext.getCurrentTenantId();
 
-        // 템플릿이 하나도 없으면 기본 템플릿 자동 생성
+        // 누락된 기본 템플릿이 있으면 자동 생성
         long templateCount = templateRepository.countByTenantId(tenantId);
-        if (templateCount == 0) {
-            log.info("No templates found for tenant: {}. Initializing default templates.", tenantId);
+        int triggerCount = NotificationTrigger.values().length;
 
-            // 기본 템플릿 생성
+        if (templateCount < triggerCount) {
+            log.info("Missing templates found for tenant: {}. Current: {}, Expected: {}. Creating missing templates.",
+                    tenantId, templateCount, triggerCount);
+
+            // 누락된 템플릿 생성
             for (NotificationTrigger trigger : NotificationTrigger.values()) {
                 if (!templateRepository.existsByTenantIdAndTriggerType(tenantId, trigger)) {
                     NotificationTemplate template = NotificationTemplate.createDefault(trigger);
                     templateRepository.save(template);
-                    log.debug("Created default template: {} for tenant: {}", trigger, tenantId);
+                    log.info("Created default template: {} for tenant: {}", trigger, tenantId);
                 }
             }
         }
