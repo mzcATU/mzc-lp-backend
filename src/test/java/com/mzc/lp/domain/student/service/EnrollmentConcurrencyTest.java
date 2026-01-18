@@ -4,6 +4,7 @@ import com.mzc.lp.common.support.TenantTestSupport;
 import com.mzc.lp.domain.student.entity.Enrollment;
 import com.mzc.lp.domain.student.repository.EnrollmentRepository;
 import com.mzc.lp.domain.ts.constant.DeliveryType;
+import com.mzc.lp.domain.ts.constant.DurationType;
 import com.mzc.lp.domain.ts.constant.EnrollmentMethod;
 import com.mzc.lp.domain.ts.entity.CourseTime;
 import com.mzc.lp.domain.ts.repository.CourseTimeRepository;
@@ -59,10 +60,12 @@ class EnrollmentConcurrencyTest extends TenantTestSupport {
         courseTime = CourseTime.create(
                 "동시성 테스트 차수",
                 DeliveryType.ONLINE,
+                DurationType.FIXED,
                 LocalDate.now().minusDays(1),
                 LocalDate.now().plusDays(7),
                 LocalDate.now().plusDays(7),
                 LocalDate.now().plusDays(30),
+                null,
                 5,  // 정원 5명
                 0,
                 EnrollmentMethod.FIRST_COME,

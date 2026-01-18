@@ -3,6 +3,7 @@ import com.mzc.lp.common.support.TenantTestSupport;
 
 import com.mzc.lp.domain.ts.constant.CourseTimeStatus;
 import com.mzc.lp.domain.ts.constant.DeliveryType;
+import com.mzc.lp.domain.ts.constant.DurationType;
 import com.mzc.lp.domain.ts.constant.EnrollmentMethod;
 import com.mzc.lp.domain.ts.entity.CourseTime;
 import com.mzc.lp.domain.ts.repository.CourseTimeRepository;
@@ -38,10 +39,12 @@ class CourseTimeSchedulerTest extends TenantTestSupport {
         return CourseTime.create(
                 "테스트 차수",
                 DeliveryType.ONLINE,
+                DurationType.FIXED,
                 LocalDate.now().minusDays(30),
                 LocalDate.now().minusDays(1),
                 classStartDate,
                 classEndDate,
+                null,
                 30,
                 5,
                 EnrollmentMethod.FIRST_COME,

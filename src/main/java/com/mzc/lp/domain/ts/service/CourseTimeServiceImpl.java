@@ -17,15 +17,12 @@ import com.mzc.lp.domain.user.constant.CourseRole;
 import com.mzc.lp.domain.user.entity.UserCourseRole;
 import com.mzc.lp.domain.user.repository.UserCourseRoleRepository;
 import com.mzc.lp.domain.ts.constant.CourseTimeStatus;
-import com.mzc.lp.domain.ts.constant.EnrollmentMethod;
 import com.mzc.lp.domain.ts.dto.request.CloneCourseTimeRequest;
 import com.mzc.lp.domain.ts.dto.request.CreateCourseTimeRequest;
 import com.mzc.lp.domain.ts.dto.request.UpdateCourseTimeRequest;
-import com.mzc.lp.domain.ts.dto.response.CapacityResponse;
-import com.mzc.lp.domain.ts.dto.response.CourseTimeDetailResponse;
-import com.mzc.lp.domain.ts.dto.response.CourseTimeResponse;
-import com.mzc.lp.domain.ts.dto.response.PriceResponse;
+import com.mzc.lp.domain.ts.dto.response.*;
 import com.mzc.lp.domain.ts.entity.CourseTime;
+import com.mzc.lp.domain.ts.validator.CourseTimeConstraintValidator;
 import com.mzc.lp.domain.ts.exception.CapacityExceededException;
 import com.mzc.lp.domain.ts.exception.CourseTimeNotFoundException;
 import com.mzc.lp.domain.ts.exception.InvalidDateRangeException;
@@ -57,6 +54,7 @@ public class CourseTimeServiceImpl implements CourseTimeService {
     private final CourseRepository courseRepository;
     private final CourseSnapshotRepository snapshotRepository;
     private final SnapshotService snapshotService;
+    private final CourseTimeConstraintValidator constraintValidator;
 
     @Override
     public CourseTime getCourseTimeEntity(Long id) {
@@ -78,19 +76,29 @@ public class CourseTimeServiceImpl implements CourseTimeService {
             throw new CourseNotRegisteredException(request.courseId(), course.getStatus().name());
         }
 
-        // 비즈니스 규칙 검증
+        // 제약 조건 검증
+        CourseTimeValidationResult validationResult = constraintValidator.validate(request, course);
+        if (!validationResult.valid()) {
+            String errorMessages = validationResult.errors().stream()
+                    .map(e -> e.ruleCode() + ": " + e.message().messageCode())
+                    .reduce((a, b) -> a + ", " + b)
+                    .orElse("Validation failed");
+            throw new IllegalArgumentException(errorMessages);
+        }
+
+        // 기존 날짜 검증 (일부 중복되지만 기존 호환성 유지)
         validateDateRange(request);
-        validateLocationInfo(request);
-        validateEnrollmentMethod(request);
 
         // CourseTime 생성
         CourseTime courseTime = CourseTime.create(
                 request.title(),
                 request.deliveryType(),
+                request.durationType(),
                 request.enrollStartDate(),
                 request.enrollEndDate(),
                 request.classStartDate(),
                 request.classEndDate(),
+                request.durationDays(),
                 request.capacity(),
                 request.maxWaitingCount(),
                 request.enrollmentMethod(),
@@ -111,8 +119,8 @@ public class CourseTimeServiceImpl implements CourseTimeService {
         courseTime.linkCourseAndSnapshot(course, snapshot);
 
         CourseTime savedCourseTime = courseTimeRepository.save(courseTime);
-        log.info("Course time created from course: id={}, courseId={}, snapshotId={}",
-                savedCourseTime.getId(), request.courseId(), snapshot.getId());
+        log.info("Course time created from course: id={}, courseId={}, snapshotId={}, qualityRating={}",
+                savedCourseTime.getId(), request.courseId(), snapshot.getId(), validationResult.qualityRating());
 
         // DESIGNER를 MAIN 강사로 자동 배정
         List<InstructorAssignmentResponse> instructors = assignCourseDesignerAsMainInstructor(
@@ -213,9 +221,27 @@ public class CourseTimeServiceImpl implements CourseTimeService {
             throw new InvalidStatusTransitionException();
         }
 
+        // 제약 조건 검증
+        Course course = courseTime.getCourse();
+        CourseTimeValidationResult validationResult = constraintValidator.validate(request, courseTime, course);
+        if (!validationResult.valid()) {
+            String errorMessages = validationResult.errors().stream()
+                    .map(e -> e.ruleCode() + ": " + e.message().messageCode())
+                    .reduce((a, b) -> a + ", " + b)
+                    .orElse("Validation failed");
+            throw new IllegalArgumentException(errorMessages);
+        }
+
         // 부분 업데이트
         if (request.title() != null) {
             courseTime.updateTitle(request.title());
+        }
+
+        if (request.durationType() != null || request.durationDays() != null) {
+            courseTime.updateDurationType(
+                    request.durationType() != null ? request.durationType() : courseTime.getDurationType(),
+                    request.durationDays() != null ? request.durationDays() : courseTime.getDurationDays()
+            );
         }
 
         if (request.enrollStartDate() != null || request.enrollEndDate() != null
@@ -254,7 +280,7 @@ public class CourseTimeServiceImpl implements CourseTimeService {
             courseTime.updateMinProgress(request.minProgressForCompletion());
         }
 
-        log.info("Course time updated: id={}", id);
+        log.info("Course time updated: id={}, qualityRating={}", id, validationResult.qualityRating());
 
         List<InstructorAssignmentResponse> instructors =
                 instructorAssignmentService.getInstructorsByTimeId(id, AssignmentStatus.ACTIVE);
@@ -428,24 +454,6 @@ public class CourseTimeServiceImpl implements CourseTimeService {
         }
     }
 
-    private void validateLocationInfo(CreateCourseTimeRequest request) {
-        // [R10] OFFLINE/BLENDED일 때 location_info 필수
-        if ((request.deliveryType() == com.mzc.lp.domain.ts.constant.DeliveryType.OFFLINE
-                || request.deliveryType() == com.mzc.lp.domain.ts.constant.DeliveryType.BLENDED)
-                && (request.locationInfo() == null || request.locationInfo().isBlank())) {
-            throw new LocationRequiredException();
-        }
-    }
-
-    private void validateEnrollmentMethod(CreateCourseTimeRequest request) {
-        // [R53] APPROVAL + maxWaitingCount > 0 조합 불가
-        if (request.enrollmentMethod() == EnrollmentMethod.APPROVAL
-                && request.maxWaitingCount() != null
-                && request.maxWaitingCount() > 0) {
-            throw new IllegalArgumentException("승인제 모집에서는 대기자 기능을 사용할 수 없습니다");
-        }
-    }
-
     /**
      * DESIGNER(강의 설계자)를 차수의 MAIN 강사로 자동 배정
      */
@@ -542,5 +550,39 @@ public class CourseTimeServiceImpl implements CourseTimeService {
                 .orElseThrow(() -> new CourseTimeNotFoundException(id));
 
         return PriceResponse.from(courseTime);
+    }
+
+    // ========== Form Data & Validation ==========
+
+    @Override
+    public CourseTimeFormDataResponse getFormData(Long courseId) {
+        log.debug("Getting form data for course: courseId={}", courseId);
+
+        Course course = courseRepository.findByIdAndTenantId(courseId, TenantContext.getCurrentTenantId())
+                .orElseThrow(() -> new CourseNotFoundException(courseId));
+
+        return CourseTimeFormDataResponse.from(course);
+    }
+
+    @Override
+    public CourseTimeValidationResult validateCreateRequest(CreateCourseTimeRequest request) {
+        log.debug("Validating create request for course: courseId={}", request.courseId());
+
+        Course course = courseRepository.findByIdAndTenantId(request.courseId(), TenantContext.getCurrentTenantId())
+                .orElseThrow(() -> new CourseNotFoundException(request.courseId()));
+
+        return constraintValidator.validate(request, course);
+    }
+
+    @Override
+    public CourseTimeValidationResult validateUpdateRequest(Long courseTimeId, UpdateCourseTimeRequest request) {
+        log.debug("Validating update request for courseTime: id={}", courseTimeId);
+
+        CourseTime courseTime = courseTimeRepository.findByIdAndTenantId(courseTimeId, TenantContext.getCurrentTenantId())
+                .orElseThrow(() -> new CourseTimeNotFoundException(courseTimeId));
+
+        Course course = courseTime.getCourse();
+
+        return constraintValidator.validate(request, courseTime, course);
     }
 }

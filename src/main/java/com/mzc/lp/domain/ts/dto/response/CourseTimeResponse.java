@@ -3,6 +3,7 @@ package com.mzc.lp.domain.ts.dto.response;
 import com.mzc.lp.domain.iis.dto.response.InstructorAssignmentResponse;
 import com.mzc.lp.domain.ts.constant.CourseTimeStatus;
 import com.mzc.lp.domain.ts.constant.DeliveryType;
+import com.mzc.lp.domain.ts.constant.DurationType;
 import com.mzc.lp.domain.ts.constant.EnrollmentMethod;
 import com.mzc.lp.domain.ts.entity.CourseTime;
 
@@ -17,11 +18,13 @@ public record CourseTimeResponse(
         String title,
         String courseTitle,
         DeliveryType deliveryType,
+        DurationType durationType,
         CourseTimeStatus status,
         LocalDate enrollStartDate,
         LocalDate enrollEndDate,
         LocalDate classStartDate,
         LocalDate classEndDate,
+        Integer durationDays,
         Integer capacity,
         Integer currentEnrollment,
         Integer availableSeats,
@@ -43,11 +46,13 @@ public record CourseTimeResponse(
                 entity.getTitle(),
                 entity.getCourse() != null ? entity.getCourse().getTitle() : null,
                 entity.getDeliveryType(),
+                entity.getDurationType(),
                 entity.getStatus(),
                 entity.getEnrollStartDate(),
                 entity.getEnrollEndDate(),
                 entity.getClassStartDate(),
                 entity.getClassEndDate(),
+                entity.getDurationDays(),
                 entity.getCapacity(),
                 entity.getCurrentEnrollment(),
                 entity.getAvailableSeats(),

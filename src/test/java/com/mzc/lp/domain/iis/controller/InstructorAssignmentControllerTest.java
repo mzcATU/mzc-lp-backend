@@ -10,6 +10,7 @@ import com.mzc.lp.domain.iis.entity.InstructorAssignment;
 import com.mzc.lp.domain.iis.repository.AssignmentHistoryRepository;
 import com.mzc.lp.domain.iis.repository.InstructorAssignmentRepository;
 import com.mzc.lp.domain.ts.constant.DeliveryType;
+import com.mzc.lp.domain.ts.constant.DurationType;
 import com.mzc.lp.domain.ts.constant.EnrollmentMethod;
 import com.mzc.lp.domain.ts.entity.CourseTime;
 import com.mzc.lp.domain.ts.repository.CourseTimeRepository;
@@ -125,10 +126,12 @@ class InstructorAssignmentControllerTest extends TenantTestSupport {
         CourseTime courseTime = CourseTime.create(
                 "테스트 차수",
                 DeliveryType.ONLINE,
+                DurationType.FIXED,
                 LocalDate.now().minusDays(1),
                 LocalDate.now().plusDays(7),
                 LocalDate.now().plusDays(7),
                 LocalDate.now().plusDays(30),
+                null,
                 30,
                 5,
                 EnrollmentMethod.FIRST_COME,

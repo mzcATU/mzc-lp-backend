@@ -1,6 +1,7 @@
 package com.mzc.lp.domain.ts.dto.request;
 
 import com.mzc.lp.domain.ts.constant.DeliveryType;
+import com.mzc.lp.domain.ts.constant.DurationType;
 import com.mzc.lp.domain.ts.constant.EnrollmentMethod;
 import jakarta.validation.constraints.*;
 
@@ -13,6 +14,8 @@ public record UpdateCourseTimeRequest(
 
         DeliveryType deliveryType,
 
+        DurationType durationType,
+
         LocalDate enrollStartDate,
 
         LocalDate enrollEndDate,
@@ -20,6 +23,9 @@ public record UpdateCourseTimeRequest(
         LocalDate classStartDate,
 
         LocalDate classEndDate,
+
+        @Min(value = 1, message = "학습 일수는 1일 이상이어야 합니다")
+        Integer durationDays,
 
         @Min(value = 1, message = "정원은 1명 이상이어야 합니다")
         Integer capacity,

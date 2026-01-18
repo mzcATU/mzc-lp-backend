@@ -6,7 +6,9 @@ import com.mzc.lp.domain.ts.dto.request.CreateCourseTimeRequest;
 import com.mzc.lp.domain.ts.dto.request.UpdateCourseTimeRequest;
 import com.mzc.lp.domain.ts.dto.response.CapacityResponse;
 import com.mzc.lp.domain.ts.dto.response.CourseTimeDetailResponse;
+import com.mzc.lp.domain.ts.dto.response.CourseTimeFormDataResponse;
 import com.mzc.lp.domain.ts.dto.response.CourseTimeResponse;
+import com.mzc.lp.domain.ts.dto.response.CourseTimeValidationResult;
 import com.mzc.lp.domain.ts.dto.response.PriceResponse;
 import com.mzc.lp.domain.ts.entity.CourseTime;
 import org.springframework.data.domain.Page;
@@ -54,4 +56,11 @@ public interface CourseTimeService {
     CapacityResponse getCapacity(Long id);
 
     PriceResponse getPrice(Long id);
+
+    // Form Data & Validation
+    CourseTimeFormDataResponse getFormData(Long courseId);
+
+    CourseTimeValidationResult validateCreateRequest(CreateCourseTimeRequest request);
+
+    CourseTimeValidationResult validateUpdateRequest(Long courseTimeId, UpdateCourseTimeRequest request);
 }

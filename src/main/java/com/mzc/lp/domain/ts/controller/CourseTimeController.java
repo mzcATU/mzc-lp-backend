@@ -8,7 +8,9 @@ import com.mzc.lp.domain.ts.dto.request.CreateCourseTimeRequest;
 import com.mzc.lp.domain.ts.dto.request.UpdateCourseTimeRequest;
 import com.mzc.lp.domain.ts.dto.response.CapacityResponse;
 import com.mzc.lp.domain.ts.dto.response.CourseTimeDetailResponse;
+import com.mzc.lp.domain.ts.dto.response.CourseTimeFormDataResponse;
 import com.mzc.lp.domain.ts.dto.response.CourseTimeResponse;
+import com.mzc.lp.domain.ts.dto.response.CourseTimeValidationResult;
 import com.mzc.lp.domain.ts.dto.response.PriceResponse;
 import com.mzc.lp.domain.ts.service.CourseTimeService;
 import jakarta.validation.Valid;
@@ -144,6 +146,36 @@ public class CourseTimeController {
             @PathVariable Long id
     ) {
         PriceResponse response = courseTimeService.getPrice(id);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    // ========== Form Data & Validation API ==========
+
+    @GetMapping("/form-data")
+    @PreAuthorize("hasAnyRole('OPERATOR', 'TENANT_ADMIN')")
+    public ResponseEntity<ApiResponse<CourseTimeFormDataResponse>> getFormData(
+            @RequestParam Long courseId
+    ) {
+        CourseTimeFormDataResponse response = courseTimeService.getFormData(courseId);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @PostMapping("/validate")
+    @PreAuthorize("hasAnyRole('OPERATOR', 'TENANT_ADMIN')")
+    public ResponseEntity<ApiResponse<CourseTimeValidationResult>> validateCreateRequest(
+            @Valid @RequestBody CreateCourseTimeRequest request
+    ) {
+        CourseTimeValidationResult response = courseTimeService.validateCreateRequest(request);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @PostMapping("/{id}/validate")
+    @PreAuthorize("hasAnyRole('OPERATOR', 'TENANT_ADMIN')")
+    public ResponseEntity<ApiResponse<CourseTimeValidationResult>> validateUpdateRequest(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateCourseTimeRequest request
+    ) {
+        CourseTimeValidationResult response = courseTimeService.validateUpdateRequest(id, request);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 }

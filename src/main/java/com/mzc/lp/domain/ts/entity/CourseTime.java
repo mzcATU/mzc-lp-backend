@@ -5,6 +5,7 @@ import com.mzc.lp.domain.course.entity.Course;
 import com.mzc.lp.domain.snapshot.entity.CourseSnapshot;
 import com.mzc.lp.domain.ts.constant.CourseTimeStatus;
 import com.mzc.lp.domain.ts.constant.DeliveryType;
+import com.mzc.lp.domain.ts.constant.DurationType;
 import com.mzc.lp.domain.ts.constant.EnrollmentMethod;
 import com.mzc.lp.domain.ts.exception.InvalidStatusTransitionException;
 import jakarta.persistence.*;
@@ -61,8 +62,17 @@ public class CourseTime extends TenantEntity {
     @Column(name = "class_start_date", nullable = false)
     private LocalDate classStartDate;
 
-    @Column(name = "class_end_date", nullable = false)
+    @Column(name = "class_end_date")
     private LocalDate classEndDate;
+
+    // 학습 기간 유형
+    @Enumerated(EnumType.STRING)
+    @Column(name = "duration_type", nullable = false, length = 20)
+    private DurationType durationType;
+
+    // 학습 일수 (FIXED: 자동 계산, RELATIVE: 필수, UNLIMITED: null)
+    @Column(name = "duration_days")
+    private Integer durationDays;
 
     // 정원 (null = 무제한)
     private Integer capacity;
@@ -116,6 +126,7 @@ public class CourseTime extends TenantEntity {
         // 복제 대상 필드
         courseTime.course = source.course;
         courseTime.deliveryType = source.deliveryType;
+        courseTime.durationType = source.durationType;
         courseTime.capacity = source.capacity;
         courseTime.maxWaitingCount = source.maxWaitingCount;
         courseTime.enrollmentMethod = source.enrollmentMethod;
@@ -133,6 +144,13 @@ public class CourseTime extends TenantEntity {
         courseTime.classEndDate = classEndDate;
         courseTime.createdBy = createdBy;
 
+        // durationDays 계산 (FIXED 타입인 경우)
+        if (courseTime.durationType == DurationType.FIXED && classEndDate != null) {
+            courseTime.durationDays = (int) java.time.temporal.ChronoUnit.DAYS.between(classStartDate, classEndDate) + 1;
+        } else {
+            courseTime.durationDays = source.durationDays;
+        }
+
         // 고정 값
         courseTime.status = CourseTimeStatus.DRAFT;
         courseTime.currentEnrollment = 0;
@@ -143,10 +161,12 @@ public class CourseTime extends TenantEntity {
     public static CourseTime create(
             String title,
             DeliveryType deliveryType,
+            DurationType durationType,
             LocalDate enrollStartDate,
             LocalDate enrollEndDate,
             LocalDate classStartDate,
             LocalDate classEndDate,
+            Integer durationDays,
             Integer capacity,
             Integer maxWaitingCount,
             EnrollmentMethod enrollmentMethod,
@@ -160,11 +180,20 @@ public class CourseTime extends TenantEntity {
         CourseTime courseTime = new CourseTime();
         courseTime.title = title;
         courseTime.deliveryType = deliveryType;
+        courseTime.durationType = durationType;
         courseTime.status = CourseTimeStatus.DRAFT;
         courseTime.enrollStartDate = enrollStartDate;
         courseTime.enrollEndDate = enrollEndDate;
         courseTime.classStartDate = classStartDate;
         courseTime.classEndDate = classEndDate;
+
+        // durationDays 계산: FIXED는 자동 계산, RELATIVE는 입력값 사용, UNLIMITED는 null
+        if (durationType == DurationType.FIXED && classEndDate != null) {
+            courseTime.durationDays = (int) java.time.temporal.ChronoUnit.DAYS.between(classStartDate, classEndDate) + 1;
+        } else {
+            courseTime.durationDays = durationDays;
+        }
+
         courseTime.capacity = capacity;
         courseTime.maxWaitingCount = maxWaitingCount;
         courseTime.currentEnrollment = 0;
@@ -202,6 +231,28 @@ public class CourseTime extends TenantEntity {
         this.enrollEndDate = enrollEndDate;
         this.classStartDate = classStartDate;
         this.classEndDate = classEndDate;
+
+        // FIXED 타입이면 durationDays 자동 계산
+        if (this.durationType == DurationType.FIXED && classEndDate != null && classStartDate != null) {
+            this.durationDays = (int) java.time.temporal.ChronoUnit.DAYS.between(classStartDate, classEndDate) + 1;
+        }
+    }
+
+    public void updateDurationType(DurationType durationType, Integer durationDays) {
+        this.durationType = durationType;
+
+        if (durationType == DurationType.FIXED && this.classEndDate != null && this.classStartDate != null) {
+            // FIXED: 자동 계산
+            this.durationDays = (int) java.time.temporal.ChronoUnit.DAYS.between(this.classStartDate, this.classEndDate) + 1;
+        } else if (durationType == DurationType.UNLIMITED) {
+            // UNLIMITED: null
+            this.durationDays = null;
+            this.classEndDate = null;
+        } else {
+            // RELATIVE: 입력값 사용
+            this.durationDays = durationDays;
+            this.classEndDate = null;
+        }
     }
 
     public void updateCapacity(Integer capacity, Integer maxWaitingCount) {
