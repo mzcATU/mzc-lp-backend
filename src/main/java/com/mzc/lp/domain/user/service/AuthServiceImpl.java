@@ -1,11 +1,14 @@
 package com.mzc.lp.domain.user.service;
 
 import com.mzc.lp.common.security.JwtProvider;
+import com.mzc.lp.domain.analytics.constant.ActivityType;
+import com.mzc.lp.domain.analytics.service.ActivityLogService;
 import com.mzc.lp.domain.notification.event.NotificationEventPublisher;
 import com.mzc.lp.domain.user.constant.TenantRole;
 import com.mzc.lp.domain.user.dto.request.LoginRequest;
 import com.mzc.lp.domain.user.dto.request.RefreshTokenRequest;
 import com.mzc.lp.domain.user.dto.request.RegisterRequest;
+import com.mzc.lp.domain.user.dto.request.SwitchRoleRequest;
 import com.mzc.lp.domain.user.dto.response.TokenResponse;
 import com.mzc.lp.domain.user.dto.response.UserResponse;
 import com.mzc.lp.domain.user.entity.RefreshToken;
@@ -14,6 +17,7 @@ import com.mzc.lp.domain.user.constant.UserStatus;
 import com.mzc.lp.domain.user.exception.DuplicateEmailException;
 import com.mzc.lp.domain.user.exception.InvalidCredentialsException;
 import com.mzc.lp.domain.user.exception.InvalidTokenException;
+import com.mzc.lp.domain.user.exception.RoleNotAssignedException;
 import com.mzc.lp.domain.user.exception.UserNotFoundException;
 import com.mzc.lp.domain.user.repository.RefreshTokenRepository;
 import com.mzc.lp.domain.user.repository.UserRepository;
@@ -38,6 +42,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
     private final NotificationEventPublisher notificationEventPublisher;
+    private final ActivityLogService activityLogService;
 
     @Value("${jwt.access-expiration}")
     private long accessTokenExpiry;
@@ -181,5 +186,67 @@ public class AuthServiceImpl implements AuthService {
         refreshTokenRepository.findByTokenAndRevokedFalse(refreshToken)
                 .ifPresent(RefreshToken::revoke);
         log.info("User logged out");
+    }
+
+    @Override
+    @Transactional
+    public TokenResponse switchRole(Long userId, SwitchRoleRequest request) {
+        log.info("Role switch attempt: userId={}, targetRole={}", userId, request.targetRole());
+
+        // 사용자 조회 (userRoles를 함께 로딩)
+        User user = userRepository.findByIdWithRoles(userId)
+                .orElseThrow(UserNotFoundException::new);
+
+        // 요청한 역할을 사용자가 보유하고 있는지 확인
+        if (!user.hasRole(request.targetRole())) {
+            log.warn("Role switch failed: user does not have role. userId={}, targetRole={}",
+                    userId, request.targetRole());
+            throw new RoleNotAssignedException();
+        }
+
+        // 탈퇴/정지 사용자 체크
+        if (user.getStatus() == UserStatus.WITHDRAWN || user.getStatus() == UserStatus.SUSPENDED) {
+            throw new InvalidCredentialsException();
+        }
+
+        // 새 토큰 생성 (currentRole을 요청한 역할로 설정)
+        Set<String> roleNames = user.getRoles().stream()
+                .map(TenantRole::name)
+                .collect(Collectors.toSet());
+        String accessToken = jwtProvider.createAccessToken(
+                user.getId(),
+                user.getEmail(),
+                user.getRole().name(),
+                roleNames,
+                request.targetRole().name(),  // currentRole
+                user.getTenantId()
+        );
+        String refreshToken = jwtProvider.createRefreshToken(user.getId());
+
+        // 새 Refresh Token 저장
+        RefreshToken refreshTokenEntity = RefreshToken.create(
+                refreshToken,
+                user.getId(),
+                jwtProvider.getRefreshTokenExpiry()
+        );
+        refreshTokenRepository.save(refreshTokenEntity);
+
+        // 감사 로그 기록
+        activityLogService.log(
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                ActivityType.ROLE_CHANGE,
+                "역할 전환: " + request.targetRole().name(),
+                "USER",
+                user.getId(),
+                user.getName(),
+                null,
+                null
+        );
+
+        log.info("Role switched: userId={}, currentRole={}", userId, request.targetRole());
+
+        return TokenResponse.of(accessToken, refreshToken, accessTokenExpiry);
     }
 }

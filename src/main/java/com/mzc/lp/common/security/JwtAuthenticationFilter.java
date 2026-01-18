@@ -53,6 +53,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String path = request.getRequestURI();
         String method = request.getMethod();
 
+        // /api/auth/switch-role은 인증 필요
+        if (path.equals("/api/auth/switch-role")) {
+            return false;
+        }
+
         // 정적 경로 체크
         for (String permitPath : PERMIT_ALL_PATHS) {
             if (path.startsWith(permitPath)) {

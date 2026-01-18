@@ -26,12 +26,14 @@ import com.mzc.lp.domain.user.dto.response.ProfileImageResponse;
 import com.mzc.lp.domain.user.entity.User;
 import com.mzc.lp.domain.user.entity.UserCourseRole;
 import com.mzc.lp.domain.user.exception.CourseRoleNotFoundException;
+import com.mzc.lp.domain.user.exception.LastTenantAdminException;
 import com.mzc.lp.domain.user.exception.PasswordMismatchException;
 import com.mzc.lp.domain.user.exception.RoleAlreadyExistsException;
 import com.mzc.lp.domain.user.exception.UserNotFoundException;
 import com.mzc.lp.domain.user.repository.RefreshTokenRepository;
 import com.mzc.lp.domain.user.repository.UserCourseRoleRepository;
 import com.mzc.lp.domain.user.repository.UserRepository;
+import com.mzc.lp.domain.user.repository.UserRoleRepository;
 import com.mzc.lp.common.service.FileStorageService;
 import com.mzc.lp.domain.employee.entity.Employee;
 import com.mzc.lp.domain.employee.repository.EmployeeRepository;
@@ -41,6 +43,8 @@ import com.mzc.lp.domain.tenant.repository.TenantRepository;
 import com.mzc.lp.domain.user.dto.request.UpdateUserRolesRequest;
 import com.mzc.lp.domain.user.dto.response.UserRolesResponse;
 import com.mzc.lp.domain.notification.event.NotificationEventPublisher;
+import com.mzc.lp.domain.analytics.constant.ActivityType;
+import com.mzc.lp.domain.analytics.service.ActivityLogService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -64,6 +68,7 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final UserCourseRoleRepository userCourseRoleRepository;
+    private final UserRoleRepository userRoleRepository;
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenRepository refreshTokenRepository;
     private final FileStorageService fileStorageService;
@@ -71,6 +76,7 @@ public class UserServiceImpl implements UserService {
     private final EmployeeRepository employeeRepository;
     private final TenantRepository tenantRepository;
     private final NotificationEventPublisher notificationEventPublisher;
+    private final ActivityLogService activityLogService;
 
     @Override
     public UserDetailResponse getMe(Long userId) {
@@ -225,7 +231,28 @@ public class UserServiceImpl implements UserService {
         log.info("Changing user role: userId={}, newRole={}", userId, request.role());
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
+        TenantRole oldRole = user.getRole();
+
+        // 최소 1명 TENANT_ADMIN 유지 검증 (TENANT_ADMIN에서 다른 역할로 변경 시)
+        if (oldRole == TenantRole.TENANT_ADMIN && request.role() != TenantRole.TENANT_ADMIN) {
+            long taCount = userRoleRepository.countByRoleAndTenantId(TenantRole.TENANT_ADMIN, user.getTenantId());
+            if (taCount <= 1) {
+                log.warn("Cannot change last TENANT_ADMIN role: userId={}, tenantId={}", userId, user.getTenantId());
+                throw new LastTenantAdminException();
+            }
+        }
+
         user.updateRole(request.role());
+
+        // 감사 로그 기록
+        activityLogService.log(
+                ActivityType.ROLE_CHANGE,
+                String.format("역할 변경: %s (%s → %s)", user.getEmail(), oldRole.name(), request.role().name()),
+                "USER",
+                userId,
+                user.getName()
+        );
+
         log.info("User role changed: userId={}, role={}", userId, request.role());
         return UserRoleResponse.from(user);
     }
@@ -566,6 +593,16 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new UserNotFoundException(userId));
 
         user.addRole(role);
+
+        // 감사 로그 기록
+        activityLogService.log(
+                ActivityType.ROLE_CHANGE,
+                String.format("역할 추가: %s에게 %s 역할 부여", user.getEmail(), role.name()),
+                "USER",
+                userId,
+                user.getName()
+        );
+
         log.info("User role added: userId={}, allRoles={}", userId, user.getRoles());
 
         return UserRolesResponse.from(user);
@@ -578,7 +615,26 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findByIdWithRoles(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
 
+        // 최소 1명 TENANT_ADMIN 유지 검증
+        if (role == TenantRole.TENANT_ADMIN && user.hasRole(TenantRole.TENANT_ADMIN)) {
+            long taCount = userRoleRepository.countByRoleAndTenantId(TenantRole.TENANT_ADMIN, user.getTenantId());
+            if (taCount <= 1) {
+                log.warn("Cannot remove last TENANT_ADMIN: userId={}, tenantId={}", userId, user.getTenantId());
+                throw new LastTenantAdminException();
+            }
+        }
+
         user.removeRole(role);
+
+        // 감사 로그 기록
+        activityLogService.log(
+                ActivityType.ROLE_CHANGE,
+                String.format("역할 제거: %s에서 %s 역할 삭제", user.getEmail(), role.name()),
+                "USER",
+                userId,
+                user.getName()
+        );
+
         log.info("User role removed: userId={}, remainingRoles={}", userId, user.getRoles());
 
         return UserRolesResponse.from(user);

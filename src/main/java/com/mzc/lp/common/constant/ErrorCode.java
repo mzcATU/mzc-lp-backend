@@ -91,6 +91,9 @@ public enum ErrorCode {
     ACCESS_DENIED(HttpStatus.FORBIDDEN, "A002", "Access denied"),
     INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED, "A003", "Invalid email or password"),
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "A004", "Invalid or expired token"),
+    ROLE_NOT_ASSIGNED(HttpStatus.FORBIDDEN, "A005", "User does not have the requested role"),
+    LAST_TENANT_ADMIN_CANNOT_BE_REMOVED(HttpStatus.BAD_REQUEST, "A006", "Cannot remove the last tenant admin"),
+    CANNOT_ASSIGN_HIGHER_ROLE(HttpStatus.FORBIDDEN, "A007", "Cannot assign role higher than your own"),
 
     // Instructor (IIS)
     INSTRUCTOR_ASSIGNMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "IIS001", "Instructor assignment not found"),
