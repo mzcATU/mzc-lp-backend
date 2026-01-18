@@ -19,9 +19,11 @@ import com.mzc.lp.domain.user.repository.UserCourseRoleRepository;
 import com.mzc.lp.domain.ts.constant.CourseTimeStatus;
 import com.mzc.lp.domain.ts.dto.request.CloneCourseTimeRequest;
 import com.mzc.lp.domain.ts.dto.request.CreateCourseTimeRequest;
+import com.mzc.lp.domain.ts.dto.request.RecurringScheduleRequest;
 import com.mzc.lp.domain.ts.dto.request.UpdateCourseTimeRequest;
 import com.mzc.lp.domain.ts.dto.response.*;
 import com.mzc.lp.domain.ts.entity.CourseTime;
+import com.mzc.lp.domain.ts.entity.RecurringSchedule;
 import com.mzc.lp.domain.ts.validator.CourseTimeConstraintValidator;
 import com.mzc.lp.domain.ts.exception.CapacityExceededException;
 import com.mzc.lp.domain.ts.exception.CourseTimeNotFoundException;
@@ -89,6 +91,9 @@ public class CourseTimeServiceImpl implements CourseTimeService {
         // 기존 날짜 검증 (일부 중복되지만 기존 호환성 유지)
         validateDateRange(request);
 
+        // RecurringSchedule 변환
+        RecurringSchedule recurringSchedule = toRecurringSchedule(request.recurringSchedule());
+
         // CourseTime 생성
         CourseTime courseTime = CourseTime.create(
                 request.title(),
@@ -107,6 +112,7 @@ public class CourseTimeServiceImpl implements CourseTimeService {
                 request.isFree(),
                 request.locationInfo(),
                 request.allowLateEnrollment() != null ? request.allowLateEnrollment() : false,
+                recurringSchedule,
                 createdBy
         );
 
@@ -278,6 +284,16 @@ public class CourseTimeServiceImpl implements CourseTimeService {
 
         if (request.minProgressForCompletion() != null) {
             courseTime.updateMinProgress(request.minProgressForCompletion());
+        }
+
+        // 정기 일정 업데이트 (null이면 변경 없음, 빈 요일 배열이면 삭제)
+        if (request.recurringSchedule() != null) {
+            if (request.recurringSchedule().daysOfWeek() == null || request.recurringSchedule().daysOfWeek().isEmpty()) {
+                courseTime.clearRecurringSchedule();
+            } else {
+                RecurringSchedule schedule = toRecurringSchedule(request.recurringSchedule());
+                courseTime.updateRecurringSchedule(schedule);
+            }
         }
 
         log.info("Course time updated: id={}, qualityRating={}", id, validationResult.qualityRating());
@@ -452,6 +468,16 @@ public class CourseTimeServiceImpl implements CourseTimeService {
         if (enrollEndDate.isAfter(classStartDate)) {
             throw new InvalidDateRangeException("모집 종료일은 학습 시작일 이전이어야 합니다");
         }
+    }
+
+    /**
+     * RecurringScheduleRequest를 RecurringSchedule 엔티티로 변환
+     */
+    private RecurringSchedule toRecurringSchedule(RecurringScheduleRequest request) {
+        if (request == null) {
+            return null;
+        }
+        return RecurringSchedule.create(request.daysOfWeek(), request.startTime(), request.endTime());
     }
 
     /**

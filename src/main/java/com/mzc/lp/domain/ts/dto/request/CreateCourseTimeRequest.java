@@ -3,6 +3,7 @@ package com.mzc.lp.domain.ts.dto.request;
 import com.mzc.lp.domain.ts.constant.DeliveryType;
 import com.mzc.lp.domain.ts.constant.DurationType;
 import com.mzc.lp.domain.ts.constant.EnrollmentMethod;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
@@ -69,6 +70,12 @@ public record CreateCourseTimeRequest(
 
         String locationInfo,
 
-        Boolean allowLateEnrollment
+        Boolean allowLateEnrollment,
+
+        /**
+         * 정기 수업 일정 (FIXED + OFFLINE/BLENDED/LIVE에서 선택 사항)
+         */
+        @Valid
+        RecurringScheduleRequest recurringSchedule
 ) {
 }

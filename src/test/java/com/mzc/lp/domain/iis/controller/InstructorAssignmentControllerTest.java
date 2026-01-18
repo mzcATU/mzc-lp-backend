@@ -140,6 +140,7 @@ class InstructorAssignmentControllerTest extends TenantTestSupport {
                 false,
                 null,
                 true,
+                null,
                 1L
         );
         return courseTimeRepository.save(courseTime);

@@ -125,6 +125,7 @@ class InstructorAssignmentServiceTest extends TenantTestSupport {
                 false,
                 null,
                 true,
+                null,
                 1L
         );
         // 테스트용 tenantId 설정 (리플렉션 사용)
@@ -320,6 +321,7 @@ class InstructorAssignmentServiceTest extends TenantTestSupport {
                 false,
                 null,
                 true,
+                null,
                 1L
         );
         try {

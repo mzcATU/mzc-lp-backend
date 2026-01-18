@@ -32,7 +32,13 @@ public enum ValidationRule {
     R65("R65", "constraint.consistency.classEndAfterClassStart", true),
 
     // Course 연동 제약 (R70-R79)
-    R70("R70", "constraint.course.deliveryTypeMismatch", false);
+    R70("R70", "constraint.course.deliveryTypeMismatch", false),
+
+    // 정기 일정 제약 (R80-R89)
+    R80("R80", "constraint.schedule.dayRange", true),           // 요일 범위 0-6
+    R81("R81", "constraint.schedule.timeOrder", true),          // 종료 시간 > 시작 시간
+    R82("R82", "constraint.schedule.fixedOnly", true),          // FIXED 타입에서만 허용
+    R83("R83", "constraint.schedule.notOnline", true);          // ONLINE에서는 불가
 
     private final String code;
     private final String messageCode;

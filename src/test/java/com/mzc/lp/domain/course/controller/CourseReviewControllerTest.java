@@ -121,6 +121,7 @@ class CourseReviewControllerTest extends TenantTestSupport {
                 true,
                 null,
                 false,
+                null,
                 testUser.getId()
         );
         testCourseTime.linkCourseAndSnapshot(testCourse, null);

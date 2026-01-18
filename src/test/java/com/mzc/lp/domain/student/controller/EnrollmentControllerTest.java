@@ -117,6 +117,7 @@ class EnrollmentControllerTest extends TenantTestSupport {
                 false,
                 null,
                 true,
+                null,
                 1L
         );
         courseTime.open();
@@ -141,6 +142,7 @@ class EnrollmentControllerTest extends TenantTestSupport {
                 false,
                 null,
                 true,
+                null,
                 1L
         );
         return courseTimeRepository.save(courseTime);

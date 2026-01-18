@@ -108,6 +108,10 @@ public class CourseTime extends TenantEntity {
     @Column(name = "allow_late_enrollment", nullable = false)
     private boolean allowLateEnrollment;
 
+    // 정기 수업 일정 (FIXED + OFFLINE/BLENDED/LIVE에서 선택 사항)
+    @Embedded
+    private RecurringSchedule recurringSchedule;
+
     // 생성자 ID
     @Column(name = "created_by")
     private Long createdBy;
@@ -135,6 +139,7 @@ public class CourseTime extends TenantEntity {
         courseTime.free = source.free;
         courseTime.locationInfo = source.locationInfo;
         courseTime.allowLateEnrollment = source.allowLateEnrollment;
+        courseTime.recurringSchedule = source.recurringSchedule;
 
         // 새로 지정하는 필드
         courseTime.title = newTitle;
@@ -175,6 +180,7 @@ public class CourseTime extends TenantEntity {
             boolean free,
             String locationInfo,
             boolean allowLateEnrollment,
+            RecurringSchedule recurringSchedule,
             Long createdBy
     ) {
         CourseTime courseTime = new CourseTime();
@@ -203,6 +209,7 @@ public class CourseTime extends TenantEntity {
         courseTime.free = free;
         courseTime.locationInfo = locationInfo;
         courseTime.allowLateEnrollment = allowLateEnrollment;
+        courseTime.recurringSchedule = recurringSchedule;
         courseTime.createdBy = createdBy;
         return courseTime;
     }
@@ -275,6 +282,14 @@ public class CourseTime extends TenantEntity {
 
     public void updateMinProgress(Integer minProgressForCompletion) {
         this.minProgressForCompletion = minProgressForCompletion;
+    }
+
+    public void updateRecurringSchedule(RecurringSchedule recurringSchedule) {
+        this.recurringSchedule = recurringSchedule;
+    }
+
+    public void clearRecurringSchedule() {
+        this.recurringSchedule = null;
     }
 
     // 상태 전이 메서드

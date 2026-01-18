@@ -83,6 +83,7 @@ class InstructorAssignmentConcurrencyTest extends TenantTestSupport {
                 false,
                 null,
                 true,
+                null,
                 1L
         );
         courseTime = courseTimeRepository.save(courseTime);

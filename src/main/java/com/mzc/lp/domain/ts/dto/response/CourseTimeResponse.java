@@ -32,6 +32,7 @@ public record CourseTimeResponse(
         BigDecimal price,
         boolean isFree,
         boolean allowLateEnrollment,
+        RecurringScheduleResponse recurringSchedule,
         Instant createdAt,
         List<InstructorAssignmentResponse> instructors
 ) {
@@ -60,6 +61,7 @@ public record CourseTimeResponse(
                 entity.getPrice(),
                 entity.isFree(),
                 entity.isAllowLateEnrollment(),
+                RecurringScheduleResponse.from(entity.getRecurringSchedule()),
                 entity.getCreatedAt(),
                 instructors != null ? instructors : List.of()
         );

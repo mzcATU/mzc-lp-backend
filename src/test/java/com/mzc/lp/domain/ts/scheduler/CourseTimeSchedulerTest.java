@@ -53,6 +53,7 @@ class CourseTimeSchedulerTest extends TenantTestSupport {
                 false,
                 null,
                 true,
+                null,
                 1L
         );
     }

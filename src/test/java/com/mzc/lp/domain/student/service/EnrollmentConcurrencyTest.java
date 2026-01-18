@@ -74,6 +74,7 @@ class EnrollmentConcurrencyTest extends TenantTestSupport {
                 false,
                 null,
                 true,
+                null,
                 1L
         );
         courseTime.open();  // RECRUITING 상태로 변경
