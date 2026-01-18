@@ -93,7 +93,7 @@ public class NotificationTemplate extends TenantEntity {
         return switch (trigger) {
             case WELCOME -> "회원가입을 환영합니다!";
             case ENROLLMENT_COMPLETE -> "수강신청이 완료되었습니다";
-            case COURSE_COMPLETE -> "축하합니다! 과정을 완료하셨습니다";
+            case COURSE_COMPLETE -> "과정 수료를 축하드립니다!";
         };
     }
 
@@ -101,7 +101,7 @@ public class NotificationTemplate extends TenantEntity {
         return switch (trigger) {
             case WELCOME -> "{{userName}}님, 가입을 환영합니다! 다양한 강좌를 둘러보세요.";
             case ENROLLMENT_COMPLETE -> "{{userName}}님, {{courseName}} 강좌 수강신청이 완료되었습니다.";
-            case COURSE_COMPLETE -> "{{userName}}님, {{courseName}} 과정을 성공적으로 완료하셨습니다!";
+            case COURSE_COMPLETE -> "{{userName}}님, {{courseName}} 과정을 수료하신 것을 축하드립니다! 수료증을 확인해보세요.";
         };
     }
 
