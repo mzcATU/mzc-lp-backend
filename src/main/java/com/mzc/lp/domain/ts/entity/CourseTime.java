@@ -156,8 +156,10 @@ public class CourseTime extends TenantEntity {
             courseTime.durationDays = source.durationDays;
         }
 
-        // 고정 값
-        courseTime.status = CourseTimeStatus.DRAFT;
+        // 상태 자동 결정: 모집 시작일이 오늘이거나 이미 지남 → RECRUITING, 미래 → DRAFT
+        courseTime.status = !enrollStartDate.isAfter(LocalDate.now())
+                ? CourseTimeStatus.RECRUITING
+                : CourseTimeStatus.DRAFT;
         courseTime.currentEnrollment = 0;
 
         return courseTime;
@@ -187,7 +189,10 @@ public class CourseTime extends TenantEntity {
         courseTime.title = title;
         courseTime.deliveryType = deliveryType;
         courseTime.durationType = durationType;
-        courseTime.status = CourseTimeStatus.DRAFT;
+        // 상태 자동 결정: 모집 시작일이 오늘이거나 이미 지남 → RECRUITING, 미래 → DRAFT
+        courseTime.status = !enrollStartDate.isAfter(LocalDate.now())
+                ? CourseTimeStatus.RECRUITING
+                : CourseTimeStatus.DRAFT;
         courseTime.enrollStartDate = enrollStartDate;
         courseTime.enrollEndDate = enrollEndDate;
         courseTime.classStartDate = classStartDate;

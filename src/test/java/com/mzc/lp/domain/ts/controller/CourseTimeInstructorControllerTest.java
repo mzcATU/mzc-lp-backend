@@ -119,7 +119,7 @@ class CourseTimeInstructorControllerTest extends TenantTestSupport {
                 "테스트 차수",
                 DeliveryType.ONLINE,
                 DurationType.FIXED,
-                LocalDate.now(),
+                LocalDate.now().plusDays(1),  // 미래 날짜로 설정하여 DRAFT 상태로 생성
                 LocalDate.now().plusDays(7),
                 LocalDate.now().plusDays(7),
                 LocalDate.now().plusDays(30),

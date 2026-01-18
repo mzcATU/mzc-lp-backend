@@ -61,7 +61,7 @@ class EnrollmentConcurrencyTest extends TenantTestSupport {
                 "동시성 테스트 차수",
                 DeliveryType.ONLINE,
                 DurationType.FIXED,
-                LocalDate.now().minusDays(1),
+                LocalDate.now().minusDays(1),  // 과거 날짜이므로 RECRUITING 상태로 자동 생성
                 LocalDate.now().plusDays(7),
                 LocalDate.now().plusDays(7),
                 LocalDate.now().plusDays(30),
@@ -77,7 +77,7 @@ class EnrollmentConcurrencyTest extends TenantTestSupport {
                 null,
                 1L
         );
-        courseTime.open();  // RECRUITING 상태로 변경
+        // enrollStartDate가 과거이므로 이미 RECRUITING 상태
         courseTime = courseTimeRepository.save(courseTime);
     }
 

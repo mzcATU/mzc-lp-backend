@@ -72,7 +72,7 @@ class CourseTimeSchedulerTest extends TenantTestSupport {
                     LocalDate.now(),
                     LocalDate.now().plusDays(30)
             );
-            courseTime.open(); // RECRUITING 상태로 변경
+            // enrollStartDate가 과거이므로 이미 RECRUITING 상태
 
             given(courseTimeRepository.findByStatusAndClassStartDateLessThanEqual(
                     eq(CourseTimeStatus.RECRUITING), any(LocalDate.class)))
@@ -111,13 +111,13 @@ class CourseTimeSchedulerTest extends TenantTestSupport {
                     LocalDate.now(),
                     LocalDate.now().plusDays(30)
             );
-            courseTime1.open();
+            // enrollStartDate가 과거이므로 이미 RECRUITING 상태
 
             CourseTime courseTime2 = createTestCourseTime(
                     LocalDate.now().minusDays(1),
                     LocalDate.now().plusDays(29)
             );
-            courseTime2.open();
+            // enrollStartDate가 과거이므로 이미 RECRUITING 상태
 
             given(courseTimeRepository.findByStatusAndClassStartDateLessThanEqual(
                     eq(CourseTimeStatus.RECRUITING), any(LocalDate.class)))
@@ -146,7 +146,7 @@ class CourseTimeSchedulerTest extends TenantTestSupport {
                     LocalDate.now().minusDays(30),
                     LocalDate.now().minusDays(1)
             );
-            courseTime.open();
+            // enrollStartDate가 과거이므로 이미 RECRUITING 상태
             courseTime.startClass(); // ONGOING 상태로 변경
 
             given(courseTimeRepository.findByStatusAndClassEndDateLessThan(
@@ -186,14 +186,14 @@ class CourseTimeSchedulerTest extends TenantTestSupport {
                     LocalDate.now().minusDays(60),
                     LocalDate.now().minusDays(1)
             );
-            courseTime1.open();
+            // enrollStartDate가 과거이므로 이미 RECRUITING 상태
             courseTime1.startClass();
 
             CourseTime courseTime2 = createTestCourseTime(
                     LocalDate.now().minusDays(45),
                     LocalDate.now().minusDays(2)
             );
-            courseTime2.open();
+            // enrollStartDate가 과거이므로 이미 RECRUITING 상태
             courseTime2.startClass();
 
             given(courseTimeRepository.findByStatusAndClassEndDateLessThan(
@@ -228,7 +228,7 @@ class CourseTimeSchedulerTest extends TenantTestSupport {
                     LocalDate.now().minusDays(30),
                     LocalDate.now().minusDays(1)
             );
-            normalCourseTime.open();
+            // enrollStartDate가 과거이므로 이미 RECRUITING 상태
             normalCourseTime.startClass();
 
             given(courseTimeRepository.findByStatusAndClassEndDateLessThan(

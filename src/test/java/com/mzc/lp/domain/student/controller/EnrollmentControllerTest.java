@@ -104,7 +104,7 @@ class EnrollmentControllerTest extends TenantTestSupport {
                 "테스트 차수",
                 DeliveryType.ONLINE,
                 DurationType.FIXED,
-                LocalDate.now().minusDays(1),
+                LocalDate.now().minusDays(1),  // 과거 날짜이므로 RECRUITING 상태로 자동 생성
                 LocalDate.now().plusDays(7),
                 LocalDate.now().plusDays(7),
                 LocalDate.now().plusDays(30),
@@ -120,7 +120,7 @@ class EnrollmentControllerTest extends TenantTestSupport {
                 null,
                 1L
         );
-        courseTime.open();
+        // enrollStartDate가 과거이므로 이미 RECRUITING 상태
         return courseTimeRepository.save(courseTime);
     }
 
@@ -129,7 +129,7 @@ class EnrollmentControllerTest extends TenantTestSupport {
                 "Draft 차수",
                 DeliveryType.ONLINE,
                 DurationType.FIXED,
-                LocalDate.now(),
+                LocalDate.now().plusDays(1),  // 미래 날짜로 변경하여 DRAFT 상태로 생성
                 LocalDate.now().plusDays(7),
                 LocalDate.now().plusDays(7),
                 LocalDate.now().plusDays(30),

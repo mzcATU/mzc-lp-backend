@@ -125,8 +125,9 @@ public class CourseTimeServiceImpl implements CourseTimeService {
         courseTime.linkCourseAndSnapshot(course, snapshot);
 
         CourseTime savedCourseTime = courseTimeRepository.save(courseTime);
-        log.info("Course time created from course: id={}, courseId={}, snapshotId={}, qualityRating={}",
-                savedCourseTime.getId(), request.courseId(), snapshot.getId(), validationResult.qualityRating());
+        log.info("Course time created: id={}, courseId={}, snapshotId={}, status={}, enrollStartDate={}, qualityRating={}",
+                savedCourseTime.getId(), request.courseId(), snapshot.getId(),
+                savedCourseTime.getStatus(), request.enrollStartDate(), validationResult.qualityRating());
 
         // DESIGNER를 MAIN 강사로 자동 배정
         List<InstructorAssignmentResponse> instructors = assignCourseDesignerAsMainInstructor(
@@ -164,7 +165,8 @@ public class CourseTimeServiceImpl implements CourseTimeService {
         );
 
         CourseTime savedCourseTime = courseTimeRepository.save(cloned);
-        log.info("Course time cloned: sourceId={}, newId={}", sourceId, savedCourseTime.getId());
+        log.info("Course time cloned: sourceId={}, newId={}, status={}, enrollStartDate={}",
+                sourceId, savedCourseTime.getId(), savedCourseTime.getStatus(), request.enrollStartDate());
 
         return CourseTimeDetailResponse.from(savedCourseTime);
     }
@@ -459,8 +461,8 @@ public class CourseTimeServiceImpl implements CourseTimeService {
             throw new InvalidDateRangeException("모집 시작일은 모집 종료일 이전이어야 합니다");
         }
 
-        // [R-DATE-02] 학습 시작일 <= 학습 종료일
-        if (classStartDate.isAfter(classEndDate)) {
+        // [R-DATE-02] 학습 시작일 <= 학습 종료일 (UNLIMITED 타입은 classEndDate가 null이므로 검증 스킵)
+        if (classEndDate != null && classStartDate.isAfter(classEndDate)) {
             throw new InvalidDateRangeException("학습 시작일은 학습 종료일 이전이어야 합니다");
         }
 
