@@ -3,6 +3,7 @@ package com.mzc.lp.domain.ts.validator;
 import com.mzc.lp.domain.course.entity.Course;
 import com.mzc.lp.domain.ts.constant.*;
 import com.mzc.lp.domain.ts.dto.request.CreateCourseTimeRequest;
+import com.mzc.lp.domain.ts.dto.request.RecurringScheduleRequest;
 import com.mzc.lp.domain.ts.dto.request.UpdateCourseTimeRequest;
 import com.mzc.lp.domain.ts.dto.response.*;
 import com.mzc.lp.domain.ts.entity.CourseTime;
@@ -40,6 +41,10 @@ public class CourseTimeConstraintValidator {
         // Course 연동 제약 검증
         validateCourseConstraints(builder, request.deliveryType(), course);
 
+        // 정기 일정 제약 검증
+        validateRecurringScheduleConstraints(builder, request.recurringSchedule(),
+                request.deliveryType(), request.durationType());
+
         // QualityRating 평가
         evaluateQualityRating(builder, request.deliveryType(), request.durationType(),
                 request.enrollmentMethod(), request.capacity());
@@ -75,6 +80,10 @@ public class CourseTimeConstraintValidator {
 
         // Course 연동 제약 검증
         validateCourseConstraints(builder, deliveryType, course);
+
+        // 정기 일정 제약 검증
+        validateRecurringScheduleConstraints(builder, request.recurringSchedule(),
+                deliveryType, durationType);
 
         // QualityRating 평가
         evaluateQualityRating(builder, deliveryType, durationType, enrollmentMethod, capacity);
@@ -270,33 +279,17 @@ public class CourseTimeConstraintValidator {
             DeliveryType deliveryType,
             DurationType durationType
     ) {
-        // ONLINE + RELATIVE = BEST
-        if (deliveryType == DeliveryType.ONLINE && durationType == DurationType.RELATIVE) {
-            return current;
-        }
+        // LIVE는 FIXED 필수 (R14에서 Error로 처리됨)
+        // 나머지 DeliveryType은 모든 DurationType 허용
+        // - B2C: FIXED 선택 (단체 수업)
+        // - B2B: RELATIVE/UNLIMITED 선택 가능 (기업 교육)
 
-        // ONLINE + UNLIMITED = GOOD
+        // ONLINE + UNLIMITED = GOOD (무제한이므로 약간 낮은 등급)
         if (deliveryType == DeliveryType.ONLINE && durationType == DurationType.UNLIMITED) {
             return maxRating(current, QualityRating.GOOD);
         }
 
-        // OFFLINE/BLENDED/LIVE + FIXED = BEST
-        if ((deliveryType == DeliveryType.OFFLINE || deliveryType == DeliveryType.BLENDED || deliveryType == DeliveryType.LIVE)
-                && durationType == DurationType.FIXED) {
-            return current;
-        }
-
-        // ONLINE + FIXED = COMMON (비권장이지만 허용)
-        if (deliveryType == DeliveryType.ONLINE && durationType == DurationType.FIXED) {
-            return maxRating(current, QualityRating.COMMON);
-        }
-
-        // OFFLINE/BLENDED + RELATIVE/UNLIMITED = CAUTION
-        if ((deliveryType == DeliveryType.OFFLINE || deliveryType == DeliveryType.BLENDED)
-                && (durationType == DurationType.RELATIVE || durationType == DurationType.UNLIMITED)) {
-            return maxRating(current, QualityRating.CAUTION);
-        }
-
+        // 나머지 모든 조합은 BEST
         return current;
     }
 
@@ -323,5 +316,60 @@ public class CourseTimeConstraintValidator {
             case OFFLINE -> DeliveryType.OFFLINE;
             case BLENDED -> DeliveryType.BLENDED;
         };
+    }
+
+    /**
+     * 정기 일정 제약 검증 (R80-R83)
+     */
+    private void validateRecurringScheduleConstraints(
+            CourseTimeValidationResult.Builder builder,
+            RecurringScheduleRequest schedule,
+            DeliveryType deliveryType,
+            DurationType durationType
+    ) {
+        if (schedule == null) {
+            return;
+        }
+
+        // R80: 요일 범위 0-6
+        if (schedule.daysOfWeek() != null) {
+            boolean invalidDayExists = schedule.daysOfWeek().stream()
+                    .anyMatch(day -> day < 0 || day > 6);
+            if (invalidDayExists) {
+                builder.addError(ValidationError.clientValidatable(
+                        ValidationRule.R80.getCode(),
+                        "recurringSchedule.daysOfWeek",
+                        I18nMessage.of(ValidationRule.R80.getMessageCode())
+                ));
+            }
+        }
+
+        // R81: 종료 시간 > 시작 시간
+        if (schedule.startTime() != null && schedule.endTime() != null
+                && !schedule.endTime().isAfter(schedule.startTime())) {
+            builder.addError(ValidationError.clientValidatable(
+                    ValidationRule.R81.getCode(),
+                    "recurringSchedule.endTime",
+                    I18nMessage.of(ValidationRule.R81.getMessageCode())
+            ));
+        }
+
+        // R82: FIXED 타입에서만 허용
+        if (durationType != DurationType.FIXED) {
+            builder.addError(ValidationError.serverOnly(
+                    ValidationRule.R82.getCode(),
+                    "recurringSchedule",
+                    I18nMessage.of(ValidationRule.R82.getMessageCode())
+            ));
+        }
+
+        // R83: ONLINE에서는 불가
+        if (deliveryType == DeliveryType.ONLINE) {
+            builder.addError(ValidationError.serverOnly(
+                    ValidationRule.R83.getCode(),
+                    "recurringSchedule",
+                    I18nMessage.of(ValidationRule.R83.getMessageCode())
+            ));
+        }
     }
 }

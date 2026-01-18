@@ -7,6 +7,7 @@ import com.mzc.lp.domain.ts.constant.DurationType;
 import com.mzc.lp.domain.ts.constant.EnrollmentMethod;
 import com.mzc.lp.domain.ts.constant.QualityRating;
 import com.mzc.lp.domain.ts.dto.request.CreateCourseTimeRequest;
+import com.mzc.lp.domain.ts.dto.request.RecurringScheduleRequest;
 import com.mzc.lp.domain.ts.dto.response.CourseTimeValidationResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -15,6 +16,8 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -35,6 +38,15 @@ class CourseTimeConstraintValidatorTest {
             DurationType durationType,
             EnrollmentMethod enrollmentMethod
     ) {
+        return createBaseRequest(deliveryType, durationType, enrollmentMethod, null);
+    }
+
+    private CreateCourseTimeRequest createBaseRequest(
+            DeliveryType deliveryType,
+            DurationType durationType,
+            EnrollmentMethod enrollmentMethod,
+            RecurringScheduleRequest recurringSchedule
+    ) {
         LocalDate now = LocalDate.now();
         return new CreateCourseTimeRequest(
                 1L,
@@ -52,8 +64,10 @@ class CourseTimeConstraintValidatorTest {
                 80,
                 new BigDecimal("100000"),
                 false,
-                deliveryType == DeliveryType.OFFLINE ? "{\"address\": \"서울\"}" : null,
-                false
+                deliveryType == DeliveryType.OFFLINE || deliveryType == DeliveryType.BLENDED
+                        ? "{\"address\": \"서울\"}" : null,
+                false,
+                recurringSchedule
         );
     }
 
@@ -76,7 +90,7 @@ class CourseTimeConstraintValidatorTest {
                     LocalDate.now().plusDays(1), LocalDate.now().plusDays(10),
                     LocalDate.now().plusDays(11), null, null,
                     30, 5, EnrollmentMethod.FIRST_COME, 80,
-                    BigDecimal.valueOf(10000), false, null, false
+                    BigDecimal.valueOf(10000), false, null, false, null
             );
             Course course = createMockCourse(CourseType.ONLINE);
 
@@ -97,7 +111,7 @@ class CourseTimeConstraintValidatorTest {
                     LocalDate.now().plusDays(1), LocalDate.now().plusDays(10),
                     LocalDate.now().plusDays(11), null, null,
                     30, 5, EnrollmentMethod.FIRST_COME, 80,
-                    BigDecimal.valueOf(10000), false, null, false
+                    BigDecimal.valueOf(10000), false, null, false, null
             );
             Course course = createMockCourse(CourseType.ONLINE);
 
@@ -118,7 +132,7 @@ class CourseTimeConstraintValidatorTest {
                     LocalDate.now().plusDays(1), LocalDate.now().plusDays(10),
                     LocalDate.now().plusDays(11), LocalDate.now().plusDays(40), null,
                     30, 5, EnrollmentMethod.FIRST_COME, 80,
-                    BigDecimal.valueOf(10000), false, null, false
+                    BigDecimal.valueOf(10000), false, null, false, null
             );
             Course course = createMockCourse(CourseType.ONLINE);
 
@@ -144,7 +158,7 @@ class CourseTimeConstraintValidatorTest {
                     LocalDate.now().plusDays(1), LocalDate.now().plusDays(10),
                     LocalDate.now().plusDays(11), LocalDate.now().plusDays(40), null,
                     30, 5, EnrollmentMethod.FIRST_COME, 80,
-                    BigDecimal.valueOf(10000), false, null, false
+                    BigDecimal.valueOf(10000), false, null, false, null
             );
             Course course = createMockCourse(CourseType.OFFLINE);
 
@@ -165,7 +179,7 @@ class CourseTimeConstraintValidatorTest {
                     LocalDate.now().plusDays(1), LocalDate.now().plusDays(10),
                     LocalDate.now().plusDays(11), null, 30,
                     30, 5, EnrollmentMethod.FIRST_COME, 80,
-                    BigDecimal.valueOf(10000), false, "{\"address\": \"서울\"}", false
+                    BigDecimal.valueOf(10000), false, "{\"address\": \"서울\"}", false, null
             );
             Course course = createMockCourse(CourseType.ONLINE);
 
@@ -191,7 +205,7 @@ class CourseTimeConstraintValidatorTest {
                     LocalDate.now().plusDays(1), LocalDate.now().plusDays(10),
                     LocalDate.now().plusDays(11), LocalDate.now().plusDays(40), null,
                     30, 5, EnrollmentMethod.APPROVAL, 80,
-                    BigDecimal.valueOf(10000), false, null, false
+                    BigDecimal.valueOf(10000), false, null, false, null
             );
             Course course = createMockCourse(CourseType.ONLINE);
 
@@ -212,7 +226,7 @@ class CourseTimeConstraintValidatorTest {
                     LocalDate.now().plusDays(1), LocalDate.now().plusDays(10),
                     LocalDate.now().plusDays(11), LocalDate.now().plusDays(40), null,
                     30, 0, EnrollmentMethod.APPROVAL, 80,
-                    BigDecimal.valueOf(10000), false, null, false
+                    BigDecimal.valueOf(10000), false, null, false, null
             );
             Course course = createMockCourse(CourseType.ONLINE);
 
@@ -254,7 +268,7 @@ class CourseTimeConstraintValidatorTest {
                     LocalDate.now().plusDays(1), LocalDate.now().plusDays(10),
                     LocalDate.now().plusDays(11), LocalDate.now().plusDays(40), null,
                     30, 5, EnrollmentMethod.FIRST_COME, 80,
-                    BigDecimal.valueOf(10000), false, "{\"address\": \"서울\"}", false
+                    BigDecimal.valueOf(10000), false, "{\"address\": \"서울\"}", false, null
             );
             Course course = createMockCourse(CourseType.OFFLINE);
 
@@ -267,15 +281,15 @@ class CourseTimeConstraintValidatorTest {
         }
 
         @Test
-        @DisplayName("ONLINE + FIXED = COMMON (비권장)")
-        void onlineFixed_common() {
+        @DisplayName("ONLINE + FIXED = BEST (B2C 단체 수업)")
+        void onlineFixed_best() {
             // given
             CreateCourseTimeRequest request = new CreateCourseTimeRequest(
                     1L, "테스트", DeliveryType.ONLINE, DurationType.FIXED,
                     LocalDate.now().plusDays(1), LocalDate.now().plusDays(10),
                     LocalDate.now().plusDays(11), LocalDate.now().plusDays(40), null,
-                    30, 0, EnrollmentMethod.FIRST_COME, 80,
-                    BigDecimal.valueOf(10000), false, null, false
+                    30, 5, EnrollmentMethod.FIRST_COME, 80,
+                    BigDecimal.valueOf(10000), false, null, false, null
             );
             Course course = createMockCourse(CourseType.ONLINE);
 
@@ -284,7 +298,70 @@ class CourseTimeConstraintValidatorTest {
 
             // then
             assertThat(result.valid()).isTrue();
-            assertThat(result.qualityRating()).isEqualTo(QualityRating.COMMON);
+            assertThat(result.qualityRating()).isEqualTo(QualityRating.BEST);
+        }
+
+        @Test
+        @DisplayName("OFFLINE + RELATIVE = BEST (B2B 신입사원 OJT)")
+        void offlineRelative_best() {
+            // given - B2B 기업 교육: 입사일로부터 90일 OJT
+            CreateCourseTimeRequest request = new CreateCourseTimeRequest(
+                    1L, "신입사원 OJT", DeliveryType.OFFLINE, DurationType.RELATIVE,
+                    LocalDate.now().plusDays(1), LocalDate.now().plusDays(10),
+                    LocalDate.now().plusDays(11), null, 90,
+                    30, 5, EnrollmentMethod.FIRST_COME, 80,
+                    BigDecimal.valueOf(10000), false, "{\"address\": \"서울\"}", false, null
+            );
+            Course course = createMockCourse(CourseType.OFFLINE);
+
+            // when
+            CourseTimeValidationResult result = validator.validate(request, course);
+
+            // then
+            assertThat(result.valid()).isTrue();
+            assertThat(result.qualityRating()).isEqualTo(QualityRating.BEST);
+        }
+
+        @Test
+        @DisplayName("BLENDED + UNLIMITED = BEST (B2B 자율 학습)")
+        void blendedUnlimited_best() {
+            // given - B2B 기업 교육: 팀별 자율 진행 리더십 과정
+            CreateCourseTimeRequest request = new CreateCourseTimeRequest(
+                    1L, "리더십 과정", DeliveryType.BLENDED, DurationType.UNLIMITED,
+                    LocalDate.now().plusDays(1), LocalDate.now().plusDays(10),
+                    LocalDate.now().plusDays(11), null, null,
+                    30, 5, EnrollmentMethod.FIRST_COME, 80,
+                    BigDecimal.valueOf(10000), false, "{\"address\": \"서울\"}", false, null
+            );
+            Course course = createMockCourse(CourseType.BLENDED);
+
+            // when
+            CourseTimeValidationResult result = validator.validate(request, course);
+
+            // then
+            assertThat(result.valid()).isTrue();
+            assertThat(result.qualityRating()).isEqualTo(QualityRating.BEST);
+        }
+
+        @Test
+        @DisplayName("ONLINE + UNLIMITED = GOOD (무제한은 약간 낮은 등급)")
+        void onlineUnlimited_good() {
+            // given
+            CreateCourseTimeRequest request = new CreateCourseTimeRequest(
+                    1L, "테스트", DeliveryType.ONLINE, DurationType.UNLIMITED,
+                    LocalDate.now().plusDays(1), LocalDate.now().plusDays(10),
+                    LocalDate.now().plusDays(11), null, null,
+                    30, 5, EnrollmentMethod.FIRST_COME, 80,
+                    BigDecimal.valueOf(10000), false, null, false, null
+            );
+            Course course = createMockCourse(CourseType.ONLINE);
+
+            // when
+            CourseTimeValidationResult result = validator.validate(request, course);
+
+            // then
+            assertThat(result.valid()).isTrue();
+            assertThat(result.qualityRating()).isEqualTo(QualityRating.GOOD);
         }
     }
 
@@ -301,7 +378,7 @@ class CourseTimeConstraintValidatorTest {
                     LocalDate.now().plusDays(1), LocalDate.now().plusDays(10),
                     LocalDate.now().plusDays(11), LocalDate.now().plusDays(40), null,
                     30, 0, EnrollmentMethod.FIRST_COME, 80,
-                    BigDecimal.valueOf(10000), false, "{\"address\": \"서울\"}", false
+                    BigDecimal.valueOf(10000), false, "{\"address\": \"서울\"}", false, null
             );
             Course course = createMockCourse(CourseType.ONLINE);
 
@@ -311,6 +388,198 @@ class CourseTimeConstraintValidatorTest {
             // then
             assertThat(result.valid()).isTrue();
             assertThat(result.warnings()).anyMatch(w -> w.ruleCode().equals("R70"));
+        }
+    }
+
+    @Nested
+    @DisplayName("정기 일정 제약 검증 (R80-R83)")
+    class RecurringScheduleConstraints {
+
+        @Test
+        @DisplayName("R80 - 요일 범위 벗어남 (7 이상) 시 오류")
+        void R80_invalidDayOfWeek_error() {
+            // given
+            RecurringScheduleRequest schedule = new RecurringScheduleRequest(
+                    List.of(1, 3, 7), // 7은 유효하지 않음 (0-6만 허용)
+                    LocalTime.of(19, 0),
+                    LocalTime.of(21, 0)
+            );
+            CreateCourseTimeRequest request = createBaseRequest(
+                    DeliveryType.OFFLINE, DurationType.FIXED, EnrollmentMethod.FIRST_COME, schedule);
+            Course course = createMockCourse(CourseType.OFFLINE);
+
+            // when
+            CourseTimeValidationResult result = validator.validate(request, course);
+
+            // then
+            assertThat(result.valid()).isFalse();
+            assertThat(result.errors()).anyMatch(e -> e.ruleCode().equals("R80"));
+        }
+
+        @Test
+        @DisplayName("R80 - 음수 요일 값 시 오류")
+        void R80_negativeDayOfWeek_error() {
+            // given
+            RecurringScheduleRequest schedule = new RecurringScheduleRequest(
+                    List.of(-1, 1, 3),
+                    LocalTime.of(19, 0),
+                    LocalTime.of(21, 0)
+            );
+            CreateCourseTimeRequest request = createBaseRequest(
+                    DeliveryType.OFFLINE, DurationType.FIXED, EnrollmentMethod.FIRST_COME, schedule);
+            Course course = createMockCourse(CourseType.OFFLINE);
+
+            // when
+            CourseTimeValidationResult result = validator.validate(request, course);
+
+            // then
+            assertThat(result.valid()).isFalse();
+            assertThat(result.errors()).anyMatch(e -> e.ruleCode().equals("R80"));
+        }
+
+        @Test
+        @DisplayName("R81 - 종료 시간이 시작 시간보다 이전일 때 오류")
+        void R81_endTimeBeforeStartTime_error() {
+            // given
+            RecurringScheduleRequest schedule = new RecurringScheduleRequest(
+                    List.of(1, 3, 5),
+                    LocalTime.of(21, 0), // 시작 시간
+                    LocalTime.of(19, 0)  // 종료 시간 (시작보다 이전)
+            );
+            CreateCourseTimeRequest request = createBaseRequest(
+                    DeliveryType.OFFLINE, DurationType.FIXED, EnrollmentMethod.FIRST_COME, schedule);
+            Course course = createMockCourse(CourseType.OFFLINE);
+
+            // when
+            CourseTimeValidationResult result = validator.validate(request, course);
+
+            // then
+            assertThat(result.valid()).isFalse();
+            assertThat(result.errors()).anyMatch(e -> e.ruleCode().equals("R81"));
+        }
+
+        @Test
+        @DisplayName("R81 - 시작 시간과 종료 시간이 같을 때 오류")
+        void R81_sameStartEndTime_error() {
+            // given
+            RecurringScheduleRequest schedule = new RecurringScheduleRequest(
+                    List.of(1, 3, 5),
+                    LocalTime.of(19, 0),
+                    LocalTime.of(19, 0) // 동일한 시간
+            );
+            CreateCourseTimeRequest request = createBaseRequest(
+                    DeliveryType.OFFLINE, DurationType.FIXED, EnrollmentMethod.FIRST_COME, schedule);
+            Course course = createMockCourse(CourseType.OFFLINE);
+
+            // when
+            CourseTimeValidationResult result = validator.validate(request, course);
+
+            // then
+            assertThat(result.valid()).isFalse();
+            assertThat(result.errors()).anyMatch(e -> e.ruleCode().equals("R81"));
+        }
+
+        @Test
+        @DisplayName("R82 - RELATIVE 타입에서 정기 일정 설정 시 오류")
+        void R82_relativeWithSchedule_error() {
+            // given
+            RecurringScheduleRequest schedule = new RecurringScheduleRequest(
+                    List.of(1, 3, 5),
+                    LocalTime.of(19, 0),
+                    LocalTime.of(21, 0)
+            );
+            CreateCourseTimeRequest request = createBaseRequest(
+                    DeliveryType.OFFLINE, DurationType.RELATIVE, EnrollmentMethod.FIRST_COME, schedule);
+            Course course = createMockCourse(CourseType.OFFLINE);
+
+            // when
+            CourseTimeValidationResult result = validator.validate(request, course);
+
+            // then
+            assertThat(result.valid()).isFalse();
+            assertThat(result.errors()).anyMatch(e -> e.ruleCode().equals("R82"));
+        }
+
+        @Test
+        @DisplayName("R83 - ONLINE에서 정기 일정 설정 시 오류")
+        void R83_onlineWithSchedule_error() {
+            // given
+            RecurringScheduleRequest schedule = new RecurringScheduleRequest(
+                    List.of(1, 3, 5),
+                    LocalTime.of(19, 0),
+                    LocalTime.of(21, 0)
+            );
+            CreateCourseTimeRequest request = createBaseRequest(
+                    DeliveryType.ONLINE, DurationType.FIXED, EnrollmentMethod.FIRST_COME, schedule);
+            Course course = createMockCourse(CourseType.ONLINE);
+
+            // when
+            CourseTimeValidationResult result = validator.validate(request, course);
+
+            // then
+            assertThat(result.valid()).isFalse();
+            assertThat(result.errors()).anyMatch(e -> e.ruleCode().equals("R83"));
+        }
+
+        @Test
+        @DisplayName("유효한 정기 일정 (OFFLINE + FIXED)")
+        void validRecurringSchedule_offlineFixed() {
+            // given
+            RecurringScheduleRequest schedule = new RecurringScheduleRequest(
+                    List.of(1, 3, 5), // 월, 수, 금
+                    LocalTime.of(19, 0),
+                    LocalTime.of(21, 0)
+            );
+            CreateCourseTimeRequest request = createBaseRequest(
+                    DeliveryType.OFFLINE, DurationType.FIXED, EnrollmentMethod.FIRST_COME, schedule);
+            Course course = createMockCourse(CourseType.OFFLINE);
+
+            // when
+            CourseTimeValidationResult result = validator.validate(request, course);
+
+            // then
+            assertThat(result.valid()).isTrue();
+            assertThat(result.errors()).isEmpty();
+        }
+
+        @Test
+        @DisplayName("유효한 정기 일정 (LIVE + FIXED)")
+        void validRecurringSchedule_liveFixed() {
+            // given
+            RecurringScheduleRequest schedule = new RecurringScheduleRequest(
+                    List.of(2, 4), // 화, 목
+                    LocalTime.of(20, 0),
+                    LocalTime.of(22, 0)
+            );
+            CreateCourseTimeRequest request = new CreateCourseTimeRequest(
+                    1L, "실시간 강의", DeliveryType.LIVE, DurationType.FIXED,
+                    LocalDate.now().plusDays(1), LocalDate.now().plusDays(10),
+                    LocalDate.now().plusDays(11), LocalDate.now().plusDays(40), null,
+                    30, 5, EnrollmentMethod.FIRST_COME, 80,
+                    BigDecimal.valueOf(10000), false, null, false, schedule
+            );
+            Course course = createMockCourse(CourseType.ONLINE);
+
+            // when
+            CourseTimeValidationResult result = validator.validate(request, course);
+
+            // then
+            assertThat(result.valid()).isTrue();
+        }
+
+        @Test
+        @DisplayName("정기 일정 없이 생성 가능")
+        void noRecurringSchedule_allowed() {
+            // given
+            CreateCourseTimeRequest request = createBaseRequest(
+                    DeliveryType.OFFLINE, DurationType.FIXED, EnrollmentMethod.FIRST_COME, null);
+            Course course = createMockCourse(CourseType.OFFLINE);
+
+            // when
+            CourseTimeValidationResult result = validator.validate(request, course);
+
+            // then
+            assertThat(result.valid()).isTrue();
         }
     }
 }
