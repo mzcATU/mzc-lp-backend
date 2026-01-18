@@ -73,10 +73,17 @@ public class TenantFilter implements Filter {
                     log.debug("TenantId set in context: {} for request: {} {}",
                             tenantId, httpRequest.getMethod(), httpRequest.getRequestURI());
                 } else {
-                    // Public API나 인증 불필요 경로는 기본 테넌트 사용
-                    TenantContext.setTenantId(defaultTenantId);
-                    log.debug("Default TenantId ({}) set for request: {} {}",
-                            defaultTenantId, httpRequest.getMethod(), httpRequest.getRequestURI());
+                    // 로그인/회원가입 API는 테넌트 필터 없이 전체 사용자 대상 조회해야 함
+                    String requestUri = httpRequest.getRequestURI();
+                    if (requestUri.startsWith("/api/auth/")) {
+                        log.debug("Auth API - TenantContext not set for request: {} {}",
+                                httpRequest.getMethod(), requestUri);
+                    } else {
+                        // 그 외 Public API는 기본 테넌트 사용
+                        TenantContext.setTenantId(defaultTenantId);
+                        log.debug("Default TenantId ({}) set for request: {} {}",
+                                defaultTenantId, httpRequest.getMethod(), requestUri);
+                    }
                 }
             } else {
                 log.debug("TenantContext already set (tenantId: {}), skipping for request: {} {}",

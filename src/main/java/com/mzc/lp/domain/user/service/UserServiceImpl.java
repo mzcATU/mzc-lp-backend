@@ -75,7 +75,8 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDetailResponse getMe(Long userId) {
         log.debug("Getting user info: userId={}", userId);
-        User user = userRepository.findById(userId)
+        // userRoles를 함께 로딩하여 roles 조회 가능하게 함
+        User user = userRepository.findByIdWithRoles(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
         List<CourseRoleResponse> courseRoles = getCourseRolesWithCourseTitle(userId);
 
