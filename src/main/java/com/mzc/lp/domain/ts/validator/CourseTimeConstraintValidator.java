@@ -171,14 +171,9 @@ public class CourseTimeConstraintValidator {
             ));
         }
 
-        // R14: LIVE는 FIXED 타입 필수
-        if (deliveryType == DeliveryType.LIVE && durationType != DurationType.FIXED) {
-            builder.addError(ValidationError.serverOnly(
-                    ValidationRule.R14.getCode(),
-                    "durationType",
-                    I18nMessage.of(ValidationRule.R14.getMessageCode())
-            ));
-        }
+        // R14 제거: LIVE도 모든 DurationType 허용 (B2B 유연성 확보)
+        // - LIVE + RELATIVE: 반복되는 라이브 세션이 있는 장기 교육 프로그램
+        // - LIVE + UNLIMITED: 정기적인 Q&A 세션, 멘토링 프로그램
 
         // R15: ONLINE + UNLIMITED + 정원 없음은 경고
         if (deliveryType == DeliveryType.ONLINE && durationType == DurationType.UNLIMITED && capacity == null) {
@@ -279,13 +274,15 @@ public class CourseTimeConstraintValidator {
             DeliveryType deliveryType,
             DurationType durationType
     ) {
-        // LIVE는 FIXED 필수 (R14에서 Error로 처리됨)
-        // 나머지 DeliveryType은 모든 DurationType 허용
+        // 모든 DeliveryType에서 모든 DurationType 허용 (B2B 유연성 확보)
         // - B2C: FIXED 선택 (단체 수업)
         // - B2B: RELATIVE/UNLIMITED 선택 가능 (기업 교육)
+        // - LIVE + RELATIVE: 반복되는 라이브 세션이 있는 장기 교육 프로그램
+        // - LIVE + UNLIMITED: 정기적인 Q&A 세션, 멘토링 프로그램
 
-        // ONLINE + UNLIMITED = GOOD (무제한이므로 약간 낮은 등급)
-        if (deliveryType == DeliveryType.ONLINE && durationType == DurationType.UNLIMITED) {
+        // ONLINE/LIVE + UNLIMITED = GOOD (무제한이므로 약간 낮은 등급)
+        if ((deliveryType == DeliveryType.ONLINE || deliveryType == DeliveryType.LIVE)
+                && durationType == DurationType.UNLIMITED) {
             return maxRating(current, QualityRating.GOOD);
         }
 

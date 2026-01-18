@@ -15,7 +15,7 @@ public enum ValidationRule {
     R11("R11", "constraint.deliveryType.online.relative.recommended", false),
     R12("R12", "constraint.deliveryType.offline.fixed.recommended", false),
     R13("R13", "constraint.deliveryType.blended.fixed.recommended", false),
-    R14("R14", "constraint.deliveryType.live.fixed.required", true),
+    // R14 제거: LIVE도 모든 DurationType 허용 (B2B 유연성 확보)
     R15("R15", "constraint.deliveryType.online.unlimited.noCapacity", false),
 
     // EnrollmentMethod 제약 (R50-R59)

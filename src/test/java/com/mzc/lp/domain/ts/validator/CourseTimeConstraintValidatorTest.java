@@ -171,24 +171,48 @@ class CourseTimeConstraintValidatorTest {
         }
 
         @Test
-        @DisplayName("R14 - LIVE에서 FIXED 이외의 DurationType 사용 시 오류")
-        void R14_liveType_requiresFixedDuration() {
-            // given
+        @DisplayName("LIVE + RELATIVE 조합 허용 (B2B 유연성)")
+        void liveType_allowsRelativeDuration() {
+            // given - LIVE + RELATIVE: 반복되는 라이브 세션이 있는 장기 교육 프로그램
             CreateCourseTimeRequest request = new CreateCourseTimeRequest(
-                    1L, "테스트", DeliveryType.LIVE, DurationType.RELATIVE,
+                    1L, "정기 멘토링", DeliveryType.LIVE, DurationType.RELATIVE,
                     LocalDate.now().plusDays(1), LocalDate.now().plusDays(10),
                     LocalDate.now().plusDays(11), null, 30,
                     30, 5, EnrollmentMethod.FIRST_COME, 80,
-                    BigDecimal.valueOf(10000), false, "{\"address\": \"서울\"}", false, null
+                    BigDecimal.valueOf(10000), false, null, false, null
             );
             Course course = createMockCourse(CourseType.ONLINE);
 
             // when
             CourseTimeValidationResult result = validator.validate(request, course);
 
-            // then
-            assertThat(result.valid()).isFalse();
-            assertThat(result.errors()).anyMatch(e -> e.ruleCode().equals("R14"));
+            // then - R14 제거로 LIVE + RELATIVE 허용
+            assertThat(result.valid()).isTrue();
+            assertThat(result.errors()).isEmpty();
+        }
+
+        @Test
+        @DisplayName("LIVE + UNLIMITED 조합 허용 (B2B 유연성)")
+        void liveType_allowsUnlimitedDuration() {
+            // given - LIVE + UNLIMITED: 정기적인 Q&A 세션, 멘토링 프로그램
+            CreateCourseTimeRequest request = new CreateCourseTimeRequest(
+                    1L, "주간 Q&A", DeliveryType.LIVE, DurationType.UNLIMITED,
+                    LocalDate.now().plusDays(1), LocalDate.now().plusDays(10),
+                    LocalDate.now().plusDays(11), null, null,
+                    30, 5, EnrollmentMethod.FIRST_COME, 80,
+                    BigDecimal.valueOf(10000), false, null, false, null
+            );
+            Course course = createMockCourse(CourseType.ONLINE);
+
+            // when
+            CourseTimeValidationResult result = validator.validate(request, course);
+
+            // then - R14 제거로 LIVE + UNLIMITED 허용
+            // QualityRating은 COMMON (LIVE에는 대응하는 CourseType이 없어 R70 경고 발생)
+            assertThat(result.valid()).isTrue();
+            assertThat(result.errors()).isEmpty();
+            assertThat(result.warnings()).anyMatch(w -> w.ruleCode().equals("R70"));
+            assertThat(result.qualityRating()).isEqualTo(QualityRating.COMMON);
         }
     }
 
