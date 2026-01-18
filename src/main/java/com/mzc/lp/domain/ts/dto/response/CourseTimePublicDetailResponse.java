@@ -2,6 +2,7 @@ package com.mzc.lp.domain.ts.dto.response;
 
 import com.mzc.lp.domain.ts.constant.CourseTimeStatus;
 import com.mzc.lp.domain.ts.constant.DeliveryType;
+import com.mzc.lp.domain.ts.constant.DurationType;
 import com.mzc.lp.domain.ts.constant.EnrollmentMethod;
 import com.mzc.lp.domain.ts.entity.CourseTime;
 
@@ -17,11 +18,12 @@ public record CourseTimePublicDetailResponse(
         String title,
         CourseTimeStatus status,
         DeliveryType deliveryType,
-        boolean isOnDemand,
+        DurationType durationType,
         LocalDate enrollStartDate,
         LocalDate enrollEndDate,
         LocalDate classStartDate,
         LocalDate classEndDate,
+        Integer durationDays,
         Integer capacity,
         Integer currentEnrollment,
         Integer availableSeats,
@@ -35,14 +37,11 @@ public record CourseTimePublicDetailResponse(
         List<CurriculumItemResponse> curriculum,
         List<InstructorSummaryResponse> instructors
 ) {
-    private static final LocalDate ON_DEMAND_DATE = LocalDate.of(9999, 12, 31);
-
     public static CourseTimePublicDetailResponse from(
             CourseTime courseTime,
             List<CurriculumItemResponse> curriculum,
             List<InstructorSummaryResponse> instructors
     ) {
-        boolean isOnDemand = ON_DEMAND_DATE.equals(courseTime.getClassEndDate());
         int availableSeats = Math.max(0,
                 courseTime.getCapacity() != null
                         ? courseTime.getCapacity() - courseTime.getCurrentEnrollment()
@@ -53,11 +52,12 @@ public record CourseTimePublicDetailResponse(
                 courseTime.getTitle(),
                 courseTime.getStatus(),
                 courseTime.getDeliveryType(),
-                isOnDemand,
+                courseTime.getDurationType(),
                 courseTime.getEnrollStartDate(),
                 courseTime.getEnrollEndDate(),
                 courseTime.getClassStartDate(),
                 courseTime.getClassEndDate(),
+                courseTime.getDurationDays(),
                 courseTime.getCapacity(),
                 courseTime.getCurrentEnrollment(),
                 availableSeats,

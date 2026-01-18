@@ -32,6 +32,7 @@ import com.mzc.lp.domain.student.dto.response.CourseTimeEnrollmentStatsResponse;
 import com.mzc.lp.domain.student.service.EnrollmentStatsService;
 import com.mzc.lp.domain.course.entity.Course;
 import com.mzc.lp.domain.ts.entity.CourseTime;
+import com.mzc.lp.domain.ts.entity.RecurringSchedule;
 import com.mzc.lp.domain.ts.repository.CourseTimeRepository;
 import com.mzc.lp.domain.user.entity.User;
 import com.mzc.lp.domain.user.repository.UserRepository;
@@ -655,7 +656,8 @@ public class InstructorAssignmentServiceImpl implements InstructorAssignmentServ
 
     /**
      * 일정 충돌 검사
-     * 강사가 동일 기간에 다른 차수에 이미 배정되어 있는지 확인
+     * 1. 강사가 동일 기간에 다른 차수에 이미 배정되어 있는지 확인
+     * 2. 정기 일정(요일/시간)이 겹치는지 확인
      */
     private void checkScheduleConflict(Long userId, Long targetTimeId, CourseTime targetCourseTime, Long tenantId) {
         // 강사의 기존 ACTIVE 배정 목록 조회
@@ -683,8 +685,26 @@ public class InstructorAssignmentServiceImpl implements InstructorAssignmentServ
                 targetCourseTime.getClassEndDate()
         );
 
-        if (!conflictingCourseTimes.isEmpty()) {
-            List<ScheduleConflictResponse> conflicts = conflictingCourseTimes.stream()
+        if (conflictingCourseTimes.isEmpty()) {
+            return;
+        }
+
+        // 정기 일정이 있는 경우 요일/시간 충돌도 확인
+        RecurringSchedule targetSchedule = targetCourseTime.getRecurringSchedule();
+        List<CourseTime> actualConflicts;
+
+        if (targetSchedule != null) {
+            // 정기 일정이 있으면 요일/시간까지 세밀하게 체크
+            actualConflicts = conflictingCourseTimes.stream()
+                    .filter(ct -> hasRecurringScheduleConflict(targetSchedule, ct.getRecurringSchedule()))
+                    .toList();
+        } else {
+            // 정기 일정이 없으면 기간만 겹쳐도 충돌
+            actualConflicts = conflictingCourseTimes;
+        }
+
+        if (!actualConflicts.isEmpty()) {
+            List<ScheduleConflictResponse> conflicts = actualConflicts.stream()
                     .map(ct -> ScheduleConflictResponse.of(
                             ct.getId(),
                             ct.getTitle(),
@@ -698,6 +718,20 @@ public class InstructorAssignmentServiceImpl implements InstructorAssignmentServ
 
             throw new InstructorScheduleConflictException(userId, conflicts);
         }
+    }
+
+    /**
+     * 두 정기 일정 간의 충돌 여부 확인
+     * - 둘 다 정기 일정이 있으면 요일/시간 충돌 확인
+     * - 둘 중 하나라도 정기 일정이 없으면 충돌로 간주 (기간이 겹치므로)
+     */
+    private boolean hasRecurringScheduleConflict(RecurringSchedule target, RecurringSchedule existing) {
+        // 둘 다 정기 일정이 있으면 세밀하게 체크
+        if (target != null && existing != null) {
+            return target.hasTimeConflict(existing);
+        }
+        // 둘 중 하나라도 정기 일정이 없으면 기간 충돌만으로 충돌 판정
+        return true;
     }
 
     // ========== 가용성 확인 API ==========

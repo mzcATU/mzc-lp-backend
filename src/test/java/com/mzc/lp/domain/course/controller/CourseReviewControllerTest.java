@@ -11,6 +11,7 @@ import com.mzc.lp.domain.course.repository.CourseReviewRepository;
 import com.mzc.lp.domain.student.entity.Enrollment;
 import com.mzc.lp.domain.student.repository.EnrollmentRepository;
 import com.mzc.lp.domain.ts.constant.DeliveryType;
+import com.mzc.lp.domain.ts.constant.DurationType;
 import com.mzc.lp.domain.ts.constant.EnrollmentMethod;
 import com.mzc.lp.domain.ts.entity.CourseTime;
 import com.mzc.lp.domain.ts.repository.CourseTimeRepository;
@@ -106,10 +107,12 @@ class CourseReviewControllerTest extends TenantTestSupport {
         testCourseTime = CourseTime.create(
                 "테스트 차수",
                 DeliveryType.ONLINE,
+                DurationType.FIXED,
                 LocalDate.now(),
                 LocalDate.now().plusDays(30),
                 LocalDate.now(),
                 LocalDate.now().plusDays(30),
+                null,
                 100,
                 0,
                 EnrollmentMethod.FIRST_COME,
@@ -118,6 +121,7 @@ class CourseReviewControllerTest extends TenantTestSupport {
                 true,
                 null,
                 false,
+                null,
                 testUser.getId()
         );
         testCourseTime.linkCourseAndSnapshot(testCourse, null);

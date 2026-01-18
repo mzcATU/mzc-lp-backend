@@ -7,6 +7,7 @@ import com.mzc.lp.domain.student.dto.request.UpdateProgressRequest;
 import com.mzc.lp.domain.student.entity.Enrollment;
 import com.mzc.lp.domain.student.repository.EnrollmentRepository;
 import com.mzc.lp.domain.ts.constant.DeliveryType;
+import com.mzc.lp.domain.ts.constant.DurationType;
 import com.mzc.lp.domain.ts.constant.EnrollmentMethod;
 import com.mzc.lp.domain.ts.entity.CourseTime;
 import com.mzc.lp.domain.ts.repository.CourseTimeRepository;
@@ -102,10 +103,12 @@ class EnrollmentControllerTest extends TenantTestSupport {
         CourseTime courseTime = CourseTime.create(
                 "테스트 차수",
                 DeliveryType.ONLINE,
-                LocalDate.now().minusDays(1),
+                DurationType.FIXED,
+                LocalDate.now().minusDays(1),  // 과거 날짜이므로 RECRUITING 상태로 자동 생성
                 LocalDate.now().plusDays(7),
                 LocalDate.now().plusDays(7),
                 LocalDate.now().plusDays(30),
+                null,
                 30,
                 5,
                 EnrollmentMethod.FIRST_COME,
@@ -114,9 +117,10 @@ class EnrollmentControllerTest extends TenantTestSupport {
                 false,
                 null,
                 true,
+                null,
                 1L
         );
-        courseTime.open();
+        // enrollStartDate가 과거이므로 이미 RECRUITING 상태
         return courseTimeRepository.save(courseTime);
     }
 
@@ -124,10 +128,12 @@ class EnrollmentControllerTest extends TenantTestSupport {
         CourseTime courseTime = CourseTime.create(
                 "Draft 차수",
                 DeliveryType.ONLINE,
-                LocalDate.now(),
+                DurationType.FIXED,
+                LocalDate.now().plusDays(1),  // 미래 날짜로 변경하여 DRAFT 상태로 생성
                 LocalDate.now().plusDays(7),
                 LocalDate.now().plusDays(7),
                 LocalDate.now().plusDays(30),
+                null,
                 30,
                 5,
                 EnrollmentMethod.FIRST_COME,
@@ -136,6 +142,7 @@ class EnrollmentControllerTest extends TenantTestSupport {
                 false,
                 null,
                 true,
+                null,
                 1L
         );
         return courseTimeRepository.save(courseTime);

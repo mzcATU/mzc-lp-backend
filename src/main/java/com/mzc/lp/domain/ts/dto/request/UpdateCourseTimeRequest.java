@@ -1,7 +1,9 @@
 package com.mzc.lp.domain.ts.dto.request;
 
 import com.mzc.lp.domain.ts.constant.DeliveryType;
+import com.mzc.lp.domain.ts.constant.DurationType;
 import com.mzc.lp.domain.ts.constant.EnrollmentMethod;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
@@ -13,6 +15,8 @@ public record UpdateCourseTimeRequest(
 
         DeliveryType deliveryType,
 
+        DurationType durationType,
+
         LocalDate enrollStartDate,
 
         LocalDate enrollEndDate,
@@ -20,6 +24,9 @@ public record UpdateCourseTimeRequest(
         LocalDate classStartDate,
 
         LocalDate classEndDate,
+
+        @Min(value = 1, message = "학습 일수는 1일 이상이어야 합니다")
+        Integer durationDays,
 
         @Min(value = 1, message = "정원은 1명 이상이어야 합니다")
         Integer capacity,
@@ -40,6 +47,12 @@ public record UpdateCourseTimeRequest(
 
         String locationInfo,
 
-        Boolean allowLateEnrollment
+        Boolean allowLateEnrollment,
+
+        /**
+         * 정기 수업 일정 (null이면 변경 없음, 빈 객체면 삭제)
+         */
+        @Valid
+        RecurringScheduleRequest recurringSchedule
 ) {
 }
