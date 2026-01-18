@@ -56,6 +56,13 @@ public class JwtProvider {
      * 다중 역할을 포함한 AccessToken 생성
      */
     public String createAccessToken(Long userId, String email, String role, Set<String> roles, Long tenantId) {
+        return createAccessToken(userId, email, role, roles, role, tenantId);
+    }
+
+    /**
+     * 다중 역할 + 현재 선택된 역할을 포함한 AccessToken 생성
+     */
+    public String createAccessToken(Long userId, String email, String role, Set<String> roles, String currentRole, Long tenantId) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + accessTokenExpiry);
 
@@ -64,6 +71,7 @@ public class JwtProvider {
                 .claim("email", email)
                 .claim("role", role)
                 .claim("roles", new ArrayList<>(roles))  // 다중 역할
+                .claim("currentRole", currentRole)       // 현재 선택된 역할
                 .claim("tenantId", tenantId)
                 .issuedAt(now)
                 .expiration(expiry)
@@ -156,6 +164,16 @@ public class JwtProvider {
         // 하위 호환성: roles가 없으면 role 하나만 반환
         String role = claims.get("role", String.class);
         return role != null ? Set.of(role) : Set.of();
+    }
+
+    /**
+     * 현재 선택된 역할 조회
+     */
+    public String getCurrentRole(String token) {
+        Claims claims = getClaims(token);
+        String currentRole = claims.get("currentRole", String.class);
+        // 하위 호환성: currentRole이 없으면 role 반환
+        return currentRole != null ? currentRole : claims.get("role", String.class);
     }
 
     /**

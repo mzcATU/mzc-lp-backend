@@ -1,9 +1,11 @@
 package com.mzc.lp.domain.user.controller;
 
 import com.mzc.lp.common.dto.ApiResponse;
+import com.mzc.lp.common.security.UserPrincipal;
 import com.mzc.lp.domain.user.dto.request.LoginRequest;
 import com.mzc.lp.domain.user.dto.request.RefreshTokenRequest;
 import com.mzc.lp.domain.user.dto.request.RegisterRequest;
+import com.mzc.lp.domain.user.dto.request.SwitchRoleRequest;
 import com.mzc.lp.domain.user.dto.response.TokenResponse;
 import com.mzc.lp.domain.user.dto.response.UserResponse;
 import com.mzc.lp.domain.user.service.AuthService;
@@ -11,6 +13,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -57,5 +60,14 @@ public class AuthController {
     ) {
         authService.logout(request.refreshToken());
         return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @PostMapping("/switch-role")
+    public ResponseEntity<ApiResponse<TokenResponse>> switchRole(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @Valid @RequestBody SwitchRoleRequest request
+    ) {
+        TokenResponse response = authService.switchRole(principal.id(), request);
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 }
