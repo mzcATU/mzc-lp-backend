@@ -1,6 +1,8 @@
 package com.mzc.lp.domain.student.service;
 
 import com.mzc.lp.common.context.TenantContext;
+import com.mzc.lp.domain.analytics.constant.ActivityType;
+import com.mzc.lp.domain.analytics.service.ActivityLogService;
 import com.mzc.lp.domain.student.constant.EnrollmentStatus;
 import com.mzc.lp.domain.student.dto.request.BulkEnrollmentRequest;
 import com.mzc.lp.domain.student.dto.request.CompleteEnrollmentRequest;
@@ -59,6 +61,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     private final UserRepository userRepository;
     private final NotificationService notificationService;
     private final NotificationEventPublisher notificationEventPublisher;
+    private final ActivityLogService activityLogService;
 
     @Override
     @Transactional
@@ -98,6 +101,15 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
         log.info("Enrollment created: id={}, userId={}, courseTimeId={}",
                 savedEnrollment.getId(), userId, courseTimeId);
+
+        // 활동 로그 기록
+        activityLogService.log(
+                ActivityType.ENROLLMENT_CREATE,
+                String.format("수강신청: %s", courseTime.getTitle()),
+                "CourseTime",
+                courseTimeId,
+                courseTime.getTitle()
+        );
 
         // 수강신청 완료 알림 발송 (템플릿 기반)
         sendEnrollmentCompleteNotification(tenantId, savedEnrollment, courseTime);
@@ -357,6 +369,16 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         // 과정 완료 축하 알림 발송 (템플릿 기반)
         sendCourseCompleteNotification(enrollment);
 
+        // 활동 로그 기록
+        CourseTime courseTime = courseTimeRepository.findById(enrollment.getCourseTimeId()).orElse(null);
+        activityLogService.log(
+                ActivityType.ENROLLMENT_COMPLETE,
+                String.format("수강완료: %s (점수: %s)", courseTime != null ? courseTime.getTitle() : "과정", request.score()),
+                "Enrollment",
+                enrollmentId,
+                courseTime != null ? courseTime.getTitle() : null
+        );
+
         log.info("Enrollment completed: enrollmentId={}", enrollmentId);
 
         return EnrollmentDetailResponse.from(enrollment);
@@ -413,6 +435,16 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
         // 상태 변경
         enrollment.drop();
+
+        // 활동 로그 기록
+        CourseTime courseTime = courseTimeRepository.findById(enrollment.getCourseTimeId()).orElse(null);
+        activityLogService.log(
+                ActivityType.ENROLLMENT_DROP,
+                String.format("수강취소: %s", courseTime != null ? courseTime.getTitle() : "과정"),
+                "Enrollment",
+                enrollmentId,
+                courseTime != null ? courseTime.getTitle() : null
+        );
 
         log.info("Enrollment cancelled: enrollmentId={}", enrollmentId);
     }

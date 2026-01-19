@@ -3,9 +3,11 @@ package com.mzc.lp.domain.analytics.service;
 import com.mzc.lp.domain.analytics.constant.ActivityType;
 import com.mzc.lp.domain.analytics.dto.response.ActivityLogResponse;
 import com.mzc.lp.domain.analytics.dto.response.ActivityStatsResponse;
+import com.mzc.lp.domain.analytics.entity.ActivityLog;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.time.Instant;
 import java.util.List;
 
 /**
@@ -54,4 +56,33 @@ public interface ActivityLogService {
      * 최근 활동 조회 (SA용)
      */
     List<ActivityLogResponse> getAllRecentActivities();
+
+    /**
+     * 활동 로그 검색 (유저별, 유형별, 기간별 필터)
+     */
+    Page<ActivityLogResponse> searchLogs(
+            Long tenantId,
+            Long userId,
+            ActivityType activityType,
+            Instant startDate,
+            Instant endDate,
+            String keyword,
+            Pageable pageable
+    );
+
+    /**
+     * 내보내기용 로그 조회 (페이징 없이)
+     */
+    List<ActivityLog> getLogsForExport(
+            Long tenantId,
+            Long userId,
+            ActivityType activityType,
+            Instant startDate,
+            Instant endDate
+    );
+
+    /**
+     * 특정 사용자의 활동 로그 조회
+     */
+    Page<ActivityLogResponse> getActivityLogsByUser(Long tenantId, Long userId, Pageable pageable);
 }

@@ -257,4 +257,38 @@ public class ActivityLogServiceImpl implements ActivityLogService {
                 .map(ActivityLogResponse::from)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public Page<ActivityLogResponse> searchLogs(
+            Long tenantId,
+            Long userId,
+            ActivityType activityType,
+            Instant startDate,
+            Instant endDate,
+            String keyword,
+            Pageable pageable
+    ) {
+        return activityLogRepository.searchLogs(
+                tenantId, userId, activityType, startDate, endDate, keyword, pageable
+        ).map(ActivityLogResponse::from);
+    }
+
+    @Override
+    public List<ActivityLog> getLogsForExport(
+            Long tenantId,
+            Long userId,
+            ActivityType activityType,
+            Instant startDate,
+            Instant endDate
+    ) {
+        return activityLogRepository.findLogsForExport(
+                tenantId, userId, activityType, startDate, endDate
+        );
+    }
+
+    @Override
+    public Page<ActivityLogResponse> getActivityLogsByUser(Long tenantId, Long userId, Pageable pageable) {
+        return activityLogRepository.findByTenantIdAndUserIdOrderByCreatedAtDesc(tenantId, userId, pageable)
+                .map(ActivityLogResponse::from);
+    }
 }

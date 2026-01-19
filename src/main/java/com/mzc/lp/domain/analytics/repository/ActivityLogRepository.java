@@ -105,4 +105,44 @@ public interface ActivityLogRepository extends JpaRepository<ActivityLog, Long> 
            "WHERE a.userId = :userId AND a.activityType = 'LOGIN_FAILED' " +
            "AND a.createdAt >= :since")
     long countLoginFailuresSince(@Param("userId") Long userId, @Param("since") Instant since);
+
+    /**
+     * 복합 조건 검색 (유저별 필터 포함)
+     */
+    @Query("SELECT a FROM ActivityLog a WHERE a.tenantId = :tenantId " +
+           "AND (:userId IS NULL OR a.userId = :userId) " +
+           "AND (:activityType IS NULL OR a.activityType = :activityType) " +
+           "AND (:startDate IS NULL OR a.createdAt >= :startDate) " +
+           "AND (:endDate IS NULL OR a.createdAt <= :endDate) " +
+           "AND (:keyword IS NULL OR a.description LIKE %:keyword% " +
+           "     OR a.userEmail LIKE %:keyword% " +
+           "     OR a.userName LIKE %:keyword% " +
+           "     OR a.targetName LIKE %:keyword%) " +
+           "ORDER BY a.createdAt DESC")
+    Page<ActivityLog> searchLogs(
+            @Param("tenantId") Long tenantId,
+            @Param("userId") Long userId,
+            @Param("activityType") ActivityType activityType,
+            @Param("startDate") Instant startDate,
+            @Param("endDate") Instant endDate,
+            @Param("keyword") String keyword,
+            Pageable pageable
+    );
+
+    /**
+     * 내보내기용 검색 (페이징 없이)
+     */
+    @Query("SELECT a FROM ActivityLog a WHERE a.tenantId = :tenantId " +
+           "AND (:userId IS NULL OR a.userId = :userId) " +
+           "AND (:activityType IS NULL OR a.activityType = :activityType) " +
+           "AND (:startDate IS NULL OR a.createdAt >= :startDate) " +
+           "AND (:endDate IS NULL OR a.createdAt <= :endDate) " +
+           "ORDER BY a.createdAt DESC")
+    List<ActivityLog> findLogsForExport(
+            @Param("tenantId") Long tenantId,
+            @Param("userId") Long userId,
+            @Param("activityType") ActivityType activityType,
+            @Param("startDate") Instant startDate,
+            @Param("endDate") Instant endDate
+    );
 }
