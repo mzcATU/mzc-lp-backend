@@ -104,6 +104,9 @@ public class AuthServiceImpl implements AuthService {
             throw new InvalidCredentialsException();
         }
 
+        // 마지막 로그인 시간 업데이트
+        user.updateLastLoginAt();
+
         // 토큰 생성 (tenantId, 다중 역할 포함)
         Set<String> roleNames = user.getRoles().stream()
                 .map(TenantRole::name)

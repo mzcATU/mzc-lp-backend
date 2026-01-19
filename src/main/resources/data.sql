@@ -108,202 +108,245 @@ DELETE FROM cm_course_tags WHERE course_id IN (SELECT id FROM cm_courses WHERE t
 DELETE FROM cm_courses WHERE tenant_id IN (1, 2, 3);
 DELETE FROM cm_categories WHERE tenant_id IN (1, 2, 3);
 DELETE FROM users WHERE tenant_id IN (1, 2, 3);
+DELETE FROM departments WHERE tenant_id IN (1, 2, 3);
 
 -- =============================================
--- 3. 사용자 데이터 INSERT
+-- 3. 부서 데이터 INSERT (테넌트별)
+-- =============================================
+
+-- ===== 테넌트 1 (기본 테넌트) 부서들 =====
+INSERT INTO departments (tenant_id, name, code, description, parent_id, sort_order, is_active, created_at, updated_at) VALUES
+(1, '개발팀', 'DEV', '소프트웨어 개발 부서', NULL, 1, true, NOW(), NOW()),
+(1, '마케팅팀', 'MKT', '마케팅 및 홍보 부서', NULL, 2, true, NOW(), NOW()),
+(1, '인사팀', 'HR', '인사 관리 부서', NULL, 3, true, NOW(), NOW()),
+(1, '영업팀', 'SALES', '영업 및 고객 관리 부서', NULL, 4, true, NOW(), NOW()),
+(1, '디자인팀', 'DESIGN', 'UI/UX 및 그래픽 디자인 부서', NULL, 5, true, NOW(), NOW()),
+(1, '경영지원팀', 'BIZ', '경영 지원 부서', NULL, 6, true, NOW(), NOW());
+
+-- ===== 테넌트 2 (A사) 부서들 =====
+INSERT INTO departments (tenant_id, name, code, description, parent_id, sort_order, is_active, created_at, updated_at) VALUES
+(2, '개발팀', 'DEV', '소프트웨어 개발 부서', NULL, 1, true, NOW(), NOW()),
+(2, '기획팀', 'PLAN', '서비스 기획 부서', NULL, 2, true, NOW(), NOW()),
+(2, '인사팀', 'HR', '인사 관리 부서', NULL, 3, true, NOW(), NOW()),
+(2, '재무팀', 'FIN', '재무 관리 부서', NULL, 4, true, NOW(), NOW()),
+(2, '품질관리팀', 'QA', '품질 보증 부서', NULL, 5, true, NOW(), NOW());
+
+-- ===== 테넌트 3 (B사) 부서들 =====
+INSERT INTO departments (tenant_id, name, code, description, parent_id, sort_order, is_active, created_at, updated_at) VALUES
+(3, '개발팀', 'DEV', '소프트웨어 개발 부서', NULL, 1, true, NOW(), NOW()),
+(3, '마케팅팀', 'MKT', '마케팅 부서', NULL, 2, true, NOW(), NOW()),
+(3, '운영팀', 'OPS', '서비스 운영 부서', NULL, 3, true, NOW(), NOW()),
+(3, '고객지원팀', 'CS', '고객 지원 부서', NULL, 4, true, NOW(), NOW());
+
+-- =============================================
+-- 4. 사용자 데이터 INSERT
 -- 비밀번호: 1q2w3e4r! (BCrypt 암호화)
 -- =============================================
- 
+
 -- ===== 시스템 관리자 (전체 1명) =====
-INSERT INTO users (tenant_id, email, password, name, phone, role, status, created_at, updated_at) VALUES
-(1, 'sysadmin@mzc.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '시스템관리자', '010-0000-0001', 'SYSTEM_ADMIN', 'ACTIVE', NOW(), NOW());
+INSERT INTO users (tenant_id, email, password, name, phone, department, position, role, status, created_at, updated_at) VALUES
+(1, 'sysadmin@mzc.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '시스템관리자', '010-0000-0001', NULL, NULL, 'SYSTEM_ADMIN', 'ACTIVE', NOW(), NOW());
 
 -- ===== 테넌트 1 (기본 테넌트) 사용자들 =====
-INSERT INTO users (tenant_id, email, password, name, phone, role, status, created_at, updated_at) VALUES
+INSERT INTO users (tenant_id, email, password, name, phone, department, position, role, status, created_at, updated_at) VALUES
 -- 테넌트 관리자
-(1, 'admin@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '기본테넌트관리자', '010-1000-0001', 'TENANT_ADMIN', 'ACTIVE', NOW(), NOW()),
+(1, 'admin@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '기본테넌트관리자', '010-1000-0001', '경영지원팀', '부장', 'TENANT_ADMIN', 'ACTIVE', NOW(), NOW()),
 -- 운영자
-(1, 'operator1@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '운영자1', '010-1000-0002', 'OPERATOR', 'ACTIVE', NOW(), NOW()),
-(1, 'operator2@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '운영자2', '010-1000-0003', 'OPERATOR', 'ACTIVE', NOW(), NOW()),
+(1, 'operator1@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '운영자1', '010-1000-0002', '경영지원팀', '과장', 'OPERATOR', 'ACTIVE', NOW(), NOW()),
+(1, 'operator2@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '운영자2', '010-1000-0003', '경영지원팀', '대리', 'OPERATOR', 'ACTIVE', NOW(), NOW()),
 -- 설계자
-(1, 'designer1@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '설계자1', '010-1000-0004', 'DESIGNER', 'ACTIVE', NOW(), NOW()),
-(1, 'designer2@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '설계자2', '010-1000-0005', 'DESIGNER', 'ACTIVE', NOW(), NOW()),
-(1, 'designer3@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '설계자3', '010-1000-0006', 'DESIGNER', 'ACTIVE', NOW(), NOW()),
+(1, 'designer1@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '설계자1', '010-1000-0004', '개발팀', '과장', 'DESIGNER', 'ACTIVE', NOW(), NOW()),
+(1, 'designer2@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '설계자2', '010-1000-0005', '개발팀', '대리', 'DESIGNER', 'ACTIVE', NOW(), NOW()),
+(1, 'designer3@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '설계자3', '010-1000-0006', '디자인팀', '대리', 'DESIGNER', 'ACTIVE', NOW(), NOW()),
 -- 강의 개설자 (테스트용)
-(1, 'creator@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '강의개설자', '010-1000-0007', 'USER', 'ACTIVE', NOW(), NOW()),
--- 일반 사용자 50명 (user1 ~ user50)
-(1, 'user1@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '김민준', '010-1001-0001', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user2@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '이서연', '010-1001-0002', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user3@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '박지호', '010-1001-0003', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user4@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '최수아', '010-1001-0004', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user5@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '정우진', '010-1001-0005', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user6@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '강하은', '010-1001-0006', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user7@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '윤준서', '010-1001-0007', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user8@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '장예은', '010-1001-0008', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user9@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '임도현', '010-1001-0009', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user10@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '한소희', '010-1001-0010', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user11@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '오시우', '010-1001-0011', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user12@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '서유진', '010-1001-0012', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user13@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '신현우', '010-1001-0013', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user14@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '권민서', '010-1001-0014', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user15@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '황지안', '010-1001-0015', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user16@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '안서준', '010-1001-0016', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user17@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '송예린', '010-1001-0017', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user18@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '전민재', '010-1001-0018', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user19@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '홍수빈', '010-1001-0019', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user20@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '유하준', '010-1001-0020', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user21@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '조아린', '010-1001-0021', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user22@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '백승민', '010-1001-0022', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user23@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '노지원', '010-1001-0023', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user24@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '하태민', '010-1001-0024', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user25@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '문채원', '010-1001-0025', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user26@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '양현준', '010-1001-0026', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user27@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '배나은', '010-1001-0027', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user28@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '남지훈', '010-1001-0028', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user29@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '심유나', '010-1001-0029', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user30@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '곽동현', '010-1001-0030', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user31@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '탁서영', '010-1001-0031', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user32@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '엄재윤', '010-1001-0032', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user33@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '표다인', '010-1001-0033', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user34@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '채성호', '010-1001-0034', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user35@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '원미래', '010-1001-0035', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user36@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '길준혁', '010-1001-0036', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user37@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '방소율', '010-1001-0037', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user38@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '추건우', '010-1001-0038', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user39@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '봉하늘', '010-1001-0039', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user40@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '석진우', '010-1001-0040', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user41@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '편가영', '010-1001-0041', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user42@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '선우혁', '010-1001-0042', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user43@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '독고윤', '010-1001-0043', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user44@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '빈세라', '010-1001-0044', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user45@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '피태양', '010-1001-0045', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user46@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '공보람', '010-1001-0046', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user47@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '국승리', '010-1001-0047', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user48@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '도경민', '010-1001-0048', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user49@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '류다온', '010-1001-0049', 'USER', 'ACTIVE', NOW(), NOW()),
-(1, 'user50@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '마준영', '010-1001-0050', 'USER', 'ACTIVE', NOW(), NOW());
+(1, 'creator@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '강의개설자', '010-1000-0007', '개발팀', '팀장', 'USER', 'ACTIVE', NOW(), NOW()),
+-- 일반 사용자 50명 (user1 ~ user50) - 부서/직급 분배
+-- 개발팀 (15명)
+(1, 'user1@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '김민준', '010-1001-0001', '개발팀', '차장', 'USER', 'ACTIVE', NOW(), NOW()),
+(1, 'user2@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '이서연', '010-1001-0002', '개발팀', '과장', 'USER', 'ACTIVE', NOW(), NOW()),
+(1, 'user3@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '박지호', '010-1001-0003', '개발팀', '과장', 'USER', 'ACTIVE', NOW(), NOW()),
+(1, 'user4@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '최수아', '010-1001-0004', '개발팀', '대리', 'USER', 'ACTIVE', NOW(), NOW()),
+(1, 'user5@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '정우진', '010-1001-0005', '개발팀', '대리', 'USER', 'ACTIVE', NOW(), NOW()),
+(1, 'user6@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '강하은', '010-1001-0006', '개발팀', '대리', 'USER', 'ACTIVE', NOW(), NOW()),
+(1, 'user7@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '윤준서', '010-1001-0007', '개발팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+(1, 'user8@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '장예은', '010-1001-0008', '개발팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+(1, 'user9@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '임도현', '010-1001-0009', '개발팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+(1, 'user10@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '한소희', '010-1001-0010', '개발팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+(1, 'user11@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '오시우', '010-1001-0011', '개발팀', '인턴', 'USER', 'ACTIVE', NOW(), NOW()),
+(1, 'user12@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '서유진', '010-1001-0012', '개발팀', '인턴', 'USER', 'ACTIVE', NOW(), NOW()),
+(1, 'user13@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '신현우', '010-1001-0013', '개발팀', '인턴', 'USER', 'ACTIVE', NOW(), NOW()),
+(1, 'user14@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '권민서', '010-1001-0014', '개발팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+(1, 'user15@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '황지안', '010-1001-0015', '개발팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+-- 마케팅팀 (10명)
+(1, 'user16@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '안서준', '010-1001-0016', '마케팅팀', '팀장', 'USER', 'ACTIVE', NOW(), NOW()),
+(1, 'user17@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '송예린', '010-1001-0017', '마케팅팀', '과장', 'USER', 'ACTIVE', NOW(), NOW()),
+(1, 'user18@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '전민재', '010-1001-0018', '마케팅팀', '대리', 'USER', 'ACTIVE', NOW(), NOW()),
+(1, 'user19@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '홍수빈', '010-1001-0019', '마케팅팀', '대리', 'USER', 'ACTIVE', NOW(), NOW()),
+(1, 'user20@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '유하준', '010-1001-0020', '마케팅팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+(1, 'user21@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '조아린', '010-1001-0021', '마케팅팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+(1, 'user22@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '백승민', '010-1001-0022', '마케팅팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+(1, 'user23@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '노지원', '010-1001-0023', '마케팅팀', '인턴', 'USER', 'ACTIVE', NOW(), NOW()),
+(1, 'user24@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '하태민', '010-1001-0024', '마케팅팀', '인턴', 'USER', 'ACTIVE', NOW(), NOW()),
+(1, 'user25@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '문채원', '010-1001-0025', '마케팅팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+-- 인사팀 (8명)
+(1, 'user26@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '양현준', '010-1001-0026', '인사팀', '팀장', 'USER', 'ACTIVE', NOW(), NOW()),
+(1, 'user27@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '배나은', '010-1001-0027', '인사팀', '과장', 'USER', 'ACTIVE', NOW(), NOW()),
+(1, 'user28@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '남지훈', '010-1001-0028', '인사팀', '대리', 'USER', 'ACTIVE', NOW(), NOW()),
+(1, 'user29@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '심유나', '010-1001-0029', '인사팀', '대리', 'USER', 'ACTIVE', NOW(), NOW()),
+(1, 'user30@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '곽동현', '010-1001-0030', '인사팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+(1, 'user31@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '탁서영', '010-1001-0031', '인사팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+(1, 'user32@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '엄재윤', '010-1001-0032', '인사팀', '인턴', 'USER', 'ACTIVE', NOW(), NOW()),
+(1, 'user33@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '표다인', '010-1001-0033', '인사팀', '인턴', 'USER', 'ACTIVE', NOW(), NOW()),
+-- 영업팀 (10명)
+(1, 'user34@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '채성호', '010-1001-0034', '영업팀', '팀장', 'USER', 'ACTIVE', NOW(), NOW()),
+(1, 'user35@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '원미래', '010-1001-0035', '영업팀', '차장', 'USER', 'ACTIVE', NOW(), NOW()),
+(1, 'user36@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '길준혁', '010-1001-0036', '영업팀', '과장', 'USER', 'ACTIVE', NOW(), NOW()),
+(1, 'user37@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '방소율', '010-1001-0037', '영업팀', '대리', 'USER', 'ACTIVE', NOW(), NOW()),
+(1, 'user38@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '추건우', '010-1001-0038', '영업팀', '대리', 'USER', 'ACTIVE', NOW(), NOW()),
+(1, 'user39@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '봉하늘', '010-1001-0039', '영업팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+(1, 'user40@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '석진우', '010-1001-0040', '영업팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+(1, 'user41@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '편가영', '010-1001-0041', '영업팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+(1, 'user42@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '선우혁', '010-1001-0042', '영업팀', '인턴', 'USER', 'ACTIVE', NOW(), NOW()),
+(1, 'user43@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '독고윤', '010-1001-0043', '영업팀', '인턴', 'USER', 'ACTIVE', NOW(), NOW()),
+-- 디자인팀 (7명)
+(1, 'user44@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '빈세라', '010-1001-0044', '디자인팀', '팀장', 'USER', 'ACTIVE', NOW(), NOW()),
+(1, 'user45@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '피태양', '010-1001-0045', '디자인팀', '과장', 'USER', 'ACTIVE', NOW(), NOW()),
+(1, 'user46@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '공보람', '010-1001-0046', '디자인팀', '대리', 'USER', 'ACTIVE', NOW(), NOW()),
+(1, 'user47@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '국승리', '010-1001-0047', '디자인팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+(1, 'user48@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '도경민', '010-1001-0048', '디자인팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+(1, 'user49@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '류다온', '010-1001-0049', '디자인팀', '인턴', 'USER', 'ACTIVE', NOW(), NOW()),
+(1, 'user50@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '마준영', '010-1001-0050', '디자인팀', '인턴', 'USER', 'ACTIVE', NOW(), NOW());
 
 -- ===== 테넌트 2 (A사 교육센터) 사용자들 =====
-INSERT INTO users (tenant_id, email, password, name, phone, role, status, created_at, updated_at) VALUES
+INSERT INTO users (tenant_id, email, password, name, phone, department, position, role, status, created_at, updated_at) VALUES
 -- 테넌트 관리자
-(2, 'admin@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A사관리자', '010-2000-0001', 'TENANT_ADMIN', 'ACTIVE', NOW(), NOW()),
+(2, 'admin@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A사관리자', '010-2000-0001', '인사팀', '부장', 'TENANT_ADMIN', 'ACTIVE', NOW(), NOW()),
 -- 운영자
-(2, 'operator1@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A사운영자1', '010-2000-0002', 'OPERATOR', 'ACTIVE', NOW(), NOW()),
+(2, 'operator1@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A사운영자1', '010-2000-0002', '인사팀', '과장', 'OPERATOR', 'ACTIVE', NOW(), NOW()),
 -- 설계자
-(2, 'designer1@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A사설계자1', '010-2000-0003', 'DESIGNER', 'ACTIVE', NOW(), NOW()),
-(2, 'designer2@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A사설계자2', '010-2000-0004', 'DESIGNER', 'ACTIVE', NOW(), NOW()),
--- 일반 사용자 50명
-(2, 'user1@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A김철수', '010-2001-0001', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user2@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A이영희', '010-2001-0002', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user3@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A박민수', '010-2001-0003', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user4@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A최지우', '010-2001-0004', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user5@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A정현아', '010-2001-0005', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user6@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A강태웅', '010-2001-0006', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user7@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A윤서진', '010-2001-0007', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user8@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A장미래', '010-2001-0008', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user9@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A임현수', '010-2001-0009', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user10@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A한소연', '010-2001-0010', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user11@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A오준혁', '010-2001-0011', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user12@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A서다은', '010-2001-0012', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user13@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A신우진', '010-2001-0013', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user14@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A권나라', '010-2001-0014', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user15@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A황민호', '010-2001-0015', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user16@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A안예진', '010-2001-0016', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user17@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A송태현', '010-2001-0017', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user18@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A전수빈', '010-2001-0018', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user19@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A홍지민', '010-2001-0019', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user20@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A유하진', '010-2001-0020', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user21@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A조민석', '010-2001-0021', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user22@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A백수진', '010-2001-0022', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user23@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A노건우', '010-2001-0023', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user24@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A하민지', '010-2001-0024', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user25@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A문성훈', '010-2001-0025', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user26@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A양채린', '010-2001-0026', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user27@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A배현준', '010-2001-0027', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user28@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A남가영', '010-2001-0028', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user29@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A심동우', '010-2001-0029', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user30@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A곽예림', '010-2001-0030', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user31@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A탁승우', '010-2001-0031', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user32@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A엄소영', '010-2001-0032', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user33@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A표재윤', '010-2001-0033', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user34@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A채지안', '010-2001-0034', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user35@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A원태윤', '010-2001-0035', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user36@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A길나윤', '010-2001-0036', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user37@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A방준서', '010-2001-0037', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user38@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A추아린', '010-2001-0038', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user39@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A봉현우', '010-2001-0039', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user40@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A석다인', '010-2001-0040', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user41@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A편성민', '010-2001-0041', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user42@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A선우민', '010-2001-0042', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user43@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A독고연', '010-2001-0043', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user44@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A빈태호', '010-2001-0044', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user45@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A피소라', '010-2001-0045', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user46@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A공민재', '010-2001-0046', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user47@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A국하늘', '010-2001-0047', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user48@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A도영우', '010-2001-0048', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user49@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A류민서', '010-2001-0049', 'USER', 'ACTIVE', NOW(), NOW()),
-(2, 'user50@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A마서연', '010-2001-0050', 'USER', 'ACTIVE', NOW(), NOW());
+(2, 'designer1@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A사설계자1', '010-2000-0003', '개발팀', '과장', 'DESIGNER', 'ACTIVE', NOW(), NOW()),
+(2, 'designer2@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A사설계자2', '010-2000-0004', '기획팀', '대리', 'DESIGNER', 'ACTIVE', NOW(), NOW()),
+-- 일반 사용자 50명 - 부서/직급 분배
+-- 개발팀 (15명)
+(2, 'user1@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A김철수', '010-2001-0001', '개발팀', '팀장', 'USER', 'ACTIVE', NOW(), NOW()),
+(2, 'user2@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A이영희', '010-2001-0002', '개발팀', '차장', 'USER', 'ACTIVE', NOW(), NOW()),
+(2, 'user3@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A박민수', '010-2001-0003', '개발팀', '과장', 'USER', 'ACTIVE', NOW(), NOW()),
+(2, 'user4@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A최지우', '010-2001-0004', '개발팀', '과장', 'USER', 'ACTIVE', NOW(), NOW()),
+(2, 'user5@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A정현아', '010-2001-0005', '개발팀', '대리', 'USER', 'ACTIVE', NOW(), NOW()),
+(2, 'user6@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A강태웅', '010-2001-0006', '개발팀', '대리', 'USER', 'ACTIVE', NOW(), NOW()),
+(2, 'user7@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A윤서진', '010-2001-0007', '개발팀', '대리', 'USER', 'ACTIVE', NOW(), NOW()),
+(2, 'user8@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A장미래', '010-2001-0008', '개발팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+(2, 'user9@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A임현수', '010-2001-0009', '개발팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+(2, 'user10@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A한소연', '010-2001-0010', '개발팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+(2, 'user11@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A오준혁', '010-2001-0011', '개발팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+(2, 'user12@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A서다은', '010-2001-0012', '개발팀', '인턴', 'USER', 'ACTIVE', NOW(), NOW()),
+(2, 'user13@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A신우진', '010-2001-0013', '개발팀', '인턴', 'USER', 'ACTIVE', NOW(), NOW()),
+(2, 'user14@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A권나라', '010-2001-0014', '개발팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+(2, 'user15@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A황민호', '010-2001-0015', '개발팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+-- 기획팀 (12명)
+(2, 'user16@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A안예진', '010-2001-0016', '기획팀', '팀장', 'USER', 'ACTIVE', NOW(), NOW()),
+(2, 'user17@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A송태현', '010-2001-0017', '기획팀', '과장', 'USER', 'ACTIVE', NOW(), NOW()),
+(2, 'user18@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A전수빈', '010-2001-0018', '기획팀', '과장', 'USER', 'ACTIVE', NOW(), NOW()),
+(2, 'user19@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A홍지민', '010-2001-0019', '기획팀', '대리', 'USER', 'ACTIVE', NOW(), NOW()),
+(2, 'user20@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A유하진', '010-2001-0020', '기획팀', '대리', 'USER', 'ACTIVE', NOW(), NOW()),
+(2, 'user21@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A조민석', '010-2001-0021', '기획팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+(2, 'user22@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A백수진', '010-2001-0022', '기획팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+(2, 'user23@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A노건우', '010-2001-0023', '기획팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+(2, 'user24@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A하민지', '010-2001-0024', '기획팀', '인턴', 'USER', 'ACTIVE', NOW(), NOW()),
+(2, 'user25@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A문성훈', '010-2001-0025', '기획팀', '인턴', 'USER', 'ACTIVE', NOW(), NOW()),
+(2, 'user26@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A양채린', '010-2001-0026', '기획팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+(2, 'user27@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A배현준', '010-2001-0027', '기획팀', '대리', 'USER', 'ACTIVE', NOW(), NOW()),
+-- 인사팀 (8명)
+(2, 'user28@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A남가영', '010-2001-0028', '인사팀', '팀장', 'USER', 'ACTIVE', NOW(), NOW()),
+(2, 'user29@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A심동우', '010-2001-0029', '인사팀', '과장', 'USER', 'ACTIVE', NOW(), NOW()),
+(2, 'user30@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A곽예림', '010-2001-0030', '인사팀', '대리', 'USER', 'ACTIVE', NOW(), NOW()),
+(2, 'user31@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A탁승우', '010-2001-0031', '인사팀', '대리', 'USER', 'ACTIVE', NOW(), NOW()),
+(2, 'user32@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A엄소영', '010-2001-0032', '인사팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+(2, 'user33@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A표재윤', '010-2001-0033', '인사팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+(2, 'user34@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A채지안', '010-2001-0034', '인사팀', '인턴', 'USER', 'ACTIVE', NOW(), NOW()),
+(2, 'user35@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A원태윤', '010-2001-0035', '인사팀', '인턴', 'USER', 'ACTIVE', NOW(), NOW()),
+-- 재무팀 (8명)
+(2, 'user36@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A길나윤', '010-2001-0036', '재무팀', '팀장', 'USER', 'ACTIVE', NOW(), NOW()),
+(2, 'user37@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A방준서', '010-2001-0037', '재무팀', '차장', 'USER', 'ACTIVE', NOW(), NOW()),
+(2, 'user38@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A추아린', '010-2001-0038', '재무팀', '과장', 'USER', 'ACTIVE', NOW(), NOW()),
+(2, 'user39@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A봉현우', '010-2001-0039', '재무팀', '대리', 'USER', 'ACTIVE', NOW(), NOW()),
+(2, 'user40@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A석다인', '010-2001-0040', '재무팀', '대리', 'USER', 'ACTIVE', NOW(), NOW()),
+(2, 'user41@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A편성민', '010-2001-0041', '재무팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+(2, 'user42@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A선우민', '010-2001-0042', '재무팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+(2, 'user43@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A독고연', '010-2001-0043', '재무팀', '인턴', 'USER', 'ACTIVE', NOW(), NOW()),
+-- 품질관리팀 (7명)
+(2, 'user44@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A빈태호', '010-2001-0044', '품질관리팀', '팀장', 'USER', 'ACTIVE', NOW(), NOW()),
+(2, 'user45@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A피소라', '010-2001-0045', '품질관리팀', '과장', 'USER', 'ACTIVE', NOW(), NOW()),
+(2, 'user46@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A공민재', '010-2001-0046', '품질관리팀', '대리', 'USER', 'ACTIVE', NOW(), NOW()),
+(2, 'user47@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A국하늘', '010-2001-0047', '품질관리팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+(2, 'user48@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A도영우', '010-2001-0048', '품질관리팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+(2, 'user49@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A류민서', '010-2001-0049', '품질관리팀', '인턴', 'USER', 'ACTIVE', NOW(), NOW()),
+(2, 'user50@company-a.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'A마서연', '010-2001-0050', '품질관리팀', '인턴', 'USER', 'ACTIVE', NOW(), NOW());
 
 -- ===== 테넌트 3 (B사 아카데미) 사용자들 =====
-INSERT INTO users (tenant_id, email, password, name, phone, role, status, created_at, updated_at) VALUES
+INSERT INTO users (tenant_id, email, password, name, phone, department, position, role, status, created_at, updated_at) VALUES
 -- 테넌트 관리자
-(3, 'admin@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B사관리자', '010-3000-0001', 'TENANT_ADMIN', 'ACTIVE', NOW(), NOW()),
+(3, 'admin@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B사관리자', '010-3000-0001', '운영팀', '부장', 'TENANT_ADMIN', 'ACTIVE', NOW(), NOW()),
 -- 운영자
-(3, 'operator1@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B사운영자1', '010-3000-0002', 'OPERATOR', 'ACTIVE', NOW(), NOW()),
+(3, 'operator1@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B사운영자1', '010-3000-0002', '운영팀', '과장', 'OPERATOR', 'ACTIVE', NOW(), NOW()),
 -- 설계자
-(3, 'designer1@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B사설계자1', '010-3000-0003', 'DESIGNER', 'ACTIVE', NOW(), NOW()),
-(3, 'designer2@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B사설계자2', '010-3000-0004', 'DESIGNER', 'ACTIVE', NOW(), NOW()),
--- 일반 사용자 50명
-(3, 'user1@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B박준혁', '010-3001-0001', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user2@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B김서아', '010-3001-0002', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user3@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B이도윤', '010-3001-0003', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user4@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B최하은', '010-3001-0004', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user5@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B정시우', '010-3001-0005', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user6@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B강예은', '010-3001-0006', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user7@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B윤지호', '010-3001-0007', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user8@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B장수아', '010-3001-0008', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user9@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B임우진', '010-3001-0009', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user10@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B한서연', '010-3001-0010', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user11@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B오민준', '010-3001-0011', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user12@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B서지안', '010-3001-0012', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user13@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B신현우', '010-3001-0013', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user14@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B권예린', '010-3001-0014', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user15@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B황태민', '010-3001-0015', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user16@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B안나은', '010-3001-0016', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user17@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B송준서', '010-3001-0017', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user18@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B전아린', '010-3001-0018', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user19@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B홍승민', '010-3001-0019', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user20@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B유지원', '010-3001-0020', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user21@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B조하준', '010-3001-0021', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user22@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B백민서', '010-3001-0022', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user23@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B노태현', '010-3001-0023', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user24@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B하수빈', '010-3001-0024', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user25@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B문지민', '010-3001-0025', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user26@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B양하진', '010-3001-0026', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user27@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B배민석', '010-3001-0027', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user28@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B남수진', '010-3001-0028', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user29@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B심건우', '010-3001-0029', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user30@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B곽민지', '010-3001-0030', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user31@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B탁성훈', '010-3001-0031', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user32@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B엄채린', '010-3001-0032', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user33@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B표현준', '010-3001-0033', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user34@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B채가영', '010-3001-0034', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user35@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B원동우', '010-3001-0035', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user36@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B길예림', '010-3001-0036', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user37@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B방승우', '010-3001-0037', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user38@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B추소영', '010-3001-0038', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user39@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B봉재윤', '010-3001-0039', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user40@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B석지안', '010-3001-0040', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user41@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B편태윤', '010-3001-0041', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user42@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B선우나', '010-3001-0042', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user43@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B독고준', '010-3001-0043', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user44@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B빈아린', '010-3001-0044', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user45@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B피현우', '010-3001-0045', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user46@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B공다인', '010-3001-0046', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user47@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B국성호', '010-3001-0047', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user48@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B도미래', '010-3001-0048', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user49@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B류준영', '010-3001-0049', 'USER', 'ACTIVE', NOW(), NOW()),
-(3, 'user50@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B마다온', '010-3001-0050', 'USER', 'ACTIVE', NOW(), NOW());
+(3, 'designer1@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B사설계자1', '010-3000-0003', '개발팀', '과장', 'DESIGNER', 'ACTIVE', NOW(), NOW()),
+(3, 'designer2@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B사설계자2', '010-3000-0004', '개발팀', '대리', 'DESIGNER', 'ACTIVE', NOW(), NOW()),
+-- 일반 사용자 50명 (4개 부서 분배: 개발팀, 마케팅팀, 운영팀, 고객지원팀)
+-- 개발팀 (15명)
+(3, 'user1@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B박준혁', '010-3001-0001', '개발팀', '팀장', 'USER', 'ACTIVE', NOW(), NOW()),
+(3, 'user2@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B김서아', '010-3001-0002', '개발팀', '차장', 'USER', 'ACTIVE', NOW(), NOW()),
+(3, 'user3@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B이도윤', '010-3001-0003', '개발팀', '과장', 'USER', 'ACTIVE', NOW(), NOW()),
+(3, 'user4@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B최하은', '010-3001-0004', '개발팀', '대리', 'USER', 'ACTIVE', NOW(), NOW()),
+(3, 'user5@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B정시우', '010-3001-0005', '개발팀', '대리', 'USER', 'ACTIVE', NOW(), NOW()),
+(3, 'user6@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B강예은', '010-3001-0006', '개발팀', '대리', 'USER', 'ACTIVE', NOW(), NOW()),
+(3, 'user7@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B윤지호', '010-3001-0007', '개발팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+(3, 'user8@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B장수아', '010-3001-0008', '개발팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+(3, 'user9@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B임우진', '010-3001-0009', '개발팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+(3, 'user10@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B한서연', '010-3001-0010', '개발팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+(3, 'user11@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B오민준', '010-3001-0011', '개발팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+(3, 'user12@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B서지안', '010-3001-0012', '개발팀', '인턴', 'USER', 'ACTIVE', NOW(), NOW()),
+(3, 'user13@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B신현우', '010-3001-0013', '개발팀', '인턴', 'USER', 'ACTIVE', NOW(), NOW()),
+(3, 'user14@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B권예린', '010-3001-0014', '개발팀', '인턴', 'USER', 'ACTIVE', NOW(), NOW()),
+(3, 'user15@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B황태민', '010-3001-0015', '개발팀', '인턴', 'USER', 'ACTIVE', NOW(), NOW()),
+-- 마케팅팀 (12명)
+(3, 'user16@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B안나은', '010-3001-0016', '마케팅팀', '팀장', 'USER', 'ACTIVE', NOW(), NOW()),
+(3, 'user17@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B송준서', '010-3001-0017', '마케팅팀', '과장', 'USER', 'ACTIVE', NOW(), NOW()),
+(3, 'user18@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B전아린', '010-3001-0018', '마케팅팀', '대리', 'USER', 'ACTIVE', NOW(), NOW()),
+(3, 'user19@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B홍승민', '010-3001-0019', '마케팅팀', '대리', 'USER', 'ACTIVE', NOW(), NOW()),
+(3, 'user20@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B유지원', '010-3001-0020', '마케팅팀', '대리', 'USER', 'ACTIVE', NOW(), NOW()),
+(3, 'user21@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B조하준', '010-3001-0021', '마케팅팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+(3, 'user22@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B백민서', '010-3001-0022', '마케팅팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+(3, 'user23@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B노태현', '010-3001-0023', '마케팅팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+(3, 'user24@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B하수빈', '010-3001-0024', '마케팅팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+(3, 'user25@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B문지민', '010-3001-0025', '마케팅팀', '인턴', 'USER', 'ACTIVE', NOW(), NOW()),
+(3, 'user26@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B양하진', '010-3001-0026', '마케팅팀', '인턴', 'USER', 'ACTIVE', NOW(), NOW()),
+(3, 'user27@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B배민석', '010-3001-0027', '마케팅팀', '인턴', 'USER', 'ACTIVE', NOW(), NOW()),
+-- 운영팀 (12명)
+(3, 'user28@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B남수진', '010-3001-0028', '운영팀', '팀장', 'USER', 'ACTIVE', NOW(), NOW()),
+(3, 'user29@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B심건우', '010-3001-0029', '운영팀', '차장', 'USER', 'ACTIVE', NOW(), NOW()),
+(3, 'user30@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B곽민지', '010-3001-0030', '운영팀', '과장', 'USER', 'ACTIVE', NOW(), NOW()),
+(3, 'user31@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B탁성훈', '010-3001-0031', '운영팀', '대리', 'USER', 'ACTIVE', NOW(), NOW()),
+(3, 'user32@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B엄채린', '010-3001-0032', '운영팀', '대리', 'USER', 'ACTIVE', NOW(), NOW()),
+(3, 'user33@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B표현준', '010-3001-0033', '운영팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+(3, 'user34@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B채가영', '010-3001-0034', '운영팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+(3, 'user35@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B원동우', '010-3001-0035', '운영팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+(3, 'user36@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B길예림', '010-3001-0036', '운영팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+(3, 'user37@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B방승우', '010-3001-0037', '운영팀', '인턴', 'USER', 'ACTIVE', NOW(), NOW()),
+(3, 'user38@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B추소영', '010-3001-0038', '운영팀', '인턴', 'USER', 'ACTIVE', NOW(), NOW()),
+(3, 'user39@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B봉재윤', '010-3001-0039', '운영팀', '인턴', 'USER', 'ACTIVE', NOW(), NOW()),
+-- 고객지원팀 (11명)
+(3, 'user40@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B석지안', '010-3001-0040', '고객지원팀', '팀장', 'USER', 'ACTIVE', NOW(), NOW()),
+(3, 'user41@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B편태윤', '010-3001-0041', '고객지원팀', '과장', 'USER', 'ACTIVE', NOW(), NOW()),
+(3, 'user42@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B선우나', '010-3001-0042', '고객지원팀', '대리', 'USER', 'ACTIVE', NOW(), NOW()),
+(3, 'user43@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B독고준', '010-3001-0043', '고객지원팀', '대리', 'USER', 'ACTIVE', NOW(), NOW()),
+(3, 'user44@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B빈아린', '010-3001-0044', '고객지원팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+(3, 'user45@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B피현우', '010-3001-0045', '고객지원팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+(3, 'user46@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B공다인', '010-3001-0046', '고객지원팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+(3, 'user47@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B국성호', '010-3001-0047', '고객지원팀', '사원', 'USER', 'ACTIVE', NOW(), NOW()),
+(3, 'user48@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B도미래', '010-3001-0048', '고객지원팀', '인턴', 'USER', 'ACTIVE', NOW(), NOW()),
+(3, 'user49@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B류준영', '010-3001-0049', '고객지원팀', '인턴', 'USER', 'ACTIVE', NOW(), NOW()),
+(3, 'user50@company-b.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', 'B마다온', '010-3001-0050', '고객지원팀', '인턴', 'USER', 'ACTIVE', NOW(), NOW());
 
 -- =============================================
 -- 4. 카테고리 데이터 INSERT (프론트엔드와 ID 일치 필요)

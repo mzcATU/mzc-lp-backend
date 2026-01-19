@@ -2,6 +2,7 @@ package com.mzc.lp.domain.department.service;
 
 import com.mzc.lp.domain.department.dto.request.CreateDepartmentRequest;
 import com.mzc.lp.domain.department.dto.request.UpdateDepartmentRequest;
+import com.mzc.lp.domain.department.dto.response.DepartmentMemberResponse;
 import com.mzc.lp.domain.department.dto.response.DepartmentResponse;
 
 import java.util.List;
@@ -47,4 +48,20 @@ public interface DepartmentService {
      * 활성 부서 목록 조회
      */
     List<DepartmentResponse> getActiveDepartments(Long tenantId);
+
+    /**
+     * 부서별 소속 인원 목록 조회
+     */
+    List<DepartmentMemberResponse> getMembersByDepartmentId(Long tenantId, Long departmentId);
+
+    /**
+     * 부서에 추가 가능한 인원 목록 조회
+     * (해당 부서에 소속되지 않은 활성 사용자)
+     */
+    List<DepartmentMemberResponse> getAvailableMembersForDepartment(Long tenantId, Long departmentId);
+
+    /**
+     * 부서에 인원 추가 (사용자의 부서를 변경)
+     */
+    void addMemberToDepartment(Long tenantId, Long departmentId, Long userId);
 }

@@ -4,6 +4,7 @@ import com.mzc.lp.common.dto.ApiResponse;
 import com.mzc.lp.common.security.UserPrincipal;
 import com.mzc.lp.domain.department.dto.request.CreateDepartmentRequest;
 import com.mzc.lp.domain.department.dto.request.UpdateDepartmentRequest;
+import com.mzc.lp.domain.department.dto.response.DepartmentMemberResponse;
 import com.mzc.lp.domain.department.dto.response.DepartmentResponse;
 import com.mzc.lp.domain.department.service.DepartmentService;
 import jakarta.validation.Valid;
@@ -69,6 +70,37 @@ public class DepartmentController {
     ) {
         DepartmentResponse response = departmentService.getById(principal.tenantId(), departmentId);
         return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @GetMapping("/{departmentId}/members")
+    @PreAuthorize("hasAnyRole('OPERATOR', 'TENANT_ADMIN')")
+    public ResponseEntity<ApiResponse<List<DepartmentMemberResponse>>> getMembers(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long departmentId
+    ) {
+        List<DepartmentMemberResponse> response = departmentService.getMembersByDepartmentId(principal.tenantId(), departmentId);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @GetMapping("/{departmentId}/available-members")
+    @PreAuthorize("hasRole('TENANT_ADMIN')")
+    public ResponseEntity<ApiResponse<List<DepartmentMemberResponse>>> getAvailableMembers(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long departmentId
+    ) {
+        List<DepartmentMemberResponse> response = departmentService.getAvailableMembersForDepartment(principal.tenantId(), departmentId);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @PostMapping("/{departmentId}/members/{userId}")
+    @PreAuthorize("hasRole('TENANT_ADMIN')")
+    public ResponseEntity<Void> addMemberToDepartment(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long departmentId,
+            @PathVariable Long userId
+    ) {
+        departmentService.addMemberToDepartment(principal.tenantId(), departmentId, userId);
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping
