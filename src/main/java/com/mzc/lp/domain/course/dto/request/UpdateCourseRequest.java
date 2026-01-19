@@ -6,7 +6,6 @@ import com.mzc.lp.domain.course.constant.CourseType;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 
-import java.time.LocalDate;
 import java.util.List;
 
 public record UpdateCourseRequest(
@@ -27,10 +26,6 @@ public record UpdateCourseRequest(
 
         @Size(max = 500, message = "썸네일 URL은 500자 이하여야 합니다")
         String thumbnailUrl,
-
-        LocalDate startDate,
-
-        LocalDate endDate,
 
         List<String> tags,
 
