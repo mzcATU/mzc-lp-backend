@@ -16,6 +16,7 @@ import java.util.List;
 public record CourseTimePublicDetailResponse(
         Long id,
         String title,
+        String description,
         CourseTimeStatus status,
         DeliveryType deliveryType,
         DurationType durationType,
@@ -50,6 +51,7 @@ public record CourseTimePublicDetailResponse(
         return new CourseTimePublicDetailResponse(
                 courseTime.getId(),
                 courseTime.getTitle(),
+                courseTime.getDescription(),
                 courseTime.getStatus(),
                 courseTime.getDeliveryType(),
                 courseTime.getDurationType(),

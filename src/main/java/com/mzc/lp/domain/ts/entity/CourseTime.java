@@ -43,6 +43,9 @@ public class CourseTime extends TenantEntity {
     @Column(nullable = false, length = 200)
     private String title;
 
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "delivery_type", nullable = false, length = 20)
     private DeliveryType deliveryType;
@@ -120,6 +123,7 @@ public class CourseTime extends TenantEntity {
     public static CourseTime cloneFrom(
             CourseTime source,
             String newTitle,
+            String newDescription,
             LocalDate enrollStartDate,
             LocalDate enrollEndDate,
             LocalDate classStartDate,
@@ -143,6 +147,7 @@ public class CourseTime extends TenantEntity {
 
         // 새로 지정하는 필드
         courseTime.title = newTitle;
+        courseTime.description = newDescription;
         courseTime.enrollStartDate = enrollStartDate;
         courseTime.enrollEndDate = enrollEndDate;
         courseTime.classStartDate = classStartDate;
@@ -167,6 +172,7 @@ public class CourseTime extends TenantEntity {
 
     public static CourseTime create(
             String title,
+            String description,
             DeliveryType deliveryType,
             DurationType durationType,
             LocalDate enrollStartDate,
@@ -187,6 +193,7 @@ public class CourseTime extends TenantEntity {
     ) {
         CourseTime courseTime = new CourseTime();
         courseTime.title = title;
+        courseTime.description = description;
         courseTime.deliveryType = deliveryType;
         courseTime.durationType = durationType;
         // 상태 자동 결정: 모집 시작일이 오늘이거나 이미 지남 → RECRUITING, 미래 → DRAFT
@@ -231,6 +238,10 @@ public class CourseTime extends TenantEntity {
 
     public void updateTitle(String title) {
         this.title = title;
+    }
+
+    public void updateDescription(String description) {
+        this.description = description;
     }
 
     public void updatePeriod(

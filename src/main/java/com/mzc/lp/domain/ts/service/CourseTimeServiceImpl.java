@@ -97,6 +97,7 @@ public class CourseTimeServiceImpl implements CourseTimeService {
         // CourseTime 생성
         CourseTime courseTime = CourseTime.create(
                 request.title(),
+                request.description(),
                 request.deliveryType(),
                 request.durationType(),
                 request.enrollStartDate(),
@@ -157,6 +158,7 @@ public class CourseTimeServiceImpl implements CourseTimeService {
         CourseTime cloned = CourseTime.cloneFrom(
                 source,
                 request.title(),
+                request.description(),
                 request.enrollStartDate(),
                 request.enrollEndDate(),
                 request.classStartDate(),
@@ -243,6 +245,10 @@ public class CourseTimeServiceImpl implements CourseTimeService {
         // 부분 업데이트
         if (request.title() != null) {
             courseTime.updateTitle(request.title());
+        }
+
+        if (request.description() != null) {
+            courseTime.updateDescription(request.description());
         }
 
         if (request.durationType() != null || request.durationDays() != null) {
