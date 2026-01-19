@@ -3,6 +3,8 @@ package com.mzc.lp.domain.user.repository;
 import com.mzc.lp.common.dto.stats.StatusCountProjection;
 import com.mzc.lp.common.dto.stats.TypeCountProjection;
 import com.mzc.lp.domain.user.entity.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -234,4 +236,17 @@ public interface UserRepository extends JpaRepository<User, Long>, UserRepositor
     List<Object[]> findActiveUsersInfoByTenantIdAndRole(
             @Param("tenantId") Long tenantId,
             @Param("role") com.mzc.lp.domain.user.constant.TenantRole role);
+
+    // ===== 리포트 내보내기용 쿼리 =====
+
+    /**
+     * 테넌트별 사용자 조회 (기간 필터 - 리포트 내보내기용)
+     */
+    @Query("SELECT u FROM User u " +
+            "WHERE u.tenantId = :tenantId " +
+            "AND (:startDate IS NULL OR u.createdAt >= :startDate)")
+    Page<User> findByTenantIdWithPeriodFilter(
+            @Param("tenantId") Long tenantId,
+            @Param("startDate") Instant startDate,
+            Pageable pageable);
 }

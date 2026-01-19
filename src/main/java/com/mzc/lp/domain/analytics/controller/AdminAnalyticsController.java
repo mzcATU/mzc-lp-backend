@@ -3,10 +3,17 @@ package com.mzc.lp.domain.analytics.controller;
 import com.mzc.lp.common.context.TenantContext;
 import com.mzc.lp.common.dto.ApiResponse;
 import com.mzc.lp.domain.analytics.constant.ActivityType;
+import com.mzc.lp.domain.analytics.constant.ExportFormat;
+import com.mzc.lp.domain.analytics.constant.ReportPeriod;
+import com.mzc.lp.domain.analytics.constant.ReportType;
 import com.mzc.lp.domain.analytics.dto.response.ActivityLogResponse;
 import com.mzc.lp.domain.analytics.dto.response.ActivityStatsResponse;
+import com.mzc.lp.domain.analytics.dto.response.ExportJobResponse;
+import com.mzc.lp.domain.analytics.dto.response.ExportStatsResponse;
+import com.mzc.lp.domain.analytics.dto.response.ReportTypeResponse;
 import com.mzc.lp.domain.analytics.entity.ActivityLog;
 import com.mzc.lp.domain.analytics.service.ActivityLogService;
+import com.mzc.lp.domain.analytics.service.ReportExportService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -35,6 +42,7 @@ import java.util.List;
 public class AdminAnalyticsController {
 
     private final ActivityLogService activityLogService;
+    private final ReportExportService reportExportService;
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
             .withZone(ZoneId.systemDefault());
 
@@ -223,4 +231,72 @@ public class AdminAnalyticsController {
 
     // 활동 유형 정보 DTO
     record ActivityTypeInfo(String type, String description) {}
+
+    // ============================================
+    // 리포트 내보내기 API
+    // ============================================
+
+    /**
+     * 리포트 유형 목록 조회
+     * GET /api/admin/analytics/reports/types
+     */
+    @GetMapping("/reports/types")
+    @PreAuthorize("hasAnyRole('TENANT_ADMIN', 'OPERATOR')")
+    public ResponseEntity<ApiResponse<List<ReportTypeResponse>>> getReportTypes() {
+        List<ReportTypeResponse> types = Arrays.stream(ReportType.values())
+                .map(ReportTypeResponse::from)
+                .toList();
+        return ResponseEntity.ok(ApiResponse.success(types));
+    }
+
+    /**
+     * 리포트 내보내기
+     * GET /api/admin/analytics/reports/export
+     */
+    @GetMapping("/reports/export")
+    @PreAuthorize("hasAnyRole('TENANT_ADMIN', 'OPERATOR')")
+    public void exportReport(
+            @RequestParam ReportType reportType,
+            @RequestParam(defaultValue = "CSV") ExportFormat format,
+            @RequestParam(defaultValue = "MONTH") ReportPeriod period,
+            HttpServletResponse response
+    ) throws IOException {
+        Long tenantId = TenantContext.getCurrentTenantId();
+
+        // 응답 설정
+        String contentType = format == ExportFormat.CSV ? "text/csv; charset=UTF-8" : format.getContentType();
+        response.setContentType(contentType);
+        response.setCharacterEncoding("UTF-8");
+
+        String filename = reportType.name().toLowerCase() + "_report_" + Instant.now().toEpochMilli() + format.getExtension();
+        response.setHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"");
+
+        reportExportService.exportReport(tenantId, reportType, format, period, response.getOutputStream());
+    }
+
+    /**
+     * 내보내기 이력 조회
+     * GET /api/admin/analytics/reports/history
+     */
+    @GetMapping("/reports/history")
+    @PreAuthorize("hasAnyRole('TENANT_ADMIN', 'OPERATOR')")
+    public ResponseEntity<ApiResponse<List<ExportJobResponse>>> getExportHistory(
+            @RequestParam(defaultValue = "10") int limit
+    ) {
+        Long tenantId = TenantContext.getCurrentTenantId();
+        List<ExportJobResponse> history = reportExportService.getExportHistory(tenantId, limit);
+        return ResponseEntity.ok(ApiResponse.success(history));
+    }
+
+    /**
+     * 내보내기 통계 조회
+     * GET /api/admin/analytics/reports/stats
+     */
+    @GetMapping("/reports/stats")
+    @PreAuthorize("hasAnyRole('TENANT_ADMIN', 'OPERATOR')")
+    public ResponseEntity<ApiResponse<ExportStatsResponse>> getExportStats() {
+        Long tenantId = TenantContext.getCurrentTenantId();
+        ExportStatsResponse stats = reportExportService.getExportStats(tenantId);
+        return ResponseEntity.ok(ApiResponse.success(stats));
+    }
 }
