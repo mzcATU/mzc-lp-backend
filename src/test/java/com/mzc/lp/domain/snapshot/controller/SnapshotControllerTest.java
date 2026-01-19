@@ -130,8 +130,6 @@ class SnapshotControllerTest extends TenantTestSupport {
                 1L,
                 null,
                 null,
-                null,
-                null,
                 null
         );
         return courseRepository.save(course);
