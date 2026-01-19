@@ -143,13 +143,16 @@ public class ReportExportServiceImpl implements ReportExportService {
     private void exportToPDF(Long tenantId, ReportType reportType, ReportPeriod period, OutputStream outputStream) throws IOException {
         Document document = new Document(PageSize.A4.rotate());
         try {
+            log.debug("PDF 생성 시작: reportType={}, period={}", reportType, period);
             PdfWriter.getInstance(document, outputStream);
             document.open();
 
             // 한글 폰트 설정 (시스템 폰트 사용)
+            log.debug("폰트 생성 중...");
             Font titleFont = createKoreanFont(16, Font.BOLD);
             Font headerFont = createKoreanFont(10, Font.BOLD);
             Font contentFont = createKoreanFont(9, Font.NORMAL);
+            log.debug("폰트 생성 완료");
 
             // 제목 추가
             Paragraph title = new Paragraph(reportType.getName() + " 리포트", titleFont);
@@ -163,6 +166,7 @@ public class ReportExportServiceImpl implements ReportExportService {
             dateInfo.setSpacingAfter(10);
             document.add(dateInfo);
 
+            log.debug("데이터 조회 및 테이블 생성 중...");
             switch (reportType) {
                 case USERS -> exportUsersReportPDF(tenantId, period, document, headerFont, contentFont);
                 case COURSES -> exportCoursesReportPDF(tenantId, period, document, headerFont, contentFont);
@@ -170,9 +174,14 @@ public class ReportExportServiceImpl implements ReportExportService {
                 case COMPLETION -> exportCompletionReportPDF(tenantId, period, document, headerFont, contentFont);
                 case ENGAGEMENT -> exportEngagementReportPDF(tenantId, period, document, headerFont, contentFont);
             }
+            log.debug("PDF 생성 완료");
 
         } catch (DocumentException e) {
-            throw new IOException("PDF 생성 실패", e);
+            log.error("PDF DocumentException: {}", e.getMessage(), e);
+            throw new IOException("PDF 생성 실패: " + e.getMessage(), e);
+        } catch (Exception e) {
+            log.error("PDF 생성 중 예외 발생: {}", e.getMessage(), e);
+            throw new IOException("PDF 생성 중 오류: " + e.getMessage(), e);
         } finally {
             document.close();
         }
@@ -182,10 +191,11 @@ public class ReportExportServiceImpl implements ReportExportService {
      * 한글 지원 폰트 생성
      */
     private Font createKoreanFont(int size, int style) {
-        // 여러 경로에서 한글 폰트 시도
+        // TTF 폰트만 시도 (TTC 파일은 OpenPDF에서 직접 지원하지 않음)
         String[] fontPaths = {
             "C:/Windows/Fonts/malgun.ttf",      // Windows 맑은 고딕
-            "C:/Windows/Fonts/gulim.ttc",       // Windows 굴림
+            "C:/Windows/Fonts/batang.ttf",      // Windows 바탕
+            "C:/Windows/Fonts/NanumGothic.ttf", // Windows 나눔고딕 (설치된 경우)
             "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",  // Linux
             "/System/Library/Fonts/AppleGothic.ttf",            // macOS
         };
@@ -194,11 +204,34 @@ public class ReportExportServiceImpl implements ReportExportService {
             try {
                 java.io.File fontFile = new java.io.File(fontPath);
                 if (fontFile.exists()) {
+                    log.debug("폰트 파일 발견: {}", fontPath);
                     BaseFont baseFont = BaseFont.createFont(fontPath, BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+                    log.debug("폰트 로드 성공: {}", fontPath);
                     return new Font(baseFont, size, style);
                 }
             } catch (Exception e) {
                 log.debug("폰트 로드 실패: {} - {}", fontPath, e.getMessage());
+            }
+        }
+
+        // TTC 파일 시도 (인덱스 지정)
+        String[] ttcPaths = {
+            "C:/Windows/Fonts/gulim.ttc,0",     // Windows 굴림 (첫 번째 폰트)
+            "C:/Windows/Fonts/batang.ttc,0",    // Windows 바탕 (첫 번째 폰트)
+        };
+
+        for (String ttcPath : ttcPaths) {
+            try {
+                String[] parts = ttcPath.split(",");
+                java.io.File fontFile = new java.io.File(parts[0]);
+                if (fontFile.exists()) {
+                    log.debug("TTC 폰트 파일 발견: {}", parts[0]);
+                    BaseFont baseFont = BaseFont.createFont(ttcPath, BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+                    log.debug("TTC 폰트 로드 성공: {}", ttcPath);
+                    return new Font(baseFont, size, style);
+                }
+            } catch (Exception e) {
+                log.debug("TTC 폰트 로드 실패: {} - {}", ttcPath, e.getMessage());
             }
         }
 

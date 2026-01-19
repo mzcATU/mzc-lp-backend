@@ -78,3 +78,8 @@ springdoc:
     display-request-duration: true
   default-consumes-media-type: application/json
   default-produces-media-type: application/json
+
+# Logging
+logging:
+  level:
+    "[com.mzc.lp.domain.analytics]": DEBUG
