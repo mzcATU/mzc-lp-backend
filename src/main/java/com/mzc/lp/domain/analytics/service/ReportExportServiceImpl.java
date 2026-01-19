@@ -182,15 +182,29 @@ public class ReportExportServiceImpl implements ReportExportService {
      * 한글 지원 폰트 생성
      */
     private Font createKoreanFont(int size, int style) {
-        try {
-            // Windows 시스템 폰트 경로
-            String fontPath = "C:/Windows/Fonts/malgun.ttf";
-            BaseFont baseFont = BaseFont.createFont(fontPath, BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
-            return new Font(baseFont, size, style);
-        } catch (Exception e) {
-            log.warn("한글 폰트를 찾을 수 없어 기본 폰트를 사용합니다: {}", e.getMessage());
-            return new Font(Font.HELVETICA, size, style);
+        // 여러 경로에서 한글 폰트 시도
+        String[] fontPaths = {
+            "C:/Windows/Fonts/malgun.ttf",      // Windows 맑은 고딕
+            "C:/Windows/Fonts/gulim.ttc",       // Windows 굴림
+            "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",  // Linux
+            "/System/Library/Fonts/AppleGothic.ttf",            // macOS
+        };
+
+        for (String fontPath : fontPaths) {
+            try {
+                java.io.File fontFile = new java.io.File(fontPath);
+                if (fontFile.exists()) {
+                    BaseFont baseFont = BaseFont.createFont(fontPath, BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+                    return new Font(baseFont, size, style);
+                }
+            } catch (Exception e) {
+                log.debug("폰트 로드 실패: {} - {}", fontPath, e.getMessage());
+            }
         }
+
+        // 모든 시스템 폰트 시도 실패 시 기본 폰트 사용
+        log.warn("한글 폰트를 찾을 수 없어 기본 폰트를 사용합니다. 한글이 제대로 표시되지 않을 수 있습니다.");
+        return new Font(Font.HELVETICA, size, style);
     }
 
     @Override
