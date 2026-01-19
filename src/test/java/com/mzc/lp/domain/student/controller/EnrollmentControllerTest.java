@@ -102,6 +102,7 @@ class EnrollmentControllerTest extends TenantTestSupport {
     private CourseTime createRecruitingCourseTime() {
         CourseTime courseTime = CourseTime.create(
                 "테스트 차수",
+                null,  // description
                 DeliveryType.ONLINE,
                 DurationType.FIXED,
                 LocalDate.now().minusDays(1),  // 과거 날짜이므로 RECRUITING 상태로 자동 생성
@@ -127,6 +128,7 @@ class EnrollmentControllerTest extends TenantTestSupport {
     private CourseTime createDraftCourseTime() {
         CourseTime courseTime = CourseTime.create(
                 "Draft 차수",
+                null,  // description
                 DeliveryType.ONLINE,
                 DurationType.FIXED,
                 LocalDate.now().plusDays(1),  // 미래 날짜로 변경하여 DRAFT 상태로 생성

@@ -38,6 +38,7 @@ class CourseTimeSchedulerTest extends TenantTestSupport {
     private CourseTime createTestCourseTime(LocalDate classStartDate, LocalDate classEndDate) {
         return CourseTime.create(
                 "테스트 차수",
+                null,  // description
                 DeliveryType.ONLINE,
                 DurationType.FIXED,
                 LocalDate.now().minusDays(30),
