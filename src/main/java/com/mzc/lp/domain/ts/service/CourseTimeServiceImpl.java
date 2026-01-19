@@ -1,6 +1,8 @@
 package com.mzc.lp.domain.ts.service;
 
 import com.mzc.lp.common.context.TenantContext;
+import com.mzc.lp.domain.category.entity.Category;
+import com.mzc.lp.domain.category.repository.CategoryRepository;
 import com.mzc.lp.domain.course.entity.Course;
 import com.mzc.lp.domain.course.exception.CourseNotFoundException;
 import com.mzc.lp.domain.course.exception.CourseNotRegisteredException;
@@ -57,6 +59,7 @@ public class CourseTimeServiceImpl implements CourseTimeService {
     private final CourseSnapshotRepository snapshotRepository;
     private final SnapshotService snapshotService;
     private final CourseTimeConstraintValidator constraintValidator;
+    private final CategoryRepository categoryRepository;
 
     @Override
     public CourseTime getCourseTimeEntity(Long id) {
@@ -97,6 +100,7 @@ public class CourseTimeServiceImpl implements CourseTimeService {
         // CourseTime 생성
         CourseTime courseTime = CourseTime.create(
                 request.title(),
+                request.description(),
                 request.deliveryType(),
                 request.durationType(),
                 request.enrollStartDate(),
@@ -157,6 +161,7 @@ public class CourseTimeServiceImpl implements CourseTimeService {
         CourseTime cloned = CourseTime.cloneFrom(
                 source,
                 request.title(),
+                request.description(),
                 request.enrollStartDate(),
                 request.enrollEndDate(),
                 request.classStartDate(),
@@ -213,7 +218,15 @@ public class CourseTimeServiceImpl implements CourseTimeService {
         List<InstructorAssignmentResponse> instructors =
                 instructorAssignmentService.getInstructorsByTimeId(id, AssignmentStatus.ACTIVE);
 
-        return CourseTimeDetailResponse.from(courseTime, instructors);
+        // 카테고리명 조회
+        String categoryName = null;
+        if (courseTime.getCourse() != null && courseTime.getCourse().getCategoryId() != null) {
+            categoryName = categoryRepository.findById(courseTime.getCourse().getCategoryId())
+                    .map(Category::getName)
+                    .orElse(null);
+        }
+
+        return CourseTimeDetailResponse.from(courseTime, categoryName, instructors);
     }
 
     @Override
@@ -243,6 +256,10 @@ public class CourseTimeServiceImpl implements CourseTimeService {
         // 부분 업데이트
         if (request.title() != null) {
             courseTime.updateTitle(request.title());
+        }
+
+        if (request.description() != null) {
+            courseTime.updateDescription(request.description());
         }
 
         if (request.durationType() != null || request.durationDays() != null) {

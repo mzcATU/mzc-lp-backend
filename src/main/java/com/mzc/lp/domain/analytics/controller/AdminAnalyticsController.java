@@ -16,6 +16,7 @@ import com.mzc.lp.domain.analytics.service.ActivityLogService;
 import com.mzc.lp.domain.analytics.service.ReportExportService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -39,6 +40,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/admin/analytics")
 @RequiredArgsConstructor
+@Slf4j
 public class AdminAnalyticsController {
 
     private final ActivityLogService activityLogService;
@@ -262,16 +264,30 @@ public class AdminAnalyticsController {
             HttpServletResponse response
     ) throws IOException {
         Long tenantId = TenantContext.getCurrentTenantId();
+        log.info("리포트 내보내기 요청: reportType={}, format={}, period={}, tenantId={}",
+                reportType, format, period, tenantId);
 
-        // 응답 설정
-        String contentType = format == ExportFormat.CSV ? "text/csv; charset=UTF-8" : format.getContentType();
-        response.setContentType(contentType);
-        response.setCharacterEncoding("UTF-8");
+        try {
+            // 응답 설정
+            String contentType = format == ExportFormat.CSV ? "text/csv; charset=UTF-8" : format.getContentType();
+            response.setContentType(contentType);
+            response.setCharacterEncoding("UTF-8");
 
-        String filename = reportType.name().toLowerCase() + "_report_" + Instant.now().toEpochMilli() + format.getExtension();
-        response.setHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"");
+            String filename = reportType.name().toLowerCase() + "_report_" + Instant.now().toEpochMilli() + format.getExtension();
+            response.setHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"");
 
-        reportExportService.exportReport(tenantId, reportType, format, period, response.getOutputStream());
+            reportExportService.exportReport(tenantId, reportType, format, period, response.getOutputStream());
+            log.info("리포트 내보내기 완료: {}", filename);
+        } catch (Exception e) {
+            log.error("리포트 내보내기 실패: reportType={}, format={}, error={}", reportType, format, e.getMessage(), e);
+            // 에러 발생 시 JSON 응답 반환
+            response.reset();
+            response.setContentType("application/json;charset=UTF-8");
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            String errorMessage = e.getMessage() != null ? e.getMessage() : "알 수 없는 오류";
+            response.getWriter().write("{\"success\":false,\"error\":{\"code\":\"EXPORT_ERROR\",\"message\":\"" +
+                    errorMessage.replace("\"", "'") + "\"}}");
+        }
     }
 
     /**

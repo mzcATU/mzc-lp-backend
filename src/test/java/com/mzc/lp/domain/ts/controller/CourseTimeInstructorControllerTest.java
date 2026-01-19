@@ -117,6 +117,7 @@ class CourseTimeInstructorControllerTest extends TenantTestSupport {
     private CourseTime createTestCourseTime() {
         CourseTime courseTime = CourseTime.create(
                 "테스트 차수",
+                null,  // description
                 DeliveryType.ONLINE,
                 DurationType.FIXED,
                 LocalDate.now().plusDays(1),  // 미래 날짜로 설정하여 DRAFT 상태로 생성

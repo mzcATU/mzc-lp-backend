@@ -51,6 +51,7 @@ class CourseTimeConstraintValidatorTest {
         return new CreateCourseTimeRequest(
                 1L,
                 "테스트 차수",
+                null,  // description
                 deliveryType,
                 durationType,
                 now.plusDays(1),
@@ -86,7 +87,7 @@ class CourseTimeConstraintValidatorTest {
         void R61_fixedType_requiresClassEndDate() {
             // given
             CreateCourseTimeRequest request = new CreateCourseTimeRequest(
-                    1L, "테스트", DeliveryType.ONLINE, DurationType.FIXED,
+                    1L, "테스트", null, DeliveryType.ONLINE, DurationType.FIXED,
                     LocalDate.now().plusDays(1), LocalDate.now().plusDays(10),
                     LocalDate.now().plusDays(11), null, null,
                     30, 5, EnrollmentMethod.FIRST_COME, 80,
@@ -107,7 +108,7 @@ class CourseTimeConstraintValidatorTest {
         void R62_relativeType_requiresDurationDays() {
             // given
             CreateCourseTimeRequest request = new CreateCourseTimeRequest(
-                    1L, "테스트", DeliveryType.ONLINE, DurationType.RELATIVE,
+                    1L, "테스트", null, DeliveryType.ONLINE, DurationType.RELATIVE,
                     LocalDate.now().plusDays(1), LocalDate.now().plusDays(10),
                     LocalDate.now().plusDays(11), null, null,
                     30, 5, EnrollmentMethod.FIRST_COME, 80,
@@ -128,7 +129,7 @@ class CourseTimeConstraintValidatorTest {
         void R63_unlimitedType_noClassEndDate() {
             // given
             CreateCourseTimeRequest request = new CreateCourseTimeRequest(
-                    1L, "테스트", DeliveryType.ONLINE, DurationType.UNLIMITED,
+                    1L, "테스트", null, DeliveryType.ONLINE, DurationType.UNLIMITED,
                     LocalDate.now().plusDays(1), LocalDate.now().plusDays(10),
                     LocalDate.now().plusDays(11), LocalDate.now().plusDays(40), null,
                     30, 5, EnrollmentMethod.FIRST_COME, 80,
@@ -154,7 +155,7 @@ class CourseTimeConstraintValidatorTest {
         void R10_offlineType_requiresLocationInfo() {
             // given
             CreateCourseTimeRequest request = new CreateCourseTimeRequest(
-                    1L, "테스트", DeliveryType.OFFLINE, DurationType.FIXED,
+                    1L, "테스트", null, DeliveryType.OFFLINE, DurationType.FIXED,
                     LocalDate.now().plusDays(1), LocalDate.now().plusDays(10),
                     LocalDate.now().plusDays(11), LocalDate.now().plusDays(40), null,
                     30, 5, EnrollmentMethod.FIRST_COME, 80,
@@ -175,7 +176,7 @@ class CourseTimeConstraintValidatorTest {
         void liveType_allowsRelativeDuration() {
             // given - LIVE + RELATIVE: 반복되는 라이브 세션이 있는 장기 교육 프로그램
             CreateCourseTimeRequest request = new CreateCourseTimeRequest(
-                    1L, "정기 멘토링", DeliveryType.LIVE, DurationType.RELATIVE,
+                    1L, "정기 멘토링", null, DeliveryType.LIVE, DurationType.RELATIVE,
                     LocalDate.now().plusDays(1), LocalDate.now().plusDays(10),
                     LocalDate.now().plusDays(11), null, 30,
                     30, 5, EnrollmentMethod.FIRST_COME, 80,
@@ -196,7 +197,7 @@ class CourseTimeConstraintValidatorTest {
         void liveType_allowsUnlimitedDuration() {
             // given - LIVE + UNLIMITED: 정기적인 Q&A 세션, 멘토링 프로그램
             CreateCourseTimeRequest request = new CreateCourseTimeRequest(
-                    1L, "주간 Q&A", DeliveryType.LIVE, DurationType.UNLIMITED,
+                    1L, "주간 Q&A", null, DeliveryType.LIVE, DurationType.UNLIMITED,
                     LocalDate.now().plusDays(1), LocalDate.now().plusDays(10),
                     LocalDate.now().plusDays(11), null, null,
                     30, 5, EnrollmentMethod.FIRST_COME, 80,
@@ -225,7 +226,7 @@ class CourseTimeConstraintValidatorTest {
         void R53_approvalWithWaitingList_error() {
             // given
             CreateCourseTimeRequest request = new CreateCourseTimeRequest(
-                    1L, "테스트", DeliveryType.ONLINE, DurationType.FIXED,
+                    1L, "테스트", null, DeliveryType.ONLINE, DurationType.FIXED,
                     LocalDate.now().plusDays(1), LocalDate.now().plusDays(10),
                     LocalDate.now().plusDays(11), LocalDate.now().plusDays(40), null,
                     30, 5, EnrollmentMethod.APPROVAL, 80,
@@ -246,7 +247,7 @@ class CourseTimeConstraintValidatorTest {
         void approval_withoutWaitingList_allowed() {
             // given
             CreateCourseTimeRequest request = new CreateCourseTimeRequest(
-                    1L, "테스트", DeliveryType.ONLINE, DurationType.FIXED,
+                    1L, "테스트", null, DeliveryType.ONLINE, DurationType.FIXED,
                     LocalDate.now().plusDays(1), LocalDate.now().plusDays(10),
                     LocalDate.now().plusDays(11), LocalDate.now().plusDays(40), null,
                     30, 0, EnrollmentMethod.APPROVAL, 80,
@@ -288,7 +289,7 @@ class CourseTimeConstraintValidatorTest {
         void offlineFixed_best() {
             // given - FIRST_COME + 정원 있으면 대기자 설정 권장 (R52)되므로 대기자 설정
             CreateCourseTimeRequest request = new CreateCourseTimeRequest(
-                    1L, "테스트", DeliveryType.OFFLINE, DurationType.FIXED,
+                    1L, "테스트", null, DeliveryType.OFFLINE, DurationType.FIXED,
                     LocalDate.now().plusDays(1), LocalDate.now().plusDays(10),
                     LocalDate.now().plusDays(11), LocalDate.now().plusDays(40), null,
                     30, 5, EnrollmentMethod.FIRST_COME, 80,
@@ -309,7 +310,7 @@ class CourseTimeConstraintValidatorTest {
         void onlineFixed_best() {
             // given
             CreateCourseTimeRequest request = new CreateCourseTimeRequest(
-                    1L, "테스트", DeliveryType.ONLINE, DurationType.FIXED,
+                    1L, "테스트", null, DeliveryType.ONLINE, DurationType.FIXED,
                     LocalDate.now().plusDays(1), LocalDate.now().plusDays(10),
                     LocalDate.now().plusDays(11), LocalDate.now().plusDays(40), null,
                     30, 5, EnrollmentMethod.FIRST_COME, 80,
@@ -330,7 +331,7 @@ class CourseTimeConstraintValidatorTest {
         void offlineRelative_best() {
             // given - B2B 기업 교육: 입사일로부터 90일 OJT
             CreateCourseTimeRequest request = new CreateCourseTimeRequest(
-                    1L, "신입사원 OJT", DeliveryType.OFFLINE, DurationType.RELATIVE,
+                    1L, "신입사원 OJT", null, DeliveryType.OFFLINE, DurationType.RELATIVE,
                     LocalDate.now().plusDays(1), LocalDate.now().plusDays(10),
                     LocalDate.now().plusDays(11), null, 90,
                     30, 5, EnrollmentMethod.FIRST_COME, 80,
@@ -351,7 +352,7 @@ class CourseTimeConstraintValidatorTest {
         void blendedUnlimited_best() {
             // given - B2B 기업 교육: 팀별 자율 진행 리더십 과정
             CreateCourseTimeRequest request = new CreateCourseTimeRequest(
-                    1L, "리더십 과정", DeliveryType.BLENDED, DurationType.UNLIMITED,
+                    1L, "리더십 과정", null, DeliveryType.BLENDED, DurationType.UNLIMITED,
                     LocalDate.now().plusDays(1), LocalDate.now().plusDays(10),
                     LocalDate.now().plusDays(11), null, null,
                     30, 5, EnrollmentMethod.FIRST_COME, 80,
@@ -372,7 +373,7 @@ class CourseTimeConstraintValidatorTest {
         void onlineUnlimited_good() {
             // given
             CreateCourseTimeRequest request = new CreateCourseTimeRequest(
-                    1L, "테스트", DeliveryType.ONLINE, DurationType.UNLIMITED,
+                    1L, "테스트", null, DeliveryType.ONLINE, DurationType.UNLIMITED,
                     LocalDate.now().plusDays(1), LocalDate.now().plusDays(10),
                     LocalDate.now().plusDays(11), null, null,
                     30, 5, EnrollmentMethod.FIRST_COME, 80,
@@ -398,7 +399,7 @@ class CourseTimeConstraintValidatorTest {
         void R70_courseTypeMismatch_warning() {
             // given
             CreateCourseTimeRequest request = new CreateCourseTimeRequest(
-                    1L, "테스트", DeliveryType.OFFLINE, DurationType.FIXED,
+                    1L, "테스트", null, DeliveryType.OFFLINE, DurationType.FIXED,
                     LocalDate.now().plusDays(1), LocalDate.now().plusDays(10),
                     LocalDate.now().plusDays(11), LocalDate.now().plusDays(40), null,
                     30, 0, EnrollmentMethod.FIRST_COME, 80,
@@ -576,7 +577,7 @@ class CourseTimeConstraintValidatorTest {
                     LocalTime.of(22, 0)
             );
             CreateCourseTimeRequest request = new CreateCourseTimeRequest(
-                    1L, "실시간 강의", DeliveryType.LIVE, DurationType.FIXED,
+                    1L, "실시간 강의", null, DeliveryType.LIVE, DurationType.FIXED,
                     LocalDate.now().plusDays(1), LocalDate.now().plusDays(10),
                     LocalDate.now().plusDays(11), LocalDate.now().plusDays(40), null,
                     30, 5, EnrollmentMethod.FIRST_COME, 80,

@@ -68,6 +68,7 @@ class InstructorAssignmentConcurrencyTest extends TenantTestSupport {
         // 차수 생성
         courseTime = CourseTime.create(
                 "동시성 테스트 차수",
+                null,  // description
                 DeliveryType.ONLINE,
                 DurationType.FIXED,
                 LocalDate.now().minusDays(1),
