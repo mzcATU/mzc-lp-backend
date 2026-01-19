@@ -107,22 +107,34 @@ public interface ActivityLogRepository extends JpaRepository<ActivityLog, Long> 
     long countLoginFailuresSince(@Param("userId") Long userId, @Param("since") Instant since);
 
     /**
-     * 복합 조건 검색 (유저별 필터 포함)
+     * 복합 조건 검색 (유저별 필터 포함) - Native Query
      */
-    @Query("SELECT a FROM ActivityLog a WHERE a.tenantId = :tenantId " +
-           "AND (:userId IS NULL OR a.userId = :userId) " +
-           "AND (:activityType IS NULL OR a.activityType = :activityType) " +
-           "AND (:startDate IS NULL OR a.createdAt >= :startDate) " +
-           "AND (:endDate IS NULL OR a.createdAt <= :endDate) " +
-           "AND (:keyword IS NULL OR a.description LIKE %:keyword% " +
-           "     OR a.userEmail LIKE %:keyword% " +
-           "     OR a.userName LIKE %:keyword% " +
-           "     OR a.targetName LIKE %:keyword%) " +
-           "ORDER BY a.createdAt DESC")
+    @Query(value = "SELECT * FROM activity_logs a WHERE a.tenant_id = :tenantId " +
+           "AND (:userId IS NULL OR a.user_id = :userId) " +
+           "AND (:activityType IS NULL OR a.activity_type = :activityType) " +
+           "AND (:startDate IS NULL OR a.created_at >= :startDate) " +
+           "AND (:endDate IS NULL OR a.created_at <= :endDate) " +
+           "AND (:keyword IS NULL OR :keyword = '' " +
+           "     OR a.description LIKE CONCAT('%', :keyword, '%') " +
+           "     OR a.user_email LIKE CONCAT('%', :keyword, '%') " +
+           "     OR a.user_name LIKE CONCAT('%', :keyword, '%') " +
+           "     OR a.target_name LIKE CONCAT('%', :keyword, '%')) " +
+           "ORDER BY a.created_at DESC",
+           countQuery = "SELECT COUNT(*) FROM activity_logs a WHERE a.tenant_id = :tenantId " +
+           "AND (:userId IS NULL OR a.user_id = :userId) " +
+           "AND (:activityType IS NULL OR a.activity_type = :activityType) " +
+           "AND (:startDate IS NULL OR a.created_at >= :startDate) " +
+           "AND (:endDate IS NULL OR a.created_at <= :endDate) " +
+           "AND (:keyword IS NULL OR :keyword = '' " +
+           "     OR a.description LIKE CONCAT('%', :keyword, '%') " +
+           "     OR a.user_email LIKE CONCAT('%', :keyword, '%') " +
+           "     OR a.user_name LIKE CONCAT('%', :keyword, '%') " +
+           "     OR a.target_name LIKE CONCAT('%', :keyword, '%'))",
+           nativeQuery = true)
     Page<ActivityLog> searchLogs(
             @Param("tenantId") Long tenantId,
             @Param("userId") Long userId,
-            @Param("activityType") ActivityType activityType,
+            @Param("activityType") String activityType,
             @Param("startDate") Instant startDate,
             @Param("endDate") Instant endDate,
             @Param("keyword") String keyword,
@@ -130,18 +142,19 @@ public interface ActivityLogRepository extends JpaRepository<ActivityLog, Long> 
     );
 
     /**
-     * 내보내기용 검색 (페이징 없이)
+     * 내보내기용 검색 (페이징 없이) - Native Query
      */
-    @Query("SELECT a FROM ActivityLog a WHERE a.tenantId = :tenantId " +
-           "AND (:userId IS NULL OR a.userId = :userId) " +
-           "AND (:activityType IS NULL OR a.activityType = :activityType) " +
-           "AND (:startDate IS NULL OR a.createdAt >= :startDate) " +
-           "AND (:endDate IS NULL OR a.createdAt <= :endDate) " +
-           "ORDER BY a.createdAt DESC")
+    @Query(value = "SELECT * FROM activity_logs a WHERE a.tenant_id = :tenantId " +
+           "AND (:userId IS NULL OR a.user_id = :userId) " +
+           "AND (:activityType IS NULL OR a.activity_type = :activityType) " +
+           "AND (:startDate IS NULL OR a.created_at >= :startDate) " +
+           "AND (:endDate IS NULL OR a.created_at <= :endDate) " +
+           "ORDER BY a.created_at DESC",
+           nativeQuery = true)
     List<ActivityLog> findLogsForExport(
             @Param("tenantId") Long tenantId,
             @Param("userId") Long userId,
-            @Param("activityType") ActivityType activityType,
+            @Param("activityType") String activityType,
             @Param("startDate") Instant startDate,
             @Param("endDate") Instant endDate
     );

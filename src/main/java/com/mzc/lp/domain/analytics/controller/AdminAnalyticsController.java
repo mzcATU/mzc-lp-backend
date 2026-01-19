@@ -19,7 +19,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
-import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -133,7 +133,7 @@ public class AdminAnalyticsController {
      * GET /api/admin/analytics/logs/export
      */
     @GetMapping("/logs/export")
-    @PreAuthorize("hasRole('TENANT_ADMIN')")
+    @PreAuthorize("hasAnyRole('TENANT_ADMIN', 'SYSTEM_ADMIN')")
     public void exportLogs(
             @RequestParam(required = false) Long userId,
             @RequestParam(required = false) ActivityType type,
@@ -150,19 +150,18 @@ public class AdminAnalyticsController {
         String filename = "activity_logs_" + Instant.now().toEpochMilli() + ".csv";
         response.setHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"");
 
-        // BOM for Excel UTF-8 support
-        response.getOutputStream().write(0xEF);
-        response.getOutputStream().write(0xBB);
-        response.getOutputStream().write(0xBF);
+        // OutputStream을 사용하여 BOM과 내용 모두 작성 (getWriter와 혼용 불가)
+        var outputStream = response.getOutputStream();
 
-        PrintWriter writer = response.getWriter();
+        // BOM for Excel UTF-8 support
+        outputStream.write(new byte[]{(byte)0xEF, (byte)0xBB, (byte)0xBF});
 
         // CSV 헤더
-        writer.println("일시,사용자ID,사용자이메일,사용자명,활동유형,상세내용,대상유형,대상ID,대상명,IP주소");
+        outputStream.write("일시,사용자ID,사용자이메일,사용자명,활동유형,상세내용,대상유형,대상ID,대상명,IP주소\n".getBytes(StandardCharsets.UTF_8));
 
         // CSV 데이터
         for (ActivityLog log : logs) {
-            writer.println(String.join(",",
+            String line = String.join(",",
                     escapeCSV(log.getCreatedAt() != null ? DATE_FORMATTER.format(log.getCreatedAt()) : ""),
                     escapeCSV(log.getUserId() != null ? log.getUserId().toString() : ""),
                     escapeCSV(log.getUserEmail()),
@@ -173,10 +172,11 @@ public class AdminAnalyticsController {
                     escapeCSV(log.getTargetId() != null ? log.getTargetId().toString() : ""),
                     escapeCSV(log.getTargetName()),
                     escapeCSV(log.getIpAddress())
-            ));
+            ) + "\n";
+            outputStream.write(line.getBytes(StandardCharsets.UTF_8));
         }
 
-        writer.flush();
+        outputStream.flush();
     }
 
     // CSV 값 이스케이프

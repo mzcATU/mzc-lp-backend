@@ -12,6 +12,7 @@ import com.mzc.lp.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.core.Authentication;
@@ -268,8 +269,12 @@ public class ActivityLogServiceImpl implements ActivityLogService {
             String keyword,
             Pageable pageable
     ) {
+        // Native query를 위해 ActivityType을 String으로 변환
+        String activityTypeStr = activityType != null ? activityType.name() : null;
+        // Native query는 ORDER BY를 쿼리 내부에서 처리하므로 정렬 없는 Pageable 사용
+        Pageable unsortedPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
         return activityLogRepository.searchLogs(
-                tenantId, userId, activityType, startDate, endDate, keyword, pageable
+                tenantId, userId, activityTypeStr, startDate, endDate, keyword, unsortedPageable
         ).map(ActivityLogResponse::from);
     }
 
@@ -281,8 +286,10 @@ public class ActivityLogServiceImpl implements ActivityLogService {
             Instant startDate,
             Instant endDate
     ) {
+        // Native query를 위해 ActivityType을 String으로 변환
+        String activityTypeStr = activityType != null ? activityType.name() : null;
         return activityLogRepository.findLogsForExport(
-                tenantId, userId, activityType, startDate, endDate
+                tenantId, userId, activityTypeStr, startDate, endDate
         );
     }
 
