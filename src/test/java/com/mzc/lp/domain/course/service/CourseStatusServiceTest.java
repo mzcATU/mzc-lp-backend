@@ -56,8 +56,6 @@ class CourseStatusServiceTest extends TenantTestSupport {
                 1L, // categoryId
                 null,
                 null,
-                null,
-                null,
                 1L // createdBy
         );
         CourseItem item = CourseItem.createFolder(course, "폴더1", null);
@@ -69,8 +67,6 @@ class CourseStatusServiceTest extends TenantTestSupport {
         Course course = Course.create(
                 title,
                 null, // description 없음 -> 미완성
-                null,
-                null,
                 null,
                 null,
                 null,
@@ -250,7 +246,7 @@ class CourseStatusServiceTest extends TenantTestSupport {
                     course.getId(),
                     new com.mzc.lp.domain.course.dto.request.UpdateCourseRequest(
                             "수정 시도",
-                            null, null, null, null, null, null, null, null, null, null
+                            null, null, null, null, null, null, null, null
                     )
             )).isInstanceOf(CourseNotModifiableException.class);
         }

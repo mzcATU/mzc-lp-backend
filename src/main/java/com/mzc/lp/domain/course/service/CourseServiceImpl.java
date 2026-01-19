@@ -56,8 +56,6 @@ public class CourseServiceImpl implements CourseService {
                 request.estimatedHours(),
                 request.categoryId(),
                 request.thumbnailUrl(),
-                request.startDate(),
-                request.endDate(),
                 request.tags(),
                 createdBy
         );
@@ -183,8 +181,6 @@ public class CourseServiceImpl implements CourseService {
                 request.estimatedHours(),
                 request.categoryId(),
                 request.thumbnailUrl(),
-                request.startDate(),
-                request.endDate(),
                 request.tags()
         );
 

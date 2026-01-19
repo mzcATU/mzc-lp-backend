@@ -23,16 +23,12 @@ public record CourseTimeFormDataResponse(
 ) {
     public record CourseDefaults(
             CourseType type,
-            Integer estimatedHours,
-            LocalDate startDate,
-            LocalDate endDate
+            Integer estimatedHours
     ) {
         public static CourseDefaults from(Course course) {
             return new CourseDefaults(
                     course.getType(),
-                    course.getEstimatedHours(),
-                    course.getStartDate(),
-                    course.getEndDate()
+                    course.getEstimatedHours()
             );
         }
     }
@@ -41,8 +37,6 @@ public record CourseTimeFormDataResponse(
         DeliveryType suggestedDeliveryType = mapCourseTypeToDeliveryType(course.getType());
         DurationType suggestedDurationType = determineDurationType(course);
         Integer suggestedDurationDays = calculateSuggestedDurationDays(course);
-        LocalDate suggestedClassStartDate = course.getStartDate();
-        LocalDate suggestedClassEndDate = course.getEndDate();
 
         return new CourseTimeFormDataResponse(
                 course.getId(),
@@ -50,8 +44,8 @@ public record CourseTimeFormDataResponse(
                 suggestedDeliveryType,
                 suggestedDurationType,
                 suggestedDurationDays,
-                suggestedClassStartDate,
-                suggestedClassEndDate,
+                null,
+                null,
                 CourseDefaults.from(course)
         );
     }
@@ -68,9 +62,6 @@ public record CourseTimeFormDataResponse(
     }
 
     private static DurationType determineDurationType(Course course) {
-        if (course.getStartDate() != null && course.getEndDate() != null) {
-            return DurationType.FIXED;
-        }
         if (course.getEstimatedHours() != null) {
             return DurationType.RELATIVE;
         }
@@ -78,10 +69,6 @@ public record CourseTimeFormDataResponse(
     }
 
     private static Integer calculateSuggestedDurationDays(Course course) {
-        if (course.getStartDate() != null && course.getEndDate() != null) {
-            return (int) java.time.temporal.ChronoUnit.DAYS.between(
-                    course.getStartDate(), course.getEndDate()) + 1;
-        }
         if (course.getEstimatedHours() != null) {
             return Math.max(1, (int) Math.ceil(course.getEstimatedHours() / 8.0));
         }

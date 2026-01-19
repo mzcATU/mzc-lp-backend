@@ -6,7 +6,6 @@ import com.mzc.lp.domain.course.constant.CourseType;
 import com.mzc.lp.domain.course.entity.Course;
 
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.List;
 
 public record CourseResponse(
@@ -20,8 +19,6 @@ public record CourseResponse(
         Integer estimatedHours,
         Long categoryId,
         String categoryName,
-        LocalDate startDate,
-        LocalDate endDate,
         List<String> tags,
         Instant createdAt,
         Instant updatedAt,
@@ -70,8 +67,6 @@ public record CourseResponse(
                 course.getEstimatedHours(),
                 course.getCategoryId(),
                 categoryName,
-                course.getStartDate(),
-                course.getEndDate(),
                 course.getTags(),
                 course.getCreatedAt(),
                 course.getUpdatedAt(),
