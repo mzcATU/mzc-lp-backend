@@ -1,5 +1,7 @@
 package com.mzc.lp.domain.course.service;
 
+import com.mzc.lp.domain.analytics.constant.ActivityType;
+import com.mzc.lp.domain.analytics.service.ActivityLogService;
 import com.mzc.lp.domain.course.constant.CourseStatus;
 import com.mzc.lp.domain.course.dto.request.CreateCourseRequest;
 import com.mzc.lp.domain.course.dto.request.UpdateCourseRequest;
@@ -43,6 +45,7 @@ public class CourseServiceImpl implements CourseService {
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
     private final CourseTimeRepository courseTimeRepository;
+    private final ActivityLogService activityLogService;
 
     @Override
     @Transactional
@@ -63,6 +66,15 @@ public class CourseServiceImpl implements CourseService {
 
         Course savedCourse = courseRepository.save(course);
         log.info("Course created: id={}, title={}", savedCourse.getId(), savedCourse.getTitle());
+
+        // 활동 로그 기록
+        activityLogService.log(
+                ActivityType.COURSE_CREATE,
+                String.format("강좌 생성: %s", savedCourse.getTitle()),
+                "Course",
+                savedCourse.getId(),
+                savedCourse.getTitle()
+        );
 
         return CourseResponse.from(savedCourse);
     }
@@ -190,6 +202,15 @@ public class CourseServiceImpl implements CourseService {
             handleStatusTransition(course, request.status());
         }
 
+        // 활동 로그 기록
+        activityLogService.log(
+                ActivityType.COURSE_UPDATE,
+                String.format("강좌 수정: %s", course.getTitle()),
+                "Course",
+                courseId,
+                course.getTitle()
+        );
+
         log.info("Course updated: id={}", courseId);
         return CourseResponse.from(course, course.getItems().size());
     }
@@ -207,7 +228,18 @@ public class CourseServiceImpl implements CourseService {
             throw new CourseOwnershipException("본인이 생성한 강의만 삭제할 수 있습니다");
         }
 
+        String courseTitle = course.getTitle();
         courseRepository.delete(course);
+
+        // 활동 로그 기록
+        activityLogService.log(
+                ActivityType.COURSE_DELETE,
+                String.format("강좌 삭제: %s", courseTitle),
+                "Course",
+                courseId,
+                courseTitle
+        );
+
         log.info("Course deleted: id={}", courseId);
     }
 

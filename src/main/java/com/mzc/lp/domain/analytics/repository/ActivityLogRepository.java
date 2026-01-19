@@ -105,4 +105,57 @@ public interface ActivityLogRepository extends JpaRepository<ActivityLog, Long> 
            "WHERE a.userId = :userId AND a.activityType = 'LOGIN_FAILED' " +
            "AND a.createdAt >= :since")
     long countLoginFailuresSince(@Param("userId") Long userId, @Param("since") Instant since);
+
+    /**
+     * 복합 조건 검색 (유저별 필터 포함) - Native Query
+     */
+    @Query(value = "SELECT * FROM activity_logs a WHERE a.tenant_id = :tenantId " +
+           "AND (:userId IS NULL OR a.user_id = :userId) " +
+           "AND (:activityType IS NULL OR a.activity_type = :activityType) " +
+           "AND (:startDate IS NULL OR a.created_at >= :startDate) " +
+           "AND (:endDate IS NULL OR a.created_at <= :endDate) " +
+           "AND (:keyword IS NULL OR :keyword = '' " +
+           "     OR a.description LIKE CONCAT('%', :keyword, '%') " +
+           "     OR a.user_email LIKE CONCAT('%', :keyword, '%') " +
+           "     OR a.user_name LIKE CONCAT('%', :keyword, '%') " +
+           "     OR a.target_name LIKE CONCAT('%', :keyword, '%')) " +
+           "ORDER BY a.created_at DESC",
+           countQuery = "SELECT COUNT(*) FROM activity_logs a WHERE a.tenant_id = :tenantId " +
+           "AND (:userId IS NULL OR a.user_id = :userId) " +
+           "AND (:activityType IS NULL OR a.activity_type = :activityType) " +
+           "AND (:startDate IS NULL OR a.created_at >= :startDate) " +
+           "AND (:endDate IS NULL OR a.created_at <= :endDate) " +
+           "AND (:keyword IS NULL OR :keyword = '' " +
+           "     OR a.description LIKE CONCAT('%', :keyword, '%') " +
+           "     OR a.user_email LIKE CONCAT('%', :keyword, '%') " +
+           "     OR a.user_name LIKE CONCAT('%', :keyword, '%') " +
+           "     OR a.target_name LIKE CONCAT('%', :keyword, '%'))",
+           nativeQuery = true)
+    Page<ActivityLog> searchLogs(
+            @Param("tenantId") Long tenantId,
+            @Param("userId") Long userId,
+            @Param("activityType") String activityType,
+            @Param("startDate") Instant startDate,
+            @Param("endDate") Instant endDate,
+            @Param("keyword") String keyword,
+            Pageable pageable
+    );
+
+    /**
+     * 내보내기용 검색 (페이징 없이) - Native Query
+     */
+    @Query(value = "SELECT * FROM activity_logs a WHERE a.tenant_id = :tenantId " +
+           "AND (:userId IS NULL OR a.user_id = :userId) " +
+           "AND (:activityType IS NULL OR a.activity_type = :activityType) " +
+           "AND (:startDate IS NULL OR a.created_at >= :startDate) " +
+           "AND (:endDate IS NULL OR a.created_at <= :endDate) " +
+           "ORDER BY a.created_at DESC",
+           nativeQuery = true)
+    List<ActivityLog> findLogsForExport(
+            @Param("tenantId") Long tenantId,
+            @Param("userId") Long userId,
+            @Param("activityType") String activityType,
+            @Param("startDate") Instant startDate,
+            @Param("endDate") Instant endDate
+    );
 }
