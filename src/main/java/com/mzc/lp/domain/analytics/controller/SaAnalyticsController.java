@@ -29,27 +29,47 @@ public class SaAnalyticsController {
     /**
      * 전체 시스템 활동 로그 목록 조회
      * GET /api/sa/analytics/logs
+     *
+     * @param tenantId 테넌트 ID (null이면 전체 테넌트)
+     * @param type 활동 유형 필터
      */
     @GetMapping("/logs")
     @PreAuthorize("hasRole('SYSTEM_ADMIN')")
     public ResponseEntity<ApiResponse<Page<ActivityLogResponse>>> getAllActivityLogs(
+            @RequestParam(required = false) Long tenantId,
             @RequestParam(required = false) ActivityType type,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        Page<ActivityLogResponse> logs = activityLogService.getAllActivityLogs(type, pageable);
+        Page<ActivityLogResponse> logs;
+        if (tenantId != null) {
+            // 특정 테넌트 로그 조회
+            logs = activityLogService.getActivityLogs(tenantId, type, pageable);
+        } else {
+            // 전체 시스템 로그 조회
+            logs = activityLogService.getAllActivityLogs(type, pageable);
+        }
         return ResponseEntity.ok(ApiResponse.success(logs));
     }
 
     /**
      * 전체 시스템 활동 통계 조회
      * GET /api/sa/analytics/stats
+     *
+     * @param tenantId 테넌트 ID (null이면 전체 테넌트)
+     * @param days 조회 기간 (일)
      */
     @GetMapping("/stats")
     @PreAuthorize("hasRole('SYSTEM_ADMIN')")
     public ResponseEntity<ApiResponse<ActivityStatsResponse>> getAllActivityStats(
+            @RequestParam(required = false) Long tenantId,
             @RequestParam(defaultValue = "30") int days
     ) {
-        ActivityStatsResponse stats = activityLogService.getAllActivityStats(days);
+        ActivityStatsResponse stats;
+        if (tenantId != null) {
+            stats = activityLogService.getActivityStats(tenantId, days);
+        } else {
+            stats = activityLogService.getAllActivityStats(days);
+        }
         return ResponseEntity.ok(ApiResponse.success(stats));
     }
 

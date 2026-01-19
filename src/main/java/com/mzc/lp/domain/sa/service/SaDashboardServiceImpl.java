@@ -80,7 +80,8 @@ public class SaDashboardServiceImpl implements SaDashboardService {
         if (startDate != null && endDate != null) {
             users = userRepository.findAllWithPeriod(startDate, endDate);
         } else {
-            users = userRepository.findAll();
+            // Native Query로 Hibernate 테넌트 필터 우회하여 전체 사용자 조회
+            users = userRepository.findAllUsers();
         }
 
         Map<UserStatus, Long> statusCount = users.stream()

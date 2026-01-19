@@ -8,7 +8,11 @@ import com.mzc.lp.domain.tenantnotice.constant.NoticeTargetAudience;
 import com.mzc.lp.domain.tenantnotice.constant.TenantNoticeStatus;
 import com.mzc.lp.domain.tenantnotice.dto.request.CreateTenantNoticeRequest;
 import com.mzc.lp.domain.tenantnotice.dto.request.UpdateTenantNoticeRequest;
+import com.mzc.lp.domain.tenantnotice.dto.response.TenantNoticeDistributionDetailResponse;
+import com.mzc.lp.domain.tenantnotice.dto.response.TenantNoticeDistributionStatsResponse;
+import com.mzc.lp.domain.tenantnotice.dto.response.TenantNoticeDistributionSummaryResponse;
 import com.mzc.lp.domain.tenantnotice.dto.response.TenantNoticeResponse;
+import com.mzc.lp.domain.tenantnotice.dto.response.UserDistributionInfoResponse;
 import com.mzc.lp.domain.tenantnotice.entity.TenantNotice;
 import com.mzc.lp.domain.tenantnotice.repository.TenantNoticeRepository;
 import com.mzc.lp.domain.user.constant.TenantRole;
@@ -317,11 +321,131 @@ public class TenantNoticeServiceImpl implements TenantNoticeService {
     }
 
     // ============================================
+    // 배포 통계 API
+    // ============================================
+
+    @Override
+    public Page<TenantNoticeDistributionStatsResponse> getDistributionStats(Long tenantId, Pageable pageable) {
+        log.info("Getting distribution stats for tenant: {}", tenantId);
+
+        // 발행된 공지사항만 조회 (PUBLISHED, ARCHIVED)
+        Page<TenantNotice> publishedNotices = tenantNoticeRepository.findByTenantIdAndStatusInOrderByPublishedAtDesc(
+                tenantId,
+                List.of(TenantNoticeStatus.PUBLISHED, TenantNoticeStatus.ARCHIVED),
+                pageable
+        );
+
+        return publishedNotices.map(notice -> {
+            int targetUsers = getTargetUserCount(tenantId, notice.getTargetAudience());
+            return TenantNoticeDistributionStatsResponse.from(notice, targetUsers);
+        });
+    }
+
+    @Override
+    public TenantNoticeDistributionSummaryResponse getDistributionSummary(Long tenantId) {
+        log.info("Getting distribution summary for tenant: {}", tenantId);
+
+        // 발행된 공지 수
+        long publishedCount = tenantNoticeRepository.countByTenantIdAndStatusIn(
+                tenantId,
+                List.of(TenantNoticeStatus.PUBLISHED, TenantNoticeStatus.ARCHIVED)
+        );
+
+        // 총 열람 수 (viewCount 합계)
+        Long totalReadCount = tenantNoticeRepository.sumViewCountByTenantIdAndStatusIn(
+                tenantId,
+                List.of(TenantNoticeStatus.PUBLISHED, TenantNoticeStatus.ARCHIVED)
+        );
+        if (totalReadCount == null) {
+            totalReadCount = 0L;
+        }
+
+        // 총 대상 사용자 수 (테넌트 내 활성 사용자)
+        long totalTargetUsers = userRepository.countActiveUsersByTenantId(tenantId);
+
+        return TenantNoticeDistributionSummaryResponse.of(
+                publishedCount,
+                publishedCount,  // completedCount = publishedCount (발행된 것 = 배포 완료)
+                totalReadCount,
+                totalTargetUsers
+        );
+    }
+
+    @Override
+    public TenantNoticeDistributionDetailResponse getDistributionDetail(Long tenantId, Long noticeId) {
+        log.info("Getting distribution detail for notice: {} in tenant: {}", noticeId, tenantId);
+
+        TenantNotice notice = findNoticeByIdAndTenantId(noticeId, tenantId);
+
+        int targetUserCount = getTargetUserCount(tenantId, notice.getTargetAudience());
+        int readCount = notice.getViewCount() != null ? notice.getViewCount() : 0;
+
+        // 대상 사용자 목록 조회
+        List<UserDistributionInfoResponse> userDistributions = getTargetUsersForDistribution(
+                tenantId, notice.getTargetAudience(), notice.getPublishedAt()
+        );
+
+        return TenantNoticeDistributionDetailResponse.of(
+                notice.getId(),
+                notice.getTitle(),
+                notice.getType(),
+                notice.getTargetAudience(),
+                notice.getPublishedAt(),
+                targetUserCount,
+                readCount,
+                userDistributions
+        );
+    }
+
+    // ============================================
     // Private Helper Methods
     // ============================================
 
     private TenantNotice findNoticeByIdAndTenantId(Long noticeId, Long tenantId) {
         return tenantNoticeRepository.findByIdAndTenantId(noticeId, tenantId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.TENANT_NOTICE_NOT_FOUND));
+    }
+
+    /**
+     * 대상 audience에 해당하는 사용자 수 조회
+     */
+    private int getTargetUserCount(Long tenantId, NoticeTargetAudience targetAudience) {
+        return switch (targetAudience) {
+            case ALL -> (int) userRepository.countActiveUsersByTenantId(tenantId);
+            case OPERATOR -> userRepository.countActiveUsersByTenantIdAndRole(tenantId, TenantRole.OPERATOR);
+            case USER -> userRepository.countActiveUsersByTenantIdAndRole(tenantId, TenantRole.USER);
+            case DESIGNER -> userRepository.countActiveUsersByTenantIdAndRole(tenantId, TenantRole.DESIGNER);
+            case INSTRUCTOR -> userRepository.countActiveUsersByTenantIdAndRole(tenantId, TenantRole.INSTRUCTOR);
+        };
+    }
+
+    /**
+     * 배포 상세용 대상 사용자 목록 조회
+     * 개별 사용자 열람 상태는 추적하지 않으므로 기본값 반환
+     */
+    private List<UserDistributionInfoResponse> getTargetUsersForDistribution(
+            Long tenantId,
+            NoticeTargetAudience targetAudience,
+            Instant publishedAt
+    ) {
+        List<Object[]> users = switch (targetAudience) {
+            case ALL -> userRepository.findActiveUsersInfoByTenantId(tenantId);
+            case OPERATOR -> userRepository.findActiveUsersInfoByTenantIdAndRole(tenantId, TenantRole.OPERATOR);
+            case USER -> userRepository.findActiveUsersInfoByTenantIdAndRole(tenantId, TenantRole.USER);
+            case DESIGNER -> userRepository.findActiveUsersInfoByTenantIdAndRole(tenantId, TenantRole.DESIGNER);
+            case INSTRUCTOR -> userRepository.findActiveUsersInfoByTenantIdAndRole(tenantId, TenantRole.INSTRUCTOR);
+        };
+
+        return users.stream()
+                .map(row -> UserDistributionInfoResponse.of(
+                        (Long) row[0],      // userId
+                        (String) row[1],    // userName
+                        (String) row[2],    // userEmail
+                        (String) row[3],    // userRole
+                        false,              // isRead - 개별 추적 없음
+                        publishedAt,        // distributedAt
+                        null                // readAt
+                ))
+                .toList();
     }
 }

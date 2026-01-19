@@ -7,6 +7,9 @@ import com.mzc.lp.domain.tenantnotice.constant.NoticeTargetAudience;
 import com.mzc.lp.domain.tenantnotice.constant.TenantNoticeStatus;
 import com.mzc.lp.domain.tenantnotice.dto.request.CreateTenantNoticeRequest;
 import com.mzc.lp.domain.tenantnotice.dto.request.UpdateTenantNoticeRequest;
+import com.mzc.lp.domain.tenantnotice.dto.response.TenantNoticeDistributionDetailResponse;
+import com.mzc.lp.domain.tenantnotice.dto.response.TenantNoticeDistributionStatsResponse;
+import com.mzc.lp.domain.tenantnotice.dto.response.TenantNoticeDistributionSummaryResponse;
 import com.mzc.lp.domain.tenantnotice.dto.response.TenantNoticeResponse;
 import com.mzc.lp.domain.tenantnotice.service.TenantNoticeService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -140,6 +143,41 @@ public class TenantNoticeController {
     ) {
         Long tenantId = TenantContext.getCurrentTenantId();
         TenantNoticeResponse response = tenantNoticeService.archiveNotice(tenantId, noticeId);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    // ============================================
+    // 배포 통계 API
+    // ============================================
+
+    @Operation(summary = "배포 통계 목록 조회", description = "공지사항별 배포 통계를 조회합니다")
+    @GetMapping("/distribution/stats")
+    @PreAuthorize("hasAnyRole('TENANT_ADMIN', 'OPERATOR')")
+    public ResponseEntity<ApiResponse<Page<TenantNoticeDistributionStatsResponse>>> getDistributionStats(
+            @PageableDefault(size = 10) Pageable pageable
+    ) {
+        Long tenantId = TenantContext.getCurrentTenantId();
+        Page<TenantNoticeDistributionStatsResponse> response = tenantNoticeService.getDistributionStats(tenantId, pageable);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @Operation(summary = "배포 통계 요약 조회", description = "배포 통계 요약 정보를 조회합니다")
+    @GetMapping("/distribution/summary")
+    @PreAuthorize("hasAnyRole('TENANT_ADMIN', 'OPERATOR')")
+    public ResponseEntity<ApiResponse<TenantNoticeDistributionSummaryResponse>> getDistributionSummary() {
+        Long tenantId = TenantContext.getCurrentTenantId();
+        TenantNoticeDistributionSummaryResponse response = tenantNoticeService.getDistributionSummary(tenantId);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @Operation(summary = "배포 상세 현황 조회", description = "특정 공지사항의 배포 상세 현황을 조회합니다")
+    @GetMapping("/{noticeId}/distribution")
+    @PreAuthorize("hasAnyRole('TENANT_ADMIN', 'OPERATOR')")
+    public ResponseEntity<ApiResponse<TenantNoticeDistributionDetailResponse>> getDistributionDetail(
+            @PathVariable Long noticeId
+    ) {
+        Long tenantId = TenantContext.getCurrentTenantId();
+        TenantNoticeDistributionDetailResponse response = tenantNoticeService.getDistributionDetail(tenantId, noticeId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
