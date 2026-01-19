@@ -17,6 +17,9 @@ public record CourseTimeDetailResponse(
         Long courseId,
         String courseTitle,
         String courseDescription,
+        String courseCategory,
+        String courseDifficulty,
+        String courseThumbnailUrl,
         Long snapshotId,
         String title,
         String description,
@@ -45,15 +48,23 @@ public record CourseTimeDetailResponse(
         List<InstructorAssignmentResponse> instructors
 ) {
     public static CourseTimeDetailResponse from(CourseTime entity) {
-        return from(entity, List.of());
+        return from(entity, null, List.of());
     }
 
     public static CourseTimeDetailResponse from(CourseTime entity, List<InstructorAssignmentResponse> instructors) {
+        return from(entity, null, instructors);
+    }
+
+    public static CourseTimeDetailResponse from(CourseTime entity, String categoryName, List<InstructorAssignmentResponse> instructors) {
+        var course = entity.getCourse();
         return new CourseTimeDetailResponse(
                 entity.getId(),
-                entity.getCourse() != null ? entity.getCourse().getId() : null,
-                entity.getCourse() != null ? entity.getCourse().getTitle() : null,
-                entity.getCourse() != null ? entity.getCourse().getDescription() : null,
+                course != null ? course.getId() : null,
+                course != null ? course.getTitle() : null,
+                course != null ? course.getDescription() : null,
+                categoryName,
+                course != null && course.getLevel() != null ? course.getLevel().name() : null,
+                course != null ? course.getThumbnailUrl() : null,
                 entity.getSnapshot() != null ? entity.getSnapshot().getId() : null,
                 entity.getTitle(),
                 entity.getDescription(),

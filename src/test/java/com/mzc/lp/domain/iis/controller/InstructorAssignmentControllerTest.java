@@ -125,6 +125,7 @@ class InstructorAssignmentControllerTest extends TenantTestSupport {
     private CourseTime createCourseTime() {
         CourseTime courseTime = CourseTime.create(
                 "테스트 차수",
+                null,  // description
                 DeliveryType.ONLINE,
                 DurationType.FIXED,
                 LocalDate.now().minusDays(1),

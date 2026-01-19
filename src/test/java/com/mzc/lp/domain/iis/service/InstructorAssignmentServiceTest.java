@@ -110,6 +110,7 @@ class InstructorAssignmentServiceTest extends TenantTestSupport {
     private CourseTime createTestCourseTime() {
         CourseTime courseTime = CourseTime.create(
                 "테스트 차수",
+                null,  // description
                 DeliveryType.ONLINE,
                 DurationType.FIXED,
                 LocalDate.now().minusDays(1),
@@ -306,6 +307,7 @@ class InstructorAssignmentServiceTest extends TenantTestSupport {
     private CourseTime createTestCourseTimeWithId(Long id, LocalDate classStartDate, LocalDate classEndDate) {
         CourseTime courseTime = CourseTime.create(
                 "충돌 테스트 차수",
+                null,  // description
                 DeliveryType.ONLINE,
                 DurationType.FIXED,
                 LocalDate.now().minusDays(1),

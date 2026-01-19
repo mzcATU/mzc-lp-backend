@@ -106,6 +106,7 @@ class CourseReviewControllerTest extends TenantTestSupport {
         // 테스트 차수 생성
         testCourseTime = CourseTime.create(
                 "테스트 차수",
+                null,  // description
                 DeliveryType.ONLINE,
                 DurationType.FIXED,
                 LocalDate.now(),
