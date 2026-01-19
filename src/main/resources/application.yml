@@ -48,6 +48,11 @@ cors:
 tenant:
   default-id: ${TENANT_DEFAULT_ID:1}
 
+# App 설정
+app:
+  domain:
+    base: ${APP_DOMAIN_BASE:mzc-lp.com}
+
 # H2 Console (개발 환경에서만 활성화)
 spring.h2.console:
   enabled: ${H2_CONSOLE_ENABLED:false}

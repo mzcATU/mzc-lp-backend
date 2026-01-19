@@ -76,11 +76,20 @@ public class SaAnalyticsController {
     /**
      * 최근 활동 목록 조회 (전체 시스템)
      * GET /api/sa/analytics/recent
+     *
+     * @param tenantId 테넌트 ID (null이면 전체 테넌트)
      */
     @GetMapping("/recent")
     @PreAuthorize("hasRole('SYSTEM_ADMIN')")
-    public ResponseEntity<ApiResponse<List<ActivityLogResponse>>> getAllRecentActivities() {
-        List<ActivityLogResponse> activities = activityLogService.getAllRecentActivities();
+    public ResponseEntity<ApiResponse<List<ActivityLogResponse>>> getAllRecentActivities(
+            @RequestParam(required = false) Long tenantId
+    ) {
+        List<ActivityLogResponse> activities;
+        if (tenantId != null) {
+            activities = activityLogService.getRecentActivities(tenantId);
+        } else {
+            activities = activityLogService.getAllRecentActivities();
+        }
         return ResponseEntity.ok(ApiResponse.success(activities));
     }
 }

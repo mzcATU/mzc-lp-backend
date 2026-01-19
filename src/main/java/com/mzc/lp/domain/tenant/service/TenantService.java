@@ -50,4 +50,9 @@ public interface TenantService {
      * 테넌트별 사용자 수 통계
      */
     TenantUserStatsResponse getTenantUserStats();
+
+    /**
+     * 커스텀 도메인 삭제 (SA용)
+     */
+    void deleteCustomDomain(Long tenantId);
 }
