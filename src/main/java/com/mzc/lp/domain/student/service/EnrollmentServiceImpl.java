@@ -534,13 +534,50 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         Map<Long, User> userMap = userRepository.findAllById(userIds).stream()
                 .collect(Collectors.toMap(User::getId, Function.identity()));
 
-        // Enrollment에 사용자 정보 매핑
+        // CourseTime ID 목록 추출
+        List<Long> courseTimeIds = enrollments.getContent().stream()
+                .map(Enrollment::getCourseTimeId)
+                .distinct()
+                .toList();
+
+        // 배치 조회로 CourseTime 정보 가져오기
+        Map<Long, com.mzc.lp.domain.ts.entity.CourseTime> courseTimeMap = courseTimeRepository.findAllById(courseTimeIds).stream()
+                .collect(Collectors.toMap(com.mzc.lp.domain.ts.entity.CourseTime::getId, Function.identity()));
+
+        // Enrollment에 사용자 정보 및 실제 종료일 매핑
         return enrollments.map(enrollment -> {
             User user = userMap.get(enrollment.getUserId());
+            com.mzc.lp.domain.ts.entity.CourseTime courseTime = courseTimeMap.get(enrollment.getCourseTimeId());
+
+            java.time.LocalDate actualEndDate = calculateActualEndDate(courseTime);
+
             if (user != null) {
-                return EnrollmentResponse.from(enrollment, user.getName(), user.getEmail());
+                return EnrollmentResponse.from(enrollment, user.getName(), user.getEmail(), actualEndDate);
             }
-            return EnrollmentResponse.from(enrollment);
+            return EnrollmentResponse.from(enrollment, actualEndDate);
         });
+    }
+
+    /**
+     * CourseTime의 durationType에 따라 실제 종료일 계산
+     * - FIXED: classEndDate 그대로 반환
+     * - RELATIVE: classStartDate + durationDays 계산
+     * - UNLIMITED: null 반환
+     */
+    private java.time.LocalDate calculateActualEndDate(com.mzc.lp.domain.ts.entity.CourseTime courseTime) {
+        if (courseTime == null) {
+            return null;
+        }
+
+        return switch (courseTime.getDurationType()) {
+            case FIXED -> courseTime.getClassEndDate();
+            case RELATIVE -> {
+                if (courseTime.getDurationDays() != null && courseTime.getClassStartDate() != null) {
+                    yield courseTime.getClassStartDate().plusDays(courseTime.getDurationDays());
+                }
+                yield null;
+            }
+            case UNLIMITED -> null;
+        };
     }
 }
