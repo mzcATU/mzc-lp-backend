@@ -148,4 +148,37 @@ public interface TenantNoticeRepository extends JpaRepository<TenantNotice, Long
             @Param("tenantId") Long tenantId,
             @Param("targetAudiences") java.util.Set<NoticeTargetAudience> targetAudiences,
             @Param("now") Instant now);
+
+    // ============================================
+    // 배포 통계용 쿼리
+    // ============================================
+
+    /**
+     * 특정 상태들의 공지 조회 (발행일 기준 내림차순)
+     */
+    @Query("SELECT n FROM TenantNotice n WHERE n.tenantId = :tenantId " +
+            "AND n.status IN :statuses " +
+            "ORDER BY n.publishedAt DESC")
+    Page<TenantNotice> findByTenantIdAndStatusInOrderByPublishedAtDesc(
+            @Param("tenantId") Long tenantId,
+            @Param("statuses") List<TenantNoticeStatus> statuses,
+            Pageable pageable);
+
+    /**
+     * 특정 상태들의 공지 수 카운트
+     */
+    @Query("SELECT COUNT(n) FROM TenantNotice n WHERE n.tenantId = :tenantId " +
+            "AND n.status IN :statuses")
+    long countByTenantIdAndStatusIn(
+            @Param("tenantId") Long tenantId,
+            @Param("statuses") List<TenantNoticeStatus> statuses);
+
+    /**
+     * 특정 상태들의 공지 viewCount 합계
+     */
+    @Query("SELECT SUM(n.viewCount) FROM TenantNotice n WHERE n.tenantId = :tenantId " +
+            "AND n.status IN :statuses")
+    Long sumViewCountByTenantIdAndStatusIn(
+            @Param("tenantId") Long tenantId,
+            @Param("statuses") List<TenantNoticeStatus> statuses);
 }

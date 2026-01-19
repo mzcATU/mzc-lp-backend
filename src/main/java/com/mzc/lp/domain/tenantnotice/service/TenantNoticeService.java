@@ -4,6 +4,9 @@ import com.mzc.lp.domain.tenantnotice.constant.NoticeTargetAudience;
 import com.mzc.lp.domain.tenantnotice.constant.TenantNoticeStatus;
 import com.mzc.lp.domain.tenantnotice.dto.request.CreateTenantNoticeRequest;
 import com.mzc.lp.domain.tenantnotice.dto.request.UpdateTenantNoticeRequest;
+import com.mzc.lp.domain.tenantnotice.dto.response.TenantNoticeDistributionDetailResponse;
+import com.mzc.lp.domain.tenantnotice.dto.response.TenantNoticeDistributionStatsResponse;
+import com.mzc.lp.domain.tenantnotice.dto.response.TenantNoticeDistributionSummaryResponse;
 import com.mzc.lp.domain.tenantnotice.dto.response.TenantNoticeResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -97,4 +100,23 @@ public interface TenantNoticeService {
      * 발행된 공지 수 조회 (다중 역할 지원)
      */
     long countVisibleNoticesForMultipleAudiences(Long tenantId, Set<NoticeTargetAudience> targetAudiences);
+
+    // ============================================
+    // 배포 통계 API
+    // ============================================
+
+    /**
+     * 배포 통계 목록 조회
+     */
+    Page<TenantNoticeDistributionStatsResponse> getDistributionStats(Long tenantId, Pageable pageable);
+
+    /**
+     * 배포 통계 요약 조회
+     */
+    TenantNoticeDistributionSummaryResponse getDistributionSummary(Long tenantId);
+
+    /**
+     * 특정 공지사항의 배포 상세 현황 조회
+     */
+    TenantNoticeDistributionDetailResponse getDistributionDetail(Long tenantId, Long noticeId);
 }

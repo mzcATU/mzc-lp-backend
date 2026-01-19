@@ -3,6 +3,8 @@ package com.mzc.lp.domain.user.repository;
 import com.mzc.lp.common.dto.stats.StatusCountProjection;
 import com.mzc.lp.common.dto.stats.TypeCountProjection;
 import com.mzc.lp.domain.user.entity.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -172,9 +174,79 @@ public interface UserRepository extends JpaRepository<User, Long>, UserRepositor
 
     /**
      * 기간 내 생성된 전체 사용자 조회 (테넌트 무관, createdAt 기준)
+     * Native Query로 Hibernate 테넌트 필터 우회
      */
-    @Query("SELECT u FROM User u WHERE u.createdAt >= :startDate AND u.createdAt < :endDate")
+    @Query(value = "SELECT * FROM users WHERE created_at >= :startDate AND created_at < :endDate",
+            nativeQuery = true)
     List<User> findAllWithPeriod(
             @Param("startDate") Instant startDate,
             @Param("endDate") Instant endDate);
+
+    /**
+     * 전체 사용자 조회 (테넌트 무관, SA 대시보드용)
+     * Native Query로 Hibernate 테넌트 필터 우회
+     */
+    @Query(value = "SELECT * FROM users", nativeQuery = true)
+    List<User> findAllUsers();
+
+    // ===== 배포 통계용 쿼리 =====
+
+    /**
+     * 테넌트별 활성 사용자 수 카운트 (배포 통계용)
+     */
+    @Query("SELECT COUNT(u) FROM User u " +
+            "WHERE u.tenantId = :tenantId " +
+            "AND u.status = 'ACTIVE'")
+    long countActiveUsersByTenantId(@Param("tenantId") Long tenantId);
+
+    /**
+     * 테넌트별 특정 역할의 활성 사용자 수 카운트 (배포 통계용)
+     */
+    @Query("SELECT COUNT(DISTINCT u) FROM User u " +
+            "LEFT JOIN u.userRoles ur " +
+            "WHERE u.tenantId = :tenantId " +
+            "AND u.status = 'ACTIVE' " +
+            "AND (u.role = :role OR ur.role = :role)")
+    int countActiveUsersByTenantIdAndRole(
+            @Param("tenantId") Long tenantId,
+            @Param("role") com.mzc.lp.domain.user.constant.TenantRole role);
+
+    /**
+     * 테넌트별 활성 사용자 정보 목록 조회 (배포 상세용)
+     * 반환: [userId, userName, userEmail, userRole]
+     */
+    @Query("SELECT u.id, u.name, u.email, CAST(u.role AS string) " +
+            "FROM User u " +
+            "WHERE u.tenantId = :tenantId " +
+            "AND u.status = 'ACTIVE' " +
+            "ORDER BY u.name")
+    List<Object[]> findActiveUsersInfoByTenantId(@Param("tenantId") Long tenantId);
+
+    /**
+     * 테넌트별 특정 역할의 활성 사용자 정보 목록 조회 (배포 상세용)
+     * 반환: [userId, userName, userEmail, userRole]
+     */
+    @Query("SELECT DISTINCT u.id, u.name, u.email, CAST(u.role AS string) " +
+            "FROM User u " +
+            "LEFT JOIN u.userRoles ur " +
+            "WHERE u.tenantId = :tenantId " +
+            "AND u.status = 'ACTIVE' " +
+            "AND (u.role = :role OR ur.role = :role) " +
+            "ORDER BY u.name")
+    List<Object[]> findActiveUsersInfoByTenantIdAndRole(
+            @Param("tenantId") Long tenantId,
+            @Param("role") com.mzc.lp.domain.user.constant.TenantRole role);
+
+    // ===== 리포트 내보내기용 쿼리 =====
+
+    /**
+     * 테넌트별 사용자 조회 (기간 필터 - 리포트 내보내기용)
+     */
+    @Query("SELECT u FROM User u " +
+            "WHERE u.tenantId = :tenantId " +
+            "AND (:startDate IS NULL OR u.createdAt >= :startDate)")
+    Page<User> findByTenantIdWithPeriodFilter(
+            @Param("tenantId") Long tenantId,
+            @Param("startDate") Instant startDate,
+            Pageable pageable);
 }

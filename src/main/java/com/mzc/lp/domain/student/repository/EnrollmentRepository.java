@@ -342,4 +342,29 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
             "WHERE e.courseTimeId = :courseTimeId " +
             "AND e.status != 'DROPPED'")
     List<Enrollment> findAllByCourseTimeId(@Param("courseTimeId") Long courseTimeId);
+
+    // ===== 리포트 내보내기용 쿼리 =====
+
+    /**
+     * 테넌트별 수강 조회 (기간 필터 - 리포트 내보내기용)
+     */
+    @Query("SELECT e FROM Enrollment e " +
+            "WHERE e.tenantId = :tenantId " +
+            "AND (:startDate IS NULL OR e.enrolledAt >= :startDate)")
+    Page<Enrollment> findByTenantIdWithPeriodFilter(
+            @Param("tenantId") Long tenantId,
+            @Param("startDate") Instant startDate,
+            Pageable pageable);
+
+    /**
+     * 테넌트별 수료 완료된 수강 조회 (기간 필터 - 리포트 내보내기용)
+     */
+    @Query("SELECT e FROM Enrollment e " +
+            "WHERE e.tenantId = :tenantId " +
+            "AND e.status = 'COMPLETED' " +
+            "AND (:startDate IS NULL OR e.completedAt >= :startDate)")
+    Page<Enrollment> findCompletedByTenantIdWithPeriodFilter(
+            @Param("tenantId") Long tenantId,
+            @Param("startDate") Instant startDate,
+            Pageable pageable);
 }

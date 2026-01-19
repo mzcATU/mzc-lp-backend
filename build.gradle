@@ -54,6 +54,9 @@ dependencies {
     implementation 'org.apache.poi:poi:5.2.5'
     implementation 'org.apache.poi:poi-ooxml:5.2.5'
 
+    // PDF generation (OpenPDF - LGPL license, fork of iText)
+    implementation 'com.github.librepdf:openpdf:2.0.3'
+
     // CSV BOM handling
     implementation 'commons-io:commons-io:2.15.1'
 
