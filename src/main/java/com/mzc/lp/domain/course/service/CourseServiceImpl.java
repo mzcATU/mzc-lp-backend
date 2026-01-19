@@ -27,6 +27,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -361,13 +362,23 @@ public class CourseServiceImpl implements CourseService {
     }
 
     private void validateCompleteness(Course course) {
-        boolean isComplete = course.getTitle() != null && !course.getTitle().isBlank()
-                && course.getDescription() != null && !course.getDescription().isBlank()
-                && course.getCategoryId() != null
-                && !course.getItems().isEmpty();
+        List<String> missingFields = new ArrayList<>();
 
-        if (!isComplete) {
-            throw new CourseIncompleteException(course.getId());
+        if (course.getTitle() == null || course.getTitle().isBlank()) {
+            missingFields.add("title");
+        }
+        if (course.getDescription() == null || course.getDescription().isBlank()) {
+            missingFields.add("description");
+        }
+        if (course.getCategoryId() == null) {
+            missingFields.add("categoryId");
+        }
+        if (course.getItems().isEmpty()) {
+            missingFields.add("items");
+        }
+
+        if (!missingFields.isEmpty()) {
+            throw new CourseIncompleteException(course.getId(), missingFields);
         }
     }
 }
