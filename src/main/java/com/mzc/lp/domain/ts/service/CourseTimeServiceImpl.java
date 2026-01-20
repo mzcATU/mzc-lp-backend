@@ -135,9 +135,14 @@ public class CourseTimeServiceImpl implements CourseTimeService {
                 savedCourseTime.getId(), request.courseId(), snapshot.getId(),
                 savedCourseTime.getStatus(), request.enrollStartDate(), validationResult.qualityRating());
 
-        // DESIGNER를 MAIN 강사로 자동 배정
-        List<InstructorAssignmentResponse> instructors = assignCourseDesignerAsMainInstructor(
-                savedCourseTime, course, createdBy);
+        // DESIGNER를 MAIN 강사로 자동 배정 (플래그에 따라 조건부 실행)
+        List<InstructorAssignmentResponse> instructors = List.of();
+        if (Boolean.TRUE.equals(request.assignDesignerAsMainInstructor())) {
+            instructors = assignCourseDesignerAsMainInstructor(savedCourseTime, course, createdBy);
+        } else {
+            log.info("Skipping DESIGNER auto-assignment: courseTimeId={}, assignDesignerAsMainInstructor=false",
+                    savedCourseTime.getId());
+        }
 
         return CourseTimeDetailResponse.from(savedCourseTime, instructors);
     }

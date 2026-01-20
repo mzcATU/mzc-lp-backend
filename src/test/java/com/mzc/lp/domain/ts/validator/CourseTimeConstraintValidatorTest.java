@@ -68,7 +68,8 @@ class CourseTimeConstraintValidatorTest {
                 deliveryType == DeliveryType.OFFLINE || deliveryType == DeliveryType.BLENDED
                         ? "{\"address\": \"서울\"}" : null,
                 false,
-                recurringSchedule
+                recurringSchedule,
+                null  // assignDesignerAsMainInstructor (기본값 true)
         );
     }
 
@@ -91,7 +92,7 @@ class CourseTimeConstraintValidatorTest {
                     LocalDate.now().plusDays(1), LocalDate.now().plusDays(10),
                     LocalDate.now().plusDays(11), null, null,
                     30, 5, EnrollmentMethod.FIRST_COME, 80,
-                    BigDecimal.valueOf(10000), false, null, false, null
+                    BigDecimal.valueOf(10000), false, null, false, null, null
             );
             Course course = createMockCourse(CourseType.ONLINE);
 
@@ -112,7 +113,7 @@ class CourseTimeConstraintValidatorTest {
                     LocalDate.now().plusDays(1), LocalDate.now().plusDays(10),
                     LocalDate.now().plusDays(11), null, null,
                     30, 5, EnrollmentMethod.FIRST_COME, 80,
-                    BigDecimal.valueOf(10000), false, null, false, null
+                    BigDecimal.valueOf(10000), false, null, false, null, null
             );
             Course course = createMockCourse(CourseType.ONLINE);
 
@@ -133,7 +134,7 @@ class CourseTimeConstraintValidatorTest {
                     LocalDate.now().plusDays(1), LocalDate.now().plusDays(10),
                     LocalDate.now().plusDays(11), LocalDate.now().plusDays(40), null,
                     30, 5, EnrollmentMethod.FIRST_COME, 80,
-                    BigDecimal.valueOf(10000), false, null, false, null
+                    BigDecimal.valueOf(10000), false, null, false, null, null
             );
             Course course = createMockCourse(CourseType.ONLINE);
 
@@ -159,7 +160,7 @@ class CourseTimeConstraintValidatorTest {
                     LocalDate.now().plusDays(1), LocalDate.now().plusDays(10),
                     LocalDate.now().plusDays(11), LocalDate.now().plusDays(40), null,
                     30, 5, EnrollmentMethod.FIRST_COME, 80,
-                    BigDecimal.valueOf(10000), false, null, false, null
+                    BigDecimal.valueOf(10000), false, null, false, null, null
             );
             Course course = createMockCourse(CourseType.OFFLINE);
 
@@ -180,7 +181,7 @@ class CourseTimeConstraintValidatorTest {
                     LocalDate.now().plusDays(1), LocalDate.now().plusDays(10),
                     LocalDate.now().plusDays(11), null, 30,
                     30, 5, EnrollmentMethod.FIRST_COME, 80,
-                    BigDecimal.valueOf(10000), false, null, false, null
+                    BigDecimal.valueOf(10000), false, null, false, null, null
             );
             Course course = createMockCourse(CourseType.ONLINE);
 
@@ -201,7 +202,7 @@ class CourseTimeConstraintValidatorTest {
                     LocalDate.now().plusDays(1), LocalDate.now().plusDays(10),
                     LocalDate.now().plusDays(11), null, null,
                     30, 5, EnrollmentMethod.FIRST_COME, 80,
-                    BigDecimal.valueOf(10000), false, null, false, null
+                    BigDecimal.valueOf(10000), false, null, false, null, null
             );
             Course course = createMockCourse(CourseType.ONLINE);
 
@@ -230,7 +231,7 @@ class CourseTimeConstraintValidatorTest {
                     LocalDate.now().plusDays(1), LocalDate.now().plusDays(10),
                     LocalDate.now().plusDays(11), LocalDate.now().plusDays(40), null,
                     30, 5, EnrollmentMethod.APPROVAL, 80,
-                    BigDecimal.valueOf(10000), false, null, false, null
+                    BigDecimal.valueOf(10000), false, null, false, null, null
             );
             Course course = createMockCourse(CourseType.ONLINE);
 
@@ -251,7 +252,7 @@ class CourseTimeConstraintValidatorTest {
                     LocalDate.now().plusDays(1), LocalDate.now().plusDays(10),
                     LocalDate.now().plusDays(11), LocalDate.now().plusDays(40), null,
                     30, 0, EnrollmentMethod.APPROVAL, 80,
-                    BigDecimal.valueOf(10000), false, null, false, null
+                    BigDecimal.valueOf(10000), false, null, false, null, null
             );
             Course course = createMockCourse(CourseType.ONLINE);
 
@@ -293,7 +294,7 @@ class CourseTimeConstraintValidatorTest {
                     LocalDate.now().plusDays(1), LocalDate.now().plusDays(10),
                     LocalDate.now().plusDays(11), LocalDate.now().plusDays(40), null,
                     30, 5, EnrollmentMethod.FIRST_COME, 80,
-                    BigDecimal.valueOf(10000), false, "{\"address\": \"서울\"}", false, null
+                    BigDecimal.valueOf(10000), false, "{\"address\": \"서울\"}", false, null, null
             );
             Course course = createMockCourse(CourseType.OFFLINE);
 
@@ -314,7 +315,7 @@ class CourseTimeConstraintValidatorTest {
                     LocalDate.now().plusDays(1), LocalDate.now().plusDays(10),
                     LocalDate.now().plusDays(11), LocalDate.now().plusDays(40), null,
                     30, 5, EnrollmentMethod.FIRST_COME, 80,
-                    BigDecimal.valueOf(10000), false, null, false, null
+                    BigDecimal.valueOf(10000), false, null, false, null, null
             );
             Course course = createMockCourse(CourseType.ONLINE);
 
@@ -335,7 +336,7 @@ class CourseTimeConstraintValidatorTest {
                     LocalDate.now().plusDays(1), LocalDate.now().plusDays(10),
                     LocalDate.now().plusDays(11), null, 90,
                     30, 5, EnrollmentMethod.FIRST_COME, 80,
-                    BigDecimal.valueOf(10000), false, "{\"address\": \"서울\"}", false, null
+                    BigDecimal.valueOf(10000), false, "{\"address\": \"서울\"}", false, null, null
             );
             Course course = createMockCourse(CourseType.OFFLINE);
 
@@ -356,7 +357,7 @@ class CourseTimeConstraintValidatorTest {
                     LocalDate.now().plusDays(1), LocalDate.now().plusDays(10),
                     LocalDate.now().plusDays(11), null, null,
                     30, 5, EnrollmentMethod.FIRST_COME, 80,
-                    BigDecimal.valueOf(10000), false, "{\"address\": \"서울\"}", false, null
+                    BigDecimal.valueOf(10000), false, "{\"address\": \"서울\"}", false, null, null
             );
             Course course = createMockCourse(CourseType.BLENDED);
 
@@ -377,7 +378,7 @@ class CourseTimeConstraintValidatorTest {
                     LocalDate.now().plusDays(1), LocalDate.now().plusDays(10),
                     LocalDate.now().plusDays(11), null, null,
                     30, 5, EnrollmentMethod.FIRST_COME, 80,
-                    BigDecimal.valueOf(10000), false, null, false, null
+                    BigDecimal.valueOf(10000), false, null, false, null, null
             );
             Course course = createMockCourse(CourseType.ONLINE);
 
@@ -403,7 +404,7 @@ class CourseTimeConstraintValidatorTest {
                     LocalDate.now().plusDays(1), LocalDate.now().plusDays(10),
                     LocalDate.now().plusDays(11), LocalDate.now().plusDays(40), null,
                     30, 0, EnrollmentMethod.FIRST_COME, 80,
-                    BigDecimal.valueOf(10000), false, "{\"address\": \"서울\"}", false, null
+                    BigDecimal.valueOf(10000), false, "{\"address\": \"서울\"}", false, null, null
             );
             Course course = createMockCourse(CourseType.ONLINE);
 
@@ -581,7 +582,7 @@ class CourseTimeConstraintValidatorTest {
                     LocalDate.now().plusDays(1), LocalDate.now().plusDays(10),
                     LocalDate.now().plusDays(11), LocalDate.now().plusDays(40), null,
                     30, 5, EnrollmentMethod.FIRST_COME, 80,
-                    BigDecimal.valueOf(10000), false, null, false, schedule
+                    BigDecimal.valueOf(10000), false, null, false, schedule, null
             );
             Course course = createMockCourse(CourseType.ONLINE);
 
