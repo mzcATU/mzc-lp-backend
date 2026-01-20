@@ -222,13 +222,13 @@ public class TenantServiceImpl implements TenantService {
                 .setParameter("tenantId", tenantId).executeUpdate();
         entityManager.createNativeQuery("DELETE FROM cart_items WHERE user_id IN (SELECT id FROM users WHERE tenant_id = :tenantId)")
                 .setParameter("tenantId", tenantId).executeUpdate();
-        entityManager.createNativeQuery("DELETE FROM wishlist_items WHERE user_id IN (SELECT id FROM users WHERE tenant_id = :tenantId)")
+        entityManager.createNativeQuery("DELETE FROM cm_wishlist_items WHERE user_id IN (SELECT id FROM users WHERE tenant_id = :tenantId)")
                 .setParameter("tenantId", tenantId).executeUpdate();
-        entityManager.createNativeQuery("DELETE FROM course_reviews WHERE user_id IN (SELECT id FROM users WHERE tenant_id = :tenantId)")
+        entityManager.createNativeQuery("DELETE FROM cm_course_reviews WHERE user_id IN (SELECT id FROM users WHERE tenant_id = :tenantId)")
                 .setParameter("tenantId", tenantId).executeUpdate();
         entityManager.createNativeQuery("DELETE FROM activity_logs WHERE user_id IN (SELECT id FROM users WHERE tenant_id = :tenantId)")
                 .setParameter("tenantId", tenantId).executeUpdate();
-        entityManager.createNativeQuery("DELETE FROM enrollments WHERE user_id IN (SELECT id FROM users WHERE tenant_id = :tenantId)")
+        entityManager.createNativeQuery("DELETE FROM sis_enrollments WHERE user_id IN (SELECT id FROM users WHERE tenant_id = :tenantId)")
                 .setParameter("tenantId", tenantId).executeUpdate();
         log.info("User related data deleted: tenantId={}", tenantId);
 
@@ -244,7 +244,17 @@ public class TenantServiceImpl implements TenantService {
         tenantSettingsRepository.deleteByTenantId(tenantId);
         log.info("Tenant settings deleted: tenantId={}", tenantId);
 
-        // 5. 테넌트 삭제
+        // 5. 테넌트 카테고리 삭제
+        entityManager.createNativeQuery("DELETE FROM tenant_categories WHERE tenant_id = :tenantId")
+                .setParameter("tenantId", tenantId).executeUpdate();
+        log.info("Tenant categories deleted: tenantId={}", tenantId);
+
+        // 6. 네비게이션 아이템 삭제
+        entityManager.createNativeQuery("DELETE FROM navigation_items WHERE tenant_id = :tenantId")
+                .setParameter("tenantId", tenantId).executeUpdate();
+        log.info("Navigation items deleted: tenantId={}", tenantId);
+
+        // 7. 테넌트 삭제
         tenantRepository.delete(tenant);
         log.info("Tenant deleted: tenantId={}", tenantId);
     }
