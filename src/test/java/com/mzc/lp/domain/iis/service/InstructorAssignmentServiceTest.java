@@ -108,10 +108,14 @@ class InstructorAssignmentServiceTest extends TenantTestSupport {
     }
 
     private CourseTime createTestCourseTime() {
+        return createTestCourseTime(DeliveryType.ONLINE);
+    }
+
+    private CourseTime createTestCourseTime(DeliveryType deliveryType) {
         CourseTime courseTime = CourseTime.create(
                 "테스트 차수",
                 null,  // description
-                DeliveryType.ONLINE,
+                deliveryType,
                 DurationType.FIXED,
                 LocalDate.now().minusDays(1),
                 LocalDate.now().plusDays(7),
@@ -153,7 +157,7 @@ class InstructorAssignmentServiceTest extends TenantTestSupport {
             AssignInstructorRequest request = new AssignInstructorRequest(USER_ID, InstructorRole.MAIN, false);
             InstructorAssignment saved = createTestAssignment(1L, USER_ID, TIME_ID, InstructorRole.MAIN);
             User user = createTestUser(USER_ID, "강사", "instructor@example.com");
-            CourseTime courseTime = createTestCourseTime();
+            CourseTime courseTime = createTestCourseTime(); // ONLINE 타입 - 일정 충돌 검증 스킵
 
             // Race Condition 방지를 위한 비관적 락
             given(courseTimeRepository.findByIdWithLock(TIME_ID)).willReturn(Optional.of(courseTime));
@@ -161,8 +165,7 @@ class InstructorAssignmentServiceTest extends TenantTestSupport {
                     TIME_ID, USER_ID, TENANT_ID, AssignmentStatus.ACTIVE)).willReturn(false);
             given(assignmentRepository.findActiveByTimeKeyAndRole(TIME_ID, TENANT_ID, InstructorRole.MAIN))
                     .willReturn(Optional.empty());
-            // 일정 충돌 없음
-            given(assignmentRepository.findActiveByUserKey(TENANT_ID, USER_ID)).willReturn(List.of());
+            // ONLINE 타입은 일정 충돌 검증 스킵하므로 findActiveByUserKey mock 불필요
             given(assignmentRepository.save(any())).willReturn(saved);
             given(userRepository.findById(USER_ID)).willReturn(Optional.of(user));
 
@@ -185,14 +188,13 @@ class InstructorAssignmentServiceTest extends TenantTestSupport {
             AssignInstructorRequest request = new AssignInstructorRequest(USER_ID, InstructorRole.SUB, false);
             InstructorAssignment saved = createTestAssignment(1L, USER_ID, TIME_ID, InstructorRole.SUB);
             User user = createTestUser(USER_ID, "부강사", "sub@example.com");
-            CourseTime courseTime = createTestCourseTime();
+            CourseTime courseTime = createTestCourseTime(); // ONLINE 타입 - 일정 충돌 검증 스킵
 
             // Race Condition 방지를 위한 비관적 락
             given(courseTimeRepository.findByIdWithLock(TIME_ID)).willReturn(Optional.of(courseTime));
             given(assignmentRepository.existsByTimeKeyAndUserKeyAndTenantIdAndStatus(
                     TIME_ID, USER_ID, TENANT_ID, AssignmentStatus.ACTIVE)).willReturn(false);
-            // 일정 충돌 없음
-            given(assignmentRepository.findActiveByUserKey(TENANT_ID, USER_ID)).willReturn(List.of());
+            // ONLINE 타입은 일정 충돌 검증 스킵하므로 findActiveByUserKey mock 불필요
             given(assignmentRepository.save(any())).willReturn(saved);
             given(userRepository.findById(USER_ID)).willReturn(Optional.of(user));
 
@@ -246,7 +248,8 @@ class InstructorAssignmentServiceTest extends TenantTestSupport {
             // given
             Long conflictingTimeId = 200L;
             AssignInstructorRequest request = new AssignInstructorRequest(USER_ID, InstructorRole.SUB, false);
-            CourseTime targetCourseTime = createTestCourseTime();
+            // OFFLINE 타입은 일정 충돌 검증 대상
+            CourseTime targetCourseTime = createTestCourseTime(DeliveryType.OFFLINE);
             CourseTime conflictingCourseTime = createTestCourseTimeWithId(conflictingTimeId,
                     LocalDate.now().plusDays(10), LocalDate.now().plusDays(20)); // 겹치는 기간
 

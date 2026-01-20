@@ -19,6 +19,7 @@ import com.mzc.lp.domain.user.constant.CourseRole;
 import com.mzc.lp.domain.user.entity.UserCourseRole;
 import com.mzc.lp.domain.user.repository.UserCourseRoleRepository;
 import com.mzc.lp.domain.ts.constant.CourseTimeStatus;
+import com.mzc.lp.domain.ts.constant.DeliveryType;
 import com.mzc.lp.domain.ts.constant.DurationType;
 import com.mzc.lp.domain.ts.dto.request.CloneCourseTimeRequest;
 import com.mzc.lp.domain.ts.dto.request.CreateCourseTimeRequest;
@@ -536,7 +537,9 @@ public class CourseTimeServiceImpl implements CourseTimeService {
         UserCourseRole designerRole = designers.get(0);
         Long designerId = designerRole.getUser().getId();
 
-        AssignInstructorRequest assignRequest = new AssignInstructorRequest(designerId, InstructorRole.MAIN, false);
+        // ONLINE 타입은 자기주도 학습이므로 강사 일정 충돌 검증 스킵
+        boolean skipScheduleValidation = courseTime.getDeliveryType() == DeliveryType.ONLINE;
+        AssignInstructorRequest assignRequest = new AssignInstructorRequest(designerId, InstructorRole.MAIN, skipScheduleValidation);
         InstructorAssignmentResponse assignment = instructorAssignmentService.assignInstructor(
                 courseTime.getId(), assignRequest, operatorId);
 
