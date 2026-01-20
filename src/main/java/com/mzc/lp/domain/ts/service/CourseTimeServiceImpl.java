@@ -19,6 +19,7 @@ import com.mzc.lp.domain.user.constant.CourseRole;
 import com.mzc.lp.domain.user.entity.UserCourseRole;
 import com.mzc.lp.domain.user.repository.UserCourseRoleRepository;
 import com.mzc.lp.domain.ts.constant.CourseTimeStatus;
+import com.mzc.lp.domain.ts.constant.DurationType;
 import com.mzc.lp.domain.ts.dto.request.CloneCourseTimeRequest;
 import com.mzc.lp.domain.ts.dto.request.CreateCourseTimeRequest;
 import com.mzc.lp.domain.ts.dto.request.RecurringScheduleRequest;
@@ -149,6 +150,9 @@ public class CourseTimeServiceImpl implements CourseTimeService {
         CourseTime source = courseTimeRepository.findByIdAndTenantId(sourceId, TenantContext.getCurrentTenantId())
                 .orElseThrow(() -> new CourseTimeNotFoundException(sourceId));
 
+        // durationType에 따른 classEndDate 검증
+        validateClassEndDateByDurationType(source.getDurationType(), request.classEndDate());
+
         // 날짜 검증
         validateDateRange(
                 request.enrollStartDate(),
@@ -166,6 +170,11 @@ public class CourseTimeServiceImpl implements CourseTimeService {
                 request.enrollEndDate(),
                 request.classStartDate(),
                 request.classEndDate(),
+                request.capacity(),
+                request.price(),
+                request.isFree(),
+                request.locationInfo(),
+                request.copyRecurringSchedule(),
                 createdBy
         );
 
@@ -174,6 +183,17 @@ public class CourseTimeServiceImpl implements CourseTimeService {
                 sourceId, savedCourseTime.getId(), savedCourseTime.getStatus(), request.enrollStartDate());
 
         return CourseTimeDetailResponse.from(savedCourseTime);
+    }
+
+    /**
+     * durationType에 따른 classEndDate 검증
+     * - FIXED: classEndDate 필수
+     * - RELATIVE/UNLIMITED: classEndDate null 허용
+     */
+    private void validateClassEndDateByDurationType(DurationType durationType, LocalDate classEndDate) {
+        if (durationType == DurationType.FIXED && classEndDate == null) {
+            throw new InvalidDateRangeException("FIXED 유형은 학습 종료일이 필수입니다");
+        }
     }
 
     @Override

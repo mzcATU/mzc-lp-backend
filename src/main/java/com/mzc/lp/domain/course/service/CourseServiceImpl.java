@@ -80,25 +80,17 @@ public class CourseServiceImpl implements CourseService {
     }
 
     @Override
-    public Page<CourseResponse> getCourses(String keyword, Long categoryId, Pageable pageable) {
-        log.debug("Getting courses: keyword={}, categoryId={}", keyword, categoryId);
-
-        Page<Course> courses;
-
-        if (keyword != null && !keyword.isBlank() && categoryId != null) {
-            courses = courseRepository.findByTenantIdAndTitleContainingAndCategoryId(
-                    TenantContext.getCurrentTenantId(), keyword, categoryId, pageable);
-        } else if (keyword != null && !keyword.isBlank()) {
-            courses = courseRepository.findByTenantIdAndTitleContaining(
-                    TenantContext.getCurrentTenantId(), keyword, pageable);
-        } else if (categoryId != null) {
-            courses = courseRepository.findByTenantIdAndCategoryId(
-                    TenantContext.getCurrentTenantId(), categoryId, pageable);
-        } else {
-            courses = courseRepository.findByTenantId(TenantContext.getCurrentTenantId(), pageable);
-        }
+    public Page<CourseResponse> getCourses(String keyword, Long categoryId, CourseStatus status, Pageable pageable) {
+        log.debug("Getting courses: keyword={}, categoryId={}, status={}", keyword, categoryId, status);
 
         Long tenantId = TenantContext.getCurrentTenantId();
+        Page<Course> courses = courseRepository.findByFilters(
+                tenantId,
+                keyword != null && !keyword.isBlank() ? keyword : null,
+                categoryId,
+                status,
+                pageable
+        );
 
         // creatorId 목록 추출 및 User 일괄 조회 (N+1 방지)
         List<Long> creatorIds = courses.getContent().stream()

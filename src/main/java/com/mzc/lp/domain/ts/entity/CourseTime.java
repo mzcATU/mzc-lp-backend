@@ -128,22 +128,42 @@ public class CourseTime extends TenantEntity {
             LocalDate enrollEndDate,
             LocalDate classStartDate,
             LocalDate classEndDate,
+            // 운영 설정 (선택 - null이면 원본 복사)
+            Integer capacity,
+            BigDecimal price,
+            Boolean isFree,
+            String locationInfo,
+            Boolean copyRecurringSchedule,
             Long createdBy
     ) {
         CourseTime courseTime = new CourseTime();
-        // 복제 대상 필드
+
+        // 원본 그대로 복사 (프론트에서 수정 불가)
         courseTime.course = source.course;
         courseTime.deliveryType = source.deliveryType;
         courseTime.durationType = source.durationType;
-        courseTime.capacity = source.capacity;
         courseTime.maxWaitingCount = source.maxWaitingCount;
         courseTime.enrollmentMethod = source.enrollmentMethod;
         courseTime.minProgressForCompletion = source.minProgressForCompletion;
-        courseTime.price = source.price;
-        courseTime.free = source.free;
-        courseTime.locationInfo = source.locationInfo;
         courseTime.allowLateEnrollment = source.allowLateEnrollment;
-        courseTime.recurringSchedule = source.recurringSchedule;
+
+        // 운영 설정 - 요청값 있으면 사용, 없으면 원본 복사
+        courseTime.capacity = capacity != null ? capacity : source.capacity;
+        courseTime.locationInfo = locationInfo != null ? locationInfo : source.locationInfo;
+
+        // 가격 설정 - isFree 처리
+        if (isFree != null) {
+            courseTime.free = isFree;
+            courseTime.price = isFree ? BigDecimal.ZERO : (price != null ? price : source.price);
+        } else {
+            courseTime.free = source.free;
+            courseTime.price = price != null ? price : source.price;
+        }
+
+        // 정기 일정 - 복사 여부에 따라
+        courseTime.recurringSchedule = Boolean.TRUE.equals(copyRecurringSchedule)
+                ? source.recurringSchedule
+                : null;
 
         // 새로 지정하는 필드
         courseTime.title = newTitle;
