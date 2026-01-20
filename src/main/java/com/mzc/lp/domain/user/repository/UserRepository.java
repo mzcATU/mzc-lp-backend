@@ -249,4 +249,54 @@ public interface UserRepository extends JpaRepository<User, Long>, UserRepositor
             @Param("tenantId") Long tenantId,
             @Param("startDate") Instant startDate,
             Pageable pageable);
+
+    // ===== 부서별 인원수 조회 =====
+
+    /**
+     * 테넌트별 특정 부서명의 인원수 카운트
+     */
+    @Query("SELECT COUNT(u) FROM User u " +
+            "WHERE u.tenantId = :tenantId " +
+            "AND u.department = :departmentName " +
+            "AND u.status = 'ACTIVE'")
+    int countByTenantIdAndDepartment(
+            @Param("tenantId") Long tenantId,
+            @Param("departmentName") String departmentName);
+
+    /**
+     * 테넌트별 부서별 인원수 집계 (전체)
+     * 반환: [departmentName, count]
+     */
+    @Query("SELECT u.department AS department, COUNT(u) AS count " +
+            "FROM User u " +
+            "WHERE u.tenantId = :tenantId " +
+            "AND u.department IS NOT NULL " +
+            "AND u.status = 'ACTIVE' " +
+            "GROUP BY u.department")
+    List<Object[]> countByTenantIdGroupByDepartment(@Param("tenantId") Long tenantId);
+
+    /**
+     * 테넌트별 특정 부서의 사용자 목록 조회
+     */
+    @Query("SELECT u FROM User u " +
+            "WHERE u.tenantId = :tenantId " +
+            "AND u.department = :departmentName " +
+            "AND u.status = 'ACTIVE' " +
+            "ORDER BY u.position, u.name")
+    List<User> findByTenantIdAndDepartment(
+            @Param("tenantId") Long tenantId,
+            @Param("departmentName") String departmentName);
+
+    /**
+     * 테넌트별 특정 부서에 소속되지 않은 활성 사용자 목록 조회
+     * (부서 미배정 또는 다른 부서 소속 사용자)
+     */
+    @Query("SELECT u FROM User u " +
+            "WHERE u.tenantId = :tenantId " +
+            "AND u.status = 'ACTIVE' " +
+            "AND (u.department IS NULL OR u.department != :departmentName) " +
+            "ORDER BY u.department NULLS FIRST, u.name")
+    List<User> findByTenantIdAndDepartmentNot(
+            @Param("tenantId") Long tenantId,
+            @Param("departmentName") String departmentName);
 }

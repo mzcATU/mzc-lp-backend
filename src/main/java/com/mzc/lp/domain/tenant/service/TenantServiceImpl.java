@@ -240,4 +240,22 @@ public class TenantServiceImpl implements TenantService {
 
         return TenantUserStatsResponse.of(tenantUserCounts, totalUsers);
     }
+
+    @Override
+    @Transactional
+    public void deleteCustomDomain(Long tenantId) {
+        log.info("Deleting custom domain for tenant: tenantId={}", tenantId);
+
+        Tenant tenant = findTenantById(tenantId);
+
+        if (tenant.getCustomDomain() == null) {
+            log.warn("Tenant has no custom domain: tenantId={}", tenantId);
+            return;
+        }
+
+        String oldDomain = tenant.getCustomDomain();
+        tenant.update(tenant.getName(), null, tenant.getPlan());
+
+        log.info("Custom domain deleted: tenantId={}, oldDomain={}", tenantId, oldDomain);
+    }
 }

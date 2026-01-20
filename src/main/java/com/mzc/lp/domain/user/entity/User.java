@@ -51,6 +51,8 @@ public class User extends TenantEntity {
     @Column(nullable = false, length = 20)
     private UserStatus status;
 
+    private java.time.Instant lastLoginAt;  // 마지막 로그인 시간
+
     // 정적 팩토리 메서드
     public static User create(String email, String name, String encodedPassword) {
         User user = new User();
@@ -175,6 +177,14 @@ public class User extends TenantEntity {
                 .min((r1, r2) -> r1.ordinal() - r2.ordinal())
                 .orElse(TenantRole.USER);
         this.role = highestRole;
+    }
+
+    public void updateDepartment(String department) {
+        this.department = department;
+    }
+
+    public void updateLastLoginAt() {
+        this.lastLoginAt = java.time.Instant.now();
     }
 
     public void suspend() {

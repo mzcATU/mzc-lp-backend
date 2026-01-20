@@ -140,6 +140,62 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
         };
     }
 
+    @Override
+    public Page<User> searchSystemAdmins(String keyword, UserStatus status, Pageable pageable) {
+        // Native Query를 사용하여 Hibernate 테넌트 필터 우회
+        StringBuilder sqlBuilder = new StringBuilder();
+        sqlBuilder.append("SELECT * FROM users WHERE role = 'SYSTEM_ADMIN'");
+
+        List<String> conditions = new ArrayList<>();
+
+        if (keyword != null && !keyword.isBlank()) {
+            conditions.add("(LOWER(email) LIKE :keyword OR LOWER(name) LIKE :keyword)");
+        }
+
+        if (status != null) {
+            conditions.add("status = :status");
+        }
+
+        if (!conditions.isEmpty()) {
+            sqlBuilder.append(" AND ").append(String.join(" AND ", conditions));
+        }
+
+        sqlBuilder.append(" ORDER BY created_at DESC");
+
+        // Count query
+        String countSql = "SELECT COUNT(*) FROM users WHERE role = 'SYSTEM_ADMIN'"
+                + (!conditions.isEmpty() ? " AND " + String.join(" AND ", conditions) : "");
+
+        jakarta.persistence.Query countQuery = entityManager.createNativeQuery(countSql);
+
+        if (keyword != null && !keyword.isBlank()) {
+            countQuery.setParameter("keyword", "%" + keyword.toLowerCase() + "%");
+        }
+        if (status != null) {
+            countQuery.setParameter("status", status.name());
+        }
+
+        Long total = ((Number) countQuery.getSingleResult()).longValue();
+
+        // Main query with pagination
+        jakarta.persistence.Query mainQuery = entityManager.createNativeQuery(sqlBuilder.toString(), User.class);
+
+        if (keyword != null && !keyword.isBlank()) {
+            mainQuery.setParameter("keyword", "%" + keyword.toLowerCase() + "%");
+        }
+        if (status != null) {
+            mainQuery.setParameter("status", status.name());
+        }
+
+        mainQuery.setFirstResult((int) pageable.getOffset());
+        mainQuery.setMaxResults(pageable.getPageSize());
+
+        @SuppressWarnings("unchecked")
+        List<User> users = mainQuery.getResultList();
+
+        return new PageImpl<>(users, pageable, total);
+    }
+
     private <T> List<Predicate> buildPredicates(CriteriaBuilder cb, CriteriaQuery<T> query, Root<User> user,
                                             Long tenantId, String keyword, TenantRole role, UserStatus status, Boolean hasCourseRole) {
         List<Predicate> predicates = new ArrayList<>();
