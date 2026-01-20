@@ -51,4 +51,7 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
 
     // 테넌트별 부서명 존재 여부 확인
     boolean existsByTenantIdAndName(Long tenantId, String name);
+
+    // 테넌트별 부서 삭제 (테넌트 삭제 시 cascade용)
+    void deleteByTenantId(Long tenantId);
 }

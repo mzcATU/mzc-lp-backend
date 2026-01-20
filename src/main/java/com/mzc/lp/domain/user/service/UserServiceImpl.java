@@ -47,6 +47,10 @@ import com.mzc.lp.domain.analytics.constant.ActivityType;
 import com.mzc.lp.domain.analytics.service.ActivityLogService;
 import com.mzc.lp.domain.department.service.DepartmentService;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import org.hibernate.Session;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -80,26 +84,60 @@ public class UserServiceImpl implements UserService {
     private final ActivityLogService activityLogService;
     private final DepartmentService departmentService;
 
+    @PersistenceContext
+    private EntityManager entityManager;
+
     @Override
     public UserDetailResponse getMe(Long userId) {
         log.debug("Getting user info: userId={}", userId);
-        // userRoles를 함께 로딩하여 roles 조회 가능하게 함
-        User user = userRepository.findByIdWithRoles(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
-        List<CourseRoleResponse> courseRoles = getCourseRolesWithCourseTitle(userId);
 
-        // 테넌트 정보 조회 (subdomain, customDomain)
-        String tenantSubdomain = null;
-        String tenantCustomDomain = null;
-        if (user.getTenantId() != null) {
-            Tenant tenant = tenantRepository.findById(user.getTenantId()).orElse(null);
-            if (tenant != null) {
-                tenantSubdomain = tenant.getSubdomain();
-                tenantCustomDomain = tenant.getCustomDomain();
+        // Hibernate Session을 통해 tenant filter를 일시적으로 비활성화
+        // SYSTEM_ADMIN 사용자(tenantId=NULL)도 조회할 수 있도록 함
+        Session session = entityManager.unwrap(Session.class);
+        org.hibernate.Filter filter = session.getEnabledFilter("tenantFilter");
+        boolean wasFilterEnabled = filter != null;
+
+        try {
+            if (wasFilterEnabled) {
+                session.disableFilter("tenantFilter");
+                log.debug("Tenant filter disabled for getMe: userId={}", userId);
+            }
+
+            // Native query를 사용하여 Hibernate 필터 완전 우회
+            // JPQL은 필터를 우회하지 못하므로 native query 사용
+            User user = session.createNativeQuery(
+                    "SELECT * FROM users WHERE id = :userId",
+                    User.class
+            ).setParameter("userId", userId).uniqueResult();
+
+            if (user == null) {
+                throw new UserNotFoundException(userId);
+            }
+
+            // userRoles를 별도로 로딩 (LazyInitializationException 방지)
+            org.hibernate.Hibernate.initialize(user.getUserRoles());
+
+            List<CourseRoleResponse> courseRoles = getCourseRolesWithCourseTitle(userId);
+
+            // 테넌트 정보 조회 (subdomain, customDomain)
+            String tenantSubdomain = null;
+            String tenantCustomDomain = null;
+            if (user.getTenantId() != null) {
+                Tenant tenant = tenantRepository.findById(user.getTenantId()).orElse(null);
+                if (tenant != null) {
+                    tenantSubdomain = tenant.getSubdomain();
+                    tenantCustomDomain = tenant.getCustomDomain();
+                }
+            }
+
+            return UserDetailResponse.from(user, courseRoles, tenantSubdomain, tenantCustomDomain);
+        } finally {
+            // filter를 원래 상태로 복원
+            if (wasFilterEnabled) {
+                session.enableFilter("tenantFilter").setParameter("tenantId", TenantContext.getCurrentTenantId());
+                log.debug("Tenant filter re-enabled for getMe");
             }
         }
-
-        return UserDetailResponse.from(user, courseRoles, tenantSubdomain, tenantCustomDomain);
     }
 
     @Override

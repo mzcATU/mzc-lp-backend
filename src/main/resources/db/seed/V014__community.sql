@@ -68,7 +68,7 @@ INSERT INTO community_comment_likes (id, tenant_id, comment_id, user_id, created
 
 -- ===== 테넌트 2 게시글 (5개) =====
 INSERT INTO community_posts (id, tenant_id, type, category, author_id, title, content, view_count, is_pinned, is_solved, is_private, tags, course_time_id, created_at, updated_at) VALUES
-(51, 2, 'ANNOUNCEMENT', 'general', 1001, 'A사 개발팀 기술 스택 소개', '우리 팀에서 사용하는 기술 스택을 소개합니다.', 156, true, false, false, 'TechStack', NULL, NOW() - INTERVAL 15 DAY, NOW()),
+(51, 2, 'ANNOUNCEMENT', 'general', 1001, '삼성전자 개발팀 기술 스택 소개', '우리 팀에서 사용하는 기술 스택을 소개합니다.', 156, true, false, false, 'TechStack', NULL, NOW() - INTERVAL 15 DAY, NOW()),
 (52, 2, 'TIP', 'backend', 1002, 'Spring Batch 도입 후기', 'Spring Batch를 도입하면서 겪은 이슈들입니다.', 134, false, false, false, 'Spring,Batch', NULL, NOW() - INTERVAL 12 DAY, NOW()),
 (53, 2, 'DISCUSSION', 'cloud', 1003, '클라우드 마이그레이션 경험', 'On-premise에서 AWS로 마이그레이션한 경험입니다.', 198, false, false, false, 'AWS,Migration', NULL, NOW() - INTERVAL 10 DAY, NOW()),
 (54, 2, 'DISCUSSION', 'general', 1004, '코드 리뷰 문화 정착기', '효율적인 코드 리뷰 문화를 만들기 위한 노력들입니다.', 145, false, false, false, 'CodeReview,Culture', NULL, NOW() - INTERVAL 8 DAY, NOW()),
@@ -77,7 +77,7 @@ INSERT INTO community_posts (id, tenant_id, type, category, author_id, title, co
 -- ===== 테넌트 3 게시글 (5개) =====
 INSERT INTO community_posts (id, tenant_id, type, category, author_id, title, content, view_count, is_pinned, is_solved, is_private, tags, course_time_id, created_at, updated_at) VALUES
 (101, 3, 'DISCUSSION', 'mobile', 2001, 'React Native vs Flutter 비교', '모바일 앱 개발 프레임워크 비교입니다.', 234, false, false, false, 'ReactNative,Flutter,Mobile', NULL, NOW() - INTERVAL 15 DAY, NOW()),
-(102, 3, 'REVIEW', 'general', 2002, '스타트업 개발자 생존기', 'B사에서 1년간 개발자로 일한 경험입니다.', 289, true, false, false, 'Startup,Career', NULL, NOW() - INTERVAL 12 DAY, NOW()),
+(102, 3, 'REVIEW', 'general', 2002, '스타트업 개발자 생존기', '네이버에서 1년간 개발자로 일한 경험입니다.', 289, true, false, false, 'Startup,Career', NULL, NOW() - INTERVAL 12 DAY, NOW()),
 (103, 3, 'TIP', 'general', 2003, 'MVP 빠르게 만들기', '2주 만에 MVP를 만든 방법을 공유합니다.', 178, false, false, false, 'MVP,Startup', NULL, NOW() - INTERVAL 10 DAY, NOW()),
 (104, 3, 'TIP', 'mobile', 2004, '앱 스토어 최적화 ASO', '앱 스토어 순위를 올리기 위한 ASO 전략입니다.', 145, false, false, false, 'ASO,Mobile,Marketing', NULL, NOW() - INTERVAL 8 DAY, NOW()),
 (105, 3, 'TIP', 'backend', 2005, 'Firebase 활용 가이드', 'Firebase로 백엔드 없이 앱 만들기', 156, false, false, false, 'Firebase,Backend', NULL, NOW() - INTERVAL 5 DAY, NOW());
