@@ -88,7 +88,9 @@ INSERT INTO user_roles (id, user_id, role, created_at) VALUES
 (152, 116, 'INSTRUCTOR', NOW()),  -- 안서준 (마케팅팀 팀장)
 (153, 126, 'INSTRUCTOR', NOW()),  -- 양현준 (인사팀 팀장)
 (154, 134, 'INSTRUCTOR', NOW()),  -- 추성훈 (영업팀 팀장)
-(155, 144, 'INSTRUCTOR', NOW());  -- 두시현 (디자인팀 팀장)
+(155, 144, 'INSTRUCTOR', NOW()),  -- 두시현 (디자인팀 팀장)
+-- 전문 강사
+(156, 151, 'INSTRUCTOR', NOW());  -- 차은성 (전문 강사)
 
 -- ===== 테넌트 2 역할 =====
 INSERT INTO user_roles (id, user_id, role, created_at) VALUES
@@ -97,41 +99,43 @@ INSERT INTO user_roles (id, user_id, role, created_at) VALUES
 (1002, 12, 'OPERATOR', NOW()),
 (1003, 13, 'DESIGNER', NOW()),
 (1004, 14, 'USER', NOW()),
+-- 전문 강사
+(1005, 15, 'INSTRUCTOR', NOW()),
 -- 일반 사용자
-(1005, 1001, 'USER', NOW()),
-(1006, 1002, 'USER', NOW()),
-(1007, 1003, 'USER', NOW()),
-(1008, 1004, 'USER', NOW()),
-(1009, 1005, 'USER', NOW()),
-(1010, 1006, 'USER', NOW()),
-(1011, 1007, 'USER', NOW()),
-(1012, 1008, 'USER', NOW()),
-(1013, 1009, 'USER', NOW()),
-(1014, 1010, 'USER', NOW()),
-(1015, 1011, 'USER', NOW()),
-(1016, 1012, 'USER', NOW()),
-(1017, 1013, 'USER', NOW()),
-(1018, 1014, 'USER', NOW()),
-(1019, 1015, 'USER', NOW()),
-(1020, 1016, 'USER', NOW()),
-(1021, 1017, 'USER', NOW()),
-(1022, 1018, 'USER', NOW()),
-(1023, 1019, 'USER', NOW()),
-(1024, 1020, 'USER', NOW()),
-(1025, 1021, 'USER', NOW()),
-(1026, 1022, 'USER', NOW()),
-(1027, 1023, 'USER', NOW()),
-(1028, 1024, 'USER', NOW()),
-(1029, 1025, 'USER', NOW()),
-(1030, 1026, 'USER', NOW()),
-(1031, 1027, 'USER', NOW()),
-(1032, 1028, 'USER', NOW()),
-(1033, 1029, 'USER', NOW()),
-(1034, 1030, 'USER', NOW()),
+(1006, 1001, 'USER', NOW()),
+(1007, 1002, 'USER', NOW()),
+(1008, 1003, 'USER', NOW()),
+(1009, 1004, 'USER', NOW()),
+(1010, 1005, 'USER', NOW()),
+(1011, 1006, 'USER', NOW()),
+(1012, 1007, 'USER', NOW()),
+(1013, 1008, 'USER', NOW()),
+(1014, 1009, 'USER', NOW()),
+(1015, 1010, 'USER', NOW()),
+(1016, 1011, 'USER', NOW()),
+(1017, 1012, 'USER', NOW()),
+(1018, 1013, 'USER', NOW()),
+(1019, 1014, 'USER', NOW()),
+(1020, 1015, 'USER', NOW()),
+(1021, 1016, 'USER', NOW()),
+(1022, 1017, 'USER', NOW()),
+(1023, 1018, 'USER', NOW()),
+(1024, 1019, 'USER', NOW()),
+(1025, 1020, 'USER', NOW()),
+(1026, 1021, 'USER', NOW()),
+(1027, 1022, 'USER', NOW()),
+(1028, 1023, 'USER', NOW()),
+(1029, 1024, 'USER', NOW()),
+(1030, 1025, 'USER', NOW()),
+(1031, 1026, 'USER', NOW()),
+(1032, 1027, 'USER', NOW()),
+(1033, 1028, 'USER', NOW()),
+(1034, 1029, 'USER', NOW()),
+(1035, 1030, 'USER', NOW()),
 -- INSTRUCTOR + USER 복합롤
-(1035, 1024, 'INSTRUCTOR', NOW()),  -- 하지원 (개발팀 차장)
-(1036, 1025, 'INSTRUCTOR', NOW()),  -- 문재현 (기획팀 팀장)
-(1037, 1028, 'INSTRUCTOR', NOW());  -- 남지현 (개발팀 팀장)
+(1036, 1024, 'INSTRUCTOR', NOW()),  -- 하지원 (개발팀 차장)
+(1037, 1025, 'INSTRUCTOR', NOW()),  -- 문재현 (기획팀 팀장)
+(1038, 1028, 'INSTRUCTOR', NOW());  -- 남지현 (개발팀 팀장)
 
 -- ===== 테넌트 3 역할 =====
 INSERT INTO user_roles (id, user_id, role, created_at) VALUES
@@ -140,38 +144,40 @@ INSERT INTO user_roles (id, user_id, role, created_at) VALUES
 (2002, 22, 'OPERATOR', NOW()),
 (2003, 23, 'DESIGNER', NOW()),
 (2004, 24, 'USER', NOW()),
+-- 전문 강사
+(2005, 25, 'INSTRUCTOR', NOW()),
 -- 일반 사용자
-(2005, 2001, 'USER', NOW()),
-(2006, 2002, 'USER', NOW()),
-(2007, 2003, 'USER', NOW()),
-(2008, 2004, 'USER', NOW()),
-(2009, 2005, 'USER', NOW()),
-(2010, 2006, 'USER', NOW()),
-(2011, 2007, 'USER', NOW()),
-(2012, 2008, 'USER', NOW()),
-(2013, 2009, 'USER', NOW()),
-(2014, 2010, 'USER', NOW()),
-(2015, 2011, 'USER', NOW()),
-(2016, 2012, 'USER', NOW()),
-(2017, 2013, 'USER', NOW()),
-(2018, 2014, 'USER', NOW()),
-(2019, 2015, 'USER', NOW()),
-(2020, 2016, 'USER', NOW()),
-(2021, 2017, 'USER', NOW()),
-(2022, 2018, 'USER', NOW()),
-(2023, 2019, 'USER', NOW()),
-(2024, 2020, 'USER', NOW()),
-(2025, 2021, 'USER', NOW()),
-(2026, 2022, 'USER', NOW()),
-(2027, 2023, 'USER', NOW()),
-(2028, 2024, 'USER', NOW()),
-(2029, 2025, 'USER', NOW()),
-(2030, 2026, 'USER', NOW()),
-(2031, 2027, 'USER', NOW()),
-(2032, 2028, 'USER', NOW()),
-(2033, 2029, 'USER', NOW()),
-(2034, 2030, 'USER', NOW()),
+(2006, 2001, 'USER', NOW()),
+(2007, 2002, 'USER', NOW()),
+(2008, 2003, 'USER', NOW()),
+(2009, 2004, 'USER', NOW()),
+(2010, 2005, 'USER', NOW()),
+(2011, 2006, 'USER', NOW()),
+(2012, 2007, 'USER', NOW()),
+(2013, 2008, 'USER', NOW()),
+(2014, 2009, 'USER', NOW()),
+(2015, 2010, 'USER', NOW()),
+(2016, 2011, 'USER', NOW()),
+(2017, 2012, 'USER', NOW()),
+(2018, 2013, 'USER', NOW()),
+(2019, 2014, 'USER', NOW()),
+(2020, 2015, 'USER', NOW()),
+(2021, 2016, 'USER', NOW()),
+(2022, 2017, 'USER', NOW()),
+(2023, 2018, 'USER', NOW()),
+(2024, 2019, 'USER', NOW()),
+(2025, 2020, 'USER', NOW()),
+(2026, 2021, 'USER', NOW()),
+(2027, 2022, 'USER', NOW()),
+(2028, 2023, 'USER', NOW()),
+(2029, 2024, 'USER', NOW()),
+(2030, 2025, 'USER', NOW()),
+(2031, 2026, 'USER', NOW()),
+(2032, 2027, 'USER', NOW()),
+(2033, 2028, 'USER', NOW()),
+(2034, 2029, 'USER', NOW()),
+(2035, 2030, 'USER', NOW()),
 -- INSTRUCTOR + USER 복합롤
-(2035, 2019, 'INSTRUCTOR', NOW()),  -- 홍현우 (개발팀 팀장)
-(2036, 2022, 'INSTRUCTOR', NOW()),  -- 백도윤 (개발팀 차장)
-(2037, 2024, 'INSTRUCTOR', NOW());  -- 하준서 (운영팀 팀장)
+(2036, 2019, 'INSTRUCTOR', NOW()),  -- 홍현우 (개발팀 팀장)
+(2037, 2022, 'INSTRUCTOR', NOW()),  -- 백도윤 (개발팀 차장)
+(2038, 2024, 'INSTRUCTOR', NOW());  -- 하준서 (운영팀 팀장)
