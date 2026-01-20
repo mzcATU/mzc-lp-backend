@@ -154,6 +154,30 @@ public class EnrollmentController {
     }
 
     /**
+     * 수강 신청 승인 (PENDING → ENROLLED)
+     */
+    @PatchMapping("/api/enrollments/{enrollmentId}/approve")
+    @PreAuthorize("hasAnyRole('OPERATOR', 'TENANT_ADMIN')")
+    public ResponseEntity<ApiResponse<EnrollmentDetailResponse>> approveEnrollment(
+            @PathVariable Long enrollmentId
+    ) {
+        EnrollmentDetailResponse response = enrollmentService.approveEnrollment(enrollmentId);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    /**
+     * 수강 신청 거절 (PENDING → DROPPED)
+     */
+    @PatchMapping("/api/enrollments/{enrollmentId}/reject")
+    @PreAuthorize("hasAnyRole('OPERATOR', 'TENANT_ADMIN')")
+    public ResponseEntity<ApiResponse<EnrollmentDetailResponse>> rejectEnrollment(
+            @PathVariable Long enrollmentId
+    ) {
+        EnrollmentDetailResponse response = enrollmentService.rejectEnrollment(enrollmentId);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    /**
      * 수강 취소
      */
     @DeleteMapping("/api/enrollments/{enrollmentId}")

@@ -432,6 +432,70 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
     @Override
     @Transactional
+    public EnrollmentDetailResponse approveEnrollment(Long enrollmentId) {
+        log.info("Approving enrollment: enrollmentId={}", enrollmentId);
+
+        Long tenantId = TenantContext.getCurrentTenantId();
+
+        Enrollment enrollment = enrollmentRepository.findByIdAndTenantId(enrollmentId, tenantId)
+                .orElseThrow(() -> new EnrollmentNotFoundException(enrollmentId));
+
+        // PENDING 상태 검증 및 승인
+        enrollment.approve();
+
+        // 활동 로그 기록
+        CourseTime courseTime = courseTimeRepository.findById(enrollment.getCourseTimeId()).orElse(null);
+        activityLogService.log(
+                ActivityType.ENROLLMENT_CREATE,
+                String.format("수강신청 승인: %s", courseTime != null ? courseTime.getTitle() : "과정"),
+                "Enrollment",
+                enrollmentId,
+                courseTime != null ? courseTime.getTitle() : null
+        );
+
+        // 수강신청 완료 알림 발송 (승인 완료)
+        if (courseTime != null) {
+            sendEnrollmentCompleteNotification(tenantId, enrollment, courseTime);
+        }
+
+        log.info("Enrollment approved: enrollmentId={}", enrollmentId);
+
+        return EnrollmentDetailResponse.from(enrollment);
+    }
+
+    @Override
+    @Transactional
+    public EnrollmentDetailResponse rejectEnrollment(Long enrollmentId) {
+        log.info("Rejecting enrollment: enrollmentId={}", enrollmentId);
+
+        Long tenantId = TenantContext.getCurrentTenantId();
+
+        Enrollment enrollment = enrollmentRepository.findByIdAndTenantId(enrollmentId, tenantId)
+                .orElseThrow(() -> new EnrollmentNotFoundException(enrollmentId));
+
+        // PENDING 상태 검증 및 거절
+        enrollment.reject();
+
+        // 정원 반환
+        courseTimeService.releaseSeat(enrollment.getCourseTimeId());
+
+        // 활동 로그 기록
+        CourseTime courseTime = courseTimeRepository.findById(enrollment.getCourseTimeId()).orElse(null);
+        activityLogService.log(
+                ActivityType.ENROLLMENT_DROP,
+                String.format("수강신청 거절: %s", courseTime != null ? courseTime.getTitle() : "과정"),
+                "Enrollment",
+                enrollmentId,
+                courseTime != null ? courseTime.getTitle() : null
+        );
+
+        log.info("Enrollment rejected: enrollmentId={}", enrollmentId);
+
+        return EnrollmentDetailResponse.from(enrollment);
+    }
+
+    @Override
+    @Transactional
     public void cancelEnrollment(Long enrollmentId, Long userId, boolean isAdmin) {
         log.info("Cancelling enrollment: enrollmentId={}, userId={}, isAdmin={}", enrollmentId, userId, isAdmin);
 
