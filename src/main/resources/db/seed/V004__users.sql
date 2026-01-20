@@ -13,21 +13,21 @@
 
 -- ===== 시스템 관리자 (전체 1명) =====
 INSERT INTO users (id, tenant_id, email, password, name, phone, department, position, role, status, created_at, updated_at) VALUES
-(1, NULL, 'sysadmin@mzc.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '김태호(시스템관리자)', '010-0000-0001', NULL, NULL, 'SYSTEM_ADMIN', 'ACTIVE', NOW(), NOW());
+(1, NULL, 'sysadmin@mzc.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '김태호(시스템 관리자)', '010-0000-0001', NULL, NULL, 'SYSTEM_ADMIN', 'ACTIVE', NOW(), NOW());
 
 -- ===== 테넌트 1 (기본 테넌트) 관리자/운영자/설계자 =====
 INSERT INTO users (id, tenant_id, email, password, name, phone, department, position, role, status, created_at, updated_at) VALUES
 -- 테넌트 관리자
-(2, 1, 'admin@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '이정훈(테넌트관리자)', '010-1000-0001', '경영지원팀', '부장', 'TENANT_ADMIN', 'ACTIVE', NOW(), NOW()),
+(2, 1, 'admin@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '이정훈(테넌트 관리자)', '010-1000-0001', '경영지원팀', '부장', 'TENANT_ADMIN', 'ACTIVE', NOW(), NOW()),
 -- 운영자
 (3, 1, 'operator1@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '박성민(운영자)', '010-1000-0002', '경영지원팀', '과장', 'OPERATOR', 'ACTIVE', NOW(), NOW()),
 (4, 1, 'operator2@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '최유진(운영자)', '010-1000-0003', '경영지원팀', '대리', 'OPERATOR', 'ACTIVE', NOW(), NOW()),
--- 설계자
-(5, 1, 'designer1@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '정동욱(설계자)', '010-1000-0004', '개발팀', '과장', 'DESIGNER', 'ACTIVE', NOW(), NOW()),
-(6, 1, 'designer2@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '한소영(설계자)', '010-1000-0005', '개발팀', '대리', 'DESIGNER', 'ACTIVE', NOW(), NOW()),
-(7, 1, 'designer3@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '오민지(설계자)', '010-1000-0006', '디자인팀', '대리', 'DESIGNER', 'ACTIVE', NOW(), NOW()),
--- 강의 개설자 (테스트용)
-(8, 1, 'creator@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '송재현(강의개설자)', '010-1000-0007', '개발팀', '팀장', 'USER', 'ACTIVE', NOW(), NOW()),
+-- 강의 개설자 (설계자/디자이너)
+(5, 1, 'designer1@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '정동욱(강의 개설자)', '010-1000-0004', '개발팀', '과장', 'DESIGNER', 'ACTIVE', NOW(), NOW()),
+(6, 1, 'designer2@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '한소영(강의 개설자)', '010-1000-0005', '개발팀', '대리', 'DESIGNER', 'ACTIVE', NOW(), NOW()),
+(7, 1, 'designer3@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '오민지(강의 개설자)', '010-1000-0006', '디자인팀', '대리', 'DESIGNER', 'ACTIVE', NOW(), NOW()),
+-- 일반 사용자 (테스트용)
+(8, 1, 'creator@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '송재현(강의 개설자)', '010-1000-0007', '개발팀', '팀장', 'USER', 'ACTIVE', NOW(), NOW()),
 -- 멀티롤 테스트 사용자 (운영자 + 설계자)
 (9, 1, 'multi1@default.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '강현우(멀티롤)', '010-1000-0010', '개발팀', '차장', 'OPERATOR', 'ACTIVE', NOW(), NOW()),
 -- 멀티롤 테스트 사용자 (설계자 + 강사)
@@ -94,10 +94,10 @@ INSERT INTO users (id, tenant_id, email, password, name, phone, department, posi
 
 -- ===== 테넌트 2 (삼성전자) 관리자급 =====
 INSERT INTO users (id, tenant_id, email, password, name, phone, department, position, role, status, created_at, updated_at) VALUES
-(11, 2, 'admin@samsung.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '장민혁(테넌트관리자)', '010-2000-0001', '인사팀', '부장', 'TENANT_ADMIN', 'ACTIVE', NOW(), NOW()),
+(11, 2, 'admin@samsung.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '장민혁(테넌트 관리자)', '010-2000-0001', '인사팀', '부장', 'TENANT_ADMIN', 'ACTIVE', NOW(), NOW()),
 (12, 2, 'operator1@samsung.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '김세진(운영자)', '010-2000-0002', '인사팀', '과장', 'OPERATOR', 'ACTIVE', NOW(), NOW()),
-(13, 2, 'designer1@samsung.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '이태영(설계자)', '010-2000-0003', '개발팀', '과장', 'DESIGNER', 'ACTIVE', NOW(), NOW()),
-(14, 2, 'creator@samsung.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '박준혁(강의개설자)', '010-2000-0004', '개발팀', '차장', 'USER', 'ACTIVE', NOW(), NOW());
+(13, 2, 'designer1@samsung.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '이태영(강의 개설자)', '010-2000-0003', '개발팀', '과장', 'DESIGNER', 'ACTIVE', NOW(), NOW()),
+(14, 2, 'creator@samsung.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '박준혁(강의 개설자)', '010-2000-0004', '개발팀', '차장', 'USER', 'ACTIVE', NOW(), NOW());
 
 -- ===== 테넌트 2 일반 사용자 30명 =====
 INSERT INTO users (id, tenant_id, email, password, name, phone, department, position, role, status, created_at, updated_at) VALUES
@@ -134,10 +134,10 @@ INSERT INTO users (id, tenant_id, email, password, name, phone, department, posi
 
 -- ===== 테넌트 3 (네이버) 관리자급 =====
 INSERT INTO users (id, tenant_id, email, password, name, phone, department, position, role, status, created_at, updated_at) VALUES
-(21, 3, 'admin@naver.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '조영훈(테넌트관리자)', '010-3000-0001', '운영팀', '부장', 'TENANT_ADMIN', 'ACTIVE', NOW(), NOW()),
+(21, 3, 'admin@naver.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '조영훈(테넌트 관리자)', '010-3000-0001', '운영팀', '부장', 'TENANT_ADMIN', 'ACTIVE', NOW(), NOW()),
 (22, 3, 'operator1@naver.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '서지현(운영자)', '010-3000-0002', '운영팀', '과장', 'OPERATOR', 'ACTIVE', NOW(), NOW()),
-(23, 3, 'designer1@naver.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '나현수(설계자)', '010-3000-0003', '개발팀', '과장', 'DESIGNER', 'ACTIVE', NOW(), NOW()),
-(24, 3, 'creator@naver.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '류승범(강의개설자)', '010-3000-0004', '개발팀', '차장', 'USER', 'ACTIVE', NOW(), NOW());
+(23, 3, 'designer1@naver.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '나현수(강의 개설자)', '010-3000-0003', '개발팀', '과장', 'DESIGNER', 'ACTIVE', NOW(), NOW()),
+(24, 3, 'creator@naver.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '류승범(강의 개설자)', '010-3000-0004', '개발팀', '차장', 'USER', 'ACTIVE', NOW(), NOW());
 
 -- ===== 테넌트 3 일반 사용자 30명 =====
 INSERT INTO users (id, tenant_id, email, password, name, phone, department, position, role, status, created_at, updated_at) VALUES
