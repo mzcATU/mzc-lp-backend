@@ -15,9 +15,20 @@ import com.mzc.lp.domain.tenant.exception.TenantDomainNotFoundException;
 import com.mzc.lp.domain.tenant.repository.TenantRepository;
 import com.mzc.lp.domain.tenant.repository.TenantSettingsRepository;
 import com.mzc.lp.domain.course.repository.CourseRepository;
+import com.mzc.lp.domain.department.repository.DepartmentRepository;
 import com.mzc.lp.domain.user.constant.TenantRole;
 import com.mzc.lp.domain.user.entity.User;
 import com.mzc.lp.domain.user.repository.UserRepository;
+import com.mzc.lp.domain.user.repository.UserRoleRepository;
+import com.mzc.lp.domain.user.repository.UserCourseRoleRepository;
+import com.mzc.lp.domain.user.repository.RefreshTokenRepository;
+import com.mzc.lp.domain.notification.repository.NotificationRepository;
+import com.mzc.lp.domain.student.repository.EnrollmentRepository;
+import com.mzc.lp.domain.cart.repository.CartRepository;
+import com.mzc.lp.domain.wishlist.repository.WishlistRepository;
+import com.mzc.lp.domain.course.repository.CourseReviewRepository;
+import com.mzc.lp.domain.analytics.repository.ActivityLogRepository;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -38,6 +49,17 @@ public class TenantServiceImpl implements TenantService {
     private final TenantSettingsRepository tenantSettingsRepository;
     private final UserRepository userRepository;
     private final CourseRepository courseRepository;
+    private final DepartmentRepository departmentRepository;
+    private final UserRoleRepository userRoleRepository;
+    private final UserCourseRoleRepository userCourseRoleRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
+    private final NotificationRepository notificationRepository;
+    private final EnrollmentRepository enrollmentRepository;
+    private final CartRepository cartRepository;
+    private final WishlistRepository wishlistRepository;
+    private final CourseReviewRepository courseReviewRepository;
+    private final ActivityLogRepository activityLogRepository;
+    private final EntityManager entityManager;
     private final PasswordEncoder passwordEncoder;
 
     private static final String DEFAULT_TENANT_ADMIN_PASSWORD = "1q2w3e4r!";
@@ -186,10 +208,43 @@ public class TenantServiceImpl implements TenantService {
 
         Tenant tenant = findTenantById(tenantId);
 
-        // 관련 설정 먼저 삭제
+        // 관련 데이터 먼저 삭제 (FK 제약 조건 때문에 순서 중요)
+        // Native Query로 테넌트 관련 모든 데이터 삭제
+
+        // 1. User와 연결된 테이블들 삭제 (user_id FK가 있는 테이블들)
+        entityManager.createNativeQuery("DELETE FROM user_roles WHERE user_id IN (SELECT id FROM users WHERE tenant_id = :tenantId)")
+                .setParameter("tenantId", tenantId).executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM user_course_roles WHERE user_id IN (SELECT id FROM users WHERE tenant_id = :tenantId)")
+                .setParameter("tenantId", tenantId).executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM refresh_tokens WHERE user_id IN (SELECT id FROM users WHERE tenant_id = :tenantId)")
+                .setParameter("tenantId", tenantId).executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM notifications WHERE user_id IN (SELECT id FROM users WHERE tenant_id = :tenantId)")
+                .setParameter("tenantId", tenantId).executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM cart_items WHERE user_id IN (SELECT id FROM users WHERE tenant_id = :tenantId)")
+                .setParameter("tenantId", tenantId).executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM wishlist_items WHERE user_id IN (SELECT id FROM users WHERE tenant_id = :tenantId)")
+                .setParameter("tenantId", tenantId).executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM course_reviews WHERE user_id IN (SELECT id FROM users WHERE tenant_id = :tenantId)")
+                .setParameter("tenantId", tenantId).executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM activity_logs WHERE user_id IN (SELECT id FROM users WHERE tenant_id = :tenantId)")
+                .setParameter("tenantId", tenantId).executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM enrollments WHERE user_id IN (SELECT id FROM users WHERE tenant_id = :tenantId)")
+                .setParameter("tenantId", tenantId).executeUpdate();
+        log.info("User related data deleted: tenantId={}", tenantId);
+
+        // 2. 사용자 삭제
+        userRepository.deleteByTenantId(tenantId);
+        log.info("Tenant users deleted: tenantId={}", tenantId);
+
+        // 3. 부서 삭제
+        departmentRepository.deleteByTenantId(tenantId);
+        log.info("Tenant departments deleted: tenantId={}", tenantId);
+
+        // 4. 테넌트 설정 삭제
         tenantSettingsRepository.deleteByTenantId(tenantId);
         log.info("Tenant settings deleted: tenantId={}", tenantId);
 
+        // 5. 테넌트 삭제
         tenantRepository.delete(tenant);
         log.info("Tenant deleted: tenantId={}", tenantId);
     }
