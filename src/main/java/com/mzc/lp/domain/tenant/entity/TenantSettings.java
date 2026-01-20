@@ -186,6 +186,9 @@ public class TenantSettings extends BaseTimeEntity {
         settings.headingFont = "Pretendard";
         settings.bodyFont = "Pretendard";
 
+        // 테넌트 이름 첫 글자로 자동 파비콘 생성
+        settings.faviconUrl = generateInitialFavicon(tenant.getName(), settings.primaryColor);
+
         // 기본 헤더 설정
         settings.headerSettings = new HashMap<>();
         settings.headerSettings.put("style", "fixed");
@@ -211,6 +214,46 @@ public class TenantSettings extends BaseTimeEntity {
         settings.contentSettings.put("padding", "normal");
 
         return settings;
+    }
+
+    /**
+     * 테넌트 이름의 첫 글자로 SVG 파비콘 생성
+     * @param tenantName 테넌트 이름
+     * @param primaryColor 주 색상 (hex)
+     * @return SVG data URL
+     */
+    private static String generateInitialFavicon(String tenantName, String primaryColor) {
+        if (tenantName == null || tenantName.isBlank()) {
+            return null;
+        }
+
+        // 첫 글자 추출 (영문 대문자, 한글, 숫자 지원)
+        String initial = tenantName.trim().substring(0, 1).toUpperCase();
+
+        // SVG 파비콘 생성 (32x32, 라운드 사각형 배경 + 흰색 글자)
+        String svg = String.format("""
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+              <rect width="32" height="32" rx="6" fill="%s"/>
+              <text x="16" y="22" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="white" text-anchor="middle">%s</text>
+            </svg>
+            """, primaryColor, escapeXml(initial));
+
+        // Base64 인코딩하여 data URL 반환
+        String base64 = java.util.Base64.getEncoder().encodeToString(svg.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        return "data:image/svg+xml;base64," + base64;
+    }
+
+    /**
+     * XML 특수문자 이스케이프
+     */
+    private static String escapeXml(String text) {
+        if (text == null) return "";
+        return text
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&apos;");
     }
 
     // 브랜딩 업데이트 (확장)
