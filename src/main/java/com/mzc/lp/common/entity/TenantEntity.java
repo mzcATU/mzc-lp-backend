@@ -19,7 +19,7 @@ import org.hibernate.annotations.ParamDef;
 @Filter(name = "tenantFilter")
 public abstract class TenantEntity extends BaseTimeEntity {
 
-    @Column(name = "tenant_id", nullable = false)
+    @Column(name = "tenant_id", nullable = true)  // SYSTEM_ADMIN은 tenantId가 null일 수 있음
     private Long tenantId;
 
     @PrePersist

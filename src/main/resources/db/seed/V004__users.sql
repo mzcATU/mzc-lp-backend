@@ -13,7 +13,7 @@
 
 -- ===== 시스템 관리자 (전체 1명) =====
 INSERT INTO users (id, tenant_id, email, password, name, phone, department, position, role, status, created_at, updated_at) VALUES
-(1, 1, 'sysadmin@mzc.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '김태호(시스템관리자)', '010-0000-0001', NULL, NULL, 'SYSTEM_ADMIN', 'ACTIVE', NOW(), NOW());
+(1, NULL, 'sysadmin@mzc.com', '$2a$10$4hFhr508/iEYj4.XDJ4DQOf6nq.vW6eWbUP4NQFD0yUhV8sWHYQWa', '김태호(시스템관리자)', '010-0000-0001', NULL, NULL, 'SYSTEM_ADMIN', 'ACTIVE', NOW(), NOW());
 
 -- ===== 테넌트 1 (기본 테넌트) 관리자/운영자/설계자 =====
 INSERT INTO users (id, tenant_id, email, password, name, phone, department, position, role, status, created_at, updated_at) VALUES
