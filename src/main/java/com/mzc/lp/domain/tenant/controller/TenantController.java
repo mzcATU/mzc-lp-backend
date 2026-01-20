@@ -132,4 +132,17 @@ public class TenantController {
         TenantUserStatsResponse response = tenantService.getTenantUserStats();
         return ResponseEntity.ok(ApiResponse.success(response));
     }
+
+    /**
+     * 커스텀 도메인 삭제
+     * DELETE /api/tenants/{tenantId}/custom-domain
+     */
+    @DeleteMapping("/{tenantId}/custom-domain")
+    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    public ResponseEntity<Void> deleteCustomDomain(
+            @PathVariable @Positive Long tenantId
+    ) {
+        tenantService.deleteCustomDomain(tenantId);
+        return ResponseEntity.noContent().build();
+    }
 }

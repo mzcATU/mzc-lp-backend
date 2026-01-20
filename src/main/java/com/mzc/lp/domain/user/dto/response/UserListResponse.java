@@ -33,8 +33,8 @@ public record UserListResponse(
                 user.getRole().name(),
                 roleNames,
                 user.getStatus().name(),
-                null,
-                null,
+                user.getDepartment(),
+                user.getLastLoginAt(),
                 user.getCreatedAt()
         );
     }
