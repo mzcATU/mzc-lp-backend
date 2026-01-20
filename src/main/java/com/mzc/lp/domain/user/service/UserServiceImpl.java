@@ -579,8 +579,18 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findByIdWithRoles(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
 
+        Set<TenantRole> oldRoles = new java.util.HashSet<>(user.getRoles());
         user.setRoles(request.roles());
         log.info("User roles updated: userId={}, newRoles={}", userId, user.getRoles());
+
+        // 감사 로그 기록
+        activityLogService.log(
+                ActivityType.ROLE_CHANGE,
+                String.format("역할 일괄 변경: %s (%s → %s)", user.getEmail(), oldRoles, request.roles()),
+                "USER",
+                userId,
+                user.getName()
+        );
 
         return UserRolesResponse.from(user);
     }
