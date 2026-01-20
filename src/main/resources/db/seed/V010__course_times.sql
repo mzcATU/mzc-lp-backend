@@ -22,7 +22,14 @@ INSERT INTO course_times (id, tenant_id, course_id, snapshot_id, title, delivery
 (10, 1, 15, 10, 'SQL 완전 정복 1차', 'ONLINE', 'FIXED', 42, 'CLOSED', '2025-11-01', '2025-11-15', '2025-11-20', '2025-12-31', 100, 20, 87, 'FIRST_COME', 70, 50000.00, false, true, 4, NOW(), NOW(), 0),
 -- 5. ARCHIVED (보관) - 먼 과거
 (11, 1, 10, 11, 'Spring Boot 기초 0차 (파일럿)', 'ONLINE', 'FIXED', 32, 'ARCHIVED', '2025-01-01', '2025-01-15', '2025-01-20', '2025-02-20', 10, 0, 10, 'INVITE_ONLY', 80, 0.00, true, false, 3, NOW(), NOW(), 0),
-(12, 1, 13, 12, 'Java 프로그래밍 마스터 0차', 'OFFLINE', 'FIXED', 62, 'ARCHIVED', '2025-03-01', '2025-03-15', '2025-03-20', '2025-05-20', 20, 5, 18, 'APPROVAL', 85, 80000.00, false, false, 4, NOW(), NOW(), 0);
+(12, 1, 13, 12, 'Java 프로그래밍 마스터 0차', 'OFFLINE', 'FIXED', 62, 'ARCHIVED', '2025-03-01', '2025-03-15', '2025-03-20', '2025-05-20', 20, 5, 18, 'APPROVAL', 85, 80000.00, false, false, 4, NOW(), NOW(), 0),
+-- 6. 테스트용 추가 차수
+-- INVITE_ONLY + RECRUITING (선발제 모집중)
+(13, 1, 14, 13, 'Kubernetes 운영 실무 특별반', 'BLENDED', 'FIXED', 45, 'RECRUITING', '2026-01-01', '2026-01-31', '2026-02-01', '2026-03-15', 10, 0, 3, 'INVITE_ONLY', 90, 500000.00, false, false, 4, NOW(), NOW(), 0),
+-- APPROVAL + RECRUITING (승인제 모집중) - 추가 차수
+(14, 1, 12, 14, 'React & TypeScript 심화 특별반', 'LIVE', 'FIXED', 40, 'RECRUITING', '2026-01-01', '2026-01-31', '2026-02-05', '2026-03-15', 20, 5, 5, 'APPROVAL', 85, 350000.00, false, false, 3, NOW(), NOW(), 0),
+-- FIRST_COME + RECRUITING (수강 기간 먼 미래)
+(15, 1, 15, 15, 'SQL 완전 정복 2차', 'ONLINE', 'FIXED', 30, 'RECRUITING', '2026-01-15', '2026-02-15', '2026-03-01', '2026-03-30', 50, 10, 8, 'FIRST_COME', 70, 80000.00, false, true, 4, NOW(), NOW(), 0);
 
 -- ===== 테넌트 2 차수 (차수 ID = 스냅샷 ID로 1:1 매핑) =====
 INSERT INTO course_times (id, tenant_id, course_id, snapshot_id, title, delivery_type, duration_type, duration_days, status, enroll_start_date, enroll_end_date, class_start_date, class_end_date, capacity, max_waiting_count, current_enrollment, enrollment_method, min_progress_for_completion, price, is_free, allow_late_enrollment, created_by, created_at, updated_at, version) VALUES
@@ -31,7 +38,14 @@ INSERT INTO course_times (id, tenant_id, course_id, snapshot_id, title, delivery
 (53, 2, 53, 53, '클라우드 네이티브 개발 1차', 'BLENDED', 'FIXED', 55, 'ONGOING', '2025-12-01', '2025-12-31', '2026-01-05', '2026-02-28', 20, 3, 18, 'APPROVAL', 90, 250000.00, false, false, 12, NOW(), NOW(), 0),
 (54, 2, 54, 54, '머신러닝 입문 1차', 'ONLINE', 'FIXED', 42, 'ONGOING', '2025-12-15', '2025-12-31', '2026-01-10', '2026-02-20', 40, 10, 35, 'FIRST_COME', 75, 180000.00, false, true, 12, NOW(), NOW(), 0),
 (55, 2, 55, 55, '딥러닝 심화 1차', 'ONLINE', 'FIXED', 60, 'DRAFT', '2026-02-01', '2026-02-15', '2026-02-20', '2026-04-20', 30, 5, 0, 'APPROVAL', 80, 300000.00, false, false, 12, NOW(), NOW(), 0),
-(56, 2, 51, 56, 'Java 기초 입문 2차', 'ONLINE', 'FIXED', 42, 'CLOSED', '2025-10-01', '2025-10-15', '2025-10-20', '2025-11-30', 30, 5, 28, 'FIRST_COME', 80, 100000.00, false, true, 12, NOW(), NOW(), 0);
+(56, 2, 51, 56, 'Java 기초 입문 2차', 'ONLINE', 'FIXED', 42, 'CLOSED', '2025-10-01', '2025-10-15', '2025-10-20', '2025-11-30', 30, 5, 28, 'FIRST_COME', 80, 100000.00, false, true, 12, NOW(), NOW(), 0),
+-- 테스트용 추가 차수 (테넌트 2)
+-- INVITE_ONLY + RECRUITING (선발제 모집중)
+(57, 2, 53, 57, '클라우드 네이티브 특별반', 'BLENDED', 'FIXED', 45, 'RECRUITING', '2026-01-01', '2026-01-31', '2026-02-01', '2026-03-15', 10, 0, 3, 'INVITE_ONLY', 90, 400000.00, false, false, 12, NOW(), NOW(), 0),
+-- APPROVAL + RECRUITING (승인제 모집중)
+(58, 2, 54, 58, '머신러닝 심화 특별반', 'ONLINE', 'FIXED', 40, 'RECRUITING', '2026-01-01', '2026-01-31', '2026-02-05', '2026-03-15', 20, 5, 5, 'APPROVAL', 85, 280000.00, false, false, 12, NOW(), NOW(), 0),
+-- FIRST_COME + RECRUITING (수강 기간 먼 미래)
+(59, 2, 52, 59, 'Spring Framework 2차', 'ONLINE', 'FIXED', 30, 'RECRUITING', '2026-01-15', '2026-02-15', '2026-03-01', '2026-03-30', 50, 10, 5, 'FIRST_COME', 85, 150000.00, false, true, 12, NOW(), NOW(), 0);
 
 -- ===== 테넌트 3 차수 (차수 ID = 스냅샷 ID로 1:1 매핑) =====
 INSERT INTO course_times (id, tenant_id, course_id, snapshot_id, title, delivery_type, duration_type, duration_days, status, enroll_start_date, enroll_end_date, class_start_date, class_end_date, capacity, max_waiting_count, current_enrollment, enrollment_method, min_progress_for_completion, price, is_free, allow_late_enrollment, created_by, created_at, updated_at, version) VALUES

@@ -496,6 +496,34 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
     @Override
     @Transactional
+    public EnrollmentDetailResponse resubmitEnrollment(Long enrollmentId) {
+        log.info("Resubmitting enrollment: enrollmentId={}", enrollmentId);
+
+        Long tenantId = TenantContext.getCurrentTenantId();
+
+        Enrollment enrollment = enrollmentRepository.findByIdAndTenantId(enrollmentId, tenantId)
+                .orElseThrow(() -> new EnrollmentNotFoundException(enrollmentId));
+
+        // REJECTED 상태 검증 및 재심사 (PENDING으로 변경)
+        enrollment.resubmit();
+
+        // 활동 로그 기록
+        CourseTime courseTime = courseTimeRepository.findById(enrollment.getCourseTimeId()).orElse(null);
+        activityLogService.log(
+                ActivityType.ENROLLMENT_CREATE,
+                String.format("수강신청 재심사 요청: %s", courseTime != null ? courseTime.getTitle() : "과정"),
+                "Enrollment",
+                enrollmentId,
+                courseTime != null ? courseTime.getTitle() : null
+        );
+
+        log.info("Enrollment resubmitted: enrollmentId={}", enrollmentId);
+
+        return EnrollmentDetailResponse.from(enrollment);
+    }
+
+    @Override
+    @Transactional
     public void cancelEnrollment(Long enrollmentId, Long userId, boolean isAdmin) {
         log.info("Cancelling enrollment: enrollmentId={}, userId={}, isAdmin={}", enrollmentId, userId, isAdmin);
 

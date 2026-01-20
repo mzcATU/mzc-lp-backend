@@ -132,11 +132,18 @@ public class Enrollment extends TenantEntity {
         if (this.status != EnrollmentStatus.PENDING) {
             throw new IllegalStateException("Only PENDING enrollment can be rejected");
         }
-        this.status = EnrollmentStatus.DROPPED;
+        this.status = EnrollmentStatus.REJECTED;
     }
 
     public void fail() {
         this.status = EnrollmentStatus.FAILED;
+    }
+
+    public void resubmit() {
+        if (this.status != EnrollmentStatus.REJECTED) {
+            throw new IllegalStateException("Only REJECTED enrollment can be resubmitted");
+        }
+        this.status = EnrollmentStatus.PENDING;
     }
 
     public void updateStatus(EnrollmentStatus status) {
@@ -166,6 +173,10 @@ public class Enrollment extends TenantEntity {
 
     public boolean isPending() {
         return this.status == EnrollmentStatus.PENDING;
+    }
+
+    public boolean isRejected() {
+        return this.status == EnrollmentStatus.REJECTED;
     }
 
     public boolean canCancel() {

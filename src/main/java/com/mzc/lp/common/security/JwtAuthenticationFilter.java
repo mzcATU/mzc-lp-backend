@@ -90,19 +90,26 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain
     ) throws ServletException, IOException {
-        // permitAll() 경로는 토큰 검증 없이 통과
-        if (isPermitAllPath(request)) {
+        boolean isPermitAllPath = isPermitAllPath(request);
+        String token = resolveToken(request);
+
+        // permitAll() 경로에서 토큰이 없으면 바로 통과
+        if (isPermitAllPath && !StringUtils.hasText(token)) {
             filterChain.doFilter(request, response);
             return;
         }
-
-        String token = resolveToken(request);
 
         if (StringUtils.hasText(token)) {
             // 토큰 유효성 검사 (만료 여부 포함)
             JwtValidationResult validationResult = jwtProvider.validateTokenWithResult(token);
 
             if (validationResult.isExpired()) {
+                // permitAll() 경로에서는 만료된 토큰이어도 에러 반환하지 않고 통과
+                if (isPermitAllPath) {
+                    log.debug("Token expired on permitAll path, proceeding without authentication");
+                    filterChain.doFilter(request, response);
+                    return;
+                }
                 // 토큰 만료 시 401 반환 (프론트엔드에서 refresh 토큰으로 갱신 시도)
                 log.debug("Token expired, returning 401 for refresh");
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
@@ -156,6 +163,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 log.debug("Authenticated user: {}, tenantId: {}, roles: {}, courseRoles: {}", email, tenantId, roles, courseRoles);
             } else {
+                // permitAll() 경로에서는 유효하지 않은 토큰이어도 에러 반환하지 않고 통과
+                if (isPermitAllPath) {
+                    log.debug("Invalid token on permitAll path, proceeding without authentication");
+                    filterChain.doFilter(request, response);
+                    return;
+                }
                 // 유효하지 않은 토큰 (만료 제외) - 401 반환
                 log.debug("Invalid token, returning 401");
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);

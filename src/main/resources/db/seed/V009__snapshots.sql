@@ -30,7 +30,13 @@ INSERT INTO cm_snapshots (id, tenant_id, source_course_id, snapshot_name, descri
 -- 차수 11: Spring Boot 기초 0차 파일럿 (ARCHIVED)
 (11, 1, 10, 'Spring Boot 기초 v0.1 파일럿', 'Spring Boot 프레임워크의 기본 개념 - 파일럿 과정', 'ARCHIVED', 1, 3, NOW() - INTERVAL 365 DAY, NOW()),
 -- 차수 12: Java 프로그래밍 마스터 0차 (ARCHIVED)
-(12, 1, 13, 'Java 프로그래밍 마스터 v0.9', '자바 언어의 핵심 개념 - 초기 버전', 'ARCHIVED', 1, 4, NOW() - INTERVAL 300 DAY, NOW());
+(12, 1, 13, 'Java 프로그래밍 마스터 v0.9', '자바 언어의 핵심 개념 - 초기 버전', 'ARCHIVED', 1, 4, NOW() - INTERVAL 300 DAY, NOW()),
+-- 차수 13: Kubernetes 운영 실무 특별반 (INVITE_ONLY + RECRUITING)
+(13, 1, 14, 'Kubernetes 운영 실무 특별반 v1.0', '쿠버네티스 클러스터 운영 심화 - 선발제 과정', 'ACTIVE', 1, 4, NOW() - INTERVAL 10 DAY, NOW()),
+-- 차수 14: React & TypeScript 심화 특별반 (APPROVAL + RECRUITING)
+(14, 1, 12, 'React & TypeScript 심화 특별반 v1.0', 'React와 TypeScript를 활용한 프론트엔드 심화 - 승인제 과정', 'ACTIVE', 1, 3, NOW() - INTERVAL 10 DAY, NOW()),
+-- 차수 15: SQL 완전 정복 2차 (FIRST_COME + RECRUITING)
+(15, 1, 15, 'SQL 완전 정복 v2.0', '관계형 데이터베이스와 SQL 쿼리 작성 - 개선판', 'ACTIVE', 1, 4, NOW() - INTERVAL 5 DAY, NOW());
 
 -- ===== 테넌트 1 스냅샷 LO (원본 LO ID 참조 포함) =====
 INSERT INTO cm_snapshot_los (id, tenant_id, source_lo_id, content_id, display_name, duration, thumbnail_url, is_customized, created_at, updated_at, version) VALUES
@@ -55,7 +61,12 @@ INSERT INTO cm_snapshot_los (id, tenant_id, source_lo_id, content_id, display_na
 (14, 1, 14, 14, 'Pod와 Deployment', 3600, '/thumbnails/k8s-pods.jpg', false, NOW() - INTERVAL 35 DAY, NOW(), 0),
 -- SQL 스냅샷 LO
 (15, 1, 15, 15, 'SELECT 문 기초', 1800, '/thumbnails/sql-select.jpg', false, NOW() - INTERVAL 15 DAY, NOW(), 0),
-(16, 1, 16, 16, 'JOIN과 서브쿼리', 2700, '/thumbnails/sql-join.jpg', false, NOW() - INTERVAL 15 DAY, NOW(), 0);
+(16, 1, 16, 16, 'JOIN과 서브쿼리', 2700, '/thumbnails/sql-join.jpg', false, NOW() - INTERVAL 15 DAY, NOW(), 0),
+-- 테스트용 스냅샷 LO (스냅샷 13, 14, 15용)
+(17, 1, 13, 13, 'Kubernetes 아키텍처 심화', 5400, '/thumbnails/k8s-advanced.jpg', false, NOW() - INTERVAL 10 DAY, NOW(), 0),
+(18, 1, 14, 14, 'Pod와 Deployment 심화', 4800, '/thumbnails/k8s-pods-adv.jpg', false, NOW() - INTERVAL 10 DAY, NOW(), 0),
+(19, 1, 8, 8, 'React 심화 컴포넌트', 4200, '/thumbnails/react-adv.jpg', false, NOW() - INTERVAL 10 DAY, NOW(), 0),
+(20, 1, 15, 15, 'SQL 심화 쿼리', 3000, '/thumbnails/sql-adv.jpg', false, NOW() - INTERVAL 5 DAY, NOW(), 0);
 
 -- ===== 테넌트 1 스냅샷 아이템 (커리큘럼 구조) =====
 INSERT INTO cm_snapshot_items (id, tenant_id, snapshot_id, parent_id, item_name, depth, item_type, snapshot_lo_id, created_at, updated_at, version) VALUES
@@ -85,7 +96,15 @@ INSERT INTO cm_snapshot_items (id, tenant_id, snapshot_id, parent_id, item_name,
 (17, 1, 5, NULL, 'Pod와 Deployment', 0, 'VIDEO', 14, NOW() - INTERVAL 35 DAY, NOW(), 0),
 -- SQL 스냅샷 아이템
 (18, 1, 6, NULL, 'SELECT 문 기초', 0, 'VIDEO', 15, NOW() - INTERVAL 15 DAY, NOW(), 0),
-(19, 1, 6, NULL, 'JOIN과 서브쿼리', 0, 'VIDEO', 16, NOW() - INTERVAL 15 DAY, NOW(), 0);
+(19, 1, 6, NULL, 'JOIN과 서브쿼리', 0, 'VIDEO', 16, NOW() - INTERVAL 15 DAY, NOW(), 0),
+-- 테스트용 스냅샷 아이템 (스냅샷 13, 14, 15)
+-- 스냅샷 13: Kubernetes 특별반
+(20, 1, 13, NULL, 'Kubernetes 아키텍처 심화', 0, 'VIDEO', 17, NOW() - INTERVAL 10 DAY, NOW(), 0),
+(21, 1, 13, NULL, 'Pod와 Deployment 심화', 0, 'VIDEO', 18, NOW() - INTERVAL 10 DAY, NOW(), 0),
+-- 스냅샷 14: React & TypeScript 심화 특별반
+(22, 1, 14, NULL, 'React 심화 컴포넌트', 0, 'VIDEO', 19, NOW() - INTERVAL 10 DAY, NOW(), 0),
+-- 스냅샷 15: SQL 완전 정복 2차
+(23, 1, 15, NULL, 'SQL 심화 쿼리', 0, 'VIDEO', 20, NOW() - INTERVAL 5 DAY, NOW(), 0);
 
 -- ===== 테넌트 1 스냅샷 관계 (학습 순서) =====
 INSERT INTO cm_snapshot_relations (id, tenant_id, snapshot_id, from_item_id, to_item_id, created_at, updated_at, version) VALUES
@@ -115,21 +134,35 @@ INSERT INTO cm_snapshots (id, tenant_id, source_course_id, snapshot_name, descri
 -- 차수 55: 딥러닝 심화 1차 (DRAFT)
 (55, 2, 55, '딥러닝 심화 v1.0', '신경망과 딥러닝 알고리즘 학습', 'ACTIVE', 1, 12, NOW() - INTERVAL 15 DAY, NOW()),
 -- 차수 56: Java 기초 입문 2차 (CLOSED)
-(56, 2, 51, 'Java 기초 입문 v0.9', 'Java 프로그래밍 언어의 기본 개념 학습 - 이전 버전', 'ARCHIVED', 1, 12, NOW() - INTERVAL 90 DAY, NOW());
+(56, 2, 51, 'Java 기초 입문 v0.9', 'Java 프로그래밍 언어의 기본 개념 학습 - 이전 버전', 'ARCHIVED', 1, 12, NOW() - INTERVAL 90 DAY, NOW()),
+-- 차수 57: 클라우드 네이티브 특별반 (INVITE_ONLY + RECRUITING)
+(57, 2, 53, '클라우드 네이티브 특별반 v1.0', '클라우드 환경 최적화 개발 심화 - 선발제 과정', 'ACTIVE', 1, 12, NOW() - INTERVAL 10 DAY, NOW()),
+-- 차수 58: 머신러닝 심화 특별반 (APPROVAL + RECRUITING)
+(58, 2, 54, '머신러닝 심화 특별반 v1.0', '머신러닝 심화 과정 - 승인제 과정', 'ACTIVE', 1, 12, NOW() - INTERVAL 10 DAY, NOW()),
+-- 차수 59: Spring Framework 2차 (FIRST_COME + RECRUITING)
+(59, 2, 52, 'Spring Framework v2.0', 'Spring Framework 실전 개발 - 개선판', 'ACTIVE', 1, 12, NOW() - INTERVAL 5 DAY, NOW());
 
 -- ===== 테넌트 2 스냅샷 LO (원본 LO ID 참조 포함) =====
 INSERT INTO cm_snapshot_los (id, tenant_id, source_lo_id, content_id, display_name, duration, thumbnail_url, is_customized, created_at, updated_at, version) VALUES
 (51, 2, 101, 101, 'Java 기초 입문', 2700, '/thumbnails/t2-java-intro.jpg', false, NOW() - INTERVAL 25 DAY, NOW(), 0),
 (52, 2, 102, 102, 'Spring Framework', 3600, '/thumbnails/t2-spring.jpg', false, NOW() - INTERVAL 23 DAY, NOW(), 0),
 (53, 2, 103, 103, '클라우드 네이티브', 3000, '/thumbnails/t2-cloud-native.jpg', false, NOW() - INTERVAL 20 DAY, NOW(), 0),
-(54, 2, 104, 104, '머신러닝 기초', 4200, '/thumbnails/t2-ml-basics.jpg', false, NOW() - INTERVAL 18 DAY, NOW(), 0);
+(54, 2, 104, 104, '머신러닝 기초', 4200, '/thumbnails/t2-ml-basics.jpg', false, NOW() - INTERVAL 18 DAY, NOW(), 0),
+-- 테스트용 스냅샷 LO (스냅샷 57, 58, 59용)
+(55, 2, 103, 103, '클라우드 네이티브 심화', 4500, '/thumbnails/t2-cloud-adv.jpg', false, NOW() - INTERVAL 10 DAY, NOW(), 0),
+(56, 2, 104, 104, '머신러닝 심화', 5400, '/thumbnails/t2-ml-adv.jpg', false, NOW() - INTERVAL 10 DAY, NOW(), 0),
+(57, 2, 102, 102, 'Spring Framework 심화', 4200, '/thumbnails/t2-spring-adv.jpg', false, NOW() - INTERVAL 5 DAY, NOW(), 0);
 
 -- ===== 테넌트 2 스냅샷 아이템 =====
 INSERT INTO cm_snapshot_items (id, tenant_id, snapshot_id, parent_id, item_name, depth, item_type, snapshot_lo_id, created_at, updated_at, version) VALUES
 (51, 2, 51, NULL, 'Java 기초 입문', 0, 'VIDEO', 51, NOW() - INTERVAL 25 DAY, NOW(), 0),
 (52, 2, 52, NULL, 'Spring Framework', 0, 'VIDEO', 52, NOW() - INTERVAL 23 DAY, NOW(), 0),
 (53, 2, 53, NULL, '클라우드 네이티브', 0, 'VIDEO', 53, NOW() - INTERVAL 20 DAY, NOW(), 0),
-(54, 2, 54, NULL, '머신러닝 기초', 0, 'VIDEO', 54, NOW() - INTERVAL 18 DAY, NOW(), 0);
+(54, 2, 54, NULL, '머신러닝 기초', 0, 'VIDEO', 54, NOW() - INTERVAL 18 DAY, NOW(), 0),
+-- 테스트용 스냅샷 아이템 (스냅샷 57, 58, 59)
+(55, 2, 57, NULL, '클라우드 네이티브 심화', 0, 'VIDEO', 55, NOW() - INTERVAL 10 DAY, NOW(), 0),
+(56, 2, 58, NULL, '머신러닝 심화', 0, 'VIDEO', 56, NOW() - INTERVAL 10 DAY, NOW(), 0),
+(57, 2, 59, NULL, 'Spring Framework 심화', 0, 'VIDEO', 57, NOW() - INTERVAL 5 DAY, NOW(), 0);
 
 -- ===== 테넌트 3 스냅샷 (차수별 고유 스냅샷) =====
 INSERT INTO cm_snapshots (id, tenant_id, source_course_id, snapshot_name, description, status, version, created_by, created_at, updated_at) VALUES
