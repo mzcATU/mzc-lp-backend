@@ -16,7 +16,7 @@ INSERT INTO cm_categories (id, tenant_id, name, code, sort_order, active, create
 (6, 1, '마케팅', 'marketing', 6, true, NOW(), NOW()),
 (7, 1, '외국어', 'language', 7, true, NOW(), NOW());
 
--- ===== 테넌트 2 (A사) 카테고리 =====
+-- ===== 테넌트 2 (삼성전자) 카테고리 =====
 INSERT INTO cm_categories (id, tenant_id, name, code, sort_order, active, created_at, updated_at) VALUES
 (11, 2, '개발', 'dev', 1, true, NOW(), NOW()),
 (12, 2, 'AI/ML', 'ai', 2, true, NOW(), NOW()),
@@ -24,7 +24,7 @@ INSERT INTO cm_categories (id, tenant_id, name, code, sort_order, active, create
 (14, 2, '클라우드', 'cloud', 4, true, NOW(), NOW()),
 (15, 2, '보안', 'security', 5, true, NOW(), NOW());
 
--- ===== 테넌트 3 (B사) 카테고리 =====
+-- ===== 테넌트 3 (네이버) 카테고리 =====
 INSERT INTO cm_categories (id, tenant_id, name, code, sort_order, active, created_at, updated_at) VALUES
 (21, 3, '프로그래밍', 'programming', 1, true, NOW(), NOW()),
 (22, 3, '웹개발', 'web', 2, true, NOW(), NOW()),

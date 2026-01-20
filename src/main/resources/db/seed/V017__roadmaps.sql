@@ -18,10 +18,10 @@ INSERT INTO roadmaps (id, tenant_id, title, description, category, thumbnail_url
 
 -- ===== 테넌트 2 로드맵 =====
 INSERT INTO roadmaps (id, tenant_id, title, description, category, thumbnail_url, is_active, created_by, created_at, updated_at) VALUES
-(21, 2, 'A사 신입 개발자 온보딩', '신입 개발자를 위한 필수 교육 과정입니다.', '온보딩', '/thumbnails/roadmap-a-onboarding.jpg', true, 12, NOW() - INTERVAL 20 DAY, NOW()),
-(22, 2, 'A사 클라우드 전환 과정', '클라우드 기술 습득을 위한 학습 경로입니다.', '클라우드', '/thumbnails/roadmap-a-cloud.jpg', true, 12, NOW() - INTERVAL 18 DAY, NOW());
+(21, 2, '삼성전자 신입 개발자 온보딩', '신입 개발자를 위한 필수 교육 과정입니다.', '온보딩', '/thumbnails/roadmap-samsung-onboarding.jpg', true, 12, NOW() - INTERVAL 20 DAY, NOW()),
+(22, 2, '삼성전자 클라우드 전환 과정', '클라우드 기술 습득을 위한 학습 경로입니다.', '클라우드', '/thumbnails/roadmap-samsung-cloud.jpg', true, 12, NOW() - INTERVAL 18 DAY, NOW());
 
 -- ===== 테넌트 3 로드맵 =====
 INSERT INTO roadmaps (id, tenant_id, title, description, category, thumbnail_url, is_active, created_by, created_at, updated_at) VALUES
-(41, 3, 'B사 모바일 개발자 과정', '모바일 앱 개발을 위한 학습 경로입니다.', '모바일', '/thumbnails/roadmap-b-mobile.jpg', true, 22, NOW() - INTERVAL 15 DAY, NOW()),
-(42, 3, 'B사 풀스택 개발자 과정', '풀스택 개발자가 되기 위한 학습 경로입니다.', '개발', '/thumbnails/roadmap-b-fullstack.jpg', true, 22, NOW() - INTERVAL 12 DAY, NOW());
+(41, 3, '네이버 모바일 개발자 과정', '모바일 앱 개발을 위한 학습 경로입니다.', '모바일', '/thumbnails/roadmap-naver-mobile.jpg', true, 22, NOW() - INTERVAL 15 DAY, NOW()),
+(42, 3, '네이버 풀스택 개발자 과정', '풀스택 개발자가 되기 위한 학습 경로입니다.', '개발', '/thumbnails/roadmap-naver-fullstack.jpg', true, 22, NOW() - INTERVAL 12 DAY, NOW());
