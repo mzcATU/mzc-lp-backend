@@ -63,7 +63,6 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
 
     /**
      * Pageable의 Sort 정보를 JPA Criteria Order 리스트로 변환
-     * name, email 필드는 자연순 정렬 적용 (1, 2, 10, 11 순서)
      */
     private List<Order> buildOrders(CriteriaBuilder cb, Root<User> user, Sort sort) {
         List<Order> orders = new ArrayList<>();
@@ -80,50 +79,12 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
                 continue;
             }
 
-            // name, email 필드는 자연순 정렬 적용
-            if ("name".equals(property) || "email".equals(property)) {
-                // 1. 문자 부분만 추출 (숫자 제거)
-                Expression<String> textPart = cb.function(
-                    "REGEXP_REPLACE",
-                    String.class,
-                    user.get(property),
-                    cb.literal("[0-9]"),
-                    cb.literal("")
-                );
+            Path<?> path = user.get(property);
 
-                // 2. 숫자 부분만 추출하여 정수로 변환 (문자 제거 후 CAST)
-                Expression<String> numericStr = cb.function(
-                    "REGEXP_REPLACE",
-                    String.class,
-                    user.get(property),
-                    cb.literal("[^0-9]"),
-                    cb.literal("")
-                );
-
-                // 빈 문자열을 0으로 처리
-                Expression<Integer> numericPart = cb.function(
-                    "CAST",
-                    Integer.class,
-                    cb.selectCase()
-                        .when(cb.equal(numericStr, cb.literal("")), cb.literal("0"))
-                        .otherwise(numericStr)
-                );
-
-                if (sortOrder.isAscending()) {
-                    orders.add(cb.asc(textPart));
-                    orders.add(cb.asc(numericPart));
-                } else {
-                    orders.add(cb.desc(textPart));
-                    orders.add(cb.desc(numericPart));
-                }
+            if (sortOrder.isAscending()) {
+                orders.add(cb.asc(path));
             } else {
-                Path<?> path = user.get(property);
-
-                if (sortOrder.isAscending()) {
-                    orders.add(cb.asc(path));
-                } else {
-                    orders.add(cb.desc(path));
-                }
+                orders.add(cb.desc(path));
             }
         }
 
