@@ -5,9 +5,9 @@
 -- 멀티롤 사용자는 여러 역할을 가질 수 있음
 -- ID 범위:
 --   테넌트 1 관리자급 역할: 1-20
---   테넌트 1 일반 사용자 역할: 101-200
---   테넌트 2 역할: 1001-1100
---   테넌트 3 역할: 2001-2100
+--   테넌트 1 일반 사용자 역할: 101-155 (강사 복합롤 포함)
+--   테넌트 2 역할: 1001-1037 (강사 복합롤 포함)
+--   테넌트 3 역할: 2001-2037 (강사 복합롤 포함)
 
 -- ===== 테넌트 1 관리자급 역할 =====
 INSERT INTO user_roles (id, user_id, role, created_at) VALUES
@@ -82,7 +82,13 @@ INSERT INTO user_roles (id, user_id, role, created_at) VALUES
 (147, 147, 'USER', NOW()),
 (148, 148, 'USER', NOW()),
 (149, 149, 'USER', NOW()),
-(150, 150, 'USER', NOW());
+(150, 150, 'USER', NOW()),
+-- INSTRUCTOR + USER 복합롤 (팀장/차장급)
+(151, 101, 'INSTRUCTOR', NOW()),  -- 김민준 (개발팀 차장)
+(152, 116, 'INSTRUCTOR', NOW()),  -- 안서준 (마케팅팀 팀장)
+(153, 126, 'INSTRUCTOR', NOW()),  -- 양현준 (인사팀 팀장)
+(154, 134, 'INSTRUCTOR', NOW()),  -- 추성훈 (영업팀 팀장)
+(155, 144, 'INSTRUCTOR', NOW());  -- 두시현 (디자인팀 팀장)
 
 -- ===== 테넌트 2 역할 =====
 INSERT INTO user_roles (id, user_id, role, created_at) VALUES
@@ -121,7 +127,11 @@ INSERT INTO user_roles (id, user_id, role, created_at) VALUES
 (1031, 1027, 'USER', NOW()),
 (1032, 1028, 'USER', NOW()),
 (1033, 1029, 'USER', NOW()),
-(1034, 1030, 'USER', NOW());
+(1034, 1030, 'USER', NOW()),
+-- INSTRUCTOR + USER 복합롤
+(1035, 1024, 'INSTRUCTOR', NOW()),  -- 하지원 (개발팀 차장)
+(1036, 1025, 'INSTRUCTOR', NOW()),  -- 문재현 (기획팀 팀장)
+(1037, 1028, 'INSTRUCTOR', NOW());  -- 남지현 (개발팀 팀장)
 
 -- ===== 테넌트 3 역할 =====
 INSERT INTO user_roles (id, user_id, role, created_at) VALUES
@@ -160,4 +170,8 @@ INSERT INTO user_roles (id, user_id, role, created_at) VALUES
 (2031, 2027, 'USER', NOW()),
 (2032, 2028, 'USER', NOW()),
 (2033, 2029, 'USER', NOW()),
-(2034, 2030, 'USER', NOW());
+(2034, 2030, 'USER', NOW()),
+-- INSTRUCTOR + USER 복합롤
+(2035, 2019, 'INSTRUCTOR', NOW()),  -- 홍현우 (개발팀 팀장)
+(2036, 2022, 'INSTRUCTOR', NOW()),  -- 백도윤 (개발팀 차장)
+(2037, 2024, 'INSTRUCTOR', NOW());  -- 하준서 (운영팀 팀장)
