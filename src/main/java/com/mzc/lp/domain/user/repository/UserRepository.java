@@ -299,4 +299,14 @@ public interface UserRepository extends JpaRepository<User, Long>, UserRepositor
     List<User> findByTenantIdAndDepartmentNot(
             @Param("tenantId") Long tenantId,
             @Param("departmentName") String departmentName);
+
+    /**
+     * 테넌트별 고유 부서명 목록 조회 (부서 자동 생성 초기화용)
+     * 반환: [tenantId, departmentName]
+     * Native Query로 Hibernate 테넌트 필터 우회
+     */
+    @Query(value = "SELECT DISTINCT tenant_id, department FROM users " +
+            "WHERE department IS NOT NULL AND department != ''",
+            nativeQuery = true)
+    List<Object[]> findDistinctDepartmentsByTenant();
 }

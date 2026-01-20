@@ -45,4 +45,10 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
 
     // 매니저별 부서 조회
     List<Department> findByTenantIdAndManagerId(Long tenantId, Long managerId);
+
+    // 테넌트별 부서명으로 조회
+    Optional<Department> findByTenantIdAndName(Long tenantId, String name);
+
+    // 테넌트별 부서명 존재 여부 확인
+    boolean existsByTenantIdAndName(Long tenantId, String name);
 }

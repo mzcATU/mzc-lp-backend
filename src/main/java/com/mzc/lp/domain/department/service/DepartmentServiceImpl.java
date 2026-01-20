@@ -268,4 +268,64 @@ public class DepartmentServiceImpl implements DepartmentService {
         log.info("Added user to department: userId={}, departmentId={}, departmentName={}",
                 userId, departmentId, department.getName());
     }
+
+    @Override
+    @Transactional
+    public DepartmentResponse getOrCreateByName(Long tenantId, String departmentName) {
+        if (departmentName == null || departmentName.isBlank()) {
+            return null;
+        }
+
+        String trimmedName = departmentName.trim();
+
+        // 기존 부서 조회
+        return departmentRepository.findByTenantIdAndName(tenantId, trimmedName)
+                .map(dept -> {
+                    Map<String, Integer> countMap = getDepartmentMemberCounts(tenantId);
+                    int memberCount = getMemberCountWithChildren(dept, countMap);
+                    String managerName = getManagerName(dept.getManagerId());
+                    return DepartmentResponse.from(dept, managerName, memberCount);
+                })
+                .orElseGet(() -> {
+                    // 부서가 없으면 자동 생성
+                    log.info("Auto-creating department: tenantId={}, name={}", tenantId, trimmedName);
+
+                    // 부서 코드 생성 (부서명에서 공백 제거 후 대문자로 변환, 중복 시 숫자 추가)
+                    String baseCode = generateDepartmentCode(trimmedName);
+                    String code = baseCode;
+                    int suffix = 1;
+                    while (departmentRepository.existsByTenantIdAndCode(tenantId, code)) {
+                        code = baseCode + suffix++;
+                    }
+
+                    TenantContext.setTenantId(tenantId);
+                    try {
+                        Department department = Department.create(trimmedName, code, "자동 생성된 부서");
+                        Department saved = departmentRepository.save(department);
+
+                        log.info("Auto-created department: tenantId={}, departmentId={}, name={}, code={}",
+                                tenantId, saved.getId(), trimmedName, code);
+
+                        return DepartmentResponse.from(saved, null, 0);
+                    } finally {
+                        TenantContext.clear();
+                    }
+                });
+    }
+
+    /**
+     * 부서명으로부터 부서 코드 생성
+     * 한글/영문 혼용 지원, 공백 제거, 대문자 변환
+     */
+    private String generateDepartmentCode(String departmentName) {
+        // 공백 제거 후 대문자 변환
+        String code = departmentName.replaceAll("\\s+", "").toUpperCase();
+
+        // 코드 길이 제한 (최대 20자)
+        if (code.length() > 20) {
+            code = code.substring(0, 20);
+        }
+
+        return code;
+    }
 }
