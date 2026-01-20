@@ -3,6 +3,7 @@ package com.mzc.lp.domain.student.dto.response;
 import com.mzc.lp.domain.student.constant.EnrollmentStatus;
 import com.mzc.lp.domain.student.constant.EnrollmentType;
 import com.mzc.lp.domain.student.entity.Enrollment;
+import com.mzc.lp.domain.ts.constant.EnrollmentMethod;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -19,7 +20,8 @@ public record EnrollmentResponse(
         Integer progressPercent,
         Integer score,
         Instant completedAt,
-        LocalDate actualEndDate
+        LocalDate actualEndDate,
+        EnrollmentMethod enrollmentMethod
 ) {
     public static EnrollmentResponse from(Enrollment enrollment) {
         return new EnrollmentResponse(
@@ -34,6 +36,7 @@ public record EnrollmentResponse(
                 enrollment.getProgressPercent(),
                 enrollment.getScore(),
                 enrollment.getCompletedAt(),
+                null,
                 null
         );
     }
@@ -51,6 +54,7 @@ public record EnrollmentResponse(
                 enrollment.getProgressPercent(),
                 enrollment.getScore(),
                 enrollment.getCompletedAt(),
+                null,
                 null
         );
     }
@@ -68,7 +72,8 @@ public record EnrollmentResponse(
                 enrollment.getProgressPercent(),
                 enrollment.getScore(),
                 enrollment.getCompletedAt(),
-                actualEndDate
+                actualEndDate,
+                null
         );
     }
 
@@ -85,7 +90,26 @@ public record EnrollmentResponse(
                 enrollment.getProgressPercent(),
                 enrollment.getScore(),
                 enrollment.getCompletedAt(),
-                actualEndDate
+                actualEndDate,
+                null
+        );
+    }
+
+    public static EnrollmentResponse from(Enrollment enrollment, String userName, String userEmail, LocalDate actualEndDate, EnrollmentMethod enrollmentMethod) {
+        return new EnrollmentResponse(
+                enrollment.getId(),
+                enrollment.getUserId(),
+                userName,
+                userEmail,
+                enrollment.getCourseTimeId(),
+                enrollment.getEnrolledAt(),
+                enrollment.getType(),
+                enrollment.getStatus(),
+                enrollment.getProgressPercent(),
+                enrollment.getScore(),
+                enrollment.getCompletedAt(),
+                actualEndDate,
+                enrollmentMethod
         );
     }
 }

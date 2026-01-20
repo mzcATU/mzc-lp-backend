@@ -637,17 +637,18 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         Map<Long, com.mzc.lp.domain.ts.entity.CourseTime> courseTimeMap = courseTimeRepository.findAllById(courseTimeIds).stream()
                 .collect(Collectors.toMap(com.mzc.lp.domain.ts.entity.CourseTime::getId, Function.identity()));
 
-        // Enrollment에 사용자 정보 및 실제 종료일 매핑
+        // Enrollment에 사용자 정보, 실제 종료일, enrollmentMethod 매핑
         return enrollments.map(enrollment -> {
             User user = userMap.get(enrollment.getUserId());
             com.mzc.lp.domain.ts.entity.CourseTime courseTime = courseTimeMap.get(enrollment.getCourseTimeId());
 
             java.time.LocalDate actualEndDate = calculateActualEndDate(courseTime);
+            var enrollmentMethod = courseTime != null ? courseTime.getEnrollmentMethod() : null;
 
             if (user != null) {
-                return EnrollmentResponse.from(enrollment, user.getName(), user.getEmail(), actualEndDate);
+                return EnrollmentResponse.from(enrollment, user.getName(), user.getEmail(), actualEndDate, enrollmentMethod);
             }
-            return EnrollmentResponse.from(enrollment, actualEndDate);
+            return EnrollmentResponse.from(enrollment, null, null, actualEndDate, enrollmentMethod);
         });
     }
 
