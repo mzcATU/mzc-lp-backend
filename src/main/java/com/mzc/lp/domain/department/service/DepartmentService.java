@@ -64,4 +64,10 @@ public interface DepartmentService {
      * 부서에 인원 추가 (사용자의 부서를 변경)
      */
     void addMemberToDepartment(Long tenantId, Long departmentId, Long userId);
+
+    /**
+     * 부서명으로 부서 조회 또는 자동 생성
+     * 부서명이 존재하면 해당 부서 반환, 없으면 자동 생성 후 반환
+     */
+    DepartmentResponse getOrCreateByName(Long tenantId, String departmentName);
 }
