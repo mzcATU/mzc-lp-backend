@@ -23,3 +23,7 @@ ADD COLUMN schedule_end_time TIME NULL;
 -- class_end_date NULL 허용으로 변경 (UNLIMITED 타입용)
 ALTER TABLE course_times
 MODIFY COLUMN class_end_date DATE NULL;
+
+-- description 컬럼 추가 (차수 설명)
+ALTER TABLE course_times
+ADD COLUMN description TEXT NULL;
