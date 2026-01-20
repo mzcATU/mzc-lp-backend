@@ -13,6 +13,6 @@ SELECT 2, 'samsung', '삼성전자 인재개발원', 'B2B', 'ACTIVE', 'PRO', 'sa
 WHERE NOT EXISTS (SELECT 1 FROM tenants WHERE id = 2);
 
 -- 테넌트 3: 네이버 (IT 기업 교육)
-INSERT INTO tenants (id, code, name, type, status, plan, subdomain, created_at, updated_at)
-SELECT 3, 'naver', '네이버 커넥트', 'B2B', 'ACTIVE', 'BASIC', 'naver', NOW(), NOW()
+INSERT INTO tenants (id, code, name, type, status, plan, subdomain, custom_domain, created_at, updated_at)
+SELECT 3, 'naver', '네이버 커넥트', 'B2B', 'ACTIVE', 'BASIC', 'naver', 'naver-lms.com', NOW(), NOW()
 WHERE NOT EXISTS (SELECT 1 FROM tenants WHERE id = 3);

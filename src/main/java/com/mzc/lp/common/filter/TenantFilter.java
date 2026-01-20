@@ -140,30 +140,45 @@ public class TenantFilter implements Filter {
 
     /**
      * X-Subdomain 헤더에서 tenantId 추출
-     * Public API에서 서브도메인 기반 테넌트 식별에 사용
+     * Public API에서 서브도메인 또는 커스텀 도메인 기반 테넌트 식별에 사용
      *
      * @param request HTTP 요청
      * @return 테넌트 ID (헤더 없거나 테넌트를 찾을 수 없으면 null)
      */
     private Long extractTenantIdFromSubdomainHeader(HttpServletRequest request) {
-        String subdomain = request.getHeader(SUBDOMAIN_HEADER);
+        String identifier = request.getHeader(SUBDOMAIN_HEADER);
 
-        if (subdomain == null || subdomain.isBlank()) {
+        if (identifier == null || identifier.isBlank()) {
             return null;
         }
 
         try {
+            String trimmedIdentifier = identifier.trim();
+
+            // 1. 먼저 subdomain으로 검색
             Optional<Tenant> tenantOpt = tenantRepository.findBySubdomainAndStatus(
-                    subdomain.trim(), TenantStatus.ACTIVE);
+                    trimmedIdentifier, TenantStatus.ACTIVE);
 
             if (tenantOpt.isPresent()) {
                 Long tenantId = tenantOpt.get().getId();
-                log.debug("TenantId {} resolved from X-Subdomain header: {}", tenantId, subdomain);
+                log.debug("TenantId {} resolved from X-Subdomain header (subdomain): {}", tenantId, identifier);
                 return tenantId;
-            } else {
-                log.warn("Tenant not found for subdomain: {}", subdomain);
-                return null;
             }
+
+            // 2. subdomain으로 못 찾으면 customDomain으로 검색 (도메인 패턴이 있는 경우)
+            if (trimmedIdentifier.matches(".*\\.[a-zA-Z]{2,}$")) {
+                tenantOpt = tenantRepository.findByCustomDomainAndStatus(
+                        trimmedIdentifier, TenantStatus.ACTIVE);
+
+                if (tenantOpt.isPresent()) {
+                    Long tenantId = tenantOpt.get().getId();
+                    log.debug("TenantId {} resolved from X-Subdomain header (customDomain): {}", tenantId, identifier);
+                    return tenantId;
+                }
+            }
+
+            log.warn("Tenant not found for identifier: {}", identifier);
+            return null;
         } catch (Exception e) {
             log.warn("Failed to extract tenantId from X-Subdomain header: {}", e.getMessage());
             return null;
