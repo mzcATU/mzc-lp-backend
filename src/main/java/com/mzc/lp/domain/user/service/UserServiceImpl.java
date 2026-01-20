@@ -45,6 +45,7 @@ import com.mzc.lp.domain.user.dto.response.UserRolesResponse;
 import com.mzc.lp.domain.notification.event.NotificationEventPublisher;
 import com.mzc.lp.domain.analytics.constant.ActivityType;
 import com.mzc.lp.domain.analytics.service.ActivityLogService;
+import com.mzc.lp.domain.department.service.DepartmentService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -77,6 +78,7 @@ public class UserServiceImpl implements UserService {
     private final TenantRepository tenantRepository;
     private final NotificationEventPublisher notificationEventPublisher;
     private final ActivityLogService activityLogService;
+    private final DepartmentService departmentService;
 
     @Override
     public UserDetailResponse getMe(Long userId) {
@@ -113,6 +115,12 @@ public class UserServiceImpl implements UserService {
         String department = request.department() != null ? request.department() : user.getDepartment();
         String position = request.position() != null ? request.position() : user.getPosition();
         user.updateProfile(name, phone, profileImageUrl, department, position);
+
+        // 부서명이 입력된 경우 부서 자동 생성
+        if (department != null && !department.isBlank()) {
+            departmentService.getOrCreateByName(user.getTenantId(), department);
+        }
+
         List<CourseRoleResponse> courseRoles = getCourseRolesWithCourseTitle(userId);
         return UserDetailResponse.from(user, courseRoles);
     }
@@ -192,6 +200,19 @@ public class UserServiceImpl implements UserService {
                     request.phone() != null ? request.phone() : user.getPhone(),
                     user.getProfileImageUrl()
             );
+        }
+
+        // 부서 또는 직급 업데이트
+        if (request.department() != null || request.position() != null) {
+            String department = request.department() != null ? request.department() : user.getDepartment();
+            String position = request.position() != null ? request.position() : user.getPosition();
+            user.updateProfile(user.getName(), user.getPhone(), user.getProfileImageUrl(), department, position);
+
+            // 부서명이 입력된 경우 부서 자동 생성
+            if (department != null && !department.isBlank()) {
+                departmentService.getOrCreateByName(user.getTenantId(), department);
+                log.info("Auto-created/verified department for user: userId={}, department={}", userId, department);
+            }
         }
 
         if (request.role() != null) {
@@ -507,6 +528,11 @@ public class UserServiceImpl implements UserService {
                     if ((row.department() != null && !row.department().isBlank()) ||
                         (row.position() != null && !row.position().isBlank())) {
                         user.updateProfile(name, row.phone(), null, row.department(), row.position());
+
+                        // 부서명이 입력된 경우 부서 자동 생성
+                        if (row.department() != null && !row.department().isBlank()) {
+                            departmentService.getOrCreateByName(tenantId, row.department());
+                        }
                     }
 
                     // 역할 설정
