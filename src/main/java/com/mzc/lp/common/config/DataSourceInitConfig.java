@@ -19,6 +19,7 @@ import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
  * V002: 테넌트
  * V003: 부서
  * V004: 사용자
+ * V004_5: 직원
  * V005: 사용자 역할 (멀티롤 지원)
  * V006: 카테고리
  * V007: 콘텐츠
@@ -34,6 +35,7 @@ import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
  * V015: 장바구니/찜
  * V016: 리뷰
  * V017: 로드맵 (비활성 - 스킵)
+ * V018: 회원 풀 + 자동 입과 규칙
  */
 @Configuration
 public class DataSourceInitConfig {
@@ -54,6 +56,7 @@ public class DataSourceInitConfig {
         populator.addScript(new ClassPathResource("db/seed/V002__tenants.sql"));
         populator.addScript(new ClassPathResource("db/seed/V003__departments.sql"));
         populator.addScript(new ClassPathResource("db/seed/V004__users.sql"));
+        populator.addScript(new ClassPathResource("db/seed/V004_5__employees.sql"));
         populator.addScript(new ClassPathResource("db/seed/V005__user_roles.sql"));
         populator.addScript(new ClassPathResource("db/seed/V006__categories.sql"));
         populator.addScript(new ClassPathResource("db/seed/V007__contents.sql"));
@@ -70,6 +73,7 @@ public class DataSourceInitConfig {
         populator.addScript(new ClassPathResource("db/seed/V016__reviews.sql"));
         // V017 로드맵 - 비활성 기능이므로 스킵
         // populator.addScript(new ClassPathResource("db/seed/V017__roadmaps.sql"));
+        populator.addScript(new ClassPathResource("db/seed/V018__member_pools_and_auto_enrollment_rules.sql"));
 
         DataSourceInitializer initializer = new DataSourceInitializer();
         initializer.setDataSource(dataSource);

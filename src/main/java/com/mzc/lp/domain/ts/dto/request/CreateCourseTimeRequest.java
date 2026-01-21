@@ -78,6 +78,19 @@ public record CreateCourseTimeRequest(
          * 정기 수업 일정 (FIXED + OFFLINE/BLENDED/LIVE에서 선택 사항)
          */
         @Valid
-        RecurringScheduleRequest recurringSchedule
+        RecurringScheduleRequest recurringSchedule,
+
+        /**
+         * DESIGNER를 MAIN 강사로 자동 배정 여부
+         * - true (기본값): 기존처럼 DESIGNER를 MAIN 강사로 자동 배정
+         * - false: 자동 배정 안함, 프론트엔드에서 별도로 강사 배정
+         */
+        Boolean assignDesignerAsMainInstructor
 ) {
+    public CreateCourseTimeRequest {
+        // 기본값 설정: null이면 true (기존 동작 유지)
+        if (assignDesignerAsMainInstructor == null) {
+            assignDesignerAsMainInstructor = true;
+        }
+    }
 }

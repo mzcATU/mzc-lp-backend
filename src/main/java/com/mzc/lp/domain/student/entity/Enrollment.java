@@ -62,7 +62,7 @@ public class Enrollment extends TenantEntity {
     @Column(name = "enrolled_by")
     private Long enrolledBy;
 
-    // 정적 팩토리 메서드 - 자발적 수강신청
+    // 정적 팩토리 메서드 - 자발적 수강신청 (선착순)
     public static Enrollment createVoluntary(Long userId, Long courseTimeId) {
         Enrollment enrollment = new Enrollment();
         enrollment.userId = userId;
@@ -70,6 +70,19 @@ public class Enrollment extends TenantEntity {
         enrollment.enrolledAt = Instant.now();
         enrollment.type = EnrollmentType.VOLUNTARY;
         enrollment.status = EnrollmentStatus.ENROLLED;
+        enrollment.progressPercent = 0;
+        enrollment.enrolledBy = userId;
+        return enrollment;
+    }
+
+    // 정적 팩토리 메서드 - 승인 대기 수강신청 (승인제)
+    public static Enrollment createPending(Long userId, Long courseTimeId) {
+        Enrollment enrollment = new Enrollment();
+        enrollment.userId = userId;
+        enrollment.courseTimeId = courseTimeId;
+        enrollment.enrolledAt = Instant.now();
+        enrollment.type = EnrollmentType.VOLUNTARY;
+        enrollment.status = EnrollmentStatus.PENDING;
         enrollment.progressPercent = 0;
         enrollment.enrolledBy = userId;
         return enrollment;
@@ -108,8 +121,29 @@ public class Enrollment extends TenantEntity {
         this.status = EnrollmentStatus.DROPPED;
     }
 
+    public void approve() {
+        if (this.status != EnrollmentStatus.PENDING) {
+            throw new IllegalStateException("Only PENDING enrollment can be approved");
+        }
+        this.status = EnrollmentStatus.ENROLLED;
+    }
+
+    public void reject() {
+        if (this.status != EnrollmentStatus.PENDING) {
+            throw new IllegalStateException("Only PENDING enrollment can be rejected");
+        }
+        this.status = EnrollmentStatus.REJECTED;
+    }
+
     public void fail() {
         this.status = EnrollmentStatus.FAILED;
+    }
+
+    public void resubmit() {
+        if (this.status != EnrollmentStatus.REJECTED) {
+            throw new IllegalStateException("Only REJECTED enrollment can be resubmitted");
+        }
+        this.status = EnrollmentStatus.PENDING;
     }
 
     public void updateStatus(EnrollmentStatus status) {
@@ -137,8 +171,16 @@ public class Enrollment extends TenantEntity {
         return this.status == EnrollmentStatus.FAILED;
     }
 
+    public boolean isPending() {
+        return this.status == EnrollmentStatus.PENDING;
+    }
+
+    public boolean isRejected() {
+        return this.status == EnrollmentStatus.REJECTED;
+    }
+
     public boolean canCancel() {
-        return this.status == EnrollmentStatus.ENROLLED;
+        return this.status == EnrollmentStatus.ENROLLED || this.status == EnrollmentStatus.PENDING;
     }
 
     public boolean isVoluntary() {

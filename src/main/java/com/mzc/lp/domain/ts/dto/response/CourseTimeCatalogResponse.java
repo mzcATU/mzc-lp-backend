@@ -4,6 +4,7 @@ import com.mzc.lp.domain.category.entity.Category;
 import com.mzc.lp.domain.ts.constant.CourseTimeStatus;
 import com.mzc.lp.domain.ts.constant.DeliveryType;
 import com.mzc.lp.domain.ts.constant.DurationType;
+import com.mzc.lp.domain.ts.constant.EnrollmentMethod;
 import com.mzc.lp.domain.ts.entity.CourseTime;
 
 import java.math.BigDecimal;
@@ -19,6 +20,7 @@ public record CourseTimeCatalogResponse(
         CourseTimeStatus status,
         DeliveryType deliveryType,
         DurationType durationType,
+        EnrollmentMethod enrollmentMethod,
         LocalDate enrollStartDate,
         LocalDate enrollEndDate,
         LocalDate classStartDate,
@@ -55,6 +57,7 @@ public record CourseTimeCatalogResponse(
                 courseTime.getStatus(),
                 courseTime.getDeliveryType(),
                 courseTime.getDurationType(),
+                courseTime.getEnrollmentMethod(),
                 courseTime.getEnrollStartDate(),
                 courseTime.getEnrollEndDate(),
                 courseTime.getClassStartDate(),

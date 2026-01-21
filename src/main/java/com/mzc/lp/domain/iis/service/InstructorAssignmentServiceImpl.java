@@ -31,6 +31,7 @@ import com.mzc.lp.domain.iis.repository.InstructorAssignmentRepository;
 import com.mzc.lp.domain.student.dto.response.CourseTimeEnrollmentStatsResponse;
 import com.mzc.lp.domain.student.service.EnrollmentStatsService;
 import com.mzc.lp.domain.course.entity.Course;
+import com.mzc.lp.domain.ts.constant.DeliveryType;
 import com.mzc.lp.domain.ts.entity.CourseTime;
 import com.mzc.lp.domain.ts.entity.RecurringSchedule;
 import com.mzc.lp.domain.ts.repository.CourseTimeRepository;
@@ -658,8 +659,16 @@ public class InstructorAssignmentServiceImpl implements InstructorAssignmentServ
      * 일정 충돌 검사
      * 1. 강사가 동일 기간에 다른 차수에 이미 배정되어 있는지 확인
      * 2. 정기 일정(요일/시간)이 겹치는지 확인
+     *
+     * ONLINE 타입은 자기주도 학습이므로 일정 충돌 검증을 스킵합니다.
      */
     private void checkScheduleConflict(Long userId, Long targetTimeId, CourseTime targetCourseTime, Long tenantId) {
+        // ONLINE 타입은 자기주도 학습이므로 강사 일정 충돌 검증 스킵
+        if (targetCourseTime.getDeliveryType() == DeliveryType.ONLINE) {
+            log.debug("Skipping schedule conflict check for ONLINE course time: timeId={}", targetTimeId);
+            return;
+        }
+
         // 강사의 기존 ACTIVE 배정 목록 조회
         List<InstructorAssignment> existingAssignments = assignmentRepository.findActiveByUserKey(tenantId, userId);
 

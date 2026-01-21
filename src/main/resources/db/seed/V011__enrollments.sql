@@ -32,7 +32,38 @@ INSERT INTO sis_enrollments (id, tenant_id, user_id, course_time_id, enrolled_at
 -- Spring Boot 기초 2차 (RECRUITING) 수강생 - 이미 등록된 사용자들
 (20, 1, 120, 3, NOW() - INTERVAL 3 DAY, 'VOLUNTARY', 'ENROLLED', 0, NULL, NULL, 120, NOW() - INTERVAL 3 DAY, NOW(), 0),
 (21, 1, 121, 3, NOW() - INTERVAL 2 DAY, 'VOLUNTARY', 'ENROLLED', 0, NULL, NULL, 121, NOW() - INTERVAL 2 DAY, NOW(), 0),
-(22, 1, 122, 3, NOW() - INTERVAL 1 DAY, 'VOLUNTARY', 'ENROLLED', 0, NULL, NULL, 122, NOW() - INTERVAL 1 DAY, NOW(), 0);
+(22, 1, 122, 3, NOW() - INTERVAL 1 DAY, 'VOLUNTARY', 'ENROLLED', 0, NULL, NULL, 122, NOW() - INTERVAL 1 DAY, NOW(), 0),
+
+-- ===== 테스트 시나리오용 수강 =====
+-- 1. PENDING 상태 (승인제 과정 승인 대기)
+-- AWS 클라우드 아키텍처 2차 (차수 5, APPROVAL + RECRUITING)
+(23, 1, 123, 5, NOW() - INTERVAL 2 DAY, 'VOLUNTARY', 'PENDING', 0, NULL, NULL, 123, NOW() - INTERVAL 2 DAY, NOW(), 0),
+(24, 1, 124, 5, NOW() - INTERVAL 1 DAY, 'VOLUNTARY', 'PENDING', 0, NULL, NULL, 124, NOW() - INTERVAL 1 DAY, NOW(), 0),
+-- React & TypeScript 심화 특별반 (차수 14, APPROVAL + RECRUITING)
+(25, 1, 125, 14, NOW() - INTERVAL 3 DAY, 'VOLUNTARY', 'PENDING', 0, NULL, NULL, 125, NOW() - INTERVAL 3 DAY, NOW(), 0),
+(26, 1, 126, 14, NOW() - INTERVAL 2 DAY, 'VOLUNTARY', 'PENDING', 0, NULL, NULL, 126, NOW() - INTERVAL 2 DAY, NOW(), 0),
+(27, 1, 127, 14, NOW() - INTERVAL 1 DAY, 'VOLUNTARY', 'PENDING', 0, NULL, NULL, 127, NOW() - INTERVAL 1 DAY, NOW(), 0),
+
+-- 2. MANDATORY 타입 (선발제 과정 - 운영자가 배정)
+-- Kubernetes 운영 실무 특별반 (차수 13, INVITE_ONLY + RECRUITING)
+(28, 1, 128, 13, NOW() - INTERVAL 5 DAY, 'MANDATORY', 'ENROLLED', 0, NULL, NULL, 3, NOW() - INTERVAL 5 DAY, NOW(), 0),
+(29, 1, 129, 13, NOW() - INTERVAL 4 DAY, 'MANDATORY', 'ENROLLED', 0, NULL, NULL, 3, NOW() - INTERVAL 4 DAY, NOW(), 0),
+(30, 1, 130, 13, NOW() - INTERVAL 3 DAY, 'MANDATORY', 'ENROLLED', 0, NULL, NULL, 4, NOW() - INTERVAL 3 DAY, NOW(), 0),
+
+-- 3. 수강 기간 전 테스트 (classStartDate가 미래)
+-- SQL 완전 정복 2차 (차수 15, classStartDate=2026-03-01)
+(31, 1, 131, 15, NOW() - INTERVAL 2 DAY, 'VOLUNTARY', 'ENROLLED', 0, NULL, NULL, 131, NOW() - INTERVAL 2 DAY, NOW(), 0),
+(32, 1, 132, 15, NOW() - INTERVAL 1 DAY, 'VOLUNTARY', 'ENROLLED', 0, NULL, NULL, 132, NOW() - INTERVAL 1 DAY, NOW(), 0),
+
+-- 4. 수강 기간 종료 후 테스트 (classEndDate가 과거, ENROLLED 상태 유지)
+-- Spring Boot 기초 4차 (차수 9, CLOSED, classEndDate=2025-10-20)
+(33, 1, 133, 9, NOW() - INTERVAL 90 DAY, 'VOLUNTARY', 'ENROLLED', 65, NULL, NULL, 133, NOW() - INTERVAL 90 DAY, NOW(), 0),
+(34, 1, 134, 9, NOW() - INTERVAL 85 DAY, 'VOLUNTARY', 'ENROLLED', 50, NULL, NULL, 134, NOW() - INTERVAL 85 DAY, NOW(), 0),
+
+-- 5. 승인된 승인제 수강 (승인 완료 후 ENROLLED)
+-- AWS 클라우드 아키텍처 2차 (차수 5, APPROVAL + RECRUITING)
+(35, 1, 135, 5, NOW() - INTERVAL 10 DAY, 'VOLUNTARY', 'ENROLLED', 0, NULL, NULL, 135, NOW() - INTERVAL 10 DAY, NOW(), 0),
+(36, 1, 136, 5, NOW() - INTERVAL 8 DAY, 'VOLUNTARY', 'ENROLLED', 0, NULL, NULL, 136, NOW() - INTERVAL 8 DAY, NOW(), 0);
 
 -- ===== 테넌트 2 수강 =====
 INSERT INTO sis_enrollments (id, tenant_id, user_id, course_time_id, enrolled_at, type, status, progress_percent, score, completed_at, enrolled_by, created_at, updated_at, version) VALUES
@@ -49,7 +80,35 @@ INSERT INTO sis_enrollments (id, tenant_id, user_id, course_time_id, enrolled_at
 (208, 2, 1008, 54, NOW() - INTERVAL 8 DAY, 'VOLUNTARY', 'ENROLLED', 25, NULL, NULL, 1008, NOW() - INTERVAL 8 DAY, NOW(), 0),
 -- Java 기초 입문 2차 (CLOSED)
 (209, 2, 1009, 56, NOW() - INTERVAL 50 DAY, 'VOLUNTARY', 'COMPLETED', 100, 90, NOW() - INTERVAL 10 DAY, 1009, NOW() - INTERVAL 50 DAY, NOW(), 0),
-(210, 2, 1010, 56, NOW() - INTERVAL 48 DAY, 'VOLUNTARY', 'COMPLETED', 100, 85, NOW() - INTERVAL 12 DAY, 1010, NOW() - INTERVAL 48 DAY, NOW(), 0);
+(210, 2, 1010, 56, NOW() - INTERVAL 48 DAY, 'VOLUNTARY', 'COMPLETED', 100, 85, NOW() - INTERVAL 12 DAY, 1010, NOW() - INTERVAL 48 DAY, NOW(), 0),
+
+-- ===== 테스트 시나리오용 수강 (테넌트 2) =====
+-- 1. PENDING 상태 (승인제 과정 승인 대기)
+-- 머신러닝 심화 특별반 (차수 58, APPROVAL + RECRUITING)
+(211, 2, 1011, 58, NOW() - INTERVAL 2 DAY, 'VOLUNTARY', 'PENDING', 0, NULL, NULL, 1011, NOW() - INTERVAL 2 DAY, NOW(), 0),
+(212, 2, 1012, 58, NOW() - INTERVAL 1 DAY, 'VOLUNTARY', 'PENDING', 0, NULL, NULL, 1012, NOW() - INTERVAL 1 DAY, NOW(), 0),
+(213, 2, 1013, 58, NOW() - INTERVAL 1 DAY, 'VOLUNTARY', 'PENDING', 0, NULL, NULL, 1013, NOW() - INTERVAL 1 DAY, NOW(), 0),
+
+-- 2. MANDATORY 타입 (선발제 과정 - 운영자가 배정)
+-- 클라우드 네이티브 특별반 (차수 57, INVITE_ONLY + RECRUITING)
+(214, 2, 1014, 57, NOW() - INTERVAL 5 DAY, 'MANDATORY', 'ENROLLED', 0, NULL, NULL, 12, NOW() - INTERVAL 5 DAY, NOW(), 0),
+(215, 2, 1015, 57, NOW() - INTERVAL 4 DAY, 'MANDATORY', 'ENROLLED', 0, NULL, NULL, 12, NOW() - INTERVAL 4 DAY, NOW(), 0),
+(216, 2, 1016, 57, NOW() - INTERVAL 3 DAY, 'MANDATORY', 'ENROLLED', 0, NULL, NULL, 12, NOW() - INTERVAL 3 DAY, NOW(), 0),
+
+-- 3. 수강 기간 전 테스트 (classStartDate가 미래)
+-- Spring Framework 2차 (차수 59, classStartDate=2026-03-01)
+(217, 2, 1017, 59, NOW() - INTERVAL 2 DAY, 'VOLUNTARY', 'ENROLLED', 0, NULL, NULL, 1017, NOW() - INTERVAL 2 DAY, NOW(), 0),
+(218, 2, 1018, 59, NOW() - INTERVAL 1 DAY, 'VOLUNTARY', 'ENROLLED', 0, NULL, NULL, 1018, NOW() - INTERVAL 1 DAY, NOW(), 0),
+
+-- 4. 수강 기간 종료 후 테스트 (classEndDate가 과거, ENROLLED 상태 유지)
+-- Java 기초 입문 2차 (차수 56, CLOSED, classEndDate=2025-11-30)
+(219, 2, 1019, 56, NOW() - INTERVAL 70 DAY, 'VOLUNTARY', 'ENROLLED', 65, NULL, NULL, 1019, NOW() - INTERVAL 70 DAY, NOW(), 0),
+(220, 2, 1020, 56, NOW() - INTERVAL 68 DAY, 'VOLUNTARY', 'ENROLLED', 50, NULL, NULL, 1020, NOW() - INTERVAL 68 DAY, NOW(), 0),
+
+-- 5. 승인된 승인제 수강 (승인 완료 후 ENROLLED)
+-- 머신러닝 심화 특별반 (차수 58, APPROVAL + RECRUITING)
+(221, 2, 1021, 58, NOW() - INTERVAL 10 DAY, 'VOLUNTARY', 'ENROLLED', 0, NULL, NULL, 1021, NOW() - INTERVAL 10 DAY, NOW(), 0),
+(222, 2, 1022, 58, NOW() - INTERVAL 8 DAY, 'VOLUNTARY', 'ENROLLED', 0, NULL, NULL, 1022, NOW() - INTERVAL 8 DAY, NOW(), 0);
 
 -- ===== 테넌트 3 수강 =====
 INSERT INTO sis_enrollments (id, tenant_id, user_id, course_time_id, enrolled_at, type, status, progress_percent, score, completed_at, enrolled_by, created_at, updated_at, version) VALUES

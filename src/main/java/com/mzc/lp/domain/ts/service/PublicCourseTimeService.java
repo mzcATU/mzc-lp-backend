@@ -24,6 +24,7 @@ public interface PublicCourseTimeService {
      * @param keyword      제목 검색 키워드
      * @param categoryId   카테고리 ID 필터
      * @param pageable     페이징 정보
+     * @param userId       현재 사용자 ID (INVITE_ONLY 필터링용, null 가능)
      * @return 페이징된 차수 목록
      */
     Page<CourseTimeCatalogResponse> getPublicCourseTimes(
@@ -33,7 +34,8 @@ public interface PublicCourseTimeService {
             Boolean isFree,
             String keyword,
             Long categoryId,
-            Pageable pageable
+            Pageable pageable,
+            Long userId
     );
 
     /**

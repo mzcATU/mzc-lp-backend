@@ -1,6 +1,7 @@
 package com.mzc.lp.domain.ts.controller;
 
 import com.mzc.lp.common.dto.ApiResponse;
+import com.mzc.lp.common.security.UserPrincipal;
 import com.mzc.lp.domain.ts.constant.CourseTimeStatus;
 import com.mzc.lp.domain.ts.constant.DeliveryType;
 import com.mzc.lp.domain.ts.dto.response.CourseTimeCatalogResponse;
@@ -11,6 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,6 +31,7 @@ public class PublicCourseTimeController {
 
     /**
      * 학습자용 차수 목록 조회 (카탈로그)
+     * - INVITE_ONLY 과정은 배정된 사용자에게만 노출
      *
      * @param status       상태 필터 (다중 선택 가능, 기본: RECRUITING, ONGOING)
      * @param deliveryType 운영 방식 필터
@@ -37,6 +40,7 @@ public class PublicCourseTimeController {
      * @param keyword      제목 검색 키워드
      * @param categoryId   카테고리 ID 필터
      * @param pageable     페이징 정보
+     * @param principal    현재 사용자 (비로그인 시 null)
      * @return 페이징된 차수 목록
      */
     @GetMapping
@@ -47,10 +51,12 @@ public class PublicCourseTimeController {
             @RequestParam(required = false) Boolean isFree,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Long categoryId,
-            @PageableDefault(size = 20) Pageable pageable
+            @PageableDefault(size = 20) Pageable pageable,
+            @AuthenticationPrincipal UserPrincipal principal
     ) {
+        Long userId = principal != null ? principal.id() : null;
         Page<CourseTimeCatalogResponse> response = publicCourseTimeService.getPublicCourseTimes(
-                status, deliveryType, courseId, isFree, keyword, categoryId, pageable
+                status, deliveryType, courseId, isFree, keyword, categoryId, pageable, userId
         );
         return ResponseEntity.ok(ApiResponse.success(response));
     }

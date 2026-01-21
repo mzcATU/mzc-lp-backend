@@ -24,6 +24,10 @@ TRUNCATE TABLE sis_item_progress;
 TRUNCATE TABLE sis_enrollments;
 TRUNCATE TABLE iis_instructor_assignments;
 
+-- 회원 풀/자동 입과 규칙
+TRUNCATE TABLE auto_enrollment_rules;
+TRUNCATE TABLE member_pools;
+
 -- 사용자 역할
 TRUNCATE TABLE user_course_roles;
 TRUNCATE TABLE user_roles;
@@ -52,6 +56,9 @@ TRUNCATE TABLE cm_courses;
 
 -- 카테고리
 TRUNCATE TABLE cm_categories;
+
+-- 직원
+TRUNCATE TABLE employees;
 
 -- 사용자/부서
 TRUNCATE TABLE users;

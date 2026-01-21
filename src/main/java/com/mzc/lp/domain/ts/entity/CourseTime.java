@@ -104,7 +104,7 @@ public class CourseTime extends TenantEntity {
     private boolean free;
 
     // 장소 정보 (OFFLINE/BLENDED일 때 필수)
-    @Column(name = "location_info", columnDefinition = "json")
+    @Column(name = "location_info", columnDefinition = "TEXT")
     private String locationInfo;
 
     // 중간 합류 허용 여부
@@ -149,7 +149,12 @@ public class CourseTime extends TenantEntity {
 
         // 운영 설정 - 요청값 있으면 사용, 없으면 원본 복사
         courseTime.capacity = capacity != null ? capacity : source.capacity;
-        courseTime.locationInfo = locationInfo != null ? locationInfo : source.locationInfo;
+        // JSON 컬럼이므로 빈 문자열은 null로 처리
+        if (locationInfo != null) {
+            courseTime.locationInfo = !locationInfo.isBlank() ? locationInfo : null;
+        } else {
+            courseTime.locationInfo = source.locationInfo;
+        }
 
         // 가격 설정 - isFree 처리
         if (isFree != null) {
@@ -239,7 +244,8 @@ public class CourseTime extends TenantEntity {
         courseTime.minProgressForCompletion = minProgressForCompletion;
         courseTime.price = free ? BigDecimal.ZERO : price;
         courseTime.free = free;
-        courseTime.locationInfo = locationInfo;
+        // JSON 컬럼이므로 빈 문자열은 null로 처리
+        courseTime.locationInfo = (locationInfo != null && !locationInfo.isBlank()) ? locationInfo : null;
         courseTime.allowLateEnrollment = allowLateEnrollment;
         courseTime.recurringSchedule = recurringSchedule;
         courseTime.createdBy = createdBy;
@@ -309,7 +315,8 @@ public class CourseTime extends TenantEntity {
     }
 
     public void updateLocationInfo(String locationInfo) {
-        this.locationInfo = locationInfo;
+        // JSON 컬럼이므로 빈 문자열은 null로 처리
+        this.locationInfo = (locationInfo != null && !locationInfo.isBlank()) ? locationInfo : null;
     }
 
     public void updateAllowLateEnrollment(boolean allowLateEnrollment) {

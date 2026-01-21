@@ -18,7 +18,9 @@ import com.mzc.lp.domain.student.exception.AlreadyEnrolledException;
 import com.mzc.lp.domain.student.exception.CannotCancelCompletedException;
 import com.mzc.lp.domain.student.exception.EnrollmentNotFoundException;
 import com.mzc.lp.domain.student.exception.EnrollmentPeriodClosedException;
+import com.mzc.lp.domain.student.exception.InviteOnlyEnrollmentException;
 import com.mzc.lp.domain.student.exception.UnauthorizedEnrollmentAccessException;
+import com.mzc.lp.domain.ts.constant.EnrollmentMethod;
 import com.mzc.lp.domain.iis.constant.AssignmentStatus;
 import com.mzc.lp.domain.iis.repository.InstructorAssignmentRepository;
 import com.mzc.lp.domain.course.entity.Course;
@@ -79,6 +81,11 @@ public class EnrollmentServiceImpl implements EnrollmentService {
             throw new CourseTimeNotFoundException(courseTimeId);
         }
 
+        // INVITE_ONLY 방식은 자발적 수강신청 불가
+        if (courseTime.getEnrollmentMethod() == EnrollmentMethod.INVITE_ONLY) {
+            throw new InviteOnlyEnrollmentException(courseTimeId);
+        }
+
         // 수강 신청 가능 여부 체크 (락 상태에서)
         if (!courseTime.canEnroll()) {
             throw new EnrollmentPeriodClosedException(courseTimeId);
@@ -95,12 +102,21 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         }
         courseTime.incrementEnrollment();
 
-        // 수강 생성
-        Enrollment enrollment = Enrollment.createVoluntary(userId, courseTimeId);
+        // EnrollmentMethod에 따른 수강 생성
+        Enrollment enrollment;
+        if (courseTime.getEnrollmentMethod() == EnrollmentMethod.APPROVAL) {
+            // 승인제: PENDING 상태로 생성
+            enrollment = Enrollment.createPending(userId, courseTimeId);
+            log.info("Enrollment created with PENDING status (approval required): userId={}, courseTimeId={}",
+                    userId, courseTimeId);
+        } else {
+            // 선착순(FIRST_COME): 즉시 ENROLLED 상태
+            enrollment = Enrollment.createVoluntary(userId, courseTimeId);
+        }
         Enrollment savedEnrollment = enrollmentRepository.save(enrollment);
 
-        log.info("Enrollment created: id={}, userId={}, courseTimeId={}",
-                savedEnrollment.getId(), userId, courseTimeId);
+        log.info("Enrollment created: id={}, userId={}, courseTimeId={}, status={}",
+                savedEnrollment.getId(), userId, courseTimeId, savedEnrollment.getStatus());
 
         // 활동 로그 기록
         activityLogService.log(
@@ -111,8 +127,10 @@ public class EnrollmentServiceImpl implements EnrollmentService {
                 courseTime.getTitle()
         );
 
-        // 수강신청 완료 알림 발송 (템플릿 기반)
-        sendEnrollmentCompleteNotification(tenantId, savedEnrollment, courseTime);
+        // 수강신청 완료 알림 발송 (템플릿 기반) - ENROLLED 상태인 경우만
+        if (savedEnrollment.isEnrolled()) {
+            sendEnrollmentCompleteNotification(tenantId, savedEnrollment, courseTime);
+        }
 
         return EnrollmentDetailResponse.from(savedEnrollment);
     }
@@ -414,6 +432,98 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
     @Override
     @Transactional
+    public EnrollmentDetailResponse approveEnrollment(Long enrollmentId) {
+        log.info("Approving enrollment: enrollmentId={}", enrollmentId);
+
+        Long tenantId = TenantContext.getCurrentTenantId();
+
+        Enrollment enrollment = enrollmentRepository.findByIdAndTenantId(enrollmentId, tenantId)
+                .orElseThrow(() -> new EnrollmentNotFoundException(enrollmentId));
+
+        // PENDING 상태 검증 및 승인
+        enrollment.approve();
+
+        // 활동 로그 기록
+        CourseTime courseTime = courseTimeRepository.findById(enrollment.getCourseTimeId()).orElse(null);
+        activityLogService.log(
+                ActivityType.ENROLLMENT_CREATE,
+                String.format("수강신청 승인: %s", courseTime != null ? courseTime.getTitle() : "과정"),
+                "Enrollment",
+                enrollmentId,
+                courseTime != null ? courseTime.getTitle() : null
+        );
+
+        // 수강신청 완료 알림 발송 (승인 완료)
+        if (courseTime != null) {
+            sendEnrollmentCompleteNotification(tenantId, enrollment, courseTime);
+        }
+
+        log.info("Enrollment approved: enrollmentId={}", enrollmentId);
+
+        return EnrollmentDetailResponse.from(enrollment);
+    }
+
+    @Override
+    @Transactional
+    public EnrollmentDetailResponse rejectEnrollment(Long enrollmentId) {
+        log.info("Rejecting enrollment: enrollmentId={}", enrollmentId);
+
+        Long tenantId = TenantContext.getCurrentTenantId();
+
+        Enrollment enrollment = enrollmentRepository.findByIdAndTenantId(enrollmentId, tenantId)
+                .orElseThrow(() -> new EnrollmentNotFoundException(enrollmentId));
+
+        // PENDING 상태 검증 및 거절
+        enrollment.reject();
+
+        // 정원 반환
+        courseTimeService.releaseSeat(enrollment.getCourseTimeId());
+
+        // 활동 로그 기록
+        CourseTime courseTime = courseTimeRepository.findById(enrollment.getCourseTimeId()).orElse(null);
+        activityLogService.log(
+                ActivityType.ENROLLMENT_DROP,
+                String.format("수강신청 거절: %s", courseTime != null ? courseTime.getTitle() : "과정"),
+                "Enrollment",
+                enrollmentId,
+                courseTime != null ? courseTime.getTitle() : null
+        );
+
+        log.info("Enrollment rejected: enrollmentId={}", enrollmentId);
+
+        return EnrollmentDetailResponse.from(enrollment);
+    }
+
+    @Override
+    @Transactional
+    public EnrollmentDetailResponse resubmitEnrollment(Long enrollmentId) {
+        log.info("Resubmitting enrollment: enrollmentId={}", enrollmentId);
+
+        Long tenantId = TenantContext.getCurrentTenantId();
+
+        Enrollment enrollment = enrollmentRepository.findByIdAndTenantId(enrollmentId, tenantId)
+                .orElseThrow(() -> new EnrollmentNotFoundException(enrollmentId));
+
+        // REJECTED 상태 검증 및 재심사 (PENDING으로 변경)
+        enrollment.resubmit();
+
+        // 활동 로그 기록
+        CourseTime courseTime = courseTimeRepository.findById(enrollment.getCourseTimeId()).orElse(null);
+        activityLogService.log(
+                ActivityType.ENROLLMENT_CREATE,
+                String.format("수강신청 재심사 요청: %s", courseTime != null ? courseTime.getTitle() : "과정"),
+                "Enrollment",
+                enrollmentId,
+                courseTime != null ? courseTime.getTitle() : null
+        );
+
+        log.info("Enrollment resubmitted: enrollmentId={}", enrollmentId);
+
+        return EnrollmentDetailResponse.from(enrollment);
+    }
+
+    @Override
+    @Transactional
     public void cancelEnrollment(Long enrollmentId, Long userId, boolean isAdmin) {
         log.info("Cancelling enrollment: enrollmentId={}, userId={}, isAdmin={}", enrollmentId, userId, isAdmin);
 
@@ -469,6 +579,12 @@ public class EnrollmentServiceImpl implements EnrollmentService {
                     continue;
                 }
 
+                // INVITE_ONLY 방식 체크
+                if (courseTime.getEnrollmentMethod() == EnrollmentMethod.INVITE_ONLY) {
+                    results.add(BulkEnrollmentResponse.EnrollmentResult.failure(courseTimeId, "초대 전용 과정입니다"));
+                    continue;
+                }
+
                 // 수강 신청 가능 여부 체크
                 if (!courseTime.canEnroll()) {
                     results.add(BulkEnrollmentResponse.EnrollmentResult.failure(courseTimeId, "수강신청 기간이 아닙니다"));
@@ -490,14 +606,19 @@ public class EnrollmentServiceImpl implements EnrollmentService {
                 // 정원 증가
                 courseTime.incrementEnrollment();
 
-                // 수강 생성
-                Enrollment enrollment = Enrollment.createVoluntary(userId, courseTimeId);
+                // EnrollmentMethod에 따른 수강 생성
+                Enrollment enrollment;
+                if (courseTime.getEnrollmentMethod() == EnrollmentMethod.APPROVAL) {
+                    enrollment = Enrollment.createPending(userId, courseTimeId);
+                } else {
+                    enrollment = Enrollment.createVoluntary(userId, courseTimeId);
+                }
                 Enrollment savedEnrollment = enrollmentRepository.save(enrollment);
 
                 results.add(BulkEnrollmentResponse.EnrollmentResult.success(courseTimeId, savedEnrollment.getId()));
 
-                log.debug("Bulk enrollment success: userId={}, courseTimeId={}, enrollmentId={}",
-                        userId, courseTimeId, savedEnrollment.getId());
+                log.debug("Bulk enrollment success: userId={}, courseTimeId={}, enrollmentId={}, status={}",
+                        userId, courseTimeId, savedEnrollment.getId(), savedEnrollment.getStatus());
             } catch (CourseTimeNotFoundException e) {
                 results.add(BulkEnrollmentResponse.EnrollmentResult.failure(courseTimeId, "차수를 찾을 수 없습니다"));
             } catch (Exception e) {
@@ -544,17 +665,18 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         Map<Long, com.mzc.lp.domain.ts.entity.CourseTime> courseTimeMap = courseTimeRepository.findAllById(courseTimeIds).stream()
                 .collect(Collectors.toMap(com.mzc.lp.domain.ts.entity.CourseTime::getId, Function.identity()));
 
-        // Enrollment에 사용자 정보 및 실제 종료일 매핑
+        // Enrollment에 사용자 정보, 실제 종료일, enrollmentMethod 매핑
         return enrollments.map(enrollment -> {
             User user = userMap.get(enrollment.getUserId());
             com.mzc.lp.domain.ts.entity.CourseTime courseTime = courseTimeMap.get(enrollment.getCourseTimeId());
 
             java.time.LocalDate actualEndDate = calculateActualEndDate(courseTime);
+            var enrollmentMethod = courseTime != null ? courseTime.getEnrollmentMethod() : null;
 
             if (user != null) {
-                return EnrollmentResponse.from(enrollment, user.getName(), user.getEmail(), actualEndDate);
+                return EnrollmentResponse.from(enrollment, user.getName(), user.getEmail(), actualEndDate, enrollmentMethod);
             }
-            return EnrollmentResponse.from(enrollment, actualEndDate);
+            return EnrollmentResponse.from(enrollment, null, null, actualEndDate, enrollmentMethod);
         });
     }
 

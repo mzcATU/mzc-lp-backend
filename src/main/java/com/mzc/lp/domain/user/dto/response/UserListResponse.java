@@ -16,6 +16,8 @@ public record UserListResponse(
         Set<String> roles,  // 다중 역할 (1:N)
         String status,
         String organizationName,
+        String department,
+        String position,
         Instant lastLoginAt,
         Instant createdAt
 ) {
@@ -34,6 +36,8 @@ public record UserListResponse(
                 roleNames,
                 user.getStatus().name(),
                 user.getDepartment(),
+                user.getDepartment(),
+                user.getPosition(),
                 user.getLastLoginAt(),
                 user.getCreatedAt()
         );

@@ -66,10 +66,11 @@ public class PublicCourseTimeServiceImpl implements PublicCourseTimeService {
             Boolean isFree,
             String keyword,
             Long categoryId,
-            Pageable pageable
+            Pageable pageable,
+            Long userId
     ) {
-        log.debug("Getting public course times: statuses={}, deliveryType={}, courseId={}, isFree={}, keyword={}, categoryId={}",
-                statuses, deliveryType, courseId, isFree, keyword, categoryId);
+        log.debug("Getting public course times: statuses={}, deliveryType={}, courseId={}, isFree={}, keyword={}, categoryId={}, userId={}",
+                statuses, deliveryType, courseId, isFree, keyword, categoryId, userId);
 
         Long tenantId = TenantContext.getCurrentTenantId();
 
@@ -78,7 +79,7 @@ public class PublicCourseTimeServiceImpl implements PublicCourseTimeService {
                 ? PUBLIC_STATUSES
                 : statuses.stream().filter(PUBLIC_STATUSES::contains).toList();
 
-        // 동적 쿼리 생성
+        // 동적 쿼리 생성 (INVITE_ONLY 필터링 포함)
         Specification<CourseTime> spec = CourseTimeSpecification.forPublicCatalog(
                 tenantId,
                 effectiveStatuses,
@@ -86,7 +87,8 @@ public class PublicCourseTimeServiceImpl implements PublicCourseTimeService {
                 courseId,
                 isFree,
                 keyword,
-                categoryId
+                categoryId,
+                userId
         );
 
         Page<CourseTime> courseTimePage = courseTimeRepository.findAll(spec, pageable);

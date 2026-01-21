@@ -19,6 +19,7 @@ import com.mzc.lp.domain.user.constant.CourseRole;
 import com.mzc.lp.domain.user.entity.UserCourseRole;
 import com.mzc.lp.domain.user.repository.UserCourseRoleRepository;
 import com.mzc.lp.domain.ts.constant.CourseTimeStatus;
+import com.mzc.lp.domain.ts.constant.DeliveryType;
 import com.mzc.lp.domain.ts.constant.DurationType;
 import com.mzc.lp.domain.ts.dto.request.CloneCourseTimeRequest;
 import com.mzc.lp.domain.ts.dto.request.CreateCourseTimeRequest;
@@ -134,9 +135,14 @@ public class CourseTimeServiceImpl implements CourseTimeService {
                 savedCourseTime.getId(), request.courseId(), snapshot.getId(),
                 savedCourseTime.getStatus(), request.enrollStartDate(), validationResult.qualityRating());
 
-        // DESIGNER를 MAIN 강사로 자동 배정
-        List<InstructorAssignmentResponse> instructors = assignCourseDesignerAsMainInstructor(
-                savedCourseTime, course, createdBy);
+        // DESIGNER를 MAIN 강사로 자동 배정 (플래그에 따라 조건부 실행)
+        List<InstructorAssignmentResponse> instructors = List.of();
+        if (Boolean.TRUE.equals(request.assignDesignerAsMainInstructor())) {
+            instructors = assignCourseDesignerAsMainInstructor(savedCourseTime, course, createdBy);
+        } else {
+            log.info("Skipping DESIGNER auto-assignment: courseTimeId={}, assignDesignerAsMainInstructor=false",
+                    savedCourseTime.getId());
+        }
 
         return CourseTimeDetailResponse.from(savedCourseTime, instructors);
     }
@@ -536,7 +542,9 @@ public class CourseTimeServiceImpl implements CourseTimeService {
         UserCourseRole designerRole = designers.get(0);
         Long designerId = designerRole.getUser().getId();
 
-        AssignInstructorRequest assignRequest = new AssignInstructorRequest(designerId, InstructorRole.MAIN, false);
+        // ONLINE 타입은 자기주도 학습이므로 강사 일정 충돌 검증 스킵
+        boolean skipScheduleValidation = courseTime.getDeliveryType() == DeliveryType.ONLINE;
+        AssignInstructorRequest assignRequest = new AssignInstructorRequest(designerId, InstructorRole.MAIN, skipScheduleValidation);
         InstructorAssignmentResponse assignment = instructorAssignmentService.assignInstructor(
                 courseTime.getId(), assignRequest, operatorId);
 

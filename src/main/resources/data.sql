@@ -10,6 +10,7 @@
 --   db/seed/V002__tenants.sql         - 테넌트
 --   db/seed/V003__departments.sql     - 부서
 --   db/seed/V004__users.sql           - 사용자 (명시적 ID)
+--   db/seed/V004_5__employees.sql     - 직원
 --   db/seed/V005__user_roles.sql      - 사용자 역할 (멀티롤 지원)
 --   db/seed/V006__categories.sql      - 카테고리
 --   db/seed/V007__contents.sql        - 콘텐츠
@@ -24,6 +25,7 @@
 --   db/seed/V015__cart_wishlist.sql   - 장바구니/찜
 --   db/seed/V016__reviews.sql         - 리뷰
 --   db/seed/V017__roadmaps.sql        - 로드맵
+--   db/seed/V018__member_pools_and_auto_enrollment_rules.sql - 회원 풀 + 자동 입과 규칙
 --
 -- 환경 설정:
 --   local, dev 프로파일에서만 시드 데이터 로드

@@ -42,6 +42,15 @@ public interface EnrollmentService {
     // 상태 변경 (관리자)
     EnrollmentDetailResponse updateStatus(Long enrollmentId, UpdateEnrollmentStatusRequest request);
 
+    // 수강 신청 승인 (PENDING → ENROLLED)
+    EnrollmentDetailResponse approveEnrollment(Long enrollmentId);
+
+    // 수강 신청 거절 (PENDING → REJECTED)
+    EnrollmentDetailResponse rejectEnrollment(Long enrollmentId);
+
+    // 수강 신청 재심사 (REJECTED → PENDING)
+    EnrollmentDetailResponse resubmitEnrollment(Long enrollmentId);
+
     // 수강 취소
     void cancelEnrollment(Long enrollmentId, Long userId, boolean isAdmin);
 
