@@ -7,7 +7,6 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -24,7 +23,6 @@ public class DepartmentInitializer implements ApplicationRunner {
     private final DepartmentService departmentService;
 
     @Override
-    @Transactional
     public void run(ApplicationArguments args) {
         log.info("Starting department initialization from existing user data...");
 

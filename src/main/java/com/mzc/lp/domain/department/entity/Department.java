@@ -15,7 +15,8 @@ import java.util.List;
  */
 @Entity
 @Table(name = "departments", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"tenant_id", "code"})
+        @UniqueConstraint(columnNames = {"tenant_id", "code"}),
+        @UniqueConstraint(columnNames = {"tenant_id", "name"})
 })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
