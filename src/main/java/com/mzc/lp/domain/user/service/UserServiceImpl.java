@@ -656,6 +656,7 @@ public class UserServiceImpl implements UserService {
         }
 
         user.setRoles(request.roles());
+        userRepository.save(user);  // 명시적으로 저장하여 DB 반영 보장
         log.info("User roles updated: userId={}, newRoles={}", userId, user.getRoles());
 
         // 감사 로그 기록
@@ -678,6 +679,7 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new UserNotFoundException(userId));
 
         user.addRole(role);
+        userRepository.save(user);  // 명시적으로 저장하여 DB 반영 보장
 
         // 감사 로그 기록
         activityLogService.log(
@@ -710,6 +712,7 @@ public class UserServiceImpl implements UserService {
         }
 
         user.removeRole(role);
+        userRepository.save(user);  // 명시적으로 저장하여 DB 반영 보장
 
         // 감사 로그 기록
         activityLogService.log(
