@@ -64,7 +64,7 @@ public class CourseController {
      * GET /api/courses/my
      */
     @GetMapping("/my")
-    @PreAuthorize("hasAnyRole('DESIGNER', 'OPERATOR', 'TENANT_ADMIN')")
+    @PreAuthorize("hasAnyRole('DESIGNER', 'INSTRUCTOR', 'OPERATOR', 'TENANT_ADMIN')")
     public ResponseEntity<ApiResponse<Page<CourseResponse>>> getMyCourses(
             @PageableDefault(size = 20) Pageable pageable,
             @AuthenticationPrincipal UserPrincipal principal
@@ -91,7 +91,7 @@ public class CourseController {
      * PUT /api/courses/{courseId}
      */
     @PutMapping("/{courseId:\\d+}")
-    @PreAuthorize("hasAnyRole('DESIGNER', 'OPERATOR', 'TENANT_ADMIN')")
+    @PreAuthorize("hasAnyRole('DESIGNER', 'INSTRUCTOR', 'OPERATOR', 'TENANT_ADMIN')")
     public ResponseEntity<ApiResponse<CourseResponse>> updateCourse(
             @PathVariable @Positive Long courseId,
             @Valid @RequestBody UpdateCourseRequest request,
