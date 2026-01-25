@@ -644,7 +644,19 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new UserNotFoundException(userId));
 
         Set<TenantRole> oldRoles = new java.util.HashSet<>(user.getRoles());
+
+        // 최소 1명 TENANT_ADMIN 유지 검증
+        // 기존에 TENANT_ADMIN 역할이 있었는데 새 역할 목록에 TENANT_ADMIN이 없는 경우
+        if (oldRoles.contains(TenantRole.TENANT_ADMIN) && !request.roles().contains(TenantRole.TENANT_ADMIN)) {
+            long taCount = userRoleRepository.countByRoleAndTenantId(TenantRole.TENANT_ADMIN, user.getTenantId());
+            if (taCount <= 1) {
+                log.warn("Cannot remove last TENANT_ADMIN via role update: userId={}, tenantId={}", userId, user.getTenantId());
+                throw new LastTenantAdminException();
+            }
+        }
+
         user.setRoles(request.roles());
+        userRepository.save(user);  // 명시적으로 저장하여 DB 반영 보장
         log.info("User roles updated: userId={}, newRoles={}", userId, user.getRoles());
 
         // 감사 로그 기록
@@ -667,6 +679,7 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new UserNotFoundException(userId));
 
         user.addRole(role);
+        userRepository.save(user);  // 명시적으로 저장하여 DB 반영 보장
 
         // 감사 로그 기록
         activityLogService.log(
@@ -699,6 +712,7 @@ public class UserServiceImpl implements UserService {
         }
 
         user.removeRole(role);
+        userRepository.save(user);  // 명시적으로 저장하여 DB 반영 보장
 
         // 감사 로그 기록
         activityLogService.log(

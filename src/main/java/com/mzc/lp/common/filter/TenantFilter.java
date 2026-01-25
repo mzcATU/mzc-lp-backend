@@ -51,43 +51,49 @@ public class TenantFilter implements Filter {
             throws IOException, ServletException {
 
         HttpServletRequest httpRequest = (HttpServletRequest) request;
+        String requestUri = httpRequest.getRequestURI();
 
         // 기존 TenantContext가 설정되어 있는지 확인 (테스트 등에서 미리 설정한 경우)
         boolean wasAlreadySet = TenantContext.isSet();
         Long previousTenantId = TenantContext.getCurrentTenantIdOrNull();
 
+        // 로그인/토큰갱신 API는 테넌트 필터 없이 전체 사용자 대상 조회해야 함
+        // SA(SYSTEM_ADMIN)도 어떤 서브도메인에서든 로그인할 수 있어야 함
+        boolean isAuthApi = requestUri.equals("/api/auth/login") || requestUri.equals("/api/auth/refresh");
+
         try {
             // 기존 컨텍스트가 없는 경우에만 설정
             if (!wasAlreadySet) {
-                // 1. JWT에서 tenantId 추출
-                Long tenantId = extractTenantIdFromRequest(httpRequest);
-
-                // 2. JWT에 tenantId가 없으면 X-Subdomain 헤더에서 추출
-                if (tenantId == null) {
-                    tenantId = extractTenantIdFromSubdomainHeader(httpRequest);
-                }
-
-                // 3. TenantContext에 설정
-                if (tenantId != null) {
-                    TenantContext.setTenantId(tenantId);
-                    log.debug("TenantId set in context: {} for request: {} {}",
-                            tenantId, httpRequest.getMethod(), httpRequest.getRequestURI());
+                // 로그인/토큰갱신 API는 TenantContext 설정하지 않음
+                if (isAuthApi) {
+                    log.debug("Auth API - TenantContext not set for request: {} {}",
+                            httpRequest.getMethod(), requestUri);
                 } else {
-                    String requestUri = httpRequest.getRequestURI();
-                    // 로그인 API는 테넌트 필터 없이 전체 사용자 대상 조회해야 함
-                    if (requestUri.equals("/api/auth/login") || requestUri.equals("/api/auth/refresh")) {
-                        log.debug("Auth API - TenantContext not set for request: {} {}",
-                                httpRequest.getMethod(), requestUri);
-                    } else if (requestUri.equals("/api/auth/register")) {
-                        // 회원가입 시에는 X-Subdomain 헤더가 없으면 기본 테넌트로 가입
-                        TenantContext.setTenantId(defaultTenantId);
-                        log.debug("Register API - Default TenantId ({}) set for request: {} {}",
-                                defaultTenantId, httpRequest.getMethod(), requestUri);
+                    // 1. JWT에서 tenantId 추출
+                    Long tenantId = extractTenantIdFromRequest(httpRequest);
+
+                    // 2. JWT에 tenantId가 없으면 X-Subdomain 헤더에서 추출
+                    if (tenantId == null) {
+                        tenantId = extractTenantIdFromSubdomainHeader(httpRequest);
+                    }
+
+                    // 3. TenantContext에 설정
+                    if (tenantId != null) {
+                        TenantContext.setTenantId(tenantId);
+                        log.debug("TenantId set in context: {} for request: {} {}",
+                                tenantId, httpRequest.getMethod(), httpRequest.getRequestURI());
                     } else {
-                        // 그 외 Public API는 기본 테넌트 사용
-                        TenantContext.setTenantId(defaultTenantId);
-                        log.debug("Default TenantId ({}) set for request: {} {}",
-                                defaultTenantId, httpRequest.getMethod(), requestUri);
+                        if (requestUri.equals("/api/auth/register")) {
+                            // 회원가입 시에는 X-Subdomain 헤더가 없으면 기본 테넌트로 가입
+                            TenantContext.setTenantId(defaultTenantId);
+                            log.debug("Register API - Default TenantId ({}) set for request: {} {}",
+                                    defaultTenantId, httpRequest.getMethod(), requestUri);
+                        } else {
+                            // 그 외 Public API는 기본 테넌트 사용
+                            TenantContext.setTenantId(defaultTenantId);
+                            log.debug("Default TenantId ({}) set for request: {} {}",
+                                    defaultTenantId, httpRequest.getMethod(), requestUri);
+                        }
                     }
                 }
             } else {

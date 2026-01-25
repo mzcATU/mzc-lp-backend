@@ -179,7 +179,7 @@ public class TenantNoticeServiceImpl implements TenantNoticeService {
 
             String title = "새 공지사항";
             String message = notice.getTitle();
-            String link = "/tu/b2c/notifications?tab=SYSTEM";  // 알림 페이지 공지사항 탭으로 이동
+            String link = "/tu/b2c/notifications?tab=NOTICE";  // 알림 페이지 공지사항 탭으로 이동
 
             for (Long userId : userIds) {
                 try {
@@ -190,7 +190,7 @@ public class TenantNoticeServiceImpl implements TenantNoticeService {
                             message,
                             link,
                             notice.getId(),
-                            "TENANT_NOTICE",
+                            "NOTICE",  // NOTICE로 설정하여 프론트엔드에서 '공지' 탭으로 분류
                             null,  // actorId (시스템 발송)
                             null   // actorName
                     );
