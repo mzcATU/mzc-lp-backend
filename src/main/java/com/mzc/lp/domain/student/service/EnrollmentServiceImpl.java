@@ -246,9 +246,9 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     }
 
     @Override
-    public Page<EnrollmentResponse> getEnrollmentsByCourseTime(Long courseTimeId, EnrollmentStatus status, Pageable pageable, Long userId, boolean isAdmin) {
-        log.debug("Getting enrollments by course time: courseTimeId={}, status={}, userId={}, isAdmin={}",
-                courseTimeId, status, userId, isAdmin);
+    public Page<EnrollmentResponse> getEnrollmentsByCourseTime(Long courseTimeId, EnrollmentStatus status, String keyword, Pageable pageable, Long userId, boolean isAdmin) {
+        log.debug("Getting enrollments by course time: courseTimeId={}, status={}, keyword={}, userId={}, isAdmin={}",
+                courseTimeId, status, keyword, userId, isAdmin);
 
         Long tenantId = TenantContext.getCurrentTenantId();
 
@@ -258,7 +258,11 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         }
 
         Page<Enrollment> enrollments;
-        if (status != null) {
+        // keyword가 있으면 새로운 필터 쿼리 사용
+        if (keyword != null && !keyword.isBlank()) {
+            enrollments = enrollmentRepository.findByCourseTimeIdWithFilters(
+                    courseTimeId, tenantId, status, keyword, pageable);
+        } else if (status != null) {
             enrollments = enrollmentRepository.findByCourseTimeIdAndStatusAndTenantId(courseTimeId, status, tenantId, pageable);
         } else {
             enrollments = enrollmentRepository.findByCourseTimeIdAndTenantId(courseTimeId, tenantId, pageable);

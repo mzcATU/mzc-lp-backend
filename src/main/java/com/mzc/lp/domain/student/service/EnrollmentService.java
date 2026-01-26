@@ -25,7 +25,7 @@ public interface EnrollmentService {
     EnrollmentDetailResponse getEnrollment(Long enrollmentId);
 
     // 차수별 수강생 목록 조회 (소유권/강사 검증 포함)
-    Page<EnrollmentResponse> getEnrollmentsByCourseTime(Long courseTimeId, EnrollmentStatus status, Pageable pageable, Long userId, boolean isAdmin);
+    Page<EnrollmentResponse> getEnrollmentsByCourseTime(Long courseTimeId, EnrollmentStatus status, String keyword, Pageable pageable, Long userId, boolean isAdmin);
 
     // 내 수강 목록 조회
     Page<EnrollmentResponse> getMyEnrollments(Long userId, EnrollmentStatus status, Pageable pageable);

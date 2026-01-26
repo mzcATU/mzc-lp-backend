@@ -49,10 +49,11 @@ public class InstructorAssignmentController {
             @RequestParam(required = false) Long courseTimeId,
             @RequestParam(required = false) InstructorRole role,
             @RequestParam(required = false) AssignmentStatus status,
+            @RequestParam(required = false) String keyword,
             @PageableDefault(size = 20) Pageable pageable
     ) {
         Page<InstructorAssignmentListResponse> response = assignmentService.getAssignments(
-                instructorId, courseTimeId, role, status, pageable);
+                instructorId, courseTimeId, role, status, keyword, pageable);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

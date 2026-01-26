@@ -203,13 +203,17 @@ public class CourseTimeServiceImpl implements CourseTimeService {
     }
 
     @Override
-    public Page<CourseTimeResponse> getCourseTimes(CourseTimeStatus status, Long courseId, Pageable pageable) {
-        log.debug("Getting course times: status={}, courseId={}", status, courseId);
+    public Page<CourseTimeResponse> getCourseTimes(CourseTimeStatus status, Long courseId, String keyword, Pageable pageable) {
+        log.debug("Getting course times: status={}, courseId={}, keyword={}", status, courseId, keyword);
 
         Long tenantId = TenantContext.getCurrentTenantId();
         Page<CourseTime> courseTimePage;
 
-        if (courseId != null && status != null) {
+        // keyword가 있으면 새로운 필터 쿼리 사용
+        if (keyword != null && !keyword.isBlank()) {
+            courseTimePage = courseTimeRepository.findByFilters(
+                    tenantId, status, courseId, keyword, pageable);
+        } else if (courseId != null && status != null) {
             courseTimePage = courseTimeRepository.findByCourseIdAndTenantIdAndStatus(
                     courseId, tenantId, status, pageable);
         } else if (courseId != null) {

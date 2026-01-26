@@ -77,11 +77,12 @@ public class EnrollmentController {
     public ResponseEntity<ApiResponse<Page<EnrollmentResponse>>> getEnrollmentsByCourseTime(
             @PathVariable Long courseTimeId,
             @RequestParam(required = false) EnrollmentStatus status,
+            @RequestParam(required = false) String keyword,
             @PageableDefault(size = 20) Pageable pageable,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
         Page<EnrollmentResponse> response = enrollmentService.getEnrollmentsByCourseTime(
-                courseTimeId, status, pageable, principal.id(), hasAdminRole(principal));
+                courseTimeId, status, keyword, pageable, principal.id(), hasAdminRole(principal));
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

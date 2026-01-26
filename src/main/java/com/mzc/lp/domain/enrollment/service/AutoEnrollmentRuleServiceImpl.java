@@ -12,10 +12,15 @@ import com.mzc.lp.domain.department.repository.DepartmentRepository;
 import com.mzc.lp.domain.ts.repository.CourseTimeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -112,6 +117,60 @@ public class AutoEnrollmentRuleServiceImpl implements AutoEnrollmentRuleService 
                 .stream()
                 .map(rule -> toResponseWithRelations(rule, tenantId))
                 .toList();
+    }
+
+    @Override
+    public Page<AutoEnrollmentRuleResponse> getAllWithFilters(
+            Long tenantId,
+            String keyword,
+            Boolean isActive,
+            AutoEnrollmentTrigger trigger,
+            Pageable pageable
+    ) {
+        log.debug("Getting auto enrollment rules with filters: tenantId={}, keyword={}, isActive={}, trigger={}",
+                tenantId, keyword, isActive, trigger);
+
+        Page<AutoEnrollmentRule> rulePage = ruleRepository.findByFilters(
+                tenantId, keyword, isActive, trigger, pageable);
+
+        // N+1 방지: 관련 엔티티 일괄 조회
+        List<AutoEnrollmentRule> rules = rulePage.getContent();
+
+        // Department 이름 일괄 조회
+        List<Long> departmentIds = rules.stream()
+                .map(AutoEnrollmentRule::getDepartmentId)
+                .filter(id -> id != null)
+                .distinct()
+                .toList();
+
+        Map<Long, String> departmentNameMap = departmentIds.isEmpty() ? Map.of() :
+                departmentRepository.findAllById(departmentIds).stream()
+                        .collect(Collectors.toMap(
+                                dept -> dept.getId(),
+                                dept -> dept.getName()
+                        ));
+
+        // CourseTime 제목 일괄 조회
+        List<Long> courseTimeIds = rules.stream()
+                .map(AutoEnrollmentRule::getCourseTimeId)
+                .filter(id -> id != null)
+                .distinct()
+                .toList();
+
+        Map<Long, String> courseTimeTitleMap = courseTimeIds.isEmpty() ? Map.of() :
+                courseTimeRepository.findAllById(courseTimeIds).stream()
+                        .collect(Collectors.toMap(
+                                ct -> ct.getId(),
+                                ct -> ct.getTitle()
+                        ));
+
+        return rulePage.map(rule -> {
+            String departmentName = rule.getDepartmentId() != null ?
+                    departmentNameMap.get(rule.getDepartmentId()) : null;
+            String courseTimeTitle = rule.getCourseTimeId() != null ?
+                    courseTimeTitleMap.get(rule.getCourseTimeId()) : null;
+            return AutoEnrollmentRuleResponse.from(rule, departmentName, courseTimeTitle);
+        });
     }
 
     @Override

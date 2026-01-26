@@ -51,6 +51,20 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
             @Param("excludeStatus") EnrollmentStatus excludeStatus,
             Pageable pageable);
 
+    // 차수별 수강생 목록 (keyword 검색 - 수강생 이름, 이메일)
+    @Query("SELECT e FROM Enrollment e " +
+            "WHERE e.courseTimeId = :courseTimeId " +
+            "AND e.tenantId = :tenantId " +
+            "AND (:status IS NULL OR e.status = :status) " +
+            "AND (:keyword IS NULL OR " +
+            "     e.userId IN (SELECT u.id FROM User u WHERE u.name LIKE %:keyword% OR u.email LIKE %:keyword%))")
+    Page<Enrollment> findByCourseTimeIdWithFilters(
+            @Param("courseTimeId") Long courseTimeId,
+            @Param("tenantId") Long tenantId,
+            @Param("status") EnrollmentStatus status,
+            @Param("keyword") String keyword,
+            Pageable pageable);
+
     // 사용자별 수강 이력
     Page<Enrollment> findByUserIdAndTenantId(Long userId, Long tenantId, Pageable pageable);
 

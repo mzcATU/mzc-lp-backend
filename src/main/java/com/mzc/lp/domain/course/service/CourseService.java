@@ -1,6 +1,8 @@
 package com.mzc.lp.domain.course.service;
 
+import com.mzc.lp.domain.course.constant.CourseLevel;
 import com.mzc.lp.domain.course.constant.CourseStatus;
+import com.mzc.lp.domain.course.constant.CourseType;
 import com.mzc.lp.domain.course.dto.request.CreateCourseRequest;
 import com.mzc.lp.domain.course.dto.request.UpdateCourseRequest;
 import com.mzc.lp.domain.course.dto.response.CourseDetailResponse;
@@ -19,14 +21,16 @@ public interface CourseService {
     CourseResponse createCourse(CreateCourseRequest request, Long createdBy);
 
     /**
-     * 강의 목록 조회 (페이징, 키워드 검색, 카테고리 필터, 상태 필터)
+     * 강의 목록 조회 (페이징, 키워드 검색, 카테고리 필터, 상태 필터, 레벨 필터, 타입 필터)
      * @param keyword 검색 키워드 (제목)
      * @param categoryId 카테고리 ID (필터)
      * @param status 상태 필터 (DRAFT, READY, REGISTERED)
+     * @param level 레벨 필터 (BEGINNER, INTERMEDIATE, ADVANCED)
+     * @param type 타입 필터 (ONLINE, OFFLINE, BLENDED)
      * @param pageable 페이징 정보
      * @return 강의 목록 페이지
      */
-    Page<CourseResponse> getCourses(String keyword, Long categoryId, CourseStatus status, Pageable pageable);
+    Page<CourseResponse> getCourses(String keyword, Long categoryId, CourseStatus status, CourseLevel level, CourseType type, Pageable pageable);
 
     /**
      * 강의 상세 조회 (아이템 포함)
