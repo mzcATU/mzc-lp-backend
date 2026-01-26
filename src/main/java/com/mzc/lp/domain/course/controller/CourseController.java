@@ -2,7 +2,9 @@ package com.mzc.lp.domain.course.controller;
 
 import com.mzc.lp.common.dto.ApiResponse;
 import com.mzc.lp.common.security.UserPrincipal;
+import com.mzc.lp.domain.course.constant.CourseLevel;
 import com.mzc.lp.domain.course.constant.CourseStatus;
+import com.mzc.lp.domain.course.constant.CourseType;
 import com.mzc.lp.domain.course.dto.request.CreateCourseRequest;
 import com.mzc.lp.domain.course.dto.request.UpdateCourseRequest;
 import com.mzc.lp.domain.course.dto.response.CourseDetailResponse;
@@ -44,7 +46,7 @@ public class CourseController {
     }
 
     /**
-     * 강의 목록 조회 (페이징, 키워드 검색, 카테고리 필터, 상태 필터)
+     * 강의 목록 조회 (페이징, 키워드 검색, 카테고리 필터, 상태 필터, 레벨 필터, 타입 필터)
      * GET /api/courses
      */
     @GetMapping
@@ -52,10 +54,12 @@ public class CourseController {
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) CourseStatus status,
+            @RequestParam(required = false) CourseLevel level,
+            @RequestParam(required = false) CourseType type,
             @PageableDefault(size = 20) Pageable pageable,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        Page<CourseResponse> response = courseService.getCourses(keyword, categoryId, status, pageable);
+        Page<CourseResponse> response = courseService.getCourses(keyword, categoryId, status, level, type, pageable);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

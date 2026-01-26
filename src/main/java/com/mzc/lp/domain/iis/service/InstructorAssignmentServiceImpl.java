@@ -152,16 +152,17 @@ public class InstructorAssignmentServiceImpl implements InstructorAssignmentServ
             Long courseTimeId,
             InstructorRole role,
             AssignmentStatus status,
+            String keyword,
             Pageable pageable
     ) {
-        log.debug("Getting assignments: instructorId={}, courseTimeId={}, role={}, status={}",
-                instructorId, courseTimeId, role, status);
+        log.debug("Getting assignments: instructorId={}, courseTimeId={}, role={}, status={}, keyword={}",
+                instructorId, courseTimeId, role, status, keyword);
 
         Long tenantId = TenantContext.getCurrentTenantId();
 
         // 동적 쿼리로 배정 목록 조회
         Page<InstructorAssignment> assignmentPage = assignmentRepository.searchAssignments(
-                tenantId, instructorId, courseTimeId, role, status, pageable);
+                tenantId, instructorId, courseTimeId, role, status, keyword, pageable);
 
         List<InstructorAssignment> assignments = assignmentPage.getContent();
 

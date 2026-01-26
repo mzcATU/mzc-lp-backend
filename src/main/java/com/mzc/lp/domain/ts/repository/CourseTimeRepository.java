@@ -58,6 +58,20 @@ public interface CourseTimeRepository extends JpaRepository<CourseTime, Long>, J
             Pageable pageable
     );
 
+    // 차수 목록 조회 (keyword 검색 - 차수명, 과정명)
+    @Query("SELECT ct FROM CourseTime ct LEFT JOIN ct.course c " +
+            "WHERE ct.tenantId = :tenantId " +
+            "AND (:status IS NULL OR ct.status = :status) " +
+            "AND (:courseId IS NULL OR ct.course.id = :courseId) " +
+            "AND (:keyword IS NULL OR ct.title LIKE %:keyword% OR c.title LIKE %:keyword%)")
+    Page<CourseTime> findByFilters(
+            @Param("tenantId") Long tenantId,
+            @Param("status") CourseTimeStatus status,
+            @Param("courseId") Long courseId,
+            @Param("keyword") String keyword,
+            Pageable pageable
+    );
+
     // ===== 배치 Job용 쿼리 =====
 
     /**

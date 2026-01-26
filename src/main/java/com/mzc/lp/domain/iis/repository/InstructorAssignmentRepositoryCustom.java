@@ -14,6 +14,7 @@ public interface InstructorAssignmentRepositoryCustom {
             Long courseTimeId,
             InstructorRole role,
             AssignmentStatus status,
+            String keyword,
             Pageable pageable
     );
 }

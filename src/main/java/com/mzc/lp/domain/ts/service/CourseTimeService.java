@@ -24,7 +24,7 @@ public interface CourseTimeService {
 
     CourseTimeDetailResponse cloneCourseTime(Long sourceId, CloneCourseTimeRequest request, Long createdBy);
 
-    Page<CourseTimeResponse> getCourseTimes(CourseTimeStatus status, Long courseId, Pageable pageable);
+    Page<CourseTimeResponse> getCourseTimes(CourseTimeStatus status, Long courseId, String keyword, Pageable pageable);
 
     CourseTimeDetailResponse getCourseTime(Long id);
 

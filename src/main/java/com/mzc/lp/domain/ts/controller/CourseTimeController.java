@@ -47,9 +47,10 @@ public class CourseTimeController {
     public ResponseEntity<ApiResponse<Page<CourseTimeResponse>>> getCourseTimes(
             @RequestParam(required = false) CourseTimeStatus status,
             @RequestParam(required = false) Long courseId,
+            @RequestParam(required = false) String keyword,
             @PageableDefault(size = 20) Pageable pageable
     ) {
-        Page<CourseTimeResponse> response = courseTimeService.getCourseTimes(status, courseId, pageable);
+        Page<CourseTimeResponse> response = courseTimeService.getCourseTimes(status, courseId, keyword, pageable);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

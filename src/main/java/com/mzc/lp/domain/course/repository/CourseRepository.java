@@ -1,6 +1,8 @@
 package com.mzc.lp.domain.course.repository;
 
+import com.mzc.lp.domain.course.constant.CourseLevel;
 import com.mzc.lp.domain.course.constant.CourseStatus;
+import com.mzc.lp.domain.course.constant.CourseType;
 import com.mzc.lp.domain.course.entity.Course;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -42,12 +44,16 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
     @Query("SELECT c FROM Course c WHERE c.tenantId = :tenantId " +
             "AND (:keyword IS NULL OR c.title LIKE %:keyword%) " +
             "AND (:categoryId IS NULL OR c.categoryId = :categoryId) " +
-            "AND (:status IS NULL OR c.status = :status)")
+            "AND (:status IS NULL OR c.status = :status) " +
+            "AND (:level IS NULL OR c.level = :level) " +
+            "AND (:type IS NULL OR c.type = :type)")
     Page<Course> findByFilters(
             @Param("tenantId") Long tenantId,
             @Param("keyword") String keyword,
             @Param("categoryId") Long categoryId,
             @Param("status") CourseStatus status,
+            @Param("level") CourseLevel level,
+            @Param("type") CourseType type,
             Pageable pageable
     );
 }

@@ -36,6 +36,7 @@ public interface InstructorAssignmentService {
             Long courseTimeId,
             InstructorRole role,
             AssignmentStatus status,
+            String keyword,
             Pageable pageable
     );
 

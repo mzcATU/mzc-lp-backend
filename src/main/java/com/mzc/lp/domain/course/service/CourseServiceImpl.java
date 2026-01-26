@@ -2,7 +2,9 @@ package com.mzc.lp.domain.course.service;
 
 import com.mzc.lp.domain.analytics.constant.ActivityType;
 import com.mzc.lp.domain.analytics.service.ActivityLogService;
+import com.mzc.lp.domain.course.constant.CourseLevel;
 import com.mzc.lp.domain.course.constant.CourseStatus;
+import com.mzc.lp.domain.course.constant.CourseType;
 import com.mzc.lp.domain.course.dto.request.CreateCourseRequest;
 import com.mzc.lp.domain.course.dto.request.UpdateCourseRequest;
 import com.mzc.lp.domain.course.dto.response.CourseDetailResponse;
@@ -80,8 +82,8 @@ public class CourseServiceImpl implements CourseService {
     }
 
     @Override
-    public Page<CourseResponse> getCourses(String keyword, Long categoryId, CourseStatus status, Pageable pageable) {
-        log.debug("Getting courses: keyword={}, categoryId={}, status={}", keyword, categoryId, status);
+    public Page<CourseResponse> getCourses(String keyword, Long categoryId, CourseStatus status, CourseLevel level, CourseType type, Pageable pageable) {
+        log.debug("Getting courses: keyword={}, categoryId={}, status={}, level={}, type={}", keyword, categoryId, status, level, type);
 
         Long tenantId = TenantContext.getCurrentTenantId();
         Page<Course> courses = courseRepository.findByFilters(
@@ -89,6 +91,8 @@ public class CourseServiceImpl implements CourseService {
                 keyword != null && !keyword.isBlank() ? keyword : null,
                 categoryId,
                 status,
+                level,
+                type,
                 pageable
         );
 

@@ -4,6 +4,8 @@ import com.mzc.lp.domain.enrollment.constant.AutoEnrollmentTrigger;
 import com.mzc.lp.domain.enrollment.dto.request.CreateAutoEnrollmentRuleRequest;
 import com.mzc.lp.domain.enrollment.dto.request.UpdateAutoEnrollmentRuleRequest;
 import com.mzc.lp.domain.enrollment.dto.response.AutoEnrollmentRuleResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
@@ -18,6 +20,14 @@ public interface AutoEnrollmentRuleService {
     AutoEnrollmentRuleResponse getById(Long tenantId, Long ruleId);
 
     List<AutoEnrollmentRuleResponse> getAll(Long tenantId);
+
+    Page<AutoEnrollmentRuleResponse> getAllWithFilters(
+            Long tenantId,
+            String keyword,
+            Boolean isActive,
+            AutoEnrollmentTrigger trigger,
+            Pageable pageable
+    );
 
     List<AutoEnrollmentRuleResponse> getActiveRules(Long tenantId);
 
